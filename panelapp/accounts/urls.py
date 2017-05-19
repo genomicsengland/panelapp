@@ -2,6 +2,8 @@ from django.conf.urls import url
 from django.conf.urls import include
 from django.contrib.auth.views import PasswordResetView
 from django.contrib.auth.views import PasswordResetDoneView
+from django.contrib.auth.views import PasswordResetConfirmView
+from django.contrib.auth.views import PasswordResetCompleteView
 from django.urls import reverse_lazy
 
 from .views import EmptyView
@@ -9,14 +11,24 @@ from .views import EmptyView
 urlpatterns = [
     url(r'^profile/$', EmptyView.as_view(), name="profile"),
     url(r'^registration/$', EmptyView.as_view(), name="register"),
-    url(r'^anonymous/$', EmptyView.as_view(), name="anonymous"),
-    url(r'^password_reset/done/$', PasswordResetDoneView.as_view(
-            template_name="registration/custom_password_change_done.html",
-        ), name="password_reset_done"),
-    url(r'^password_reset/$', PasswordResetView.as_view(
+    url(r'^password_reset/$',
+        PasswordResetView.as_view(
             email_template_name="registration/custom_password_reset_email.html",
             template_name="registration/custom_password_reset_form.html",
             success_url=reverse_lazy('accounts:password_reset_done')
         ), name="password_reset"),
+    url(r'^password_reset/done/$',
+        PasswordResetDoneView.as_view(
+            template_name="registration/custom_password_change_done.html",
+        ), name="password_reset_done"),
+    url(r'^reset/(?P<uidb64>[0-9A-Za-z_\-]+)/(?P<token>[0-9A-Za-z]{1,13}-[0-9A-Za-z]{1,20})/$',
+        PasswordResetConfirmView.as_view(
+            template_name="registration/custom_password_reset_confirm.html",
+            success_url=reverse_lazy('accounts:password_reset_complete')
+        ), name="password_reset_confirm"),
+    url(r'^reset/done/$',
+        PasswordResetCompleteView.as_view(
+            template_name="registration/custom_password_change_complete.html",
+        ), name="password_reset_complete"),
     url('^', include('django.contrib.auth.urls')),
 ]

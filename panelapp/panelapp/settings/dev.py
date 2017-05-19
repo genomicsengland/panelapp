@@ -12,4 +12,4 @@ INTERNAL_IPS = [
     '10.0.2.2',  # Vagrant host
 ]
 
-EMAIL_BACKEND = 'django.core.mail.backends.dummy.EmailBackend'
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
