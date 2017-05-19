@@ -1,3 +1,14 @@
+from django.views.generic.base import View
+from django.views.generic.edit import CreateView
 from django.shortcuts import render
 
-# Create your views here.
+from .models import User
+
+
+class EmptyView(View):
+    pass
+
+
+class UserRegistrationView(CreateView):
+    model = User
+    

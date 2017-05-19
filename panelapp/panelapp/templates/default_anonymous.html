@@ -25,35 +25,6 @@
       </button>
       <a class="navbar-brand" href="{% url 'home' %}">PanelApp</a>
     </div>
-    <div class="collapse navbar-collapse" id="navbar">
-      <ul class="nav navbar-nav">
-        <li><a href="panels">Panels</a></li>
-        <li><a href="genes">Genes</a></li>
-        <li><a href="activity">Activity</a></li>
-        {% if request.user.is_authenticated and request.user.reviewer.is_GEL %}
-        <li><a href="{% url 'PanelApp.views.views_main.creation' %}">Add panel</a></li>
-        <li><a href="{% url 'PanelApp.views.views_main.admin' %}">Import panel</a></li>
-        <li class="dropdown">
-          <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">Resources <span class="caret"></span></a>
-          <ul class="dropdown-menu" role="menu">
-            <li><a href="{% url 'PanelApp.views.views_main.download_all_genes' %}">Download all genes</a></li>
-            <li><a href="{% url 'PanelApp.views.views_main.download_all_panels' %}">Download all panels</a></li>
-          </ul>
-        </li>
-        {% endif %}
-      </ul>
-
-      {% if request.user.is_authenticated %}
-      <ul class="nav navbar-nav navbar-right">
-        <li><a href="{% url 'accounts:profile' %}"><strong>{{ request.user }}</strong></a></li>
-        <li><a href="{% url 'accounts:logout' %}?next={% url 'accounts:login' %}">Log out</a></li>
-      </ul>
-      {% else %}
-      <ul class="nav navbar-nav navbar-right">
-        <li><a href="{% url 'accounts:login' %}">Log in</a></li>
-      </ul>
-      {% endif %}
-    </div>
   </div>
 </div>
 
@@ -68,8 +39,6 @@
 
 {% block body %}{% endblock %}
 {% block modals %}{% endblock %}
-<script src="{% static "bootstrap.min.js" %}"></script>
-<script src="{% static "panel_app.js" %}"></script>
 {% block js %}{% endblock %}
 </body>
 </html>

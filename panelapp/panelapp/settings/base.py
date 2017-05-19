@@ -44,6 +44,7 @@ CUSTOM_APPS = [
     'django_extensions',
     'markdownx',
     'markdown_deux',
+    'bootstrap3',
 ]
 
 PROJECT_APPS = [
@@ -94,6 +95,7 @@ DATABASES = {
 
 # Auth
 AUTH_USER_MODEL = 'accounts.User'
+LOGIN_REDIRECT_URL = 'home'
 
 
 # Password validation
