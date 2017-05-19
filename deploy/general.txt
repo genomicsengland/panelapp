@@ -13,6 +13,7 @@ django-model-utils==3.0.0
 django-hashid-field==1.2.1
 django-extensions==1.7.9
 django-markdown-deux==1.0.5
+django-markdownx==2.0.21
 Werkzeug==0.12.2
 
 Markdown==2.6.8
