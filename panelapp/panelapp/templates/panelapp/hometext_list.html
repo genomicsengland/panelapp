@@ -1,0 +1,37 @@
+{% extends "default.html" %}
+{% load staticfiles %}
+{% load markdown_deux_tags %}
+{% block body %}
+<div class="splash" style="background-color: #EAF1F1">
+  <div class="container">
+    <h1>{% block title %}Genomics England PanelApp{% endblock %}</h1>
+    <p class="lead">A crowdsourcing tool to allow gene panels to be shared, downloaded, viewed and evaluated by the Scientific Community</p>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row" data-module="tab-switcher" data-default-tab="Introduction">
+    <div class="col-sm-3">
+      <ul class="nav nav-pills nav-stacked">
+        <li class="active"><a href="#Introduction" data-toggle="tab" aria-expanded="true">Home</a></li>
+        <li><a href="#Principles" data-toggle="tab" aria-expanded="false">Gene Panel Guidelines and Principles</a></li>
+        <li><a href="#Reviewers" data-toggle="tab" aria-expanded="false">The Role of Expert Reviewers</a></li>
+        <li><a href="#Guidelines" data-toggle="tab" aria-expanded="false">News</a></li>
+        <li><a href="#Instructions" data-toggle="tab" aria-expanded="false">PanelApp Instructions</a></li>
+        <li><a href="#HowTo" data-toggle="tab" aria-expanded="false">How to…</a></li>
+        <li><a href="#FAQs" data-toggle="tab" aria-expanded="false">FAQs</a></li>
+        <li><a href="#Information" data-toggle="tab" aria-expanded="false">Contact, Sources and Glossary</a></li>
+      </ul>
+    </div>
+    <div class="col-sm-9">
+      <div id="myTabContent" class="tab-content">
+        {% for hometext in object_list %}
+        <div class="tab-pane active in" id="{{ hometext.href }}">
+          <div class="copy-container">{{ hometext.text|markdown }}</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

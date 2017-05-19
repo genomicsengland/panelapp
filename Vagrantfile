@@ -74,15 +74,16 @@ Vagrant.configure("2") do |config|
     sudo apt-get update
     sudo apt-get upgrade
     sudo apt-get install -y build-essential python3.5 python3.5-dev python-pip python-virtualenv postgresql postgresql-contrib
-    
+
     sudo -u vagrant virtualenv -p python3.5 /home/vagrant/.panelappv2
     sudo -H -u vagrant /home/vagrant/.panelappv2/bin/pip install setuptools==33.1.1
     sudo -H -u vagrant /home/vagrant/.panelappv2/bin/pip install -r /srv/panelappv2/deploy/dev.txt
+    sudo -u vagrant /home/vagrant/.panelappv2/bin/python /srv/panelappv2/panelapp/manage.py migrate
 
     echo "source /home/vagrant/.panelappv2/bin/activate" >> /home/vagrant/.bashrc
     echo "export DATABASE_URL=postgres://panelapp:panelapp@localhost/panelapp >> /home/vagrant/.bashrc
     echo "export DJANGO_SETTINGS=panelapp.settings.dev" >> /home/vagrant/.bashrc
-    echo "cd /srv/panelappv2" >> /home/vagrant/.bashrc
+    echo "cd /srv/panelappv2/panelapp" >> /home/vagrant/.bashrc
 
     sudo -u postgres createdb panelapp -O panelapp
     sudo -u postgres createuser -d panelapp

@@ -1,5 +1,8 @@
 # Project related
-
+*~
+.DS_Store
+.coverag
+*.swp
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -103,3 +106,6 @@ ENV/
 
 # mypy
 .mypy_cache/
+.Rhistory
+_mediafiles
+_staticfiles

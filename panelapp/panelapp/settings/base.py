@@ -14,7 +14,7 @@ import os
 import dj_database_url
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 
 # Quick-start development settings - unsuitable for production
@@ -42,9 +42,12 @@ DJANGO_APPS = [
 
 CUSTOM_APPS = [
     'django_extensions',
+    'markdownx',
+    'markdown_deux',
 ]
 
 PROJECT_APPS = [
+    'panelapp',
     'accounts',
 ]
 
@@ -126,3 +129,18 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/1.11/howto/static-files/
 
 STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, '_staticfiles')
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, '_mediafiles')
+
+# 3rd party apps setup
+
+MARKDOWN_DEUX_STYLES = {
+    "default": {
+        "extras": {
+            "wiki-tables": True
+        },
+        "safe_mode": "escape",
+    },
+}
