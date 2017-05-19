@@ -19,3 +19,6 @@ class Reviewers(models.Model):
 
     def __str__(self):
         return str(self.user)
+
+    def is_GEL(self):
+        return True if self.user_type == "GEL" else False
