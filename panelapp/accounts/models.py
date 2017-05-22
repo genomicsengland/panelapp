@@ -5,9 +5,19 @@ from django.contrib.auth.models import BaseUserManager
 from model_utils import Choices
 from model_utils.models import TimeStampedModel
 
+from .tasks import revierwer_confirmed_email
+
 
 class User(AbstractUser, TimeStampedModel):
-    pass
+    def promote_to_reviewer(self):
+        try:
+            self.reviewer.user_type = Reviewer.TYPES.REVIEWER
+            self.reviewer.save()
+            revierwer_confirmed_email.delay(self.pk)
+            return True
+        except Reviewer.DoesNotExist:
+            pass
+        return False
 
 
 class Reviewer(models.Model):
@@ -61,8 +71,8 @@ class Reviewer(models.Model):
     def is_GEL(self):
         return True if self.user_type == "GEL" else False
 
-    def is_REVIEWED(self):
-        return True if self.user_type == "REVIEWED" else False
+    def is_REVIEWER(self):
+        return True if self.user_type == "REVIEWER" else False
 
-    def is_reviewd(self):
-        return True if self.is_GEL() or self.is_REVIEWED() else False
+    def is_reviewer(self):
+        return True if self.is_GEL() or self.is_REVIEWER() else False
