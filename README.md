@@ -36,6 +36,10 @@ Run `python manage.py runserver_plus` it will run the local version.
 
 If you need to debug a model use `shell_plus` extension, you can access it via `python manage.py shell_plus` - it will load all available models and Django settings.
 
+If you want to access admin panel you can either register on the website, and then change
+permissions via `shell_plus` or use `python manage.py createsuperuser` command.
+
+We also run Celery with RabbitMQ backend for async tasks. To run celery simply run `celery -A panelapp worker`
 
 Project configuration
 ---------------------
