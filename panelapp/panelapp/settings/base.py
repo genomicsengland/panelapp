@@ -33,7 +33,7 @@ EMAIL_HOST = 'localhost'
 EMAIL_PORT = 25
 EMAIL_HOST_USER = 'vagrant'
 EMAIL_HOST_PASSWORD = '1'
-
+DEFAULT_FROM_EMAIL = 'PanelApp <panelapp@genomicsengland.co.uk>'
 
 # Application definition
 
@@ -164,3 +164,5 @@ MARKDOWN_DEUX_STYLES = {
         "safe_mode": "escape",
     },
 }
+
+PANEL_APP_EMAIL = None

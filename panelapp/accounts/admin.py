@@ -5,6 +5,7 @@ from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.forms import ReadOnlyPasswordHashField
 
 from .models import User
+from .models import Reviewer
 
 
 class UserCreationForm(forms.ModelForm):
@@ -49,6 +50,10 @@ class UserChangeForm(forms.ModelForm):
         return self.initial["password"]
 
 
+class ReviewerInline(admin.StackedInline):
+    model = Reviewer
+
+
 class UserAdmin(BaseUserAdmin):
     # The forms to add and change user instances
     form = UserChangeForm
@@ -76,6 +81,20 @@ class UserAdmin(BaseUserAdmin):
     ordering = ('email',)
     filter_horizontal = ()
 
+    inlines = [
+        ReviewerInline,
+    ]
 
+
+class ReviewerAdmin(admin.ModelAdmin):
+    model = Reviewer
+    list_display = ('reviewer_full_name', 'user_type')
+    list_filter = ('user_type', )
+
+    def reviewer_full_name(self, obj):
+        return "{} {}".format(obj.user.first_name, obj.user.last_name)
+
+
+admin.site.register(Reviewer, ReviewerAdmin)
 admin.site.register(User, UserAdmin)
 admin.site.unregister(Group)

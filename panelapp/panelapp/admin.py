@@ -5,6 +5,9 @@ from .models import HomeText
 from .models import Image
 
 
+admin.site.site_header = 'PanelApp administration'
+
+
 class HomeTextAdmin(MarkdownxModelAdmin):
     list_display = ('section', 'href', 'title')
 

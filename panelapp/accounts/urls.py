@@ -7,10 +7,11 @@ from django.contrib.auth.views import PasswordResetCompleteView
 from django.urls import reverse_lazy
 
 from .views import EmptyView
+from .views import UserRegistrationView
 
 urlpatterns = [
     url(r'^profile/$', EmptyView.as_view(), name="profile"),
-    url(r'^registration/$', EmptyView.as_view(), name="register"),
+    url(r'^registration/$', UserRegistrationView.as_view(), name="register"),
     url(r'^password_reset/$',
         PasswordResetView.as_view(
             email_template_name="registration/custom_password_reset_email.html",

@@ -18,6 +18,8 @@ django-debug-toolbar==1.8
 django-markdownx==2.0.21
 Werkzeug==0.12.2
 
+celery==4.0.2
+
 Markdown==2.6.8
 markdown2==2.3.4
 
