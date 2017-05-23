@@ -25,3 +25,5 @@ Markdown==2.6.8
 markdown2==2.3.4
 
 more-itertools==3.0.0
+
+requests==2.14.2

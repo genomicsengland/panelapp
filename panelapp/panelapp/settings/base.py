@@ -106,6 +106,25 @@ DATABASES = {
 AUTH_USER_MODEL = 'accounts.User'
 LOGIN_REDIRECT_URL = 'home'
 
+# Logging
+import os
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': os.getenv('DJANGO_LOG_LEVEL', 'INFO'),
+        },
+    },
+}
+
 
 # Password validation
 # https://docs.djangoproject.com/en/1.11/ref/settings/#auth-password-validators
@@ -168,3 +187,4 @@ MARKDOWN_DEUX_STYLES = {
 }
 
 PANEL_APP_EMAIL = None
+CELL_BASE_CONNECTOR_REST = "http://bioinfo.hpc.cam.ac.uk/cellbase/webservices/rest/"

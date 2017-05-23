@@ -1,0 +1,68 @@
+{% extends "default.html" %}
+
+{% load staticfiles %}
+
+{% block title %}Genes{% endblock %}
+
+{% block content %}
+  {% if tag_filter %}
+    <ol class="breadcrumb">
+      <li><a href="?">Genes</a></li>
+      <li class="active">{{ tag_filter }}</li>
+    </ol>
+  {% endif %}
+
+  <h1 class="add-bottom-margin">
+    {% if tag_filter %}
+      <div class="text-muted normal add-label-margin">{{ genes|length }} gene{{ genes|pluralize }} tagged</div>
+      “{{ tag_filter}}”
+    {% else %}
+      {{ genes|length }} gene{{ genes|pluralize }}
+    {% endif %}
+  </h1>
+    <div class="row">
+      <div class="col-md-9">
+        <div data-module="filterable-list">
+          <div class="panel panel-default">
+            <div class="panel-heading">
+              Find a gene
+            </div>
+            <div class="panel-body">
+              <form class="add-bottom-margin">
+                <label for="gene-filter">
+                  Gene symbol
+                  <br /><span class="text-muted normal">Enter a gene symbol or the beginning of one, eg “CD” or “CD19”</span>
+                </label><br />
+                <div class="input-group">
+                  <input id="gene-filter" type="text" autofocus class="form-control normal js-filter-list-input" placeholder="Filter genes">
+                  <span class="input-group-addon js-filter-list-count" data-singular="gene" data-plural="genes">
+                    {{ genes|length }} gene{{ genes|pluralize }}
+                  </span>
+                </div>
+              </form>
+              <hr />
+              <ul class="list-inline gene-filter-list js-filter-list">
+              {% for gene in genes %}
+                <li data-text="{{ gene.gene_symbol }}">
+                  <a href="{% url 'panels:gene_detail' gene.gene_symbol %}{% if tag_filter %}?tag={{ tag_filter}}{% endif %}">{{ gene.gene_symbol }}</a>
+                </li>
+              {% endfor %}
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <h3 class="remove-top-margin normal add-bottom-margin">Tagged</h3>
+        <ul class="list-inline">
+          {% for tag in tags %}
+            {% if tag %}
+              <li class="add-label-margin">
+                <a href="?tag={{ tag }}">{{ tag }}</a>
+              </li>
+            {% endif %}
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  {% endblock %}

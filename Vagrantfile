@@ -81,6 +81,7 @@ Vagrant.configure("2") do |config|
 
     echo "export DATABASE_URL=postgres://panelapp:panelapp@localhost/panelapp" >> /home/vagrant/.bashrc
     echo "export DJANGO_SETTINGS_MODULE=panelapp.settings.dev" >> /home/vagrant/.bashrc
+    echo "export DJANGO_LOG_LEVEL=DEBUG" >> /home/vagrant/.bashrc
 
     sudo -u vagrant virtualenv -p python3.5 /home/vagrant/.panelappv2
     sudo -H -u vagrant /home/vagrant/.panelappv2/bin/pip install setuptools==33.1.1
