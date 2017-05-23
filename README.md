@@ -41,6 +41,7 @@ permissions via `shell_plus` or use `python manage.py createsuperuser` command.
 
 We also run Celery with RabbitMQ backend for async tasks. To run celery simply run `celery -A panelapp worker`
 
+
 Project configuration
 ---------------------
 
@@ -54,6 +55,7 @@ The location for these two directories in configures in `panelapp/settings/<envi
 Run
 `/path/to/ve/bin/python /path/to/app/panelapp/manage.py collectstatic --noinput` for pulling all statics inside the `_staticfiles` folder
 
+
 nginx configuration
 --------------------
 
@@ -63,6 +65,7 @@ Create a normal file in `/etc/nginx/site-available/` directory called
 ```
 # TODO
 ```
+
 
 TODO
 ----
