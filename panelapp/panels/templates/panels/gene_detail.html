@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+{% load staticfiles %}
+{% block header %}
+<script src="{% static 'django_ajax/js/jquery.ajax.min.js' %}"></script>
+<script src="{% static 'django_ajax/js/jquery.ajax-plugin.min.js' %}"></script>
+{% endblock %}
+
+{% block content %}
+<ol class="breadcrumb">
+  <li><a href="{% url 'PanelApp.views.views_main.gene_browser' %}">Genes</a></li>
+  <li class="active">{{ gene_symbol }}</li>
+</ol>
+<h1>
+  {% block title %}{{ gene_symbol }}{% endblock %}
+</h1>
+
+<p class="lead">
+  {{ gene.gene_name }}<br />{% if gene.omim_gene %}<a href="http://omim.org/entry/{{ gene.omim_gene }}" target="_blank">OMIM: {{ gene.omim_gene }}</a>, {% endif %}<a href=" http://www.ebi.ac.uk/gene2phenotype/gene2phenotype-webcode/cgi-bin/handler.cgi?panel=ALL&search_term={{ gene.gene_symbol }}" target="_blank">Gene2Phenotype</a>
+</p>
+
+{% if entries|length > 0 %}
+  <h2>
+    {{ entries|length }} panel{{entries|pluralize}}
+  </h2>
+
+  <div id="table">
+    <div class="table-responsive add-top-margin" data-module="sortable-table" data-default-key="panel">
+      <table class="table table-bordered" data-module="filterable-table">
+        <thead>
+          <tr class="table-header">
+            <th
+              class="js-sortable-header sorted-column sorted-asc"
+              style="width: 40%"
+              data-sort-key="panel"
+              data-sort-type="name"
+            >
+              Panel
+              <i class="fa fa-arrow-down"></i>
+              <i class="fa fa-arrow-up"></i>
+            </th>
+            <th class="js-sortable-header"
+              style="width: 10%"
+              data-sort-key="reviews"
+              data-sort-type="number"
+            >
+              Reviews
+              <i class="fa fa-arrow-down"></i>
+              <i class="fa fa-arrow-up"></i>
+            </th>
+            <th class="js-sortable-header"
+              style="width: 14%"
+              data-sort-key="moi"
+              data-sort-type="name"
+            >
+              Mode of inheritance
+              <i class="fa fa-arrow-down"></i>
+              <i class="fa fa-arrow-up"></i>
+            </th>
+            <th style="width: 36%">Details</th>
+          </tr>
+            <tr class="if-no-js-hide table-header-secondary">
+              <td colspan="100">
+                <form>
+                  <label for="panel-filter" class="rm">Filter panels</label>
+                  <div class="input-group">
+                    <input autofocus id="panel-filter" type="text" class="form-control normal js-filter-table-input" placeholder="Filter panels"{% if tag_filter %} value="{{ tag_filter }}"{% endif %}>
+                    <span class="input-group-addon js-filter-table-count" data-singular="panel" data-plural="panels">
+                      {{ panels|length }} panel{{panels|pluralize}}
+                    </span>
+                  <div>
+                </form>
+              </td>
+            </tr>
+          </thead>
+          <tbody>
+            {% for entry in entries %}
+              {% if request.session.user_type == "GEL" or entry.panel.approved %}
+              <tr
+                data-panel="{{ entry.panel.level4title.name }}"
+                data-gene="{{ entry.gene.gene_symbol }}"
+                data-list-index="{{ entry.get_list_index }}"
+                data-moi="{{ entry.moi }}"
+                data-reviews="{{ entry.evaluation|length }}"
+              >
+                <td>
+                  <h4 class="remove-top-margin" title="Level 4 title">
+                    <span style="font-size: 16px" class="gel-banner {{ entry|gene_list_class }}" title="{{ entry|gene_list_name }}">
+                      {{ entry|gene_list_short_name }}
+                    </span> <a href="{% url 'PanelApp.views.views_main.evaluation' entry.panel.id entry.gene.gene_symbol %}" class="link-inherit gel-text {{ entry|gene_list_class }} js-open-on-submit">{{ entry.gene.gene_symbol }}</a> in <a href="{% url 'PanelApp.views.views_main.edit_panel' entry.panel.id %}" class="js-open-on-submit">
+                      {{ entry.panel.level4title.name }}
+                    </a>
+                  </h4>
+
+                  <p>
+                    {% if entry.panel.level4title.level3title and entry.panel.level4title.level3title.strip != '' %}
+                      Level 3: {{ entry.panel.level4title.level3title }}
+                    {% endif %}
+                    {% if entry.panel.level4title.level2title and entry.panel.level4title.level2title.strip != '' %}
+                      <br />Level 2: {{ entry.panel.level4title.level2title }}
+                    {% endif %}
+                    <br /><span class="text-muted">Version {{ entry.panel.major_version }}.{{ entry.panel.minor_version }}</span>
+                  </p>
+                </td>
+                <td>
+                  {{ entry.evaluation|length }} review{{entry.evaluation|pluralize}}
+                </td>
+                <td>
+                  {% if entry.moi %}
+                    {{ entry.moi }}
+                  {% else %}
+                    Not set
+                  {% endif %}
+                </td>
+                <td>
+                  {% if entry.evidence %}
+                    <h6 class="add-label-margin remove-top-margin">Sources</h6>
+                    <ul>
+                      {% for ev in entry.evidence %}
+                        <li>{{ ev.name }}</li>
+                      {% endfor %}
+                    </ul>
+                  {% endif %}
+                  {% if entry.phenotypes|join:"" != '' %}
+                    <h6 class="add-label-margin">Phenotypes</h6>
+                    <ul>
+                      {% for phenotype in entry.phenotypes %}
+                        {% if phenotype %}
+                          <li class="word-break">{{ phenotype }}</li>
+                        {% endif %}
+                      {% endfor %}
+                    </ul>
+                  {% endif %}
+
+                  {% if entry.tags|join:"" != '' %}
+                    <h6 class="add-label-margin">Tags</h6>
+                    <ul class="list-inline tag-list">
+                      {% for tag in entry.tags %}
+                        <li class="label label-default">{{ tag }}</li>
+                      {% endfor %}
+                    </ul>
+                  {% endif %}
+                </td>
+              </tr>
+              {% endif %}
+            {% endfor %}
+          </tbody>
+      </table>
+    </div>
+  </div>
+{% else %}
+  <div class="no-content">
+    {{ gene_symbol }} is not in any panels
+  </div>
+{% endif %}
+{% endblock %}

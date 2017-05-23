@@ -4,7 +4,7 @@ from django.contrib.postgres.fields import ArrayField
 
 class Level4Title(models.Model):
     name = models.CharField(max_length=255)
-    description = models.CharField(max_length=2555)
+    description = models.TextField()
     level3title = models.CharField(max_length=255)
     level2title = models.CharField(max_length=255)
     omim = ArrayField(models.CharField(max_length=255))
