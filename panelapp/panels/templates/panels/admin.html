@@ -1,0 +1,146 @@
+{% extends "default.html" %}
+
+{% block content %}
+    <div class="page-header" id="banner">
+        <h1>{% block title %}Import Genes{% endblock %}</h1>
+    </div>
+
+        <div class="well">
+            <form class="form-horizontal" action="{% url "PanelApp.views.views_main.upload_genes" %}" method="post" enctype="multipart/form-data">{% csrf_token %}
+                <fieldset>
+                    <legend>Upload Gene tool</legend>
+
+                    {% for field in gene_form %}
+                        <div class="form-group">
+
+                            {% if field.errors %}
+                                {% for error in field.errors %}
+                                    <div class="row">
+                                        <div class="col-lg-4"></div>
+                                        <div class="col-lg-8">
+                                            <span class="label label-danger">{{ error|escape }}</span>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            {% endif %}
+
+
+
+                            <div class="row">
+                                <label class="col-lg-2 control-label">{{ field.label_tag }}</label>
+                                <div class="col-lg-10">
+                                    {{ field }}
+
+                                </div>
+                            </div>
+
+                        </div>
+                    {% endfor %}
+
+                    <div class="col-lg-4 col-lg-offset-8">
+                        <button type="reset" class="btn btn-default">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Submit</button>
+                    </div>
+
+                </fieldset>
+
+
+            </form>
+        </div>
+
+    <div class="page-header">
+        <h1>Import Gene Panel</h1>
+    </div>
+
+        <div class="well">
+            <form class="form-horizontal" action="{% url "PanelApp.views.views_main.upload_panel" %}" method="post" enctype="multipart/form-data">{% csrf_token %}
+                <fieldset>
+                    <legend>Upload Panel Tool</legend>
+
+                    {% for field in panel_form %}
+                        <div class="form-group">
+
+                            {% if field.errors %}
+                                {% for error in field.errors %}
+                                    <div class="row">
+                                        <div class="col-lg-4"></div>
+                                        <div class="col-lg-8">
+                                            <span class="label label-danger">{{ error|escape }}</span>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            {% endif %}
+
+
+
+                            <div class="row">
+                                <label class="col-lg-2 control-label">{{ field.label_tag }}</label>
+                                <div class="col-lg-10">
+                                    {{ field }}
+
+                                </div>
+                            </div>
+
+                        </div>
+                    {% endfor %}
+
+                    <div class="col-lg-4 col-lg-offset-8">
+                        <button type="reset" class="btn btn-default">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Submit</button>
+                    </div>
+
+                </fieldset>
+
+
+            </form>
+        </div>
+
+    <div class="page-header">
+        <h1>Import Reviews</h1>
+    </div>
+
+        <div class="well">
+            <form class="form-horizontal" action="{% url "PanelApp.views.views_main.upload_reviews" %}" method="post" enctype="multipart/form-data">{% csrf_token %}
+                <fieldset>
+                    <legend>Upload Reviews Tool</legend>
+
+                    {% for field in review_form %}
+                        <div class="form-group">
+
+                            {% if field.errors %}
+                                {% for error in field.errors %}
+                                    <div class="row">
+                                        <div class="col-lg-4"></div>
+                                        <div class="col-lg-8">
+                                            <span class="label label-danger">{{ error|escape }}</span>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            {% endif %}
+
+
+
+                            <div class="row">
+                                <label class="col-lg-2 control-label">{{ field.label_tag }}</label>
+                                <div class="col-lg-10">
+                                    {{ field }}
+
+                                </div>
+                            </div>
+
+                        </div>
+                    {% endfor %}
+
+                    <div class="col-lg-4 col-lg-offset-8">
+                        <button type="reset" class="btn btn-default">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Submit</button>
+                    </div>
+
+                </fieldset>
+
+
+            </form>
+        </div>
+
+
+{% endblock %}

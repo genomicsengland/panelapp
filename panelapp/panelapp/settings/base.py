@@ -58,6 +58,7 @@ CUSTOM_APPS = [
 PROJECT_APPS = [
     'panelapp',
     'accounts',
+    'panels',
 ]
 
 INSTALLED_APPS = DJANGO_APPS + CUSTOM_APPS + PROJECT_APPS
