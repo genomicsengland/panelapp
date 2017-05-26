@@ -1,0 +1,165 @@
+{% extends "default.html" %}
+{% load staticfiles %}
+{% load mathfilters %}
+
+{% block title %}Panels{% endblock %}
+{% block header %}
+<script type="text/javascript" src="{% static 'django_ajax/js/jquery.ajax.min.js' %}"></script>
+<script type="text/javascript" src="{% static 'django_ajax/js/jquery.ajax-plugin.min.js' %}"></script>
+
+{% endblock %}
+
+{% block body %}
+<div class="container">
+    <h1>{{ panels|length }} panel{{panels|pluralize}}</h1>
+    <button type="button" class="btn btn-default text-right" data-toggle="modal" data-target="#compare-modal">
+      Compare two panels
+    </button>
+    <div id="table">
+      <div class="table-responsive add-top-margin" data-module="sortable-table" data-default-key="panel">
+        <table class="table table-bordered" data-module="filterable-table">
+            <thead>
+                <tr class="table-header">
+                    <th
+                        class="panel-column js-sortable-header sorted-column sorted-asc"
+                        data-sort-key="panel"
+                        data-sort-type="name"
+                    >
+                        Panel
+                        <i class="fa fa-arrow-down"></i>
+                        <i class="fa fa-arrow-up"></i>
+                    </th>
+                    <th class="js-sortable-header"
+                        data-sort-key="evaluated"
+                        data-sort-type="number"
+                    >
+                        Evaluated genes
+                        <i class="fa fa-arrow-down"></i>
+                        <i class="fa fa-arrow-up"></i>
+                    </th>
+                    <th
+                        class="js-sortable-header"
+                        data-sort-key="reviewers"
+                        data-sort-type="number"
+                    >
+                        Reviewers
+                        <i class="fa fa-arrow-down"></i>
+                        <i class="fa fa-arrow-up"></i>
+                    </th>
+                    <th>Actions</th>
+                </tr>
+                <tr class="if-no-js-hide table-header-secondary">
+                    <td colspan="100">
+                        <form>
+                            <label for="panel-filter" class="rm">Filter panels</label>
+                            <div class="input-group">
+                              <input autofocus id="panel-filter" type="text" class="form-control normal js-filter-table-input" placeholder="Filter panels">
+                              <span class="input-group-addon js-filter-table-count" data-singular="panel" data-plural="panels">
+                                  {{ panels|length }} panel{{panels|pluralize}}
+                              </span>
+                            <div>
+                        </form>
+                    </td>
+                </tr>
+            </thead>
+            <tbody>
+            {% for entry in panels %}
+                {% if request.user.reviewer.is_GEL or entry.panel.approved %}
+                <tr
+                    data-reviewers = "{{ entry.number_of_reviewers }}"
+                    data-panel = "{{ entry.level4title.name }}"
+                    data-evaluated = "{% if entry.number_of_genes %}{{ entry.number_of_evaluated_genes|div:entry.number_of_genes }}{% else %}0{% endif %}"
+                >
+                    <td>
+                        <h4 class="remove-top-margin" title="Level 4 title">
+                            <a href="{% url 'panels:detail' entry.panel.id %}" class="js-open-on-submit">
+                                {{ entry.level4title.name }}
+                            </a>
+                        </h4>
+                        <p>
+                            {% if entry.level4title.level3title %}
+                                Level 3: {{ entry.level4title.level3title }}<br />
+                            {% endif %}
+                            {% if entry.level4title.level2title %}
+                                Level 2: {{ entry.level4title.level2title }}<br />
+                            {% endif %}
+                            {% if entry.old_panels %}
+                                <br />Relevant disorders: {{ entry.old_panels|join:", " }}<br />
+                            {% endif %}
+                            Version {{ entry.major_version }}.{{ entry.minor_version }}
+                        </p>
+                    </td>
+                    <td>
+                        {% if entry.number_of_genes %}
+                            {{ entry.number_of_evaluated_genes  }} of {{ entry.number_of_genes }}<br >
+                            <span class="text-muted">{{ entry.number_of_evaluated_genes|div:entry.number_of_genes }}%</span>
+                        {% else %}
+                        0<br>
+                        <span class="text-muted">0%</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if entry.number_of_reviewers != None %}
+                            {{ entry.number_of_reviewers }}&nbsp;reviewer{{ entry.number_of_reviewers|pluralize }}
+                        {% endif %}
+                    </td>
+                    <td class="nowrap">
+                        {% if request.user.reviewer.is_GEL %}
+                            {% if entry.panel.approved %}
+                                <a type="url" data-ajax="true" data-success="fragments()" href="{% url 'panels:empty_items' entry.id %}" class="btn btn-default btn-sm {% if not entry.panel.approved %} disabled {% endif %}" title="Reject panel">
+                                  <i class="fa fa-thumbs-down"></i> Reject
+                                </a>
+                            {% else %}
+                                <a type="url" data-ajax="true" data-success="fragments()" href="{% url 'panels:empty_items' entry.id %}" class="btn btn-default btn-sm" title="Approve panel">
+                                    <i class="fa fa-thumbs-up"></i> Approve
+                                </a>
+                            {% endif %}
+                            {% if lock_status == "unlock_"|add:entry.id %}
+                                <a type="url" href="{% url 'panels:empty_items' entry.id %}" class="btn btn-default btn-sm" data-ajax="true" data-success="fragments()" title="Delete panel">
+                                    <i class="fa fa-trash"></i>
+                                </a>
+                                <a href="{% url 'panels:empty_items' "lock" %}" class="btn btn-default btn-sm" data-ajax="true" data-success="fragments()" title="Lock panel"> <i class="fa fa-lock fa-lg"></i></a>
+                            {% else %}
+                                <a href="{% url 'panels:empty_items' "unlock_" %}|add:entry.id" class="btn btn-default btn-sm" data-ajax="true" data-success="fragments()" title="Unlock panel for editing"> <i class="fa fa-unlock fa-lg"></i></a>
+                            {% endif %}
+                        {% else %}
+                        <a href="{% url 'panels:empty_items' entry.id %}" class="btn btn-default btn-sm" title="Download TSV file of panel">
+                            <i class="fa fa-download"></i> Download
+                        </a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endif %}
+            {% endfor %}
+            </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="modal" id="compare-modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+      <form action="{% url 'panels:empty' %}" method="post" class="modal-dialog form">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title" id="myModalLabel">Compare panels</h4>
+            </div>
+            <div class="modal-body">
+                {% csrf_token %}
+                {% comment %}
+                {% for field in compare_panels_form %}
+                    <div class="form-group">
+                        {{ field.label_tag }}
+                        <div class="add-label-margin">{{ field }}</div>
+                    </div>
+                {% endfor %}
+                {% endcomment %}
+            </div>
+            <div class="modal-footer">
+                <input type="submit" class="btn btn-primary" value="Compare panels">
+            </div>
+        </div>
+      </form>
+    </div>
+
+</div>
+{% endblock %}

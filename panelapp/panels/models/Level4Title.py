@@ -21,6 +21,12 @@ class Level4Title(models.Model):
             return False
 
     def dict_tr(self):
-        return {"name": self.name, "description": self.description,
-                "level3title": self.level3title, "level2title": self.level2title,
-                "omim": self.omim, "orphanet": self.orphanet, "hpo": self.hpo}
+        return {
+            "name": self.name,
+            "description": self.description,
+            "level3title": self.level3title,
+            "level2title": self.level2title,
+            "omim": self.omim,
+            "orphanet": self.orphanet,
+            "hpo": self.hpo
+        }

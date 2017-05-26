@@ -3,6 +3,7 @@ from django.views.generic import FormView
 from django.views.generic.edit import CreateView
 from django.views.generic import DetailView
 from django.contrib import messages
+from django.core.exceptions import PermissionDenied
 from django.urls import reverse_lazy
 from django.contrib.auth import login
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -10,10 +11,6 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from .forms import RegistrationForm
 from .forms import ChangePasswordForm
 from .models import User
-
-
-class EmptyView(View):
-    pass
 
 
 class UserRegistrationView(CreateView):

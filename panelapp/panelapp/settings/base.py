@@ -53,6 +53,8 @@ CUSTOM_APPS = [
     'markdown_deux',
     'bootstrap3',
     'django_object_actions',
+    'mathfilters',
+    'django_ajax',
 ]
 
 PROJECT_APPS = [

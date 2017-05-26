@@ -17,6 +17,7 @@ django-bootstrap3==8.2.3
 django-debug-toolbar==1.8
 django-markdownx==2.0.21
 django-object-actions==0.10.0
+django-mathfilters==0.4.0
 Werkzeug==0.12.2
 
 celery==4.0.2

@@ -27,11 +27,11 @@
     </div>
     <div class="collapse navbar-collapse" id="navbar">
       <ul class="nav navbar-nav">
-        <li><a href="panels">Panels</a></li>
+        <li><a href="{% url 'panels:index' %}">Panels</a></li>
         <li><a href="{% url 'panels:gene_list' %}">Genes</a></li>
         <li><a href="activity">Activity</a></li>
         {% if request.user.is_authenticated and request.user.reviewer.is_GEL %}
-        <li><a href="{% url 'panels:empty' %}">Add panel</a></li>
+        <li><a href="{% url 'panels:create' %}">Add panel</a></li>
         <li><a href="{% url 'panels:admin' %}">Import panel</a></li>
         <li class="dropdown">
           <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">Resources <span class="caret"></span></a>
