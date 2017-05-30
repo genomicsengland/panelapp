@@ -1,5 +1,5 @@
 from django.db import models
-from django.db.models import Prefetch
+from django.utils.functional import cached_property
 from model_utils.models import TimeStampedModel
 
 
@@ -9,8 +9,9 @@ class GenePanel(TimeStampedModel):
     promoted = models.BooleanField(default=False)
 
     def __str__(self):
-        return self.name
+        ap = self.active_panel
+        return "{} version {}.{}".format(self.name, ap.major_version, ap.minor_version)
 
-    @property
+    @cached_property
     def active_panel(self):
         return self.genepanelsnapshot_set.first()

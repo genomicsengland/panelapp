@@ -1,9 +1,7 @@
-from django.views.generic.base import View
 from django.views.generic import FormView
 from django.views.generic.edit import CreateView
 from django.views.generic import DetailView
 from django.contrib import messages
-from django.core.exceptions import PermissionDenied
 from django.urls import reverse_lazy
 from django.contrib.auth import login
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -20,7 +18,8 @@ class UserRegistrationView(CreateView):
 
     def form_valid(self, form):
         ret = super().form_valid(form)
-        messages.success(self.request,
+        messages.success(
+            self.request,
             "Your account has been created. You can contribute once we confirm your account."
         )
         login(self.request, form.instance)  # login new user

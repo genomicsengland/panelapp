@@ -1,4 +1,3 @@
-from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
 from django.views.generic import TemplateView
 from django.views.generic.base import View
@@ -11,17 +10,22 @@ from django.shortcuts import redirect
 from django.urls import reverse_lazy
 
 from panelapp.mixins import GELReviewerRequiredMixin
+from accounts.models import User
 from .forms import UploadGenesForm
 from .forms import UploadPanelsForm
 from .forms import UploadReviewsForm
 from .forms import PanelForm
+from .forms import PromotePanelForm
+from .forms import PanelAddGeneForm
 from .models import Gene
 from .models import GenePanel
 from .models import GenePanelSnapshot
+from .mixins import PanelMixin
 
 
 class EmptyView(View):
     pass
+
 
 class PanelsIndexView(ListView):
     template_name = "panels/genepanel_list.html"
@@ -48,21 +52,15 @@ class CreatePanelView(GELReviewerRequiredMixin, CreateView):
         return reverse_lazy('panels:detail', kwargs={'pk': self.instance.pk})
 
 
-class UpdatePanelView(GELReviewerRequiredMixin, UpdateView):
+class UpdatePanelView(GELReviewerRequiredMixin, PanelMixin, UpdateView):
     template_name = "panels/genepanel_create.html"
     form_class = PanelForm
-
-    def get_object(self, *args, **kwargs):
-        return GenePanel.objects.get(pk=self.kwargs['pk']).active_panel
 
     def form_valid(self, form):
         self.instance = form.instance
         ret = super().form_valid(form)
         messages.success(self.request, "Successfully updated the panel")
         return ret
-
-    def get_success_url(self):
-        return reverse_lazy('panels:detail', kwargs={'pk': self.get_object().panel.pk})
 
 
 class GenePanelView(DetailView):
@@ -72,6 +70,11 @@ class GenePanelView(DetailView):
         ctx = super().get_context_data(*args, **kwargs)
         ctx['panel'] = self.object.active_panel
         ctx['edit'] = PanelForm(initial=ctx['panel'].get_form_initial())
+        ctx['contributors'] = User.objects.panel_contributors(ctx['panel'].pk)
+        ctx['promote_panel_form'] = PromotePanelForm(
+            instance=ctx['panel'],
+            initial={'version_comment': None}
+        )
         return ctx
 
 
@@ -127,3 +130,26 @@ class GeneDetailView(DetailView):
 class GeneListView(ListView):
     model = Gene
     context_object_name = 'genes'
+
+
+class PromotePanelView(GELReviewerRequiredMixin, PanelMixin, UpdateView):
+    form_class = PromotePanelForm
+
+    def form_valid(self, form):
+        ret = super().form_valid(form)
+        self.instance = form.instance.panel
+        messages.success(self.request, "Successfully upgraded Panel {}".format(self.get_object().name))
+        return ret
+
+
+class PanelAddGeneView(CreateView):
+    template_name = "panels/genepanel_add_gene.html"
+    form_class = PanelAddGeneForm
+
+    def form_valid(self, form):
+        ret = super().form_valid(form)
+        messages.success(self.request, "Successfully added a new gene to the panel")
+        return ret
+
+    def get_success_url(self):
+        return reverse_lazy('panels:evaluation', self.instance.panel.pk, self.instance.gene.get('symbol_name'))

@@ -1,5 +1,5 @@
 import os
-from .base import *
+from .base import *  # noqa
 
 EMAIL_HOST = "smtp.office365.com"
 EMAIL_HOST_USER = 'hhx283@qmul.ac.uk'

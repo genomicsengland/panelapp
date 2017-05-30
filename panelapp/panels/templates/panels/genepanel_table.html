@@ -1,0 +1,182 @@
+{% load panel_helpers %}
+<thead>
+    <tr class="table-header">
+        <th class="js-sortable-header sorted-column sorted-desc"
+            data-sort-key="list-index"
+            data-sort-type="number"
+            style="width: 8%"
+        >
+            List
+            <i class="fa fa-arrow-down"></i>
+            <i class="fa fa-arrow-up"></i>
+        </th>
+        <th class="js-sortable-header"
+            style="width: 12%"
+            data-sort-key="gene"
+            data-sort-type="name"
+        >
+            Gene
+            <i class="fa fa-arrow-down"></i>
+            <i class="fa fa-arrow-up"></i>
+        </th>
+        <th class="js-sortable-header"
+            style="width: 16%"
+            data-sort-key="reviews"
+            data-sort-type="number"
+        >
+            Reviews
+            <i class="fa fa-arrow-down"></i>
+            <i class="fa fa-arrow-up"></i>
+        </th>
+        <th class="js-sortable-header"
+            style="width: 18%"
+            data-sort-key="moi"
+            data-sort-type="name"
+        >
+            Mode of inheritance
+            <i class="fa fa-arrow-down"></i>
+            <i class="fa fa-arrow-up"></i>
+        </th>
+        <th style="width: 46%">Details</th>
+    </tr>
+    <tr class="if-no-js-hide table-header-secondary">
+        <td colspan="100">
+            <form>
+                <label for="gene-filter" class="rm">Filter genes</label>
+                <div class="input-group">
+                    <input id="gene-filter" type="text" class="form-control normal js-filter-table-input" placeholder="Filter genes">
+                    <span class="input-group-addon js-filter-table-count" data-singular="gene" data-plural="genes">
+                        {{ entries|length }} gene{{entries|pluralize}}
+                    </span>
+                </div>
+            </form>
+        </td>
+    </tr>
+</thead>
+<tbody>
+{% for entry in entries %}
+<tr
+    data-gene="{{ entry.gene.gene_symbol }}"
+    data-list-index="{{ entry.status }}"
+    data-moi="{{ entry.moi }}"
+    data-reviews="{{ entry.evaluation|length }}"
+>
+<td class="text-right">
+    <span class="gel-banner gel-banner-block {{ entry|gene_list_class }}" title="{{ entry|gene_list_name }}">
+        {{ entry|gene_list_short_name }}{% if entry.ready and request.user.reviewer.is_GEL %}<br /><span class="gene-cell-ready">Ready</span>{% endif %}
+    </span>
+    {% if entry.ready == False and request.user.reviwer.is_GEL %}
+        <span class="rm">Not ready</span>
+    {% endif %}
+    <span class="rm">{{ entry|gene_list_name }}</span>
+    {% if request.user.reviewer.is_GEL %}
+        <div class="add-top-margin">
+            {% if lock_status == "unlock_"|add:entry.gene.gene_symbol %}
+                <a href="{% url 'PanelApp.views.views_main.unlock_gene'  panel.id  "lock" %}"
+                   data-ajax="true" data-success="fragments()"> <i class="fa fa-lock fa-lg"></i></a>
+            {% else %}
+                <a href="{% url 'PanelApp.views.views_main.unlock_gene'  panel.id  'unlock_'|add:entry.gene.gene_symbol %}"
+                   onClick="alert('{{ 'Gene '|add:entry.gene.gene_symbol|add:' is now unlocked, and you can delete it.' }}')"
+                   data-ajax="true" data-success="fragments()"> <i
+                        class="fa fa-unlock fa-lg"></i></a>
+            {% endif %}
+            {% if lock_status == "unlock_"|add:entry.gene.gene_symbol %}
+                <a href="{% url 'PanelApp.views.views_main.delete_gene' panel.id entry.gene.gene_symbol %}"
+                   data-ajax="true" data-success="fragments()">
+                    <i class="fa fa-trash fa-lg"></i>
+                </a>
+            {% endif %}
+            {% if entry.flagged %}
+                <a href="{% url 'PanelApp.views.views_main.add_gene' panel.id entry.gene.gene_symbol %}"
+                   data-ajax="true" data-success="fragments()">
+                    <i class="fa fa-plus fa-lg"></i>
+                </a>
+            {% endif %}
+        </div>
+    {% endif %}
+</td>
+<td>
+    <h5 class="gene-cell-title">
+        <a href="{% url 'PanelApp.views.views_main.evaluation' panel.id entry.gene.gene_symbol %}" class="link-inherit gel-text {{ entry|gene_list_class }} js-open-on-submit">{{ entry.gene.gene_symbol }}</a>
+    </h5>
+</td>
+<td>
+    <h5 class="normal gene-cell-title add-label-margin text-muted">{{ entry.evaluation|length }} review{{entry.evaluation|pluralize}}</h5>
+    {% if entry|gene_reviewd_by:request.user %}
+        <div class="text-muted add-bottom-margin"><i class="fa fa-check"></i> You reviewed</div>
+    {% elif request.user.reviewer.is_verified %}
+        <div class="text-muted add-bottom-margin">
+            <a href="{% url 'PanelApp.views.views_main.evaluation' panel.id entry.gene.gene_symbol %}" class="link-muted">Add review</a>
+        </div>
+    {% endif %}
+    {% if entry.evaluation|length > 0 %}
+      {% if entry.number_of_green > 0 %}
+      <span class="add-right-margin gel-text gel-green">
+          {{ entry.number_of_green }} green
+      </span>
+      {% endif %}
+      {% if entry.number_of_red > 0 %}
+      <span class="add-right-margin gel-text gel-red">
+          {{ entry.number_of_red }} red
+      </span>
+      {% endif %}
+    {% endif %}
+</td>
+<td>
+    {% if entry.moi %}
+        {{ entry.moi }}
+    {% else %}
+        Not set
+    {% endif %}
+</td>
+<td style="font-size: 14px">
+    {% if entry.evidence %}
+        <h6 class="add-label-margin remove-top-margin">Sources</h6>
+        <ul>
+            {% for ev in entry.evidence %}
+                <li>
+                    {{ ev.name }}
+                    {% if request.user.reviewer.is_GEL and lock_status == "unlock_"|add:entry.gene.gene_symbol %}
+                        <a type="url" href="{% url 'PanelApp.views.views_main.delete_source' panel.id entry.gene.gene_symbol ev.name %}"
+                           data-ajax="true">
+                            <i class="fa fa-times-circle-o"></i>
+                        </a>
+                    {% endif %}
+                </li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+    {% if entry.phenotypes %}
+        <h6 class="add-label-margin">Phenotypes</h6>
+        <ul>
+            {% for phenotype in entry.phenotypes %}
+                {% if phenotype %}
+                    <li class="word-break">{{ phenotype }}</li>
+                {% endif %}
+            {% endfor %}
+        </ul>
+    {% endif %}
+
+    {% if entry.tags %}
+        <h6 class="add-label-margin">Tags</h6>
+        <ul class="list-inline tag-list">
+            {% for tag in entry.tags %}
+                <li class="label label-default">{{ tag }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+</td>
+</tr>
+{% endfor %}
+</tbody>
+{% if request.user.reviewer.is_verified %}
+<tfoot>
+    <tr class="table-header">
+        <td colspan="100">
+            <a href="{% url 'panels:add_gene' panel.id %}" class="btn btn-default btn-large">
+                <i class="fa fa-plus add-right-margin"></i> Add a gene to this panel
+            </a>
+        </td>
+    </tr>
+</tfoot>
+{% endif %}

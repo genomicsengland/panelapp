@@ -36,8 +36,16 @@ class CellBaseConnector:
             yield r
 
     def get_transcripts(self, genes, coding=True):
-        self.create_url("latest", "hsapiens", "feature", "gene", ",".join(genes), "transcript",
-                        includes="transcripts.id,transcripts.cdsLength,transcripts.biotype,transcripts.chromosome,transcripts.strand,transcripts.start,transcripts.end")
+        includes = ",".join([
+            "transcripts.id",
+            "transcripts.cdsLength",
+            "transcripts.biotype",
+            "transcripts.chromosome",
+            "transcripts.strand",
+            "transcripts.start",
+            "transcripts.end"
+        ])
+        self.create_url("latest", "hsapiens", "feature", "gene", ",".join(genes), "transcript", includes=includes)
         all_transcripts = []
         for r in self.execute():
             if len(r) > 0:
@@ -51,8 +59,16 @@ class CellBaseConnector:
         return all_transcripts
 
     def get_exons(self, genes, coding=True):
-        self.create_url("latest", "hsapiens", "feature", "gene", ",".join(genes), "transcript",
-                        includes="transcripts.id,transcripts.cdsLength,transcripts.biotype,transcripts.chromosome,transcripts.start,transcripts.end,transcripts.exons")
+        includes = ",".join([
+            "transcripts.id",
+            "transcripts.cdsLength",
+            "transcripts.biotype",
+            "transcripts.chromosome",
+            "transcripts.start",
+            "transcripts.end",
+            "transcripts.exons"
+        ])
+        self.create_url("latest", "hsapiens", "feature", "gene", ",".join(genes), "transcript", includes=includes)
         all_exons = []
         for r in self.execute():
             if len(r) > 0:

@@ -67,8 +67,8 @@ class UserAdmin(DjangoObjectActions, BaseUserAdmin):
     add_fieldsets = (
         (None, {
             'classes': ('wide',),
-            'fields': ('username', 'email', 'first_name', 'last_name', 'password1', 'password2')}
-        ),
+            'fields': ('username', 'email', 'first_name', 'last_name', 'password1', 'password2')
+        }),
     )
     search_fields = ('email',)
     ordering = ('email',)
@@ -105,7 +105,7 @@ class UserAdmin(DjangoObjectActions, BaseUserAdmin):
 
         return actions
 
-    change_actions = ['confirm_reviewer',]
+    change_actions = ['confirm_reviewer', ]
 
 
 class ReviewerAdmin(admin.ModelAdmin):

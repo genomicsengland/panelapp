@@ -173,16 +173,16 @@ class GenePanelEntrySnapshot(models.Model):
 
 """
 
-from .gene import Gene
-from .activity import Activity
-from .level4title import Level4Title
-from .comment import Comment
-from .evaluation import Evaluation
-from .evidence import Evidence
-from .trackrecord import TrackRecord
-from .genepanel import GenePanel
-from .genepanelsnapshot import GenePanelSnapshot
-from .genepanelentrysnapshot import GenePanelEntrySnapshot
-from .import_tools import UploadedGeneList
-from .import_tools import UploadedPanelList
-from .import_tools import UploadedReviewsList
+from .gene import Gene  # noqa
+from .activity import Activity  # noqa
+from .level4title import Level4Title  # noqa
+from .comment import Comment  # noqa
+from .evaluation import Evaluation  # noqa
+from .evidence import Evidence  # noqa
+from .trackrecord import TrackRecord  # noqa
+from .genepanel import GenePanel  # noqa
+from .genepanelsnapshot import GenePanelSnapshot  # noqa
+from .genepanelentrysnapshot import GenePanelEntrySnapshot  # noqa
+from .import_tools import UploadedGeneList  # noqa
+from .import_tools import UploadedPanelList  # noqa
+from .import_tools import UploadedReviewsList  # noqa

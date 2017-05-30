@@ -14,7 +14,7 @@ class UploadedGeneList(models.Model):
     def create_genes(self):
         with open(self.gene_list.path) as file:
             logger.info('Started importing list of genes')
-            header = file.readline()
+            header = file.readline()  # noqa
 
             with transaction.atomic():
                 for line in file:

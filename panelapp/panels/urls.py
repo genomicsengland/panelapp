@@ -11,11 +11,15 @@ from .views import GeneDetailView
 from .views import GenePanelView
 from .views import PanelsIndexView
 from .views import UpdatePanelView
+from .views import PromotePanelView
+from .views import PanelAddGeneView
 
 urlpatterns = [
     url(r'^$', PanelsIndexView.as_view(), name="index"),
     url(r'^(?P<pk>[0-9]+)/$', GenePanelView.as_view(), name="detail"),
     url(r'^(?P<pk>[0-9]+)/update$', UpdatePanelView.as_view(), name="update"),
+    url(r'^(?P<pk>[0-9]+)/promote$', PromotePanelView.as_view(), name="promote"),
+    url(r'^(?P<pk>[0-9]+)/add_gene$', PanelAddGeneView.as_view(), name="add_gene"),
     url(r'^create/', CreatePanelView.as_view(), name="create"),
 
     url(r'^genes/$', GeneListView.as_view(), name="gene_list"),

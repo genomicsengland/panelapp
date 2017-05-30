@@ -4,6 +4,7 @@ from .models import UploadedGeneList
 from .models import GenePanel
 from .models import GenePanelSnapshot
 from .models import Level4Title
+from .models import GenePanelEntrySnapshot
 
 
 class PanelForm(forms.ModelForm):
@@ -104,3 +105,31 @@ class UploadReviewsForm(forms.Form):
 
     def process_file(self):
         print('processing upload genes form')
+
+
+class PromotePanelForm(forms.ModelForm):
+    version_comment = forms.CharField(label="Comment about this new version", widget=forms.Textarea)
+
+    class Meta:
+        model = GenePanelSnapshot
+        fields = ('version_comment',)
+
+    def save(self, *args, commit=True, **kwargs):
+        self.instance.pk = None
+
+        self.instance.increment_version(major=True, commit=False)
+        if commit:
+            return super().save(*args, **kwargs)
+
+
+class PanelAddGeneForm(forms.ModelForm):
+    gene_symbol = forms.CharField(label="Gene symbol")
+
+    class Meta:
+        model = GenePanelEntrySnapshot
+        fields = (
+            'mode_of_pathogenicity',
+            'moi',
+            'publications',
+            'phenotypes',
+        )

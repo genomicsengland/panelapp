@@ -1,14 +1,25 @@
 from django.db import models
 from django.contrib.postgres.fields import ArrayField
 from model_utils.models import TimeStampedModel
+from model_utils import Choices
 
 from accounts.models import User
 from .comment import Comment
 
 
 class Evaluation(TimeStampedModel):
+    """
+    TODO @migrate ratings from old format into the new one?
+    """
+
+    RATINGS = Choices(
+        ("GREEN", "Green List (high evidence)"),
+        ("RED", "Red List (low evidence)"),
+        ("AMBER", "I don't know")
+    )
+
     user = models.ForeignKey(User)
-    rating = models.CharField(max_length=255)
+    rating = models.CharField(max_length=255, choices=RATINGS)
     transcript = models.CharField(null=True,  blank=True, max_length=255)
     mode_of_pathogenicity = models.CharField(null=True,  blank=True, max_length=255)
     publications = ArrayField(models.CharField(null=True,  blank=True, max_length=255))

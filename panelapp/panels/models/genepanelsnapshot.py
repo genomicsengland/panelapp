@@ -1,6 +1,5 @@
 from django.db import models
 from django.db.models import Count
-from django.db.models import F
 from django.db.models import Subquery
 from django.contrib.postgres.fields import ArrayField
 from model_utils.models import TimeStampedModel
@@ -42,13 +41,15 @@ class GenePanelSnapshot(TimeStampedModel):
     version_comment = models.TextField(null=True)
     old_panels = ArrayField(models.CharField(max_length=255))
 
-    def increment_version(self, major=False):
+    def increment_version(self, major=False, commit=True):
         if major:
             self.major_version += 1
             self.minor_version = 0
         else:
             self.minor_version += 1
-        self.save()
+
+        if commit:
+            self.save()
 
     def get_form_initial(self):
         return {
@@ -61,6 +62,9 @@ class GenePanelSnapshot(TimeStampedModel):
             "hpo": ", ".join(self.level4title.hpo),
             "old_panels": ", ".join(self.old_panels)
         }
+
+    def get_all_entries(self):
+        pass
 
     """
     # move these to properties

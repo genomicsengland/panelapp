@@ -1,5 +1,6 @@
 {% extends "default.html" %}
 {% load staticfiles %}
+{% load bootstrap3 %}
 {% block header %}
 <script src="{% static 'django_ajax/js/jquery.ajax.min.js' %}"></script>
 <script src="{% static 'django_ajax/js/jquery.ajax-plugin.min.js' %}"></script>
@@ -41,14 +42,14 @@
           {% if contributors %}
               <h3 class="remove-top-margin add-bottom-margin">{{ contributors|length }} reviewer{{contributors|pluralize}}</h3>
               <ul class="list-group remove-bottom-margin">
-              {% for c in contributors %}
+              {% for contributor in contributors %}
                   <li class="list-group-item">
-                      <p class="bold">{{ c }} |get_name_to_show</p>
+                      <p class="bold">{{ contributor.get_full_name }}</p>
                       <p class="text-muted">
-                          Group: {{ c }} |get_reviewer_group<br />
-                          Workplace: {{ c }} |get_reviewer_workplace
-                          {% if request.session.user_type == "GEL" %}
-                              <br /><a href="mailto:{{ c }}" class="link-muted word-break">{{ c }} |get_email</a>
+                          Group: {{ contributor.reviewer.group }}<br />
+                          Workplace: {{ contributor.reviewer.workplace }}
+                          {% if request.user.reviewer.is_GEL %}
+                              <br /><a href="mailto:{{ contributor.email }}" class="link-muted word-break">{{ contributor.email }}</a>
                           {% endif %}
                       </p>
                   </li>
@@ -59,14 +60,12 @@
   </div>
 
   <h2 class="add-label-margin">{{ entries|length }} gene{{entries|pluralize}}</h2>
-  <h3 class="text-muted normal remove-top-margin add-bottom-margin">{{ panel.number_of_evaluated_genes }} reviewed{% if request.session.user_type == "GEL" %}, {{ panel }} |number_of_ready_genes ready{% endif %}, {{ panel }} |number_of_green_genes green</h3>
+  <h3 class="text-muted normal remove-top-margin add-bottom-margin">{{ panel.number_of_evaluated_genes }} reviewed{% if request.user.reviewer.is_GEL %}, {{ panel.number_of_ready_genes }} ready{% endif %}, {{ panel.number_of_green_genes }} green</h3>
 
   <div data-module="sortable-table" data-default-key="gene">
       <div class="table-responsive" data-module="filterable-table">
           <table class="table table-bordered table-hover" id="table">
-            {% comment %}
-              {% include "EditPanel/table_gene.html" %}
-            {% endcomment %}
+            {% include "panels/genepanel_table.html" %}
           </table>
       </div>
   </div>
@@ -80,7 +79,7 @@
       </ul>
   {% endif %}
 
-  {% if request.session.user_type == "GEL" %}
+  {% if request.user.reviewer.is_GEL %}
       <h3 class="add-top-margin">Promote to version {{ panel.major_version|add:"1" }}</h3>
       <div class="well">
           <p>Promoting a panel will:</p>
@@ -89,7 +88,7 @@
               <li>reset the "ready" flag on all genes</li>
               <li>increase the major version of the panel</li>
           </ul>
-          <form action="{% url 'panels:empty' panel.id %}" method="post" class="form add-top-margin">
+          <form action="{% url 'panels:promote' panel.panel.id %}" method="post" class="form add-top-margin">
               {% csrf_token %}
               <fieldset>
                   {% for field in promote_panel_form %}
@@ -99,8 +98,7 @@
                                   <span class="label label-danger">{{ error|escape }}</span>
                               {% endfor %}
                           {% endif %}
-                          {{ field.label_tag }}
-                          {{ field }}
+                          {% bootstrap_field field %}
                       </div>
                   {% endfor %}
                   <input type="submit" class="btn btn-info" value="Increase Version">

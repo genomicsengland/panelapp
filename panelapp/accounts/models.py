@@ -8,7 +8,16 @@ from model_utils.models import TimeStampedModel
 from .tasks import revierwer_confirmed_email
 
 
+class UserManager(BaseUserManager):
+    def panel_contributors(self, panel_id):
+        return super().get_queryset()\
+            .distinct('pk')\
+            .filter(evaluation__genepanelentrysnapshot__panel__pk=panel_id)
+
+
 class User(AbstractUser, TimeStampedModel):
+    objects = UserManager()
+
     def promote_to_reviewer(self):
         try:
             self.reviewer.user_type = Reviewer.TYPES.REVIEWER
@@ -74,5 +83,5 @@ class Reviewer(models.Model):
     def is_REVIEWER(self):
         return True if self.user_type == "REVIEWER" else False
 
-    def is_reviewer(self):
+    def is_verified(self):
         return True if self.is_GEL() or self.is_REVIEWER() else False
