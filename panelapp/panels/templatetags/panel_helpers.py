@@ -26,28 +26,28 @@ class GeneDataType(Enum):
 
 def get_gene_list_data(gene, list_type):
     if gene.status > 2:
-        return gene_list_data[GeneStatus.GREEN][list_type]
+        return gene_list_data[GeneStatus.GREEN.value][list_type]
     elif gene.status == 2:
-        return gene_list_data[GeneStatus.AMBER][list_type]
+        return gene_list_data[GeneStatus.AMBER.value][list_type]
     elif gene.status == 1:
-        return gene_list_data[GeneStatus.RED][list_type]
+        return gene_list_data[GeneStatus.RED.value][list_type]
     else:
-        return gene_list_data[GeneStatus.NOLIST][list_type]
+        return gene_list_data[GeneStatus.NOLIST.value][list_type]
 
 
 @register.filter
 def gene_list_class(gene):
-    return get_gene_list_data(gene, GeneDataType.CLASS)
+    return get_gene_list_data(gene, GeneDataType.CLASS.value)
 
 
 @register.filter
 def gene_list_name(gene):
-    return get_gene_list_data(gene, GeneDataType.LONG)
+    return get_gene_list_data(gene, GeneDataType.LONG.value)
 
 
 @register.filter
 def gene_list_short_name(gene):
-    return get_gene_list_data(gene, GeneDataType.SHORT)
+    return get_gene_list_data(gene, GeneDataType.SHORT.value)
 
 
 @register.filter

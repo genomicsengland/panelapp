@@ -54,12 +54,12 @@
     </tr>
 </thead>
 <tbody>
-{% for entry in entries %}
+{% for entry in panel.get_all_entries %}
 <tr
     data-gene="{{ entry.gene.gene_symbol }}"
     data-list-index="{{ entry.status }}"
     data-moi="{{ entry.moi }}"
-    data-reviews="{{ entry.evaluation|length }}"
+    data-reviews="{{ entry.evaluation.count }}"
 >
 <td class="text-right">
     <span class="gel-banner gel-banner-block {{ entry|gene_list_class }}" title="{{ entry|gene_list_name }}">
@@ -71,6 +71,7 @@
     <span class="rm">{{ entry|gene_list_name }}</span>
     {% if request.user.reviewer.is_GEL %}
         <div class="add-top-margin">
+          {% comment %}
             {% if lock_status == "unlock_"|add:entry.gene.gene_symbol %}
                 <a href="{% url 'PanelApp.views.views_main.unlock_gene'  panel.id  "lock" %}"
                    data-ajax="true" data-success="fragments()"> <i class="fa fa-lock fa-lg"></i></a>
@@ -92,24 +93,25 @@
                     <i class="fa fa-plus fa-lg"></i>
                 </a>
             {% endif %}
+          {% endcomment %}
         </div>
     {% endif %}
 </td>
 <td>
     <h5 class="gene-cell-title">
-        <a href="{% url 'PanelApp.views.views_main.evaluation' panel.id entry.gene.gene_symbol %}" class="link-inherit gel-text {{ entry|gene_list_class }} js-open-on-submit">{{ entry.gene.gene_symbol }}</a>
+        <a href="{% url 'panels:evaluation' panel.panel.id entry.gene.gene_symbol %}" class="link-inherit gel-text {{ entry|gene_list_class }} js-open-on-submit">{{ entry.gene.gene_symbol }}</a>
     </h5>
 </td>
 <td>
-    <h5 class="normal gene-cell-title add-label-margin text-muted">{{ entry.evaluation|length }} review{{entry.evaluation|pluralize}}</h5>
+    <h5 class="normal gene-cell-title add-label-margin text-muted">{{ entry.evaluation.count }} review{{entry.evaluation.count|pluralize}}</h5>
     {% if entry|gene_reviewd_by:request.user %}
         <div class="text-muted add-bottom-margin"><i class="fa fa-check"></i> You reviewed</div>
     {% elif request.user.reviewer.is_verified %}
         <div class="text-muted add-bottom-margin">
-            <a href="{% url 'PanelApp.views.views_main.evaluation' panel.id entry.gene.gene_symbol %}" class="link-muted">Add review</a>
+            <a href="{% url 'panels:evaluation' panel.panel.id entry.gene.gene_symbol %}" class="link-muted">Add review</a>
         </div>
     {% endif %}
-    {% if entry.evaluation|length > 0 %}
+    {% if entry.evaluation.count > 0 %}
       {% if entry.number_of_green > 0 %}
       <span class="add-right-margin gel-text gel-green">
           {{ entry.number_of_green }} green
@@ -133,7 +135,7 @@
     {% if entry.evidence %}
         <h6 class="add-label-margin remove-top-margin">Sources</h6>
         <ul>
-            {% for ev in entry.evidence %}
+            {% for ev in entry.evidence.all %}
                 <li>
                     {{ ev.name }}
                     {% if request.user.reviewer.is_GEL and lock_status == "unlock_"|add:entry.gene.gene_symbol %}
@@ -150,17 +152,15 @@
         <h6 class="add-label-margin">Phenotypes</h6>
         <ul>
             {% for phenotype in entry.phenotypes %}
-                {% if phenotype %}
-                    <li class="word-break">{{ phenotype }}</li>
-                {% endif %}
+              <li class="word-break">{{ phenotype }}</li>
             {% endfor %}
         </ul>
     {% endif %}
 
-    {% if entry.tags %}
+    {% if entry.tags.all %}
         <h6 class="add-label-margin">Tags</h6>
         <ul class="list-inline tag-list">
-            {% for tag in entry.tags %}
+            {% for tag in entry.tags.all %}
                 <li class="label label-default">{{ tag }}</li>
             {% endfor %}
         </ul>

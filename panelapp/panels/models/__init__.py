@@ -173,6 +173,7 @@ class GenePanelEntrySnapshot(models.Model):
 
 """
 
+from .tag import Tag  # noqa
 from .gene import Gene  # noqa
 from .activity import Activity  # noqa
 from .level4title import Level4Title  # noqa

@@ -20,6 +20,7 @@ urlpatterns = [
     url(r'^(?P<pk>[0-9]+)/update$', UpdatePanelView.as_view(), name="update"),
     url(r'^(?P<pk>[0-9]+)/promote$', PromotePanelView.as_view(), name="promote"),
     url(r'^(?P<pk>[0-9]+)/add_gene$', PanelAddGeneView.as_view(), name="add_gene"),
+    url(r'^(?P<pk>[0-9]+)/(?P<gene_symbol>[\w\-]+)/evaluation$', EmptyView.as_view(), name="evaluation"),
     url(r'^create/', CreatePanelView.as_view(), name="create"),
 
     url(r'^genes/$', GeneListView.as_view(), name="gene_list"),

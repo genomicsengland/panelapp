@@ -23,7 +23,7 @@
 </h1>
 
 {% if request.user.reviewer.is_verified %}
-    <form class="row add-top-margin" action="{% url 'panels:add_gene' panel.id %}" method="post">
+    <form class="row add-top-margin" method="post">
         {% csrf_token %}
         <div class="col-md-8">
             <div class="well">

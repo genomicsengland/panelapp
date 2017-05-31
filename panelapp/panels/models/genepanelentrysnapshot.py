@@ -3,9 +3,10 @@ from django.db.models import Count
 from django.db.models import Subquery
 from django.db.models import Case
 from django.db.models import When
-from django.db.models import IntegerField
+
 from django.contrib.postgres.fields import JSONField
 from django.contrib.postgres.fields import ArrayField
+from model_utils import Choices
 from model_utils.models import TimeStampedModel
 
 from accounts.models import User
@@ -15,19 +16,14 @@ from .evidence import Evidence
 from .evaluation import Evaluation
 from .trackrecord import TrackRecord
 from .comment import Comment
+from .tag import Tag
 
 
 class GenePanelEntrySnapshotManager(models.Manager):
-    def get_latest_ids(self):
-        return super().get_queryset()\
-            .distinct('panel__pk')\
-            .values('pk')\
-            .order_by('panel__pk', '-created', '-panel__major_version', '-panel__minor_version')
-
-    def get_gene_list(self):
+    def get_gene_list(self, panel):
         return super().get_queryset()\
             .prefetch_related('evaluation')\
-            .filter(pk__in=Subquery(self.get_latest_ids()))\
+            .filter(panel=panel)\
             .annotate(
                 number_of_green=Count(Case(When(
                     genepanelentrysnapshot__evaluation__rating=Evaluation.RATINGS.GREEN), output_field=IntegerField()
@@ -39,17 +35,26 @@ class GenePanelEntrySnapshotManager(models.Manager):
                     genepanelentrysnapshot__evaluation__rating=Evaluation.RATINGS.AMBER), output_field=IntegerField()
                 )),
             )\
-            .order_by('gene__name')
+            .order_by('gene__gene_symbol')
 
 
 class GenePanelEntrySnapshot(TimeStampedModel):
-    """
-    At what point we copy stuff from Evaluation to GenePanelEntrySnapshot and do we need to do it?
-    """
+    PENETRANCE = Choices(
+        ("unknown", "unknown"),
+        ("Complete", "Complete"),
+        ("Incomplete", "Incomplete"),
+    )
+
+    GEL_STATUS = Choices(
+        (0, "No list"),
+        (1, "Red"),
+        (2, "Amber"),
+        (3, "Green"),
+    )
 
     class Meta:
         get_latest_by = "created"
-        ordering = ['-created', ]
+        ordering = ['-saved_gel_status', '-created',]
 
     panel = models.ForeignKey(GenePanelSnapshot)
     gene = JSONField()  # copy data from Gene.dict_tr
@@ -57,11 +62,11 @@ class GenePanelEntrySnapshot(TimeStampedModel):
     evidence = models.ManyToManyField(Evidence)
     evaluation = models.ManyToManyField(Evaluation)
     moi = models.CharField("Mode of inheritance", choices=Evaluation.MODES_OF_INHERITANCE, max_length=255)
-    penetrance = models.CharField(max_length=255)
+    penetrance = models.CharField(choices=PENETRANCE, max_length=255)
     track = models.ManyToManyField(TrackRecord)
     publications = ArrayField(models.CharField(max_length=255))
     phenotypes = ArrayField(models.CharField(max_length=255))
-    tags = ArrayField(models.CharField(max_length=30))
+    tags = models.ManyToManyField(Tag)
     flagged = models.BooleanField(default=False)
     ready = models.BooleanField(default=False)
     comments = models.ManyToManyField(Comment)
@@ -71,14 +76,18 @@ class GenePanelEntrySnapshot(TimeStampedModel):
 
     objects = GenePanelEntrySnapshotManager()
 
+    def __str__(self):
+        return "Panel: {} Gene: {}".format(self.panel.panel.name, self.gene.get('gene_symbol'))
+
     @property
     def status(self):
         """
         Save gel_status in the gene panel snapshot
         """
 
-        if not self.saved_gel_status:
-            self.saved_gel_status = self.evidence_status()
+        if self.saved_gel_status is None:
+            self.status = self.evidence_status()
+            self.save()
         return self.saved_gel_status
 
     @status.setter
@@ -89,7 +98,7 @@ class GenePanelEntrySnapshot(TimeStampedModel):
     def status(self):
         self.saved_gel_status = None
 
-    def evidence_status(self):
+    def evidence_status(self, update=False):
         """
         This is a refactored `get_gel_status` function.
         It goes through evidences, check if they are valid or were provided by
@@ -108,6 +117,10 @@ class GenePanelEntrySnapshot(TimeStampedModel):
                 if evidence.name in evidence.HIGH_CONFIDENCE_SOURCES and evidence.rating > 3:
                     gel_status += 1
 
+        if update:
+            self.saved_gel_status = gel_status
+            self.save()
+
         return gel_status
 
     def is_reviewd_by_user(self, user):
@@ -125,5 +138,5 @@ class GenePanelEntrySnapshot(TimeStampedModel):
             "flagged": self.flagged,
             "mode_of_pathogenicity": self.mode_of_pathogenicity,
             "penetrance": self.penetrance,
-            "tags": self.tags
+            "tags": [tag.name for tag in self.tags.all()]
         }

@@ -1,7 +1,13 @@
 from django.db import models
+from django.db.models import Sum
 from django.db.models import Count
+from django.db.models import Case
+from django.db.models import When
+from django.db.models import Value
 from django.db.models import Subquery
 from django.contrib.postgres.fields import ArrayField
+from django.db.models import IntegerField
+from django.utils.functional import cached_property
 from model_utils.models import TimeStampedModel
 
 from .genepanel import GenePanel
@@ -41,15 +47,55 @@ class GenePanelSnapshot(TimeStampedModel):
     version_comment = models.TextField(null=True)
     old_panels = ArrayField(models.CharField(max_length=255))
 
-    def increment_version(self, major=False, commit=True):
+    @cached_property
+    def stats(self):
+        return self.genepanelentrysnapshot_set.aggregate(
+            number_of_reviewers=Count('evaluation__user', distinct=True),
+            number_of_evaluated_genes=Count('evaluation'),
+            number_of_genes=Count('pk'),
+            number_of_ready_genes=Sum(Case(When(
+                ready=True, then=Value(1)),
+                default=Value(0),
+                output_field=IntegerField()
+            )),
+            number_of_green_genes=Sum(Case(When(
+                saved_gel_status__gte=3, then=Value(1)),
+                default=Value(0),
+                output_field=IntegerField()
+            ))
+        )
+
+    def __str__(self):
+        return "Panel {} v{}.{}".format(self.level4title.name, self.major_version, self.minor_version)
+
+    def increment_version(self, major=False):
+        current_genes = self.get_all_entries
+
+        self.pk = None
+
         if major:
             self.major_version += 1
             self.minor_version = 0
         else:
             self.minor_version += 1
 
-        if commit:
-            self.save()
+        self.save()
+
+        for gene in current_genes:
+            evidences = gene.evidence.all()
+            evaluations = gene.evaluation.all()
+            tracks = gene.track.all()
+            tags = gene.tags.all()
+            comments = gene.comments.all()
+
+            gene.pk = None
+            gene.panel = self
+            gene.save()
+            gene.evidence = evidences
+            gene.evaluation = evaluations
+            gene.track = tracks
+            gene.tags = tags
+            gene.comments = comments
 
     def get_form_initial(self):
         return {
@@ -63,8 +109,12 @@ class GenePanelSnapshot(TimeStampedModel):
             "old_panels": ", ".join(self.old_panels)
         }
 
+    @cached_property
     def get_all_entries(self):
-        pass
+        return self.genepanelentrysnapshot_set.prefetch_related('evidence', 'evaluation', 'tags').all()
+
+    def has_gene(self, gene_symbol):
+        return True if self.get_all_entries.filter(gene__gene_symbol=gene_symbol).count() > 0 else 0
 
     """
     # move these to properties

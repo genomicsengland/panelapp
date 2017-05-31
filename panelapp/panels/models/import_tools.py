@@ -25,7 +25,7 @@ class UploadedGeneList(models.Model):
 
                     transcripts = self.get_other_transcripts(symbol)
 
-                    Gene.objects.create(
+                    Gene.objects.get_or_create(
                         gene_symbol=symbol,
                         gene_name=name,
                         omim_gene=OMIM,

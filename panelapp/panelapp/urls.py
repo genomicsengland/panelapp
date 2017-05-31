@@ -20,6 +20,7 @@ from django.contrib import admin
 from .views import Homepage
 from .autocomplete import GeneAutocomplete
 from .autocomplete import SourceAutocomplete
+from .autocomplete import TagsAutocomplete
 
 
 urlpatterns = [
@@ -30,6 +31,7 @@ urlpatterns = [
     url(r'^GeL-admin/', admin.site.urls),
     url(r'^autocomplete/gene/$', GeneAutocomplete.as_view(), name="autocomplete-gene"),
     url(r'^autocomplete/source/$', SourceAutocomplete.as_view(), name="autocomplete-source"),
+    url(r'^autocomplete/tags/$', TagsAutocomplete.as_view(), name="autocomplete-tags"),
 ]
 
 if settings.DEBUG:

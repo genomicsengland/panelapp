@@ -14,4 +14,4 @@ class GenePanel(TimeStampedModel):
 
     @cached_property
     def active_panel(self):
-        return self.genepanelsnapshot_set.first()
+        return self.genepanelsnapshot_set.get_active().first()

@@ -15,6 +15,6 @@ class Gene(models.Model):
         return {
             "gene_symbol": self.gene_symbol,
             "gene_name": self.gene_name,
-            "other_transcripts": [t.dict_tr() for t in self.other_transcripts],
+            "other_transcripts": self.other_transcripts,
             "omim_gene": self.omim_gene,
         }

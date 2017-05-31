@@ -1,9 +1,13 @@
 from collections import OrderedDict
 from django import forms
+from django.contrib.postgres.forms import SimpleArrayField
 from dal_select2.widgets import ModelSelect2
 from dal_select2.widgets import Select2Multiple
+from dal_select2.widgets import ModelSelect2Multiple
 from dal_select2.fields import Select2ListChoiceField
+from panelapp.forms import Select2ListMultipleChoiceField
 from .models import Comment
+from .models import Tag
 from .models import Gene
 from .models import Evidence
 from .models import Evaluation
@@ -11,6 +15,7 @@ from .models import Level4Title
 from .models import GenePanel
 from .models import GenePanelSnapshot
 from .models import GenePanelEntrySnapshot
+from .models import TrackRecord
 from .models import UploadedGeneList
 
 
@@ -125,11 +130,8 @@ class PromotePanelForm(forms.ModelForm):
         fields = ('version_comment',)
 
     def save(self, *args, commit=True, **kwargs):
-        self.instance.pk = None
-
-        self.instance.increment_version(major=True, commit=False)
-        if commit:
-            return super().save(*args, **kwargs)
+        self.instance.increment_version(major=True)
+        return self.instance
 
 
 class PanelAddGeneForm(forms.ModelForm):
@@ -153,15 +155,23 @@ class PanelAddGeneForm(forms.ModelForm):
     6) Create new GenePanelEntrySnapshot with a link to the new GenePanelSnapshot
     """
 
-    gene_symbol = forms.ModelChoiceField(
+    gene = forms.ModelChoiceField(
         label="Gene symbol",
         queryset=Gene.objects.all(),
         widget=ModelSelect2(url="autocomplete-gene")
     )
-    source = Select2ListChoiceField(
+    source = Select2ListMultipleChoiceField(
         choice_list=Evidence.ALL_SOURCES,
         widget=Select2Multiple(url="autocomplete-source")
     )
+    tags = forms.ModelMultipleChoiceField(
+        queryset=Tag.objects.all(),
+        widget=ModelSelect2Multiple(url="autocomplete-tags"),
+        required=False
+    )
+
+    publications = SimpleArrayField(forms.CharField(max_length=255), delimiter=";")
+    phenotypes = SimpleArrayField(forms.CharField(max_length=255), delimiter=";")
 
     rating = forms.ChoiceField(choices=[('', 'Provide rating')] + Evaluation.RATINGS)
     current_diagnostic = forms.BooleanField()
@@ -172,52 +182,100 @@ class PanelAddGeneForm(forms.ModelForm):
         fields = (
             'mode_of_pathogenicity',
             'moi',
+            'penetrance',
             'publications',
             'phenotypes',
         )
 
     def __init__(self, *args, **kwargs):
+        self.panel = kwargs.pop('panel')
+        self.request = kwargs.pop('request')
         super().__init__(*args, **kwargs)
 
         original_fields = self.fields
 
         self.fields = OrderedDict()
-        self.fields['gene_symbol'] = original_fields.get('gene_symbol')
+        self.fields['gene'] = original_fields.get('gene')
         self.fields['source'] = original_fields.get('source')
         self.fields['mode_of_pathogenicity'] = original_fields.get('mode_of_pathogenicity')
         self.fields['moi'] = original_fields.get('moi')
+        self.fields['penetrance'] = original_fields.get('penetrance')
         self.fields['publications'] = original_fields.get('publications')
         self.fields['phenotypes'] = original_fields.get('phenotypes')
+        self.fields['tags'] = original_fields.get('tags')
         self.fields['rating'] = original_fields.get('rating')
         self.fields['current_diagnostic'] = original_fields.get('current_diagnostic')
         self.fields['comments'] = original_fields.get('comments')
 
     def clean_gene_symbol(self):
-        gene_symbol = self.cleaned_data['gene_symbol']
-        # TODO check that we are not adding Gene that already exists in the panel
-        # We might need to rewrite the View class to provide additional __init__ kwargs for this
+        gene_symbol = self.cleaned_data['gene'].gene_symbol
+        if not self.instance.pk and self.panel.has_gene(gene_symbol):
+            raise forms.ValidationError(
+                "Gene has already been added to the panel",
+                code='gene_exists_in_panel',
+            )
         return gene_symbol
 
     def import_gene(self, symbol_name):
-        return Gene.objects.get(symbol_name=symbol_name).dict_tr()
+        return Gene.objects.get(gene_symbol=symbol_name).dict_tr()
 
     def save(self, *args, **kwargs):
+        flagged = False if self.request.user.reviewer.is_GEL() else True
+        gene = self.cleaned_data['gene']
+
+        # increment minor version in the panel
+        self.panel.increment_version()
+
+        gpe = GenePanelEntrySnapshot.objects.create(
+            panel=self.panel,
+            gene=self.import_gene(gene.gene_symbol),
+            gene_core=gene,
+            moi=self.cleaned_data['moi'],
+            penetrance=self.cleaned_data['penetrance'],
+            publications=self.cleaned_data['publications'],
+            phenotypes=self.cleaned_data['phenotypes'],
+            flagged=flagged,
+            mode_of_pathogenicity=self.cleaned_data['mode_of_pathogenicity'],
+            saved_gel_status=0
+        )
+
+
+
         comment = Comment.objects.create(
             user=self.request.user,
             comment=self.cleaned_data['comments']
         )
-        evaluation = Evaluation.objects.create(
+        gpe.comments.add(comment)
+
+        for source in self.cleaned_data['source']:
+            evidence = Evidence.objects.create(
+                rating=5,
+                reviewer=self.request.user.reviewer,
+                name=source.strip()
+            )
+            gpe.evidence.add(evidence)
+
+        track_created = TrackRecord.objects.create(
+            gel_status=gpe.evidence_status(),
+            curator_status=0,
             user=self.request.user,
-            rating=self.cleaned_data['rating'],
-            mode_of_pathogenicity=self.cleaned_data['mode_of_pathogenicity'],
-            publications=self.cleaned_data['publications'],
-            phenotypes=self.cleaned_data['phenotypes'],
-            moi=self.cleaned_data['moi'],
-            current_diagnostic=self.cleaned_data['current_diagnostic']
+            issue_type=TrackRecord.ISSUE_TYPES.Created,
+            issue_description="{} was created by {}".format(gene.gene_symbol, self.request.user.get_full_name())
         )
-        evaluation.comments.add(comment)
-        evidence = Evidence.objects.create(
-            rating=5,
-            reviewer=self.request.user.reviewer,
-            # TODO finish
+        gpe.track.add(track_created)
+
+        description = "{} was added to {} panel. Sources: {}".format(
+            gene.gene_symbol,
+            self.panel.panel.name,
+            ",".join(self.cleaned_data['source'])
         )
+        track_sources = TrackRecord.objects.create(
+            gel_status=gpe.evidence_status(),
+            curator_status=0,
+            user=self.request.user,
+            issue_type=TrackRecord.ISSUE_TYPES.NewSource,
+            issue_description=description
+        )
+        gpe.track.add(track_sources)
+        gpe.evidence_status(update=True)
+        return gpe
