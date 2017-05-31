@@ -20,15 +20,15 @@ class Evaluation(TimeStampedModel):
 
     MODES_OF_INHERITANCE = Choices(
         ("", "Provide a mode of inheritance"),
-        ("MONOALLELIC, autosomal or pseudoautosomal, NOT imprinted", "MONOALLELIC, autosomal or pseudoautosomal, NOT imprinted"),
-        ("MONOALLELIC, autosomal or pseudoautosomal, maternally imprinted (paternal allele expressed)", "MONOALLELIC, autosomal or pseudoautosomal, maternally imprinted (paternal allele expressed)"),
-        ("MONOALLELIC, autosomal or pseudoautosomal, paternally imprinted (maternal allele expressed)", "MONOALLELIC, autosomal or pseudoautosomal, paternally imprinted (maternal allele expressed)"),
-        ("MONOALLELIC, autosomal or pseudoautosomal, imprinted status unknown", "MONOALLELIC, autosomal or pseudoautosomal, imprinted status unknown"),
+        ("MONOALLELIC, autosomal or pseudoautosomal, NOT imprinted", "MONOALLELIC, autosomal or pseudoautosomal, NOT imprinted"),  # noqa
+        ("MONOALLELIC, autosomal or pseudoautosomal, maternally imprinted (paternal allele expressed)", "MONOALLELIC, autosomal or pseudoautosomal, maternally imprinted (paternal allele expressed)"),  # noqa
+        ("MONOALLELIC, autosomal or pseudoautosomal, paternally imprinted (maternal allele expressed)", "MONOALLELIC, autosomal or pseudoautosomal, paternally imprinted (maternal allele expressed)"),  # noqa
+        ("MONOALLELIC, autosomal or pseudoautosomal, imprinted status unknown", "MONOALLELIC, autosomal or pseudoautosomal, imprinted status unknown"),  # noqa
         ("BIALLELIC, autosomal or pseudoautosomal", "BIALLELIC, autosomal or pseudoautosomal"),
-        ("BOTH monoallelic and biallelic, autosomal or pseudoautosomal", "BOTH monoallelic and biallelic, autosomal or pseudoautosomal"),
-        ("BOTH monoallelic and biallelic (but BIALLELIC mutations cause a more SEVERE disease form), autosomal or pseudoautosomal", "BOTH monoallelic and biallelic (but BIALLELIC mutations cause a more SEVERE disease form), autosomal or pseudoautosomal"),
-        ("X-LINKED: hemizygous mutation in males, biallelic mutations in females", "X-LINKED: hemizygous mutation in males, biallelic mutations in females"),
-        ("X-LINKED: hemizygous mutation in males, monoallelic mutations in females may cause disease (may be less severe, later onset than males)", "X-LINKED: hemizygous mutation in males, monoallelic mutations in females may cause disease (may be less severe, later onset than males)"),
+        ("BOTH monoallelic and biallelic, autosomal or pseudoautosomal", "BOTH monoallelic and biallelic, autosomal or pseudoautosomal"),  # noqa
+        ("BOTH monoallelic and biallelic (but BIALLELIC mutations cause a more SEVERE disease form), autosomal or pseudoautosomal", "BOTH monoallelic and biallelic (but BIALLELIC mutations cause a more SEVERE disease form), autosomal or pseudoautosomal"),  # noqa
+        ("X-LINKED: hemizygous mutation in males, biallelic mutations in females", "X-LINKED: hemizygous mutation in males, biallelic mutations in females"),  # noqa
+        ("X-LINKED: hemizygous mutation in males, monoallelic mutations in females may cause disease (may be less severe, later onset than males)", "X-LINKED: hemizygous mutation in males, monoallelic mutations in females may cause disease (may be less severe, later onset than males)"),  # noqa
         ("MITOCHONDRIAL", "MITOCHONDRIAL"),
         ("Unknown", "Unknown"),
         ("Other - please specifiy in evaluation comments", "Other - please specifiy in evaluation comments"),
@@ -36,7 +36,7 @@ class Evaluation(TimeStampedModel):
 
     MODES_OF_PHATHOGENICITY = Choices(
         ("", "Provide exceptions to loss-of-function"),
-        ("Loss-of-function variants (as defined in pop up message) DO NOT cause this phenotype - please provide details in the comments", "Loss-of-function variants (as defined in pop up message) DO NOT cause this phenotype - please provide details in the comments"),
+        ("Loss-of-function variants (as defined in pop up message) DO NOT cause this phenotype - please provide details in the comments", "Loss-of-function variants (as defined in pop up message) DO NOT cause this phenotype - please provide details in the comments"),  # noqa
         ("Other - please provide details in the comments", "Other - please provide details in the comments"),
     )
 

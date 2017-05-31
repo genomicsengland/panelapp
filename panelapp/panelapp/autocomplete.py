@@ -23,7 +23,7 @@ class SourceAutocomplete(Select2ListView):
 
 class TagsAutocomplete(Select2QuerySetView):
     create_field = "name"
-    
+
     def get_queryset(self):
         qs = Tag.objects.all()
 

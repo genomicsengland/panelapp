@@ -1,8 +1,4 @@
 from django.db import models
-from django.db.models import Count
-from django.db.models import Subquery
-from django.db.models import Case
-from django.db.models import When
 
 from django.contrib.postgres.fields import JSONField
 from django.contrib.postgres.fields import ArrayField
@@ -20,22 +16,7 @@ from .tag import Tag
 
 
 class GenePanelEntrySnapshotManager(models.Manager):
-    def get_gene_list(self, panel):
-        return super().get_queryset()\
-            .prefetch_related('evaluation')\
-            .filter(panel=panel)\
-            .annotate(
-                number_of_green=Count(Case(When(
-                    genepanelentrysnapshot__evaluation__rating=Evaluation.RATINGS.GREEN), output_field=IntegerField()
-                )),
-                number_of_red=Count(Case(When(
-                    genepanelentrysnapshot__evaluation__rating=Evaluation.RATINGS.RED), output_field=IntegerField()
-                )),
-                number_of_amber=Count(Case(When(
-                    genepanelentrysnapshot__evaluation__rating=Evaluation.RATINGS.AMBER), output_field=IntegerField()
-                )),
-            )\
-            .order_by('gene__gene_symbol')
+    pass
 
 
 class GenePanelEntrySnapshot(TimeStampedModel):
@@ -54,7 +35,7 @@ class GenePanelEntrySnapshot(TimeStampedModel):
 
     class Meta:
         get_latest_by = "created"
-        ordering = ['-saved_gel_status', '-created',]
+        ordering = ['-saved_gel_status', '-created', ]
 
     panel = models.ForeignKey(GenePanelSnapshot)
     gene = JSONField()  # copy data from Gene.dict_tr

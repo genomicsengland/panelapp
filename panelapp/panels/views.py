@@ -161,7 +161,8 @@ class PanelAddGeneView(VerifiedReviewerRequiredMixin, CreateView):
 
     def form_valid(self, form):
         ret = super().form_valid(form)
-        messages.success(self.request, "Successfully added a new gene to the panel {}".format(self.object.panel.panel.name))
+        msg = "Successfully added a new gene to the panel {}".format(self.object.panel.panel.name)
+        messages.success(self.request, msg)
         return ret
 
     def get_success_url(self):

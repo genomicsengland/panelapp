@@ -4,7 +4,6 @@ from django.contrib.postgres.forms import SimpleArrayField
 from dal_select2.widgets import ModelSelect2
 from dal_select2.widgets import Select2Multiple
 from dal_select2.widgets import ModelSelect2Multiple
-from dal_select2.fields import Select2ListChoiceField
 from panelapp.forms import Select2ListMultipleChoiceField
 from .models import Comment
 from .models import Tag
@@ -238,8 +237,6 @@ class PanelAddGeneForm(forms.ModelForm):
             mode_of_pathogenicity=self.cleaned_data['mode_of_pathogenicity'],
             saved_gel_status=0
         )
-
-
 
         comment = Comment.objects.create(
             user=self.request.user,
