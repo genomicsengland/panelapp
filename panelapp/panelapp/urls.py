@@ -18,6 +18,8 @@ from django.conf.urls import url
 from django.conf.urls import include
 from django.contrib import admin
 from .views import Homepage
+from .autocomplete import GeneAutocomplete
+from .autocomplete import SourceAutocomplete
 
 
 urlpatterns = [
@@ -26,6 +28,8 @@ urlpatterns = [
     url(r'^panels/', include('panels.urls', namespace="panels")),
     url(r'^markdownx/', include('markdownx.urls')),
     url(r'^GeL-admin/', admin.site.urls),
+    url(r'^autocomplete/gene/$', GeneAutocomplete.as_view(), name="autocomplete-gene"),
+    url(r'^autocomplete/source/$', SourceAutocomplete.as_view(), name="autocomplete-source"),
 ]
 
 if settings.DEBUG:

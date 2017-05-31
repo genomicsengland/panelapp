@@ -12,6 +12,17 @@ class Evidence(TimeStampedModel):
         "UKGTN",
     ]
 
+    OTHER_SOURCES = [
+        "Other",
+        "Expert list",
+        "Expert Review",
+        "Literature",
+        "Eligibility statement prior genetic testing",
+        "Research"
+    ]
+
+    ALL_SOURCES = HIGH_CONFIDENCE_SOURCES + OTHER_SOURCES
+
     EXPERT_REVIEWS = {
         "Expert Review Green": 4,
         "Expert Review Amber": 2,

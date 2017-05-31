@@ -56,7 +56,7 @@ class GenePanelEntrySnapshot(TimeStampedModel):
     gene_core = models.ForeignKey(Gene)  # reference to the original Gene
     evidence = models.ManyToManyField(Evidence)
     evaluation = models.ManyToManyField(Evaluation)
-    moi = models.CharField("Mode of inheritance", max_length=255)
+    moi = models.CharField("Mode of inheritance", choices=Evaluation.MODES_OF_INHERITANCE, max_length=255)
     penetrance = models.CharField(max_length=255)
     track = models.ManyToManyField(TrackRecord)
     publications = ArrayField(models.CharField(max_length=255))
@@ -66,7 +66,7 @@ class GenePanelEntrySnapshot(TimeStampedModel):
     ready = models.BooleanField(default=False)
     comments = models.ManyToManyField(Comment)
     contributors = models.ManyToManyField(User)
-    mode_of_pathogenicity = models.CharField(max_length=255)
+    mode_of_pathogenicity = models.CharField(choices=Evaluation.MODES_OF_PHATHOGENICITY, max_length=255)
     saved_gel_status = models.IntegerField(null=True)
 
     objects = GenePanelEntrySnapshotManager()

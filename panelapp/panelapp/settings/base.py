@@ -39,6 +39,8 @@ DEFAULT_FROM_EMAIL = 'PanelApp <panelapp@genomicsengland.co.uk>'
 
 DJANGO_APPS = [
     'django.contrib.sites',
+    'dal',
+    'dal_select2',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',

@@ -10,6 +10,7 @@ from django.shortcuts import redirect
 from django.urls import reverse_lazy
 
 from panelapp.mixins import GELReviewerRequiredMixin
+from panelapp.mixins import VerifiedReviewerRequiredMixin
 from accounts.models import User
 from .forms import UploadGenesForm
 from .forms import UploadPanelsForm
@@ -142,14 +143,22 @@ class PromotePanelView(GELReviewerRequiredMixin, PanelMixin, UpdateView):
         return ret
 
 
-class PanelAddGeneView(CreateView):
+class PanelAddGeneView(VerifiedReviewerRequiredMixin, CreateView):
     template_name = "panels/genepanel_add_gene.html"
     form_class = PanelAddGeneForm
 
+    def get_context_data(self, *args, **kwargs):
+        ctx = super().get_context_data(*args, **kwargs)
+        ctx['panel'] = GenePanel.objects.get(pk=self.kwargs['pk']).active_panel
+        self.panel = ctx['panel']
+        return ctx
+
     def form_valid(self, form):
+        form.request = self.request
         ret = super().form_valid(form)
-        messages.success(self.request, "Successfully added a new gene to the panel")
+        self.instance = form.instance
+        messages.success(self.request, "Successfully added a new gene to the panel {}".format(self.panel.panel.name))
         return ret
 
     def get_success_url(self):
-        return reverse_lazy('panels:evaluation', self.instance.panel.pk, self.instance.gene.get('symbol_name'))
+        return reverse_lazy('panels:evaluation', self.panel.panel.pk, self.instance.gene.get('symbol_name'))
