@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.models import Count
 from django.utils.functional import cached_property
 from model_utils.models import TimeStampedModel
 
@@ -14,4 +15,12 @@ class GenePanel(TimeStampedModel):
 
     @cached_property
     def active_panel(self):
-        return self.genepanelsnapshot_set.get_active().first()
+        return self.genepanelsnapshot_set\
+            .prefetch_related('panel', 'level4title')\
+            .annotate(
+                number_of_reviewers=Count('genepanelentrysnapshot__evaluation__user', distinct=True),
+                number_of_evaluated_genes=Count('genepanelentrysnapshot__evaluation'),
+                number_of_genes=Count('genepanelentrysnapshot'),
+            )\
+            .order_by('-created', '-major_version', '-minor_version')\
+            .first()

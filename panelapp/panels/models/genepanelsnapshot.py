@@ -32,6 +32,9 @@ class GenePanelSnapshotManager(models.Manager):
             )\
             .order_by('panel', '-major_version', '-minor_version')
 
+    def get_gene_panels(self, gene):
+        return self.get_active().filter(genepanelentrysnapshot__gene_core__gene_symbol=gene)
+
 
 class GenePanelSnapshot(TimeStampedModel):
     class Meta:
@@ -129,7 +132,18 @@ class GenePanelSnapshot(TimeStampedModel):
         return self.genepanelentrysnapshot_set.prefetch_related('evidence', 'evaluation', 'tags').all()
 
     def has_gene(self, gene_symbol):
-        return True if self.get_all_entries.filter(gene__gene_symbol=gene_symbol).count() > 0 else 0
+        return True if self.get_all_entries.filter(gene__gene_symbol=gene_symbol).count() > 0 else False
+
+    def delete_gene(self, gene_symbol):
+        """
+        Removes gene from a panel, but leaves it in the previous versions of the same panel
+        """
+
+        if self.has_gene(gene_symbol):
+            self.increment_version()
+            del self.get_all_entries  # clear cached values as it points to the previous instance
+            self.get_all_entries.get(gene__gene_symbol=gene_symbol).delete()
+            del self.get_all_entries  # clear cached values as we deleted item
 
     """
     # move these to properties

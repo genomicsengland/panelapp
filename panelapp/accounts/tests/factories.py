@@ -21,7 +21,10 @@ class UserFactory(factory.django.DjangoModelFactory):
 
     first_name = factory.Faker('first_name')
     last_name = factory.Faker('first_name')
-    username = factory.Faker('user_name')
+    username = factory.LazyAttribute(lambda u: "{}{}".format(
+        factory.Faker('user_name').evaluate(0, 0, 0),
+        factory.Faker('md5').evaluate(0, 0, 0))
+    )
     email = factory.LazyAttribute(lambda a: '{0}.{1}@example.com'.format(a.first_name, a.last_name).lower())
     is_active = True
 

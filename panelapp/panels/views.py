@@ -22,6 +22,7 @@ from .models import Gene
 from .models import GenePanel
 from .models import GenePanelSnapshot
 from .mixins import PanelMixin
+from .mixins import ActAndRedirectMixin
 
 
 class EmptyView(View):
@@ -31,8 +32,13 @@ class EmptyView(View):
 class PanelsIndexView(ListView):
     template_name = "panels/genepanel_list.html"
     model = GenePanelSnapshot
-    queryset = GenePanelSnapshot.objects.get_active()
     context_object_name = 'panels'
+
+    def get_queryset(self, *args, **kwargs):
+        if self.request.GET.get('gene'):
+            return GenePanelSnapshot.objects.get_gene_panels(self.request.GET.get('gene'))
+        else:
+            return GenePanelSnapshot.objects.get_active()
 
     def get_context_data(self, *args, **kwargs):
         ctx = super().get_context_data(*args, **kwargs)
@@ -126,6 +132,8 @@ class AdminUploadReviewsView(ImportToolMixin, AdminContextMixin):
 
 class GeneDetailView(DetailView):
     model = Gene
+    slug_field = 'gene_symbol'
+    slug_field_kwarg = 'gene_symbol'
 
 
 class GeneListView(ListView):
@@ -170,3 +178,17 @@ class PanelAddGeneView(VerifiedReviewerRequiredMixin, CreateView):
             'pk': self.object.panel.panel.pk,
             'gene_symbol': self.object.gene.get('gene_name')
         })
+
+
+class PanelMarkNotReadyView(GELReviewerRequiredMixin, PanelMixin, ActAndRedirectMixin, DetailView):
+    model = GenePanelSnapshot
+
+    def act(self):
+        self.get_object().mark_genes_not_ready()
+
+
+class DeleteGeneView(GELReviewerRequiredMixin, PanelMixin, ActAndRedirectMixin, DetailView):
+    model = GenePanelSnapshot
+
+    def act(self):
+        self.get_object().delete_gene(self.kwargs['gene_symbol'])

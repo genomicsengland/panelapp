@@ -1,10 +1,7 @@
-from django.urls import reverse_lazy
 from django.test import TestCase
-from django.test import Client
 from faker import Factory
 from accounts.models import Reviewer
 from .factories import UserFactory
-from .factories import ReviewerFactory
 
 
 fake = Factory.create()
@@ -25,7 +22,7 @@ class SetupUsers(TestCase):
 
 class LoginGELUser(SetupUsers):
     """
-    LoginGELUser set's up session data on the default Client object available via
+    LoginGELUser sets up session data on the default Client object available via
     self.client, so in the later tests we don't need to authorise before we make
     the requests.
     """
@@ -33,4 +30,4 @@ class LoginGELUser(SetupUsers):
     def setUp(self):
         super().setUp()
         login_res = self.client.login(username="gel_user", password="pass")
-        assert login_res == True
+        assert login_res is True

@@ -13,6 +13,9 @@ from .views import PanelsIndexView
 from .views import UpdatePanelView
 from .views import PromotePanelView
 from .views import PanelAddGeneView
+from .views import PanelMarkNotReadyView
+from .views import DeleteGeneView
+
 
 urlpatterns = [
     url(r'^$', PanelsIndexView.as_view(), name="index"),
@@ -21,10 +24,12 @@ urlpatterns = [
     url(r'^(?P<pk>[0-9]+)/promote$', PromotePanelView.as_view(), name="promote"),
     url(r'^(?P<pk>[0-9]+)/add_gene$', PanelAddGeneView.as_view(), name="add_gene"),
     url(r'^(?P<pk>[0-9]+)/(?P<gene_symbol>[\w\-]+)/evaluation$', EmptyView.as_view(), name="evaluation"),
+    url(r'^(?P<pk>[0-9]+)/(?P<gene_symbol>[\w\-]+)/delete$', DeleteGeneView.as_view(), name="delete_gene"),
+    url(r'^(?P<pk>[0-9]+)/mark_not_ready$', PanelMarkNotReadyView.as_view(), name="mark_not_ready"),
     url(r'^create/', CreatePanelView.as_view(), name="create"),
 
     url(r'^genes/$', GeneListView.as_view(), name="gene_list"),
-    url(r'^genes/(?P<pk>[\w]+)', GeneDetailView.as_view(), name="gene_detail"),
+    url(r'^genes/(?P<gene_symbol>[\w\-]+)$', GeneDetailView.as_view(), name="gene_detail"),
 
     url(r'^admin/', AdminView.as_view(), name="admin"),
     url(r'^upload_genes/', AdminUploadGenesView.as_view(), name="upload_genes"),

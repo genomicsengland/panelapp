@@ -49,6 +49,7 @@ class GeneFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Gene
 
+    gene_symbol = factory.Faker('md5')
     other_transcripts = json.dumps({})
 
 
