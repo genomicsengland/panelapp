@@ -91,12 +91,21 @@ class GenePanelSnapshot(TimeStampedModel):
             gene.pk = None
             gene.panel = self
             gene.save()
-            gene.evidence = evidences
-            gene.evaluation = evaluations
-            gene.track = tracks
-            gene.tags = tags
-            gene.comments = comments
 
+            for evidence in evidences:
+                gene.evidence.add(evidence)
+
+            for evaluation in evaluations:
+                gene.evaluation.add(evaluation)
+
+            for track in tracks:
+                gene.track.add(track)
+
+            for tag in tags:
+                gene.tag.add(tag)
+
+            for comment in comments:
+                gene.comment.add(comment)
 
     def mark_genes_not_ready(self):
         for gene in self.genepanelentrysnapshot_set.all():

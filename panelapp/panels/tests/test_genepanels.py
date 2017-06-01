@@ -3,23 +3,32 @@ from django.test import TestCase
 from django.test import Client
 from django.urls import reverse_lazy
 from faker import Factory
-from accounts.tests.setup import LoginUser
+from accounts.tests.setup import LoginGELUser
 from panels.models import Gene
 from panels.models import GenePanel
 from panels.models import GenePanelSnapshot
+from .factories import GenePanelFactory
+from .factories import GenePanelEntrySnapshotFactory
+
 
 fake = Factory.create()
 
 
-class GeneTest(LoginUser):
+class GeneTest(LoginGELUser):
     def setUp(self):
         super().setUp()
 
     def test_import_gene(self):
+        """
+        Test Gene import. This also tests CellBaseConnector, which actually makes
+        requests to the server. We can mock it later if necessary.
+        """
+
         res = None
 
-        file_path = os.path.join(os.path.dirname(__file__), 'test_gene.tsv')
+        file_path = os.path.join(os.path.dirname(__file__), 'test_gene_data.tsv')
         test_gene_file = os.path.abspath(file_path)
+
         with open(test_gene_file) as f:
             url = reverse_lazy('panels:upload_genes')
             res = self.client.post(url, {'gene_list': f})
@@ -27,7 +36,7 @@ class GeneTest(LoginUser):
         assert Gene.objects.count() == 1
 
 
-class GenePanelTest(LoginUser):
+class GenePanelTest(LoginGELUser):
     def setUp(self):
         super().setUp()
 
@@ -66,8 +75,7 @@ class GenePanelTest(LoginUser):
         assert gp.active_panel.minor_version == 0
 
     def test_update_panel(self):
-        self.client.post(reverse_lazy('panels:create'), self.panel_data)
-        gp = GenePanel.objects.last()
+        gp = GenePanelFactory()
 
         url = reverse_lazy('panels:update', kwargs={'pk': gp.pk})
         data = self.create_panel_data()
@@ -77,3 +85,17 @@ class GenePanelTest(LoginUser):
         assert gp.active_panel.major_version == 0
         assert gp.active_panel.minor_version == 1
         assert gp.name == data['level4']
+
+    def test_update_panel_many_to_many(self):
+        gpes = GenePanelEntrySnapshotFactory()
+        url = reverse_lazy('panels:update', kwargs={'pk': gpes.panel.panel.pk})
+        data = self.create_panel_data()
+        res = self.client.post(url, data)
+
+        gp = GenePanel.objects.get(pk=gpes.panel.panel.pk)
+
+        active_snapshot = gp.active_panel
+        assert active_snapshot.major_version == 0
+        assert active_snapshot.minor_version == 1
+        assert gp.name == data['level4']
+        assert active_snapshot.get_all_entries.count() == 1
