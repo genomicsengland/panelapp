@@ -104,12 +104,14 @@
 </td>
 <td>
     <h5 class="normal gene-cell-title add-label-margin text-muted">{{ entry.evaluation.count }} review{{entry.evaluation.count|pluralize}}</h5>
-    {% if entry|gene_reviewd_by:request.user %}
-        <div class="text-muted add-bottom-margin"><i class="fa fa-check"></i> You reviewed</div>
-    {% elif request.user.reviewer.is_verified %}
-        <div class="text-muted add-bottom-margin">
-            <a href="{% url 'panels:evaluation' panel.panel.id entry.gene.gene_symbol %}" class="link-muted">Add review</a>
-        </div>
+    {% if request.user.is_authenticated %}
+      {% if entry|gene_reviewd_by:request.user %}
+          <div class="text-muted add-bottom-margin"><i class="fa fa-check"></i> You reviewed</div>
+      {% elif request.user.reviewer.is_verified %}
+          <div class="text-muted add-bottom-margin">
+              <a href="{% url 'panels:evaluation' panel.panel.id entry.gene.gene_symbol %}" class="link-muted">Add review</a>
+          </div>
+      {% endif %}
     {% endif %}
     {% if entry.evaluation.count > 0 %}
       {% if entry.number_of_green > 0 %}

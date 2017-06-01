@@ -97,6 +97,12 @@ class GenePanelSnapshot(TimeStampedModel):
             gene.tags = tags
             gene.comments = comments
 
+
+    def mark_genes_not_ready(self):
+        for gene in self.genepanelentrysnapshot_set.all():
+            gene.ready = False
+            gene.save()
+
     def get_form_initial(self):
         return {
             "level4": self.level4title.name,
