@@ -8,6 +8,7 @@ from django.views.generic import DetailView
 from django.views.generic import CreateView
 from django.shortcuts import redirect
 from django.urls import reverse_lazy
+from django.utils.functional import cached_property
 
 from panelapp.mixins import GELReviewerRequiredMixin
 from panelapp.mixins import VerifiedReviewerRequiredMixin
@@ -17,7 +18,7 @@ from .forms import UploadPanelsForm
 from .forms import UploadReviewsForm
 from .forms import PanelForm
 from .forms import PromotePanelForm
-from .forms import PanelAddGeneForm
+from .forms import PanelGeneForm
 from .models import Gene
 from .models import GenePanel
 from .models import GenePanelSnapshot
@@ -134,6 +135,13 @@ class GeneDetailView(DetailView):
     model = Gene
     slug_field = 'gene_symbol'
     slug_field_kwarg = 'gene_symbol'
+    context_object_name = 'gene'
+
+    def get_context_data(self, *args, **kwargs):
+        ctx = super().get_context_data(*args, **kwargs)
+        ctx['gene_symbol'] = self.kwargs['slug']
+        ctx['entries'] = GenePanelSnapshot.objects.get_gene_panels(self.kwargs['slug'])
+        return ctx
 
 
 class GeneListView(ListView):
@@ -153,7 +161,8 @@ class PromotePanelView(GELReviewerRequiredMixin, PanelMixin, UpdateView):
 
 class PanelAddGeneView(VerifiedReviewerRequiredMixin, CreateView):
     template_name = "panels/genepanel_add_gene.html"
-    form_class = PanelAddGeneForm
+
+    form_class = PanelGeneForm
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
@@ -175,9 +184,62 @@ class PanelAddGeneView(VerifiedReviewerRequiredMixin, CreateView):
 
     def get_success_url(self):
         return reverse_lazy('panels:evaluation', kwargs={
-            'pk': self.object.panel.panel.pk,
-            'gene_symbol': self.object.gene.get('gene_name')
+            'pk': self.kwargs['pk'],
+            'gene_symbol': self.object.gene_core.gene_symbol
         })
+
+
+class PanelEditGeneView(GELReviewerRequiredMixin, UpdateView):
+    template_name = "panels/genepanel_edit_gene.html"
+
+    form_class = PanelGeneForm
+
+    def get_object(self):
+        return self.panel.get_gene(self.kwargs['gene_symbol'])
+
+    @cached_property
+    def panel(self):
+        return GenePanel.objects.get(pk=self.kwargs['pk']).active_panel
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['panel'] = self.panel
+        kwargs['request'] = self.request
+        kwargs['initial'] = self.object.get_form_initial()
+        return kwargs
+
+    def get_context_data(self, *args, **kwargs):
+        ctx = super().get_context_data(*args, **kwargs)
+        ctx['panel'] = self.panel
+        return ctx
+
+    def form_valid(self, form):
+        ret = super().form_valid(form)
+        msg = "Successfully changed gene information for panel {}".format(self.object.panel.panel.name)
+        messages.success(self.request, msg)
+        return ret
+
+    def get_success_url(self):
+        return reverse_lazy('panels:evaluation', kwargs={
+            'pk': self.kwargs['pk'],
+            'gene_symbol': self.object.gene_core.gene_symbol
+        })
+
+
+class GenePanelSpanshotView(DetailView):
+    template_name = "panels/genepanelsnapshot_detail.html"
+    context_object_name = 'entry'
+
+    def get_object(self):
+        return self.panel.get_gene(self.kwargs['gene_symbol'])
+
+    def get_context_data(self, *args, **kwargs):
+        ctx = super().get_context_data(*args, **kwargs)
+        return ctx
+
+    @cached_property
+    def panel(self):
+        return GenePanel.objects.get(pk=self.kwargs['pk']).active_panel
 
 
 class PanelMarkNotReadyView(GELReviewerRequiredMixin, PanelMixin, ActAndRedirectMixin, DetailView):

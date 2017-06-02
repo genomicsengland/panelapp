@@ -1,5 +1,6 @@
-{% extends "base.html" %}
+{% extends "default.html" %}
 {% load staticfiles %}
+{% load panel_helpers %}
 {% block header %}
 <script src="{% static 'django_ajax/js/jquery.ajax.min.js' %}"></script>
 <script src="{% static 'django_ajax/js/jquery.ajax-plugin.min.js' %}"></script>
@@ -7,7 +8,7 @@
 
 {% block content %}
 <ol class="breadcrumb">
-  <li><a href="{% url 'PanelApp.views.views_main.gene_browser' %}">Genes</a></li>
+  <li><a href="{% url 'panels:gene_list' %}">Genes</a></li>
   <li class="active">{{ gene_symbol }}</li>
 </ol>
 <h1>
@@ -74,7 +75,7 @@
           </thead>
           <tbody>
             {% for entry in entries %}
-              {% if request.session.user_type == "GEL" or entry.panel.approved %}
+              {% if request.user.reviewer.is_GEL or entry.panel.approved %}
               <tr
                 data-panel="{{ entry.panel.level4title.name }}"
                 data-gene="{{ entry.gene.gene_symbol }}"
@@ -86,23 +87,23 @@
                   <h4 class="remove-top-margin" title="Level 4 title">
                     <span style="font-size: 16px" class="gel-banner {{ entry|gene_list_class }}" title="{{ entry|gene_list_name }}">
                       {{ entry|gene_list_short_name }}
-                    </span> <a href="{% url 'PanelApp.views.views_main.evaluation' entry.panel.id entry.gene.gene_symbol %}" class="link-inherit gel-text {{ entry|gene_list_class }} js-open-on-submit">{{ entry.gene.gene_symbol }}</a> in <a href="{% url 'PanelApp.views.views_main.edit_panel' entry.panel.id %}" class="js-open-on-submit">
+                    </span> <a href="{% url 'panels:evaluation' entry.panel.panel.id entry.gene.gene_symbol %}" class="link-inherit gel-text {{ entry|gene_list_class }} js-open-on-submit">{{ entry.gene.gene_symbol }}</a> in <a href="{% url 'panels:update' entry.panel.panel.id %}" class="js-open-on-submit">
                       {{ entry.panel.level4title.name }}
                     </a>
                   </h4>
 
                   <p>
-                    {% if entry.panel.level4title.level3title and entry.panel.level4title.level3title.strip != '' %}
+                    {% if entry.panel.level4title.level3title %}
                       Level 3: {{ entry.panel.level4title.level3title }}
                     {% endif %}
-                    {% if entry.panel.level4title.level2title and entry.panel.level4title.level2title.strip != '' %}
+                    {% if entry.panel.level4title.level2title %}
                       <br />Level 2: {{ entry.panel.level4title.level2title }}
                     {% endif %}
                     <br /><span class="text-muted">Version {{ entry.panel.major_version }}.{{ entry.panel.minor_version }}</span>
                   </p>
                 </td>
                 <td>
-                  {{ entry.evaluation|length }} review{{entry.evaluation|pluralize}}
+                  {{ entry.evaluation.count }} review{{entry.evaluation.count|pluralize}}
                 </td>
                 <td>
                   {% if entry.moi %}
@@ -120,7 +121,7 @@
                       {% endfor %}
                     </ul>
                   {% endif %}
-                  {% if entry.phenotypes|join:"" != '' %}
+                  {% if entry.phenotypes %}
                     <h6 class="add-label-margin">Phenotypes</h6>
                     <ul>
                       {% for phenotype in entry.phenotypes %}
@@ -131,7 +132,7 @@
                     </ul>
                   {% endif %}
 
-                  {% if entry.tags|join:"" != '' %}
+                  {% if entry.tags %}
                     <h6 class="add-label-margin">Tags</h6>
                     <ul class="list-inline tag-list">
                       {% for tag in entry.tags %}

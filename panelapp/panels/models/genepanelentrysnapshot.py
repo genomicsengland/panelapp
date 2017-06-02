@@ -121,3 +121,15 @@ class GenePanelEntrySnapshot(TimeStampedModel):
             "penetrance": self.penetrance,
             "tags": [tag.name for tag in self.tags.all()]
         }
+
+    def get_form_initial(self):
+        return {
+            "gene": self.gene,
+            "source": ";".join([e.name for e in self.evidence.all()]),
+            "tags": [tag for tag in self.tags.all()],
+            "publications": self.publications,
+            "phenotypes": self.phenotypes,
+            "mode_of_pathogenicity": self.mode_of_pathogenicity,
+            "moi": self.moi,
+            "penetrance": self.penetrance
+        }

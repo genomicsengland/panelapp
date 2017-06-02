@@ -135,7 +135,7 @@ class PromotePanelForm(forms.ModelForm):
         return self.instance
 
 
-class PanelAddGeneForm(forms.ModelForm):
+class PanelGeneForm(forms.ModelForm):
     """
     The goal for this form is to add a Gene to a Panel.
 
@@ -175,7 +175,7 @@ class PanelAddGeneForm(forms.ModelForm):
     phenotypes = SimpleArrayField(forms.CharField(max_length=255), delimiter=";")
 
     rating = forms.ChoiceField(choices=[('', 'Provide rating')] + Evaluation.RATINGS)
-    current_diagnostic = forms.BooleanField()
+    current_diagnostic = forms.BooleanField(required=False)
     comments = forms.CharField(widget=forms.Textarea)
 
     class Meta:
@@ -204,7 +204,8 @@ class PanelAddGeneForm(forms.ModelForm):
         self.fields['publications'] = original_fields.get('publications')
         self.fields['phenotypes'] = original_fields.get('phenotypes')
         self.fields['tags'] = original_fields.get('tags')
-        self.fields['rating'] = original_fields.get('rating')
+        if not self.instance.pk:
+            self.fields['rating'] = original_fields.get('rating')
         self.fields['current_diagnostic'] = original_fields.get('current_diagnostic')
         self.fields['comments'] = original_fields.get('comments')
 
@@ -221,60 +222,67 @@ class PanelAddGeneForm(forms.ModelForm):
         return Gene.objects.get(gene_symbol=symbol_name).dict_tr()
 
     def save(self, *args, **kwargs):
-        flagged = False if self.request.user.reviewer.is_GEL() else True
-        gene = self.cleaned_data['gene']
-
-        # increment minor version in the panel
         self.panel.increment_version()
 
-        gpe = GenePanelEntrySnapshot.objects.create(
-            panel=self.panel,
-            gene=self.import_gene(gene.gene_symbol),
-            gene_core=gene,
-            moi=self.cleaned_data['moi'],
-            penetrance=self.cleaned_data['penetrance'],
-            publications=self.cleaned_data['publications'],
-            phenotypes=self.cleaned_data['phenotypes'],
-            flagged=flagged,
-            mode_of_pathogenicity=self.cleaned_data['mode_of_pathogenicity'],
-            saved_gel_status=0
-        )
+        gene = self.cleaned_data['gene']
 
-        comment = Comment.objects.create(
-            user=self.request.user,
-            comment=self.cleaned_data['comments']
-        )
-        gpe.comments.add(comment)
-
-        for source in self.cleaned_data['source']:
-            evidence = Evidence.objects.create(
-                rating=5,
-                reviewer=self.request.user.reviewer,
-                name=source.strip()
+        if not self.instance.pk:
+            # increment minor version in the panel
+            self.instance = GenePanelEntrySnapshot(
+                gene=self.import_gene(gene.gene_symbol),
+                panel=self.panel,
+                gene_core=gene,
+                moi=self.cleaned_data['moi'],
+                penetrance=self.cleaned_data['penetrance'],
+                publications=self.cleaned_data['publications'],
+                phenotypes=self.cleaned_data['phenotypes'],
+                mode_of_pathogenicity=self.cleaned_data['mode_of_pathogenicity'],
+                saved_gel_status=0
             )
-            gpe.evidence.add(evidence)
 
-        track_created = TrackRecord.objects.create(
-            gel_status=gpe.evidence_status(),
-            curator_status=0,
-            user=self.request.user,
-            issue_type=TrackRecord.ISSUE_TYPES.Created,
-            issue_description="{} was created by {}".format(gene.gene_symbol, self.request.user.get_full_name())
-        )
-        gpe.track.add(track_created)
+            self.instance.flagged = False if self.request.user.reviewer.is_GEL() else True
+            self.instance.save()
 
-        description = "{} was added to {} panel. Sources: {}".format(
-            gene.gene_symbol,
-            self.panel.panel.name,
-            ",".join(self.cleaned_data['source'])
-        )
-        track_sources = TrackRecord.objects.create(
-            gel_status=gpe.evidence_status(),
-            curator_status=0,
-            user=self.request.user,
-            issue_type=TrackRecord.ISSUE_TYPES.NewSource,
-            issue_description=description
-        )
-        gpe.track.add(track_sources)
-        gpe.evidence_status(update=True)
-        return gpe
+            comment = Comment.objects.create(
+                user=self.request.user,
+                comment=self.cleaned_data['comments']
+            )
+            self.instance.comments.add(comment)
+
+            for source in self.cleaned_data['source']:
+                evidence = Evidence.objects.create(
+                    rating=5,
+                    reviewer=self.request.user.reviewer,
+                    name=source.strip()
+                )
+                self.instance.evidence.add(evidence)
+
+            track_created = TrackRecord.objects.create(
+                gel_status=self.instance.evidence_status(),
+                curator_status=0,
+                user=self.request.user,
+                issue_type=TrackRecord.ISSUE_TYPES.Created,
+                issue_description="{} was created by {}".format(gene.gene_symbol, self.request.user.get_full_name())
+            )
+            self.instance.track.add(track_created)
+
+            description = "{} was added to {} panel. Sources: {}".format(
+                gene.gene_symbol,
+                self.panel.panel.name,
+                ",".join(self.cleaned_data['source'])
+            )
+            track_sources = TrackRecord.objects.create(
+                gel_status=self.instance.evidence_status(),
+                curator_status=0,
+                user=self.request.user,
+                issue_type=TrackRecord.ISSUE_TYPES.NewSource,
+                issue_description=description
+            )
+            self.instance.track.add(track_sources)
+            self.instance.evidence_status(update=True)
+
+        else:
+            # when updating we are not incrementing panel version
+            raise NotImplementedError()
+
+        return self.instance

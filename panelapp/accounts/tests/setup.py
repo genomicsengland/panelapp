@@ -1,4 +1,4 @@
-from django.test import TestCase
+from django.test import TransactionTestCase
 from faker import Factory
 from accounts.models import Reviewer
 from .factories import UserFactory
@@ -7,7 +7,7 @@ from .factories import UserFactory
 fake = Factory.create()
 
 
-class SetupUsers(TestCase):
+class SetupUsers(TransactionTestCase):
     """
     Setup base User and their Reviewer models
     """

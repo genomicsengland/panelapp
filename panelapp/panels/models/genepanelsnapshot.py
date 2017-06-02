@@ -33,7 +33,9 @@ class GenePanelSnapshotManager(models.Manager):
             .order_by('panel', '-major_version', '-minor_version')
 
     def get_gene_panels(self, gene):
-        return self.get_active().filter(genepanelentrysnapshot__gene_core__gene_symbol=gene)
+        return self.get_active()\
+            .prefetch_related('evaluation', 'evidence')\
+            .filter(genepanelentrysnapshot__gene_core__gene_symbol=gene)
 
 
 class GenePanelSnapshot(TimeStampedModel):
@@ -130,6 +132,9 @@ class GenePanelSnapshot(TimeStampedModel):
     @cached_property
     def get_all_entries(self):
         return self.genepanelentrysnapshot_set.prefetch_related('evidence', 'evaluation', 'tags').all()
+
+    def get_gene(self, gene_symbol):
+        return self.get_all_entries.filter(gene__gene_symbol=gene_symbol).first()
 
     def has_gene(self, gene_symbol):
         return True if self.get_all_entries.filter(gene__gene_symbol=gene_symbol).count() > 0 else False

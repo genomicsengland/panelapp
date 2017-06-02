@@ -36,8 +36,12 @@ class UserFactory(factory.django.DjangoModelFactory):
         Set the password so we can login via the frontend
         """
 
-        user = super()._generate(create, attrs)
-        user.set_password('pass')
-        user.save()
+        # check if user exists:
+        try:
+            user = User.objects.get(username=attrs.get('username'))
+        except User.DoesNotExist:
+            user = super()._generate(create, attrs)
+            user.set_password('pass')
+            user.save()
 
         return user
