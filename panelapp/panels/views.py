@@ -22,6 +22,7 @@ from .forms import PanelGeneForm
 from .models import Gene
 from .models import GenePanel
 from .models import GenePanelSnapshot
+from .models import GenePanelEntrySnapshot
 from .mixins import PanelMixin
 from .mixins import ActAndRedirectMixin
 
@@ -140,7 +141,7 @@ class GeneDetailView(DetailView):
     def get_context_data(self, *args, **kwargs):
         ctx = super().get_context_data(*args, **kwargs)
         ctx['gene_symbol'] = self.kwargs['slug']
-        ctx['entries'] = GenePanelSnapshot.objects.get_gene_panels(self.kwargs['slug'])
+        ctx['entries'] = GenePanelEntrySnapshot.objects.get_gene_panels(self.kwargs['slug'])
         return ctx
 
 
@@ -228,7 +229,7 @@ class PanelEditGeneView(GELReviewerRequiredMixin, UpdateView):
 
 class GenePanelSpanshotView(DetailView):
     template_name = "panels/genepanelsnapshot_detail.html"
-    context_object_name = 'entry'
+    context_object_name = 'gene'
 
     def get_object(self):
         return self.panel.get_gene(self.kwargs['gene_symbol'])

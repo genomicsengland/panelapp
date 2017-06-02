@@ -53,3 +53,7 @@ def gene_list_short_name(gene):
 @register.filter
 def gene_reviewd_by(gene, user):
     return gene.is_reviewd_by_user(user)
+
+@register.filter
+def reviewed_by(gene, user):
+    return True if gene.is_reviewd_by_user(user) else False

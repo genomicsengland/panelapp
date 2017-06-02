@@ -49,7 +49,7 @@ class GeneFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Gene
 
-    gene_symbol = factory.Faker('md5')
+    gene_symbol = factory.LazyAttribute(lambda g: factory.Faker('md5').evaluate(0,0,0)[:7])
     other_transcripts = json.dumps({})
 
 

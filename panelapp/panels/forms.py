@@ -171,8 +171,8 @@ class PanelGeneForm(forms.ModelForm):
         required=False
     )
 
-    publications = SimpleArrayField(forms.CharField(max_length=255), delimiter=";")
-    phenotypes = SimpleArrayField(forms.CharField(max_length=255), delimiter=";")
+    publications = SimpleArrayField(forms.CharField(max_length=255), label="Publications (PMID: 1234;4321)", delimiter=";")
+    phenotypes = SimpleArrayField(forms.CharField(max_length=255), label="Phenotypes (separate using a semi-colon - ;)", delimiter=";")
 
     rating = forms.ChoiceField(choices=[('', 'Provide rating')] + Evaluation.RATINGS)
     current_diagnostic = forms.BooleanField(required=False)

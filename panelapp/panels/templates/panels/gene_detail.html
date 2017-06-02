@@ -116,7 +116,7 @@
                   {% if entry.evidence %}
                     <h6 class="add-label-margin remove-top-margin">Sources</h6>
                     <ul>
-                      {% for ev in entry.evidence %}
+                      {% for ev in entry.evidence.all %}
                         <li>{{ ev.name }}</li>
                       {% endfor %}
                     </ul>
@@ -124,7 +124,7 @@
                   {% if entry.phenotypes %}
                     <h6 class="add-label-margin">Phenotypes</h6>
                     <ul>
-                      {% for phenotype in entry.phenotypes %}
+                      {% for phenotype in entry.phenotypes.all %}
                         {% if phenotype %}
                           <li class="word-break">{{ phenotype }}</li>
                         {% endif %}
@@ -135,7 +135,7 @@
                   {% if entry.tags %}
                     <h6 class="add-label-margin">Tags</h6>
                     <ul class="list-inline tag-list">
-                      {% for tag in entry.tags %}
+                      {% for tag in entry.tags.all %}
                         <li class="label label-default">{{ tag }}</li>
                       {% endfor %}
                     </ul>

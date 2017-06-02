@@ -1,4 +1,6 @@
 from django.db import models
+from django.db.models import Count
+from django.db.models import Subquery
 
 from django.contrib.postgres.fields import JSONField
 from django.contrib.postgres.fields import ArrayField
@@ -16,7 +18,26 @@ from .tag import Tag
 
 
 class GenePanelEntrySnapshotManager(models.Manager):
-    pass
+    def get_latest_ids(self):
+        return super().get_queryset()\
+            .distinct('panel__panel')\
+            .values_list('pk', flat=True)\
+            .order_by('panel__panel', '-panel__major_version', '-panel__minor_version')
+
+    def get_active(self):
+        return super().get_queryset()\
+            .filter(pk__in=Subquery(self.get_latest_ids()))\
+            .annotate(
+                number_of_reviewers=Count('evaluation__user', distinct=True),
+                number_of_evaluated_genes=Count('evaluation'),
+                number_of_genes=Count('pk'),
+            )\
+            .order_by('panel', '-panel__major_version', '-panel__minor_version')
+
+    def get_gene_panels(self, gene):
+        return self.get_active()\
+            .prefetch_related('evaluation', 'evidence')\
+            .filter(gene__gene_symbol=gene)
 
 
 class GenePanelEntrySnapshot(TimeStampedModel):

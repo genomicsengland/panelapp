@@ -32,11 +32,6 @@ class GenePanelSnapshotManager(models.Manager):
             )\
             .order_by('panel', '-major_version', '-minor_version')
 
-    def get_gene_panels(self, gene):
-        return self.get_active()\
-            .prefetch_related('evaluation', 'evidence')\
-            .filter(genepanelentrysnapshot__gene_core__gene_symbol=gene)
-
 
 class GenePanelSnapshot(TimeStampedModel):
     class Meta:

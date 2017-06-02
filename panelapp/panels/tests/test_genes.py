@@ -3,7 +3,7 @@ from django.urls import reverse_lazy
 from faker import Factory
 from accounts.tests.setup import LoginGELUser
 from panels.models import Gene
-from panels.models import GenePanelSnapshot
+from panels.models import GenePanelEntrySnapshot
 from panels.utils import CellBaseConnector
 from .factories import GeneFactory
 from .factories import GenePanelSnapshotFactory
@@ -49,10 +49,11 @@ class GeneTest(LoginGELUser):
         gps4 = GenePanelSnapshotFactory()
         GenePanelEntrySnapshotFactory.create_batch(2, panel=gps4)  # random genes
 
-        assert GenePanelSnapshot.objects.get_gene_panels(gene.gene_symbol).count() == 3
+        assert GenePanelEntrySnapshot.objects.get_gene_panels(gene.gene_symbol).count() == 3
 
         url = reverse_lazy('panels:gene_detail', kwargs={'slug': gene.gene_symbol})
-        self.client.get(url)
+        res = self.client.get(url)
+        assert len(res.context_data['entries']) == 3
 
     def test_CBC(self):
         cbc = CellBaseConnector()
