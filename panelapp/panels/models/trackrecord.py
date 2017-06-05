@@ -13,6 +13,9 @@ class TrackRecord(TimeStampedModel):
     ISSUE_TYPES = Choices(
         ("Created", "Created"),
         ("NewSource", "Added New Source"),
+        ("ChangedGeneName", "Changed Gene Name"),
+        ("SetPhenotypes", "Set Phenotypes"),
+        ("SetModelofInheritance", "Set Model of Inheritance"),
     )
 
     class Meta:

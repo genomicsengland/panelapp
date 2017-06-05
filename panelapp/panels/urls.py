@@ -29,6 +29,17 @@ urlpatterns = [
     url(r'^(?P<pk>[0-9]+)/(?P<gene_symbol>[\w\-]+)/edit$', PanelEditGeneView.as_view(), name="edit_gene"),
     url(r'^(?P<pk>[0-9]+)/(?P<gene_symbol>[\w\-]+)/delete$', DeleteGeneView.as_view(), name="delete_gene"),
     url(r'^(?P<pk>[0-9]+)/(?P<gene_symbol>[\w\-]+)/review$', EmptyView.as_view(), name="review_gene"),
+
+    # TODO Add AJAX calls for clearing details from a Gene
+    url(r'^(?P<pk>[0-9]+)/(?P<gene_symbol>[\w\-]+)/clear_gene_sources$',
+        EmptyView.as_view(), name="clear_gene_sources"),
+    url(r'^(?P<pk>[0-9]+)/(?P<gene_symbol>[\w\-]+)/clear_gene_phenotypes$',
+        EmptyView.as_view(), name="clear_gene_phenotypes"),
+    url(r'^(?P<pk>[0-9]+)/(?P<gene_symbol>[\w\-]+)/clear_gene_publications$',
+        EmptyView.as_view(), name="clear_gene_publications"),
+    url(r'^(?P<pk>[0-9]+)/(?P<gene_symbol>[\w\-]+)/clear_gene_mode_of_pathogenicity$',
+        EmptyView.as_view(), name="clear_gene_mode_of_pathogenicity"),
+
     url(r'^(?P<pk>[0-9]+)/mark_not_ready$', PanelMarkNotReadyView.as_view(), name="mark_not_ready"),
     url(r'^create/', CreatePanelView.as_view(), name="create"),
 

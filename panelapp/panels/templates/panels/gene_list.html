@@ -53,6 +53,7 @@
         </div>
       </div>
       <div class="col-md-3">
+        {% if tags %}
         <h3 class="remove-top-margin normal add-bottom-margin">Tagged</h3>
         <ul class="list-inline">
           {% for tag in tags %}
@@ -63,6 +64,7 @@
             {% endif %}
           {% endfor %}
         </ul>
+        {% endif %}
       </div>
     </div>
   {% endblock %}

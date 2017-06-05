@@ -1,5 +1,7 @@
+import re
 from enum import Enum
 from django import template
+from django.utils.safestring import SafeString
 register = template.Library()
 
 
@@ -54,6 +56,19 @@ def gene_list_short_name(gene):
 def gene_reviewd_by(gene, user):
     return gene.is_reviewd_by_user(user)
 
+
 @register.filter
 def reviewed_by(gene, user):
     return True if gene.is_reviewd_by_user(user) else False
+
+
+@register.filter
+def pubmed_link(publication):
+    # Pubmed IDs are 1-8 digits, but not all strings of digits are pubmed IDs
+    # Assume that 7-8 chars is a pubmed ID and link to it.
+    parts = re.split('([0-9]{7,8})', publication)
+    for i, part in enumerate(parts):
+        if re.search('^[0-9]{7,8}$', part):
+            part = SafeString('<a href="http://www.ncbi.nlm.nih.gov/pubmed/' + part + '">' + part + '</a>')
+            parts[i] = part
+    return parts

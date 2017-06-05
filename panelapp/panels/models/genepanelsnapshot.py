@@ -105,7 +105,7 @@ class GenePanelSnapshot(TimeStampedModel):
                 gene.tag.add(tag)
 
             for comment in comments:
-                gene.comment.add(comment)
+                gene.comments.add(comment)
 
     def mark_genes_not_ready(self):
         for gene in self.genepanelentrysnapshot_set.all():
@@ -126,7 +126,11 @@ class GenePanelSnapshot(TimeStampedModel):
 
     @cached_property
     def get_all_entries(self):
-        return self.genepanelentrysnapshot_set.prefetch_related('evidence', 'evaluation', 'tags').all()
+        return self.genepanelentrysnapshot_set\
+            .distinct('gene_core__gene_symbol')\
+            .prefetch_related('evidence', 'evaluation', 'tags')\
+            .order_by('gene_core__gene_symbol', '-created')\
+            .all()
 
     def get_gene(self, gene_symbol):
         return self.get_all_entries.filter(gene__gene_symbol=gene_symbol).first()
@@ -134,13 +138,14 @@ class GenePanelSnapshot(TimeStampedModel):
     def has_gene(self, gene_symbol):
         return True if self.get_all_entries.filter(gene__gene_symbol=gene_symbol).count() > 0 else False
 
-    def delete_gene(self, gene_symbol):
+    def delete_gene(self, gene_symbol, increment=True):
         """
         Removes gene from a panel, but leaves it in the previous versions of the same panel
         """
 
         if self.has_gene(gene_symbol):
-            self.increment_version()
+            if increment:
+                self.increment_version()
             del self.get_all_entries  # clear cached values as it points to the previous instance
             self.get_all_entries.get(gene__gene_symbol=gene_symbol).delete()
             del self.get_all_entries  # clear cached values as we deleted item

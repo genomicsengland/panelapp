@@ -1,0 +1,148 @@
+{% load bootstrap3 %}
+{% load panel_helpers %}
+
+<h3>Details</h3>
+<div class="panel panel-default panel-details">
+    <div class="panel-body">
+        <dl class="dl-separated">
+            {% if request.user.reviewer.is_GEL %}
+                <dt>GEL status</dt>
+                <dd>{{ gene.status }}</dd>
+            {% endif %}
+            {% if gene.moi %}
+            <dt>Mode of Inheritance</dt>
+            <dd>{{ gene.moi }}</dd>
+            {% endif %}
+            {% if gene.evidence.all %}
+            <dt>Sources</dt>
+            <dd>
+                <ul>
+                    {% for ev in gene.evidence.all %}
+                        <li>{{ ev.name }}</li>
+                    {% endfor %}
+                </ul>
+                {% if request.user.reviewer.is_GEL %}
+                    <a class="link-muted" href="{% url 'panels:clear_gene_sources' view.panel.panel.id gene.gene.gene_symbol %}" data-ajax="true" data-success="fragments()">Clear Sources</a>
+                {% endif %}
+            </dd>
+            {% endif %}
+            {% if gene.phenotypes %}
+                <dt>Phenotypes</dt>
+                <dd>
+                    <ul>
+                        {% for phenotype in gene.phenotypes %}
+                            {% if phenotype %}
+                                <li>{{ phenotype }}</li>
+                            {% endif %}
+                        {% endfor %}
+                    </ul>
+                    {% if request.user.reviewer.is_GEL %}
+                        <a href="{% url 'panels:clear_gene_phenotypes' view.panel.panel.id gene.gene.gene_symbol %}" class="link-muted" data-ajax="true" data-success="fragments()">
+                            Clear phenotypes
+                        </a>
+                    {% endif %}
+                </dd>
+            {% endif %}
+            {% if gene.tags.all %}
+                <dt>Tags</dt>
+                <dd class="tag-list">
+                    {% for tag in gene.tags.all %}
+                        <span class="label label-default">{{ tag.name }}</span>
+                    {% endfor %}
+                </dd>
+            {% endif %}
+            <dt>OMIM</dt>
+            <dd><a href="http://omim.org/entry/{{ gene.gene.omim_gene }}" target="_blank">{{ gene.gene.omim_gene }}</a></dd>
+            <dt>Clinvar variants</dt>
+            <dd>
+                <a href="http://www.ncbi.nlm.nih.gov/clinvar?term={{ gene.gene.gene_symbol }}%5BGene%20Name%5D" target="_blank"> Variants in {{ gene.gene.gene_symbol }}</a>
+            </dd>
+            <dt>Penetrance</dt>
+            <dd>{{ gene.penetrance }}</dd>
+            {% if gene.publications %}
+            <dt>Publications</dt>
+            <dd>
+                <ul>
+                {% for publication in gene.publications %}
+                    <li>{{ publication|pubmed_link|join:'' }}</li>
+                {% endfor %}
+                </ul>
+
+                {% if request.user.reviewer.is_GEL %}
+                    <a href="{% url 'panels:clear_gene_publications' view.panel.panel.id gene.gene.gene_symbol %}" class="link-muted" data-ajax="true" data-success="fragments()">
+                        Clear publications
+                    </a>
+                {% endif %}
+            </dd>
+            {% endif %}
+            {% if gene.mode_of_pathogenicity %}
+            <dt>Mode of Pathogenicity</dt>
+            <dd>{{ gene.mode_of_pathogenicity }}</dd>
+                {% if request.user.reviewer.is_GEL %}
+                    <a href="{% url 'panels:clear_gene_mode_of_pathogenicity' view.panel.panel.id gene.gene.gene_symbol %}" class="link-muted" data-ajax="true" data-success="fragments()">
+                        Clear mode of Pathogenicity
+                    </a>
+                {% endif %}
+            {% endif %}
+            <dt>Panels with this gene</dt>
+            <dd>
+                <ul>
+                    {% for sharing_panel in sharing_panels %}
+                        <li><a href="{% url 'panels:evaluation' sharing_panel.pk  %}">
+                            {{ sharing_panel.panel_name }}
+                        </a></li>
+                    {% endfor %}
+                </ul>
+            </dd>
+        </dl>
+    </div>
+  {% if request.user.reviewer.is_GEL %}
+  <div class="panel-footer">
+    <a href="{% url 'panels:edit_gene' view.panel.panel.id gene.gene.gene_symbol %}" class="btn btn-info" data-module="showhide" data-show=".edit-gene-form" data-hide=".panel.panel-details">
+      <i class="fa fa-edit"></i> Edit gene
+    </a>
+  </div>
+  {% endif %}
+</div>
+{% if request.user.reviewer.is_GEL %}
+<form class="edit-gene-form row hidden" action="{% url 'panels:edit_gene' view.panel.panel.id  gene.gene.gene_symbol %}#!details" method="post">
+  {% csrf_token %}
+
+  <div class="col-md-12">
+    <div class="well">
+      <fieldset>
+        <legend>Edit Gene</legend>
+        {% for field in form_edit %}
+          <div class="form-group">
+            {% if field.errors %}
+              {% for error in field.errors %}
+                <span class="label label-danger">{{ error|escape }}</span>
+              {% endfor %}
+            {% endif %}
+
+            {% if field.name == "mode_of_pathogenicity" %}
+                {{ field.label_tag }} <a data-toggle="modal" data-target="#model_of_path" ><i class="fa fa-question-circle"></i></a>
+            {% elif field.name == "moi" %}
+                {{ field.label_tag }} <a data-toggle="modal" data-target="#moi" ><i class="fa fa-question-circle"></i></a>
+            {% else %}
+                {{ field.label_tag }}
+            {% endif %}
+
+            {% bootstrap_field field show_label=False %}
+          </div>
+        {% endfor %}
+        <a href="{% url 'panels:evaluation' view.panel.panel.id gene.gene.gene_symbol %}" class="btn btn-default">Cancel</a>
+        <button type="submit" class="btn btn-primary">Save</button>
+      </fieldset>
+  </div>
+  </div>
+</form>
+{{ form_edit.media }}
+{% endif %}
+
+{% block modals %}
+  {% include "panels/modals/rating.html" %}
+  {% include "panels/modals/mode_of_path.html" %}
+  {% include "panels/modals/diagnostic.html" %}
+  {% include "panels/modals/mode_of_inheritance.html" %}
+{% endblock %}

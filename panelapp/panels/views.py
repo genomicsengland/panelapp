@@ -236,6 +236,12 @@ class GenePanelSpanshotView(DetailView):
 
     def get_context_data(self, *args, **kwargs):
         ctx = super().get_context_data(*args, **kwargs)
+        ctx['form_edit'] = PanelGeneForm(
+            instance=self.object,
+            initial=self.object.get_form_initial(),
+            panel=self.panel,
+            request=self.request
+        )
         return ctx
 
     @cached_property

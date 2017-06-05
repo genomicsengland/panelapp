@@ -145,9 +145,10 @@ class GenePanelEntrySnapshot(TimeStampedModel):
 
     def get_form_initial(self):
         return {
-            "gene": self.gene,
-            "source": ";".join([e.name for e in self.evidence.all()]),
-            "tags": [tag for tag in self.tags.all()],
+            "gene": self.gene_core,
+            "gene_name": self.gene.get('gene_name'),
+            "source": [e.name for e in self.evidence.all()],
+            "tags": self.tags.all(),
             "publications": self.publications,
             "phenotypes": self.phenotypes,
             "mode_of_pathogenicity": self.mode_of_pathogenicity,
