@@ -34,10 +34,8 @@ class GenePanelEntrySnapshotManager(models.Manager):
             )\
             .order_by('panel', '-panel__major_version', '-panel__minor_version')
 
-    def get_gene_panels(self, gene):
-        return self.get_active()\
-            .prefetch_related('evaluation', 'evidence')\
-            .filter(gene__gene_symbol=gene)
+    def get_gene_panels(self, gene_symbol):
+        return self.get_active().filter(gene__gene_symbol=gene_symbol)
 
 
 class GenePanelEntrySnapshot(TimeStampedModel):
@@ -127,6 +125,40 @@ class GenePanelEntrySnapshot(TimeStampedModel):
 
     def is_reviewd_by_user(self, user):
         return True if self.evaluation.filter(user=user).count() > 0 else False
+
+    def clear_evidences(self, user, evidence=None):
+        self.panel.increment_version()
+
+        if evidence:
+            evidences = self.evidence.filter(name=evidence)
+            if len(evidences) > 0:
+                evidences.delete()
+
+                description = "{} Source: {} was removed from gene: {}".format(
+                    self.gene_core.gene_symbol,
+                    evidence,
+                    self.gene_core.gene_symbol
+                )
+            else:
+                return False
+        else:
+            self.evidence.all().delete()
+
+            description = "{} All sources for gene: {} were removed".format(
+                self.gene_core.gene_symbol,
+                self.gene_core.gene_symbol
+            )
+        evidence_status = self.evidence_status(update=True)
+        track_sources = TrackRecord.objects.create(
+            gel_status=evidence_status,
+            curator_status=0,
+            user=user,
+            issue_type=TrackRecord.ISSUE_TYPES.ClearSources,
+            issue_description=description
+        )
+        self.track.add(track_sources)
+
+        return True
 
     def dict_tr(self):
         return {

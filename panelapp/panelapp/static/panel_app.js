@@ -301,7 +301,7 @@ window.Modules = {};
           var show = $(this).data('show');
           var hide = $(this).data('hide');
           $(show).removeClass('hidden');
-          $(hide).hide();
+          $(hide).addClass('hidden');
         });
       }
     };

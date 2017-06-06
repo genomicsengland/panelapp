@@ -32,6 +32,9 @@ class GenePanelSnapshotManager(models.Manager):
             )\
             .order_by('panel', '-major_version', '-minor_version')
 
+    def get_gene_panels(self, gene_symbol):
+        return self.get_active().filter(genepanelentrysnapshot__gene__gene_symbol=gene_symbol)
+
 
 class GenePanelSnapshot(TimeStampedModel):
     class Meta:

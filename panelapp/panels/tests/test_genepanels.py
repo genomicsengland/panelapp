@@ -97,12 +97,13 @@ class GenePanelTest(LoginGELUser):
         gene_symbol = genes[2].gene['gene_symbol']
 
         url = reverse_lazy('panels:delete_gene', kwargs={'pk': gps.panel.pk, 'gene_symbol': gene_symbol})
-        res = self.client.get(url)
+        res = self.client.get(url, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
 
         new_gps = GenePanel.objects.get(pk=gps.panel.pk).active_panel
 
         assert new_gps.has_gene(gene_symbol) is False
-        assert res.status_code == 302
+        assert res.json().get('status') == 200
+        assert res.json().get('content').get('inner-fragments')
 
     def test_active_panel(self):
         """

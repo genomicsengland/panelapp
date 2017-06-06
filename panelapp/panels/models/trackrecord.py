@@ -16,6 +16,7 @@ class TrackRecord(TimeStampedModel):
         ("ChangedGeneName", "Changed Gene Name"),
         ("SetPhenotypes", "Set Phenotypes"),
         ("SetModelofInheritance", "Set Model of Inheritance"),
+        ("ClearSources", "Clear Sources"),
     )
 
     class Meta:

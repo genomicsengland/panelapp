@@ -147,7 +147,7 @@ class GeneDetailView(DetailView):
 
 class GeneListView(ListView):
     model = Gene
-    context_object_name = 'genes'
+    context_object_name = "genes"
 
 
 class PromotePanelView(GELReviewerRequiredMixin, PanelMixin, UpdateView):
@@ -173,9 +173,12 @@ class PanelAddGeneView(VerifiedReviewerRequiredMixin, CreateView):
 
     def get_context_data(self, *args, **kwargs):
         ctx = super().get_context_data(*args, **kwargs)
-        ctx['panel'] = GenePanel.objects.get(pk=self.kwargs['pk']).active_panel
-        self.panel = ctx['panel']
+        ctx['panel'] = self.panel
         return ctx
+
+    @property
+    def panel(self):
+        return GenePanel.objects.get(pk=self.kwargs['pk']).active_panel
 
     def form_valid(self, form):
         ret = super().form_valid(form)
@@ -236,12 +239,21 @@ class GenePanelSpanshotView(DetailView):
 
     def get_context_data(self, *args, **kwargs):
         ctx = super().get_context_data(*args, **kwargs)
+        ctx['panel'] = self.panel
+        ctx['sharing_panels'] = GenePanelSnapshot.objects.get_gene_panels(self.kwargs['gene_symbol'])
         ctx['form_edit'] = PanelGeneForm(
             instance=self.object,
             initial=self.object.get_form_initial(),
             panel=self.panel,
             request=self.request
         )
+        ctx['evaluation'] = []
+
+        ctx['panel_genes'] = list(self.panel.get_all_entries)
+        cgi = ctx['panel_genes'].index(self.object)
+        ctx['next_gene'] = None if cgi == len(ctx['panel_genes']) - 1 else ctx['panel_genes'][cgi + 1]
+        ctx['prev_gene'] = None if cgi == 0 else ctx['panel_genes'][cgi - 1]
+
         return ctx
 
     @cached_property
@@ -254,10 +266,3 @@ class PanelMarkNotReadyView(GELReviewerRequiredMixin, PanelMixin, ActAndRedirect
 
     def act(self):
         self.get_object().mark_genes_not_ready()
-
-
-class DeleteGeneView(GELReviewerRequiredMixin, PanelMixin, ActAndRedirectMixin, DetailView):
-    model = GenePanelSnapshot
-
-    def act(self):
-        self.get_object().delete_gene(self.kwargs['gene_symbol'])

@@ -13,6 +13,14 @@ class GenePanel(TimeStampedModel):
         ap = self.active_panel
         return "{} version {}.{}".format(self.name, ap.major_version, ap.minor_version)
 
+    def approve(self):
+        self.approved = True
+        self.save()
+
+    def reject(self):
+        self.approved = False
+        self.save()
+
     @cached_property
     def active_panel(self):
         return self.genepanelsnapshot_set\

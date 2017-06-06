@@ -2,6 +2,7 @@ import re
 from enum import Enum
 from django import template
 from django.utils.safestring import SafeString
+from panels.models import TrackRecord
 register = template.Library()
 
 
@@ -60,6 +61,16 @@ def gene_reviewd_by(gene, user):
 @register.filter
 def reviewed_by(gene, user):
     return True if gene.is_reviewd_by_user(user) else False
+
+
+@register.filter
+def human_issue_type(issue_type):
+    return TrackRecord.ISSUE_TYPES[issue_type]
+
+
+@register.filter
+def get_ensembleId(transcripts):
+    return sorted(list(set(transcripts)))
 
 
 @register.filter

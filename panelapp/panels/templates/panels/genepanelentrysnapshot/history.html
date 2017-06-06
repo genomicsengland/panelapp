@@ -1,0 +1,14 @@
+{% load panel_helpers %}
+<h3>History</h3>
+{% for track in gene.track.all %}
+  <div class="panel panel-default">
+    <div class="panel-body">
+      <span class="text-muted">{{ track.created|date }}, Gel status: {{ track.gel_status }}</span>
+      <h4 class="remove-top-margin">{{ track.issue_type|human_issue_type }}</h4>
+      <strong>{{ track.user.get_full_name }}</strong>
+      <p>
+        {{ track.issue_description }}
+      </p>
+    </div>
+  </div>
+{% endfor %}
