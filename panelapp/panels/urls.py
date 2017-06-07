@@ -16,6 +16,7 @@ from .views import PanelAddGeneView
 from .views import PanelEditGeneView
 from .views import PanelMarkNotReadyView
 from .views import GenePanelSpanshotView
+from .views import GeneReviewView
 from .ajax_views import ClearPublicationsAjaxView
 from .ajax_views import ClearPhoenotypesAjaxView
 from .ajax_views import ClearModeOfPathogenicityAjaxView
@@ -38,7 +39,8 @@ urlpatterns = [
     url(r'^(?P<pk>[0-9]+)/approve$', ApprovePanelAjaxView.as_view(), name="approve_panel"),
     url(r'^(?P<pk>[0-9]+)/(?P<gene_symbol>[\w\-]+)/evaluation$', GenePanelSpanshotView.as_view(), name="evaluation"),
     url(r'^(?P<pk>[0-9]+)/(?P<gene_symbol>[\w\-]+)/edit$', PanelEditGeneView.as_view(), name="edit_gene"),
-    url(r'^(?P<pk>[0-9]+)/(?P<gene_symbol>[\w\-]+)/review$', EmptyView.as_view(), name="review_gene"),
+    url(r'^(?P<pk>[0-9]+)/(?P<gene_symbol>[\w\-]+)/review$', GeneReviewView.as_view(), name="review_gene"),
+    url(r'^(?P<pk>[0-9]+)/(?P<gene_symbol>[\w\-]+)/mark_as_ready$', EmptyView.as_view(), name="mark_gene_as_ready"),
 
     # AJAX endpoints
     url(r'^(?P<pk>[0-9]+)/(?P<gene_symbol>[\w\-]+)/delete$', DeleteGeneAjaxView.as_view(), name="delete_gene"),
@@ -52,6 +54,26 @@ urlpatterns = [
         ClearPublicationsAjaxView.as_view(), name="clear_gene_publications"),
     url(r'^(?P<pk>[0-9]+)/(?P<gene_symbol>[\w\-]+)/clear_gene_mode_of_pathogenicity$',
         ClearModeOfPathogenicityAjaxView.as_view(), name="clear_gene_mode_of_pathogenicity"),
+
+    # AJAX Review endpoints
+    url(r'^(?P<pk>[0-9]+)/(?P<gene_symbol>[\w\-]+)/update_gene_tags$',
+        EmptyView.as_view(), name="update_gene_tags"),
+    url(r'^(?P<pk>[0-9]+)/(?P<gene_symbol>[\w\-]+)/update_gene_list$',
+        EmptyView.as_view(), name="update_gene_list"),
+    url(r'^(?P<pk>[0-9]+)/(?P<gene_symbol>[\w\-]+)/update_gene_moi$',
+        EmptyView.as_view(), name="update_gene_moi"),
+    url(r'^(?P<pk>[0-9]+)/(?P<gene_symbol>[\w\-]+)/update_gene_mop$',
+        EmptyView.as_view(), name="update_gene_mop"),
+    url(r'^(?P<pk>[0-9]+)/(?P<gene_symbol>[\w\-]+)/update_gene_phenotypes$',
+        EmptyView.as_view(), name="update_gene_phenotypes"),
+    url(r'^(?P<pk>[0-9]+)/(?P<gene_symbol>[\w\-]+)/update_gene_publications$',
+        EmptyView.as_view(), name="update_gene_publications"),
+    url(r'^(?P<pk>[0-9]+)/(?P<gene_symbol>[\w\-]+)/delete_evaluation/(?P<evaluation_pk>[0-9]+)$',
+        EmptyView.as_view(), name="delete_evaluation_by_user"),
+    url(r'^(?P<pk>[0-9]+)/(?P<gene_symbol>[\w\-]+)/edit_comment/(?P<comment_pk>[0-9]+)$',
+        EmptyView.as_view(), name="edit_comment_by_user"),
+    url(r'^(?P<pk>[0-9]+)/(?P<gene_symbol>[\w\-]+)/delete_comment/(?P<comment_pk>[0-9]+)$',
+        EmptyView.as_view(), name="delete_comment_by_user"),
 
     url(r'^(?P<pk>[0-9]+)/mark_not_ready$', PanelMarkNotReadyView.as_view(), name="mark_not_ready"),
     url(r'^create/', CreatePanelView.as_view(), name="create"),

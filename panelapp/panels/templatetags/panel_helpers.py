@@ -2,6 +2,7 @@ import re
 from enum import Enum
 from django import template
 from django.utils.safestring import SafeString
+from panels.models import Evaluation
 from panels.models import TrackRecord
 register = template.Library()
 
@@ -36,6 +37,25 @@ def get_gene_list_data(gene, list_type):
         return gene_list_data[GeneStatus.RED.value][list_type]
     else:
         return gene_list_data[GeneStatus.NOLIST.value][list_type]
+
+
+def get_review_rating_data(review, list_type):
+    if review.rating == Evaluation.RATINGS.GREEN:
+        return gene_list_data[Evaluation.GREEN.value][list_type]
+    elif review.rating == Evaluation.RATINGS.AMBER:
+        return gene_list_data[Evaluation.AMBER.value][list_type]
+    elif review.rating == Evaluation.RATINGS.RED:
+        return gene_list_data[GeneStatus.RED.value][list_type]
+
+
+@register.filter
+def evaluation_rating_name(review):
+    return Evaluation.RATINGS[review.rating]
+
+
+@register.filter
+def evaluation_rating_class(review):
+    return get_review_rating_data(review, GeneDataType.CLASS.value)
 
 
 @register.filter

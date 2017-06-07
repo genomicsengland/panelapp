@@ -41,21 +41,36 @@ class Evaluation(TimeStampedModel):
     )
 
     user = models.ForeignKey(User)
-    rating = models.CharField(max_length=255, choices=RATINGS)
-    transcript = models.CharField(null=True,  blank=True, max_length=255)
-    mode_of_pathogenicity = models.CharField(choices=MODES_OF_PHATHOGENICITY, null=True,  blank=True, max_length=255)
-    publications = ArrayField(models.CharField(null=True,  blank=True, max_length=255))
-    phenotypes = ArrayField(models.CharField(null=True,  blank=True, max_length=255))
+    rating = models.CharField(max_length=255, choices=RATINGS, blank=True)
+    mode_of_pathogenicity = models.CharField(choices=MODES_OF_PHATHOGENICITY, null=True, blank=True, max_length=255)
+    publications = ArrayField(models.CharField(null=True, max_length=255), blank=True, null=True)
+    phenotypes = ArrayField(models.CharField(null=True, max_length=255), blank=True, null=True)
     moi = models.CharField("Mode of Inheritance", choices=MODES_OF_INHERITANCE, null=True,  blank=True, max_length=255)
-    current_diagnostic = models.BooleanField(default=False)
+    current_diagnostic = models.BooleanField(default=False, blank=True)
     version = models.CharField(null=True, blank=True, max_length=255)
     comments = models.ManyToManyField(Comment)
+
+    def __str__(self):
+        gene_symbol = None
+        if self.genepanelentrysnapshot_set.first():
+            gene_symbol = self.genepanelentrysnapshot_set.first().gene.get('gene_symbol')
+        return "{} review by {}".format(gene_symbol, self.user.get_full_name())
+
+    def is_comment_without_review(self):
+        if (self.rating
+                or self.comments.count == 0
+                or self.moi
+                or self.mode_of_pathogenicity
+                or self.current_diagnostic
+                or self.publications
+                or self.phenotypes):
+            return False
+        return True
 
     def dict_tr(self):
         return {
             "user": self.user,
             "rating": self.rating,
-            "transcript": self.transcript,
             "moi": self.moi,
             "comments": [c.dict_tr() for c in self.comments.all()],
             "mode_of_pathogenicity": self.mode_of_pathogenicity,

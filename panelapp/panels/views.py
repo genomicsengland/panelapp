@@ -19,6 +19,7 @@ from .forms import UploadReviewsForm
 from .forms import PanelForm
 from .forms import PromotePanelForm
 from .forms import PanelGeneForm
+from .forms import GeneReviewForm
 from .models import Gene
 from .models import GenePanel
 from .models import GenePanelSnapshot
@@ -241,13 +242,24 @@ class GenePanelSpanshotView(DetailView):
         ctx = super().get_context_data(*args, **kwargs)
         ctx['panel'] = self.panel
         ctx['sharing_panels'] = GenePanelSnapshot.objects.get_gene_panels(self.kwargs['gene_symbol'])
+        ctx['feedback_review_parts'] = [
+            'Rating',
+            'Mode of inheritance',
+            'Mode of pathogenicity',
+            'Publications',
+            'Phenotypes'
+        ]
+        ctx['form'] = GeneReviewForm(
+            panel=self.panel,
+            request=self.request,
+            gene=self.object
+        )
         ctx['form_edit'] = PanelGeneForm(
             instance=self.object,
             initial=self.object.get_form_initial(),
             panel=self.panel,
             request=self.request
         )
-        ctx['evaluation'] = []
 
         ctx['panel_genes'] = list(self.panel.get_all_entries)
         cgi = ctx['panel_genes'].index(self.object)
@@ -266,3 +278,43 @@ class PanelMarkNotReadyView(GELReviewerRequiredMixin, PanelMixin, ActAndRedirect
 
     def act(self):
         self.get_object().mark_genes_not_ready()
+
+
+class GeneReviewView(VerifiedReviewerRequiredMixin, UpdateView):
+    template_name = "panels/genepanel_edit_gene.html"
+    context_object_name = 'gene'
+
+    form_class = GeneReviewForm
+
+    def get_object(self):
+        return self.panel.get_gene(self.kwargs['gene_symbol'])
+
+    @cached_property
+    def panel(self):
+        return GenePanel.objects.get(pk=self.kwargs['pk']).active_panel
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['panel'] = self.panel
+        kwargs['request'] = self.request
+        kwargs['gene'] = self.object
+        kwargs['initial'] = {}
+        kwargs['instance'] = None
+        return kwargs
+
+    def get_context_data(self, *args, **kwargs):
+        ctx = super().get_context_data(*args, **kwargs)
+        ctx['panel'] = self.panel.panel
+        return ctx
+
+    def form_valid(self, form):
+        ret = super().form_valid(form)
+        msg = "Successfully reviewed gene {}".format(self.get_object().gene.get('gene_symbol'))
+        messages.success(self.request, msg)
+        return ret
+
+    def get_success_url(self):
+        return reverse_lazy('panels:evaluation', kwargs={
+            'pk': self.kwargs['pk'],
+            'gene_symbol': self.kwargs['gene_symbol']
+        })

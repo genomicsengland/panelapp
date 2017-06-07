@@ -28,6 +28,12 @@ class User(AbstractUser, TimeStampedModel):
             pass
         return False
 
+    def get_reviewer_name(self):
+        if self.reviewer and self.reviewer.affiliation:
+            return "{} ({})".format(self.get_full_name(), self.reviewer.affiliation)
+        else:
+            return self.get_full_name()
+
 
 class Reviewer(models.Model):
     TYPES = Choices(

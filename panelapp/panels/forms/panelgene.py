@@ -5,134 +5,13 @@ from dal_select2.widgets import ModelSelect2
 from dal_select2.widgets import Select2Multiple
 from dal_select2.widgets import ModelSelect2Multiple
 from panelapp.forms import Select2ListMultipleChoiceField
-from .models import Comment
-from .models import Tag
-from .models import Gene
-from .models import Evidence
-from .models import Evaluation
-from .models import Level4Title
-from .models import GenePanel
-from .models import GenePanelSnapshot
-from .models import GenePanelEntrySnapshot
-from .models import TrackRecord
-from .models import UploadedGeneList
-
-
-class PanelForm(forms.ModelForm):
-    level2 = forms.CharField()
-    level3 = forms.CharField()
-    level4 = forms.CharField()
-    description = forms.CharField(widget=forms.Textarea)
-    omim = forms.CharField()
-    orphanet = forms.CharField()
-    hpo = forms.CharField()
-
-    class Meta:
-        model = GenePanelSnapshot
-        fields = ('old_panels',)
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        original_fields = self.fields
-
-        self.fields = OrderedDict()
-        self.fields['level2'] = original_fields.get('level2')
-        self.fields['level3'] = original_fields.get('level3')
-        self.fields['level4'] = original_fields.get('level4')
-        self.fields['description'] = original_fields.get('description')
-        self.fields['omim'] = original_fields.get('omim')
-        self.fields['orphanet'] = original_fields.get('orphanet')
-        self.fields['hpo'] = original_fields.get('hpo')
-        self.fields['old_panels'] = original_fields.get('old_panels')
-
-    def clean_omim(self):
-        return self._clean_array(self.cleaned_data['omim'])
-
-    def clean_orphanet(self):
-        return self._clean_array(self.cleaned_data['orphanet'])
-
-    def clean_hpo(self):
-        return self._clean_array(self.cleaned_data['hpo'])
-
-    def save(self, *args, **kwargs):
-        new_level4 = Level4Title(
-            level2title=self.cleaned_data['level2'].strip(),
-            level3title=self.cleaned_data['level3'].strip(),
-            name=self.cleaned_data['level4'].strip(),
-            description=self.cleaned_data['description'].strip(),
-            omim=self.cleaned_data['omim'],
-            hpo=self.cleaned_data['hpo'],
-            orphanet=self.cleaned_data['orphanet']
-        )
-
-        if self.instance.id:
-            panel = self.instance.panel
-            level4title = self.instance.level4title
-
-            data_changed = False
-            if level4title.dict_tr() != new_level4.dict_tr():
-                data_changed = True
-                new_level4.save()
-                self.instance.level4title = new_level4
-                self.instance.panel.name = new_level4.name
-
-            if 'old_panels' in self.changed_data:
-                data_changed = True
-                self.instance.old_panels = self.cleaned_data['old_panels']
-
-            if data_changed:
-                self.instance.panel.save()
-                self.instance.increment_version()
-
-        else:
-            panel = GenePanel.objects.create(name=self.cleaned_data['level4'].strip())
-            new_level4.save()
-
-            self.instance.panel = panel
-            self.instance.level4title = new_level4
-            self.instance.old_panels = self.cleaned_data['old_panels']
-            self.instance.save()
-
-    def _clean_array(self, data, separator=","):
-        return [x.strip() for x in data.split(separator) if x.strip()]
-
-
-class UploadGenesForm(forms.Form):
-    gene_list = forms.FileField(label='Select a file', required=True)
-
-    def process_file(self):
-        gene_list = UploadedGeneList.objects.create(gene_list=self.cleaned_data['gene_list'])
-        gene_list.create_genes()
-
-
-class UploadPanelsForm(forms.Form):
-    panel_list = forms.FileField(label='Select a file', required=True)
-
-    def process_file(self):
-        print('processing upload genes form')
-
-
-class UploadReviewsForm(forms.Form):
-    review_list = forms.FileField(label='Select a file', required=True)
-
-    def process_file(self):
-        print('processing upload genes form')
-
-
-class PromotePanelForm(forms.ModelForm):
-    """
-    This form increments a major version and saves new version comment
-    """
-    version_comment = forms.CharField(label="Comment about this new version", widget=forms.Textarea)
-
-    class Meta:
-        model = GenePanelSnapshot
-        fields = ('version_comment',)
-
-    def save(self, *args, commit=True, **kwargs):
-        self.instance.increment_version(major=True)
-        return self.instance
+from panels.models import Comment
+from panels.models import Tag
+from panels.models import Gene
+from panels.models import Evidence
+from panels.models import Evaluation
+from panels.models import GenePanelEntrySnapshot
+from panels.models import TrackRecord
 
 
 class PanelGeneForm(forms.ModelForm):
@@ -303,6 +182,20 @@ class PanelGeneForm(forms.ModelForm):
             )
             self.instance.track.add(track_sources)
 
+            # Add initial evaluation here
+            evaluation = Evaluation.objects.create(
+                user=self.request.user,
+                rating=self.cleaned_data['rating'],
+                mode_of_pathogenicity=self.cleaned_data['mode_of_pathogenicity'],
+                phenotypes=self.cleaned_data['phenotypes'],
+                publications=self.cleaned_data['publications'],
+                moi=self.cleaned_data['moi'],
+                current_diagnostic=self.cleaned_data['current_diagnostic'],
+                version=self.panel.version
+            )
+            evaluation.comments.add(comment)
+            self.instance.evaluation.add(evaluation)
+
             self.instance.evidence_status(update=True)
         else:
             gene_data['gene_name'] = self.cleaned_data['gene_name']
@@ -375,7 +268,7 @@ class PanelGeneForm(forms.ModelForm):
 
             if self.instance.gene_core != gene:
                 old_gene_symbol = self.instance.gene_core.gene_symbol
-                description = "{} was changed to {}".format(self.instance.gene_core.gene_symbol, gene.gene_symbol)
+                description = "{} was changed to {}".format(old_gene_symbol, gene.gene_symbol)
                 track_gene = TrackRecord.objects.create(
                     gel_status=evidence_status,
                     curator_status=0,

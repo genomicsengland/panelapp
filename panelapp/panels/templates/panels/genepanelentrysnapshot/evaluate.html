@@ -1,35 +1,6 @@
+{% load bootstrap3 %}
 {% if request.user.reviewer.is_verified %}
-<h3>Review gene</h3>
-<div class="well">
-    <form class="form" id="add-review" action="{% url 'panels:review_gene' view.panel.panel.pk gene.gene.gene_symbol %}#your-review" method="post">{% csrf_token %}
-        <fieldset>
-            {% for field in form %}
-                <div class="form-group">
-                    {% if field.errors %}
-                        {% for error in field.errors %}
-                            <span class="label label-danger">{{ error|escape }}</span>
-                        {% endfor %}
-                    {% endif %}
-
-                    {% if field.name == "rating" %}
-                        {{ field.label_tag }} <a data-toggle="modal" href="#rating_help" ><i class="fa fa-question-circle"></i></a>
-                    {% elif field.name == "mode_of_pathogenicity" %}
-                        {{ field.label_tag }} <a data-toggle="modal" href="#model_of_path" ><i class="fa fa-question-circle"></i></a>
-                    {% elif field.name == "Model_of_inheritance" %}
-                        {{ field.label_tag }} <a data-toggle="modal" href="#moi" ><i class="fa fa-question-circle"></i></a>
-                    {% elif field.name == "current_diagnostic" %}
-                        {{ field.label_tag }} <a data-toggle="modal" href="#diagostic" ><i class="fa fa-question-circle"></i></a>
-                    {% else %}
-                        {{ field.label_tag }}
-                    {% endif %}
-                    {{ field }}
-                </div>
-            {% endfor %}
-
-            <button type="submit" class="btn btn-info">Submit review</button>
-        </fieldset>
-    </form>
-</div>
+{% include "panels/genepanelentrysnapshot/evaluation_form.html" %}
 {% endif %}
 
 <div id="evaluations">
@@ -37,21 +8,17 @@
 
   {% for ev in gene.evaluation.all %}
     <div class="panel panel-default {% if request.user == ev.user %}panel-highlight{% endif %}">
+      {% if request.user == ev.user %}
+      <div class="panel-heading" id="your-review">
         {% if request.user == ev.user %}
-        <div class="panel-heading" id="your-review">
-            {% if request.user == ev.user %}
-                <a href="{% url "panels:delete_evaluation_by_user" view.panel.panel.id gene.gene.gene_symbol ev.user %}" class="pull-right btn btn-default btn-xs" data-ajax="true" data-success="fragments()">
-                    Delete
-                </a>
-            {% endif %}
-            <div class="panel-title">
-                Your review
-            </div>
-        </div>
+          <a href="{% url "panels:delete_evaluation_by_user" view.panel.panel.id gene.gene.gene_symbol ev.pk %}" class="pull-right btn btn-default btn-xs" data-ajax="true" data-success="djangoAjaxHandler">Delete</a>
         {% endif %}
-        {% include "Gene/evaluation.html" %}
-
+        <div class="panel-title">
+          Your review
+        </div>
+      </div>
+      {% endif %}
+      {% include "panels/genepanelentrysnapshot/gene_evaluation.html" %}
     </div>
   {% endfor %}
-
 </div>

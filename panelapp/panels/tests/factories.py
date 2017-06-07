@@ -66,6 +66,7 @@ class EvidenceFactory(factory.django.DjangoModelFactory):
 class EvaluationFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Evaluation
+    user = factory.SubFactory('accounts.tests.factories.UserFactory')
 
 
 class TrackRecordFactory(factory.django.DjangoModelFactory):
@@ -96,6 +97,18 @@ class GenePanelEntrySnapshotFactory(factory.django.DjangoModelFactory):
     mode_of_pathogenicity = Evaluation.MODES_OF_PHATHOGENICITY['Other - please provide details in the comments']
     saved_gel_status = 0
     gene = factory.LazyAttribute(lambda g: g.gene_core.dict_tr())
+
+    @factory.post_generation
+    def evaluation(self, create, extracted, **kwargs):
+        if not create:
+            return
+
+        evaluations = extracted
+        if not extracted:
+            evaluations = EvaluationFactory.create_batch(4)
+
+        for evaluation in evaluations:
+            self.evaluation.add(evaluation)
 
     @factory.post_generation
     def evidence(self, create, extracted, **kwargs):

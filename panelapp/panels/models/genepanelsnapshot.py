@@ -10,6 +10,7 @@ from django.db.models import IntegerField
 from django.utils.functional import cached_property
 from model_utils.models import TimeStampedModel
 
+from .activity import Activity
 from .genepanel import GenePanel
 from .level4title import Level4Title
 
@@ -28,6 +29,8 @@ class GenePanelSnapshotManager(models.Manager):
             .annotate(
                 number_of_reviewers=Count('genepanelentrysnapshot__evaluation__user', distinct=True),
                 number_of_evaluated_genes=Count('genepanelentrysnapshot__evaluation'),
+                # FIXME the next line is incorrect, it lists all GenePanelEntrySnapshots,
+                # but it returns all, event the old versions of these genes
                 number_of_genes=Count('genepanelentrysnapshot'),
             )\
             .order_by('panel', '-major_version', '-minor_version')
@@ -70,6 +73,10 @@ class GenePanelSnapshot(TimeStampedModel):
 
     def __str__(self):
         return "Panel {} v{}.{}".format(self.level4title.name, self.major_version, self.minor_version)
+
+    @property
+    def version(self):
+        return "{}.{}".format(self.major_version, self.minor_version)
 
     def increment_version(self, major=False):
         current_genes = self.get_all_entries
@@ -129,11 +136,15 @@ class GenePanelSnapshot(TimeStampedModel):
 
     @cached_property
     def get_all_entries(self):
-        return self.genepanelentrysnapshot_set\
+        unique_genes = self.genepanelentrysnapshot_set\
             .distinct('gene_core__gene_symbol')\
+            .values_list('pk', flat=True)\
+            .order_by('gene_core__gene_symbol', '-created')
+
+        return self.genepanelentrysnapshot_set\
+            .filter(pk__in=Subquery(unique_genes))\
             .prefetch_related('evidence', 'evaluation', 'tags')\
-            .order_by('gene_core__gene_symbol', '-created')\
-            .all()
+            .order_by('-saved_gel_status', 'gene_core__gene_symbol', '-created')
 
     def get_gene(self, gene_symbol):
         return self.get_all_entries.filter(gene__gene_symbol=gene_symbol).first()
@@ -152,6 +163,14 @@ class GenePanelSnapshot(TimeStampedModel):
             del self.get_all_entries  # clear cached values as it points to the previous instance
             self.get_all_entries.get(gene__gene_symbol=gene_symbol).delete()
             del self.get_all_entries  # clear cached values as we deleted item
+
+    def add_activity(self, user, gene_symbol, text):
+        Activity.objects.create(
+            user=user,
+            panel=self.panel,
+            gene_symbol=gene_symbol,
+            text=text
+        )
 
     """
     # move these to properties

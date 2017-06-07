@@ -133,10 +133,10 @@
                 <li role="presentation">
                     <a href="#history" aria-controls="history" role="tab" data-toggle="tab">History</a>
                 </li>
-                {% if request.user.is_GEL %}
-                    <li role="presentation">
-                        <a href="#review" aria-controls="review" role="tab" data-toggle="tab">Review feedback</a>
-                    </li>
+                {% if request.user.reviewer.is_GEL %}
+                <li role="presentation">
+                    <a href="#review" aria-controls="review" role="tab" data-toggle="tab">Review feedback</a>
+                </li>
                 {% endif %}
             </ul>
 
@@ -150,17 +150,22 @@
                 <div role="tabpanel" class="tab-pane" id="history">
                     {% include "panels/genepanelentrysnapshot/history.html" %}
                 </div>
-                {% comment %}
-                {% if request.session.user_type == "GEL" %}
-                    <div role="tabpanel" class="tab-pane" id="review">
-                        {% include "Gene/Tabs/review.html" %}
-                    </div>
+                {% if request.user.reviewer.is_GEL %}
+                <div role="tabpanel" class="tab-pane" id="review">
+                    {% include "panels/genepanelentrysnapshot/review.html" %}
+                </div>
                 {% endif %}
-                {% endcomment %}
             </div>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block modals %}
+  {% include "panels/modals/rating.html" %}
+  {% include "panels/modals/mode_of_path.html" %}
+  {% include "panels/modals/diagnostic.html" %}
+  {% include "panels/modals/mode_of_inheritance.html" %}
 {% endblock %}
 
 {% block js %}
