@@ -4,6 +4,7 @@ from .panel import PanelForm  # noqa
 from .promotepanel import PromotePanelForm  # noqa
 from .panelgene import PanelGeneForm  # noqa
 from .genereview import GeneReviewForm  # noqa
+from .geneready import GeneReadyForm  # noqa
 
 
 class UploadGenesForm(forms.Form):

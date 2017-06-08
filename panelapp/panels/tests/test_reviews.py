@@ -79,3 +79,17 @@ class EvaluationTest(LoginGELUser):
         self.client.post(url, gene_data)
         assert Evaluation.objects.filter(user=self.gel_user).count() == 1
         assert Evaluation.objects.get(user=self.gel_user).phenotypes == old_phenotypes
+
+
+class GeneReadyTest(LoginGELUser):
+    def test_mark_as_ready(self):
+        gpes = GenePanelEntrySnapshotFactory()
+        url = reverse_lazy('panels:mark_gene_as_ready', kwargs={
+            'pk': gpes.panel.panel.pk,
+            'gene_symbol': gpes.gene.get('gene_symbol')
+        })
+
+        res = self.client.post(url, {'comments': fake.sentence()})
+
+        gene = GenePanel.objects.get(pk=gpes.panel.panel.pk).active_panel.get_gene(gpes.gene.get('gene_symbol'))
+        assert gene.ready is True

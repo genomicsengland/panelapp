@@ -2,7 +2,7 @@
 {% load static %}
 {% load staticfiles %}
 {% load panel_helpers %}
-{% block title %}{{ gene.gene.gene_symbol }} ({{ viewpanel.level4title.name }}){% endblock %}
+{% block title %}{{ gene.gene.gene_symbol }} ({{ panel.level4title.name }}){% endblock %}
 {% block header %}
   <script src="{% static 'django_ajax/js/jquery.ajax.min.js' %}"></script>
   <script src="{% static 'django_ajax/js/jquery.ajax-plugin.min.js' %}"></script>

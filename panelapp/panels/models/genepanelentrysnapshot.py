@@ -160,6 +160,65 @@ class GenePanelEntrySnapshot(TimeStampedModel):
 
         return True
 
+    def clear_expert_evidence(self, evidence):
+        evidences = self.evidence.filter(name=evidence)
+        if len(evidences) > 0:
+            evidences.delete()
+            return True
+        else:
+            return False
+
+    def mark_as_ready(self, user, ready_comment):
+        self.ready = True
+
+        if ready_comment:
+            comment = Comment.objects.create(
+                user=user,
+                comment="Comment when marking as ready: {}".format(ready_comment)
+            )
+            self.comments.add(comment)
+
+        self.panel.add_activity(
+            user,
+            self.gene.get('gene_symbol'),
+            "marked {} as ready".format(self.gene.get('gene_symbol'))
+        )
+
+        status = self.status
+        [self.clear_expert_evidence(e) for e in Evidence.EXPERT_REVIEWS]
+
+        if status > 3:
+            evidence = Evidence.objects.create(name="Expert Review Green", rating=5, reviewer=user.reviewer)
+            issue_description = "This gene has been classified as Green List (High Evidence)."
+            self.flagged = False
+            self.evidence.add(evidence)
+        elif status > 1:
+            evidence = Evidence.objects.create(name="Expert Review Amber", rating=5, reviewer=user.reviewer)
+            issue_description = "This gene has been classified as Amber List (Moderate Evidence)."
+            self.flagged = False
+            self.evidence.add(evidence)
+        elif status == 1:
+            evidence = Evidence.objects.create(name="Expert Review Red", rating=5, reviewer=user.reviewer)
+            issue_description = "This gene has been classified as Red List (Low Evidence)."
+            self.evidence.add(evidence)
+            self.flagged = False
+        elif status == 0:
+            evidence = Evidence.objects.create(name="Expert Review Removed", rating=5, reviewer=user.reviewer)
+            issue_description="This gene has been removed from the panel."
+            self.evidence.add(evidence)
+            self.flagged = True
+        else:
+            return
+
+        track = TrackRecord.objects.create(
+            gel_status=status,
+            curator_status=0,
+            user=user,
+            issue_type="Gene classified by Genomics England curator", issue_description=issue_description
+        )
+        self.track.add(track)
+        self.save()
+
     def dict_tr(self):
         return {
             "gene": self.gene,

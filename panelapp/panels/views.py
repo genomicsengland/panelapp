@@ -20,6 +20,7 @@ from .forms import PanelForm
 from .forms import PromotePanelForm
 from .forms import PanelGeneForm
 from .forms import GeneReviewForm
+from .forms import GeneReadyForm
 from .models import Gene
 from .models import GenePanel
 from .models import GenePanelSnapshot
@@ -261,6 +262,21 @@ class GenePanelSpanshotView(DetailView):
             request=self.request
         )
 
+        ctx['gene_ready_form'] = GeneReadyForm(
+            instance=self.object,
+            initial={},
+            request=self.request,
+        )
+
+        """
+        "edit_gene_list_form": edit_gene_list_form(record),
+        "edit_gene_publications_form": edit_gene_publications_form(record),
+        "edit_gene_phenotypes_form": edit_gene_phenotypes_form(record),
+        "edit_gene_moi_form": edit_gene_moi_form(record),
+        "edit_gene_mop_form": edit_gene_mop_form(record),
+        "edit_gene_tags_form": edit_gene_tags_form(record),
+        """
+
         ctx['panel_genes'] = list(self.panel.get_all_entries)
         cgi = ctx['panel_genes'].index(self.object)
         ctx['next_gene'] = None if cgi == len(ctx['panel_genes']) - 1 else ctx['panel_genes'][cgi + 1]
@@ -310,6 +326,36 @@ class GeneReviewView(VerifiedReviewerRequiredMixin, UpdateView):
     def form_valid(self, form):
         ret = super().form_valid(form)
         msg = "Successfully reviewed gene {}".format(self.get_object().gene.get('gene_symbol'))
+        messages.success(self.request, msg)
+        return ret
+
+    def get_success_url(self):
+        return reverse_lazy('panels:evaluation', kwargs={
+            'pk': self.kwargs['pk'],
+            'gene_symbol': self.kwargs['gene_symbol']
+        })
+
+
+class MarkGeneReadyView(GELReviewerRequiredMixin, UpdateView):
+    template_name = None  # it should only accept a POST request anyway
+    form_class = GeneReadyForm
+
+    def get_object(self):
+        return self.panel.get_gene(self.kwargs['gene_symbol'])
+
+    @cached_property
+    def panel(self):
+        return GenePanel.objects.get(pk=self.kwargs['pk']).active_panel
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['request'] = self.request
+        kwargs['initial'] = {}
+        return kwargs
+
+    def form_valid(self, form):
+        ret = super().form_valid(form)
+        msg = "{} marked as ready".format(self.get_object().gene.get('gene_symbol'))
         messages.success(self.request, msg)
         return ret
 

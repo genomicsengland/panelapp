@@ -16,6 +16,10 @@ class BaseAjaxGeneMixin:
         self.process()
         return self.return_data()
 
+    def post(self, request, *args, **kwargs):
+        self.process()
+        return self.return_data()
+
     @cached_property
     def panel(self):
         return GenePanel.objects.get(pk=self.kwargs['pk']).active_panel
@@ -129,3 +133,19 @@ class DeleteGeneAjaxView(GELReviewerRequiredMixin, BaseAjaxGeneMixin, AJAXMixin,
                 '#table': table
             }
         }
+
+
+class GeneObjectMixin:
+    @cached_property
+    def gene(self):
+        return self.panel.get_gene(self.kwargs['gene_symbol'])
+
+
+class UpdateGeneTagsAjaxView(GELReviewerRequiredMixin, GeneObjectMixin, BaseAjaxGeneMixin, AJAXMixin, View):
+    template_name = "panels/genepanelentrysnapshot/review/part_tags.html"
+
+    def process(self):
+        pass
+
+    def return_data(self):
+        pass
