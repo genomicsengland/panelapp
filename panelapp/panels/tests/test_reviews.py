@@ -5,6 +5,7 @@ from accounts.tests.setup import LoginGELUser
 from panels.models import GenePanel
 from panels.models import Evaluation
 from .factories import GenePanelEntrySnapshotFactory
+from .factories import TagFactory
 
 
 fake = Factory.create()
@@ -81,7 +82,7 @@ class EvaluationTest(LoginGELUser):
         assert Evaluation.objects.get(user=self.gel_user).phenotypes == old_phenotypes
 
 
-class GeneReadyTest(LoginGELUser):
+class GeneReviewTest(LoginGELUser):
     def test_mark_as_ready(self):
         gpes = GenePanelEntrySnapshotFactory()
         url = reverse_lazy('panels:mark_gene_as_ready', kwargs={
@@ -90,6 +91,200 @@ class GeneReadyTest(LoginGELUser):
         })
 
         res = self.client.post(url, {'comments': fake.sentence()})
-
         gene = GenePanel.objects.get(pk=gpes.panel.panel.pk).active_panel.get_gene(gpes.gene.get('gene_symbol'))
         assert gene.ready is True
+
+    def test_update_tags(self):
+        gpes = GenePanelEntrySnapshotFactory()
+        url = reverse_lazy('panels:update_gene_tags', kwargs={
+            'pk': gpes.panel.panel.pk,
+            'gene_symbol': gpes.gene.get('gene_symbol')
+        })
+
+        tag1 = TagFactory()
+        tag2 = TagFactory()
+
+        res = self.client.post(url, {'tags': [tag1.pk, tag2.pk]}, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        gene = GenePanel.objects.get(pk=gpes.panel.panel.pk).active_panel.get_gene(gpes.gene.get('gene_symbol'))
+        assert res.json().get('status') == 200
+        assert gene.tags.count() == 2
+
+    def test_update_mop(self):
+        gpes = GenePanelEntrySnapshotFactory()
+        url = reverse_lazy('panels:update_gene_mop', kwargs={
+            'pk': gpes.panel.panel.pk,
+            'gene_symbol': gpes.gene.get('gene_symbol')
+        })
+
+        mop = [x for x in Evaluation.MODES_OF_PHATHOGENICITY][randint(1, 2)]
+        data = {'comment': fake.sentence(), 'mode_of_pathogenicity': mop[1]}
+
+        res = self.client.post(url, data, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        gene = GenePanel.objects.get(pk=gpes.panel.panel.pk).active_panel.get_gene(gpes.gene.get('gene_symbol'))
+        assert res.json().get('status') == 200
+        assert gene.comments.count() == 1
+        assert gene.mode_of_pathogenicity == mop[1]
+
+    def test_update_moi(self):
+        gpes = GenePanelEntrySnapshotFactory()
+        url = reverse_lazy('panels:update_gene_moi', kwargs={
+            'pk': gpes.panel.panel.pk,
+            'gene_symbol': gpes.gene.get('gene_symbol')
+        })
+
+        moi = [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 2)]
+        data = {'comment': fake.sentence(), 'moi': moi[1]}
+
+        res = self.client.post(url, data, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        gene = GenePanel.objects.get(pk=gpes.panel.panel.pk).active_panel.get_gene(gpes.gene.get('gene_symbol'))
+        assert res.json().get('status') == 200
+        assert gene.comments.count() == 1
+        assert gene.moi == moi[1]
+
+
+    def test_update_phenotypes(self):
+        gpes = GenePanelEntrySnapshotFactory()
+        url = reverse_lazy('panels:update_gene_phenotypes', kwargs={
+            'pk': gpes.panel.panel.pk,
+            'gene_symbol': gpes.gene.get('gene_symbol')
+        })
+
+        phenotypes_array = [fake.word(), fake.word()]
+        phenotypes = "{}; {}".format(phenotypes_array[0], phenotypes_array[1])
+        data = {'comment': fake.sentence(), 'phenotypes': phenotypes}
+
+        res = self.client.post(url, data, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        gene = GenePanel.objects.get(pk=gpes.panel.panel.pk).active_panel.get_gene(gpes.gene.get('gene_symbol'))
+        assert res.json().get('status') == 200
+        assert gene.comments.count() == 1
+        assert gene.phenotypes == phenotypes_array
+
+    def test_update_publications(self):
+        gpes = GenePanelEntrySnapshotFactory()
+        url = reverse_lazy('panels:update_gene_publications', kwargs={
+            'pk': gpes.panel.panel.pk,
+            'gene_symbol': gpes.gene.get('gene_symbol')
+        })
+
+        publications_array = [fake.word(), fake.word()]
+        publications = "{}; {}".format(publications_array[0], publications_array[1])
+        data = {'comment': fake.sentence(), 'publications': publications}
+
+        res = self.client.post(url, data, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        gene = GenePanel.objects.get(pk=gpes.panel.panel.pk).active_panel.get_gene(gpes.gene.get('gene_symbol'))
+        assert res.json().get('status') == 200
+        assert gene.comments.count() == 1
+        assert gene.publications == publications_array
+
+    def test_update_rating(self):
+        gpes = GenePanelEntrySnapshotFactory()
+        url = reverse_lazy('panels:update_gene_rating', kwargs={
+            'pk': gpes.panel.panel.pk,
+            'gene_symbol': gpes.gene.get('gene_symbol')
+        })
+
+        new_status = 0
+        data = {'comment': fake.sentence(), 'status': new_status}
+
+        res = self.client.post(url, data, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        gene = GenePanel.objects.get(pk=gpes.panel.panel.pk).active_panel.get_gene(gpes.gene.get('gene_symbol'))
+        assert res.json().get('status') == 200
+        assert gene.comments.count() == 1
+        assert gene.saved_gel_status == new_status
+
+    def test_delete_evaluation(self):
+        gpes = GenePanelEntrySnapshotFactory()
+
+        evaluation_url = reverse_lazy('panels:review_gene', kwargs={
+            'pk': gpes.panel.panel.pk,
+            'gene_symbol': gpes.gene.get('gene_symbol')
+        })
+
+        gene_data = {
+            "rating": Evaluation.RATINGS.AMBER,
+            "current_diagnostic": True,
+            "comments": fake.sentence(),
+            "publications": ";".join([fake.sentence(), fake.sentence()]),
+            "phenotypes": ";".join([fake.sentence(), fake.sentence(), fake.sentence()]),
+            "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)],
+            "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PHATHOGENICITY][randint(1, 2)],
+        }
+        self.client.post(evaluation_url, gene_data, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        gene = GenePanel.objects.get(pk=gpes.panel.panel.pk).active_panel.get_gene(gpes.gene.get('gene_symbol'))
+        assert gene.is_reviewd_by_user(self.gel_user) is True
+
+        delete_evaluation_url = reverse_lazy('panels:delete_evaluation_by_user', kwargs={
+            'pk': gpes.panel.panel.pk,
+            'gene_symbol': gpes.gene.get('gene_symbol'),
+            'evaluation_pk': gene.evaluation.get(user=self.gel_user).pk
+        })
+        res = self.client.get(delete_evaluation_url, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        assert res.json().get('status') == 200
+        assert gene.is_reviewd_by_user(self.gel_user) is False
+
+    def test_delete_comment(self):
+        gpes = GenePanelEntrySnapshotFactory()
+
+        evaluation_url = reverse_lazy('panels:review_gene', kwargs={
+            'pk': gpes.panel.panel.pk,
+            'gene_symbol': gpes.gene.get('gene_symbol')
+        })
+
+        gene_data = {
+            "rating": Evaluation.RATINGS.AMBER,
+            "current_diagnostic": True,
+            "comments": fake.sentence(),
+            "publications": ";".join([fake.sentence(), fake.sentence()]),
+            "phenotypes": ";".join([fake.sentence(), fake.sentence(), fake.sentence()]),
+            "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)],
+            "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PHATHOGENICITY][randint(1, 2)],
+        }
+        self.client.post(evaluation_url, gene_data, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        gene = GenePanel.objects.get(pk=gpes.panel.panel.pk).active_panel.get_gene(gpes.gene.get('gene_symbol'))
+        evaluation = gene.evaluation.get(user=self.gel_user)
+
+        assert evaluation.comments.count() == 1
+
+        delete_comment_url = reverse_lazy('panels:delete_comment_by_user', kwargs={
+            'pk': gpes.panel.panel.pk,
+            'gene_symbol': gpes.gene.get('gene_symbol'),
+            'comment_pk': evaluation.comments.first().pk
+        })
+        res = self.client.get(delete_comment_url, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        assert res.json().get('status') == 200
+        assert evaluation.comments.count() == 0
+
+    def test_edit_comment(self):
+        gpes = GenePanelEntrySnapshotFactory()
+
+        evaluation_url = reverse_lazy('panels:review_gene', kwargs={
+            'pk': gpes.panel.panel.pk,
+            'gene_symbol': gpes.gene.get('gene_symbol')
+        })
+
+        comment = fake.sentence()
+
+        gene_data = {
+            "rating": Evaluation.RATINGS.AMBER,
+            "current_diagnostic": True,
+            "comments": comment,
+            "publications": ";".join([fake.sentence(), fake.sentence()]),
+            "phenotypes": ";".join([fake.sentence(), fake.sentence(), fake.sentence()]),
+            "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)],
+            "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PHATHOGENICITY][randint(1, 2)],
+        }
+        self.client.post(evaluation_url, gene_data, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        gene = GenePanel.objects.get(pk=gpes.panel.panel.pk).active_panel.get_gene(gpes.gene.get('gene_symbol'))
+        evaluation = gene.evaluation.get(user=self.gel_user)
+
+        assert evaluation.comments.first().comment == comment
+
+        new_comment = fake.sentence()
+        edit_comment_url = reverse_lazy('panels:submit_edit_comment_by_user', kwargs={
+            'pk': gpes.panel.panel.pk,
+            'gene_symbol': gpes.gene.get('gene_symbol'),
+            'comment_pk': evaluation.comments.first().pk
+        })
+        res = self.client.post(edit_comment_url, {'comment': new_comment})
+        assert res.status_code == 302
+        assert evaluation.comments.first().comment == new_comment

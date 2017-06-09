@@ -17,6 +17,11 @@ class TrackRecord(TimeStampedModel):
         ("SetPhenotypes", "Set Phenotypes"),
         ("SetModelofInheritance", "Set Model of Inheritance"),
         ("ClearSources", "Clear Sources"),
+        ("SetModeofPathogenicity", "Set mode of pathogenicity"),
+        ("GeneClassifiedbyGenomicsEnglandCurator", "Gene classified by Genomics England curator"),
+        ("SetModeofInheritance", "Set mode of inheritance"),
+        ("SetPhenotypes", "Set phenotypes"),
+        ("SetPublications", "Set publications"),
     )
 
     class Meta:

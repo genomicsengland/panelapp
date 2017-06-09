@@ -21,6 +21,12 @@ from .forms import PromotePanelForm
 from .forms import PanelGeneForm
 from .forms import GeneReviewForm
 from .forms import GeneReadyForm
+from .forms.ajax import UpdateGeneTagsForm
+from .forms.ajax import UpdateGeneMOPForm
+from .forms.ajax import UpdateGeneMOIForm
+from .forms.ajax import UpdateGenePhenotypesForm
+from .forms.ajax import UpdateGenePublicationsForm
+from .forms.ajax import UpdateGeneRatingForm
 from .models import Gene
 from .models import GenePanel
 from .models import GenePanelSnapshot
@@ -268,14 +274,12 @@ class GenePanelSpanshotView(DetailView):
             request=self.request,
         )
 
-        """
-        "edit_gene_list_form": edit_gene_list_form(record),
-        "edit_gene_publications_form": edit_gene_publications_form(record),
-        "edit_gene_phenotypes_form": edit_gene_phenotypes_form(record),
-        "edit_gene_moi_form": edit_gene_moi_form(record),
-        "edit_gene_mop_form": edit_gene_mop_form(record),
-        "edit_gene_tags_form": edit_gene_tags_form(record),
-        """
+        ctx['edit_gene_tags_form'] = UpdateGeneTagsForm(instance=self.object)
+        ctx['edit_gene_mop_form'] = UpdateGeneMOPForm(instance=self.object)
+        ctx['edit_gene_moi_form'] = UpdateGeneMOIForm(instance=self.object)
+        ctx['edit_gene_phenotypes_form'] = UpdateGenePhenotypesForm(instance=self.object)
+        ctx['edit_gene_publications_form'] = UpdateGenePublicationsForm(instance=self.object)
+        ctx['edit_gene_rating_form'] = UpdateGeneRatingForm(instance=self.object)
 
         ctx['panel_genes'] = list(self.panel.get_all_entries)
         cgi = ctx['panel_genes'].index(self.object)

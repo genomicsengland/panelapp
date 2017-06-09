@@ -28,6 +28,15 @@ from .ajax_views import DeleteGeneAjaxView
 from .ajax_views import RejectPanelAjaxView
 from .ajax_views import ApprovePanelAjaxView
 from .ajax_views import UpdateGeneTagsAjaxView
+from .ajax_views import UpdateGeneMOPAjaxView
+from .ajax_views import UpdateGeneMOIAjaxView
+from .ajax_views import UpdateGenePhenotypesAjaxView
+from .ajax_views import UpdateGenePublicationsAjaxView
+from .ajax_views import UpdateGeneRatingAjaxView
+from .ajax_views import DeleteGeneEvaluationAjaxView
+from .ajax_views import DeleteGeneCommentAjaxView
+from .ajax_views import GetGeneCommentFormAjaxView
+from .ajax_views import SubmitGeneCommentFormAjaxView
 
 
 urlpatterns = [
@@ -58,24 +67,26 @@ urlpatterns = [
         ClearModeOfPathogenicityAjaxView.as_view(), name="clear_gene_mode_of_pathogenicity"),
 
     # AJAX Review endpoints
-    url(r'^(?P<pk>[0-9]+)/(?P<gene_symbol>[\w\-]+)/update_gene_tags$',
+    url(r'^(?P<pk>[0-9]+)/(?P<gene_symbol>[\w\-]+)/update_gene_tags/$',
         UpdateGeneTagsAjaxView.as_view(), name="update_gene_tags"),
-    url(r'^(?P<pk>[0-9]+)/(?P<gene_symbol>[\w\-]+)/update_gene_list$',
-        EmptyView.as_view(), name="update_gene_list"),
-    url(r'^(?P<pk>[0-9]+)/(?P<gene_symbol>[\w\-]+)/update_gene_moi$',
-        EmptyView.as_view(), name="update_gene_moi"),
-    url(r'^(?P<pk>[0-9]+)/(?P<gene_symbol>[\w\-]+)/update_gene_mop$',
-        EmptyView.as_view(), name="update_gene_mop"),
-    url(r'^(?P<pk>[0-9]+)/(?P<gene_symbol>[\w\-]+)/update_gene_phenotypes$',
-        EmptyView.as_view(), name="update_gene_phenotypes"),
-    url(r'^(?P<pk>[0-9]+)/(?P<gene_symbol>[\w\-]+)/update_gene_publications$',
-        EmptyView.as_view(), name="update_gene_publications"),
-    url(r'^(?P<pk>[0-9]+)/(?P<gene_symbol>[\w\-]+)/delete_evaluation/(?P<evaluation_pk>[0-9]+)$',
-        EmptyView.as_view(), name="delete_evaluation_by_user"),
-    url(r'^(?P<pk>[0-9]+)/(?P<gene_symbol>[\w\-]+)/edit_comment/(?P<comment_pk>[0-9]+)$',
-        EmptyView.as_view(), name="edit_comment_by_user"),
-    url(r'^(?P<pk>[0-9]+)/(?P<gene_symbol>[\w\-]+)/delete_comment/(?P<comment_pk>[0-9]+)$',
-        EmptyView.as_view(), name="delete_comment_by_user"),
+    url(r'^(?P<pk>[0-9]+)/(?P<gene_symbol>[\w\-]+)/update_gene_rating/$',
+        UpdateGeneRatingAjaxView.as_view(), name="update_gene_rating"),
+    url(r'^(?P<pk>[0-9]+)/(?P<gene_symbol>[\w\-]+)/update_gene_moi/$',
+        UpdateGeneMOIAjaxView.as_view(), name="update_gene_moi"),
+    url(r'^(?P<pk>[0-9]+)/(?P<gene_symbol>[\w\-]+)/update_gene_mop/$',
+        UpdateGeneMOPAjaxView.as_view(), name="update_gene_mop"),
+    url(r'^(?P<pk>[0-9]+)/(?P<gene_symbol>[\w\-]+)/update_gene_phenotypes/$',
+        UpdateGenePhenotypesAjaxView.as_view(), name="update_gene_phenotypes"),
+    url(r'^(?P<pk>[0-9]+)/(?P<gene_symbol>[\w\-]+)/update_gene_publications/$',
+        UpdateGenePublicationsAjaxView.as_view(), name="update_gene_publications"),
+    url(r'^(?P<pk>[0-9]+)/(?P<gene_symbol>[\w\-]+)/delete_evaluation/(?P<evaluation_pk>[0-9]+)/$',
+        DeleteGeneEvaluationAjaxView.as_view(), name="delete_evaluation_by_user"),
+    url(r'^(?P<pk>[0-9]+)/(?P<gene_symbol>[\w\-]+)/edit_comment/(?P<comment_pk>[0-9]+)/$',
+        GetGeneCommentFormAjaxView.as_view(), name="edit_comment_by_user"),
+    url(r'^(?P<pk>[0-9]+)/(?P<gene_symbol>[\w\-]+)/submit_edit_comment/(?P<comment_pk>[0-9]+)/$',
+        SubmitGeneCommentFormAjaxView.as_view(), name="submit_edit_comment_by_user"),
+    url(r'^(?P<pk>[0-9]+)/(?P<gene_symbol>[\w\-]+)/delete_comment/(?P<comment_pk>[0-9]+)/$',
+        DeleteGeneCommentAjaxView.as_view(), name="delete_comment_by_user"),
 
     url(r'^(?P<pk>[0-9]+)/mark_not_ready$', PanelMarkNotReadyView.as_view(), name="mark_not_ready"),
     url(r'^create/', CreatePanelView.as_view(), name="create"),

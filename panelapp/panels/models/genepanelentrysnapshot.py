@@ -15,6 +15,8 @@ from .evaluation import Evaluation
 from .trackrecord import TrackRecord
 from .comment import Comment
 from .tag import Tag
+from panels.templatetags.panel_helpers import get_gene_list_data
+from panels.templatetags.panel_helpers import GeneDataType
 
 
 class GenePanelEntrySnapshotManager(models.Manager):
@@ -46,10 +48,10 @@ class GenePanelEntrySnapshot(TimeStampedModel):
     )
 
     GEL_STATUS = Choices(
-        (0, "No list"),
-        (1, "Red"),
-        (2, "Amber"),
-        (3, "Green"),
+        (4, "Green List (high evidence)"),
+        (2, "Amber List (moderate evidence)"),
+        (1, "Red List (low evidence)"),
+        (0, "No List (delete)"),
     )
 
     class Meta:
@@ -168,23 +170,10 @@ class GenePanelEntrySnapshot(TimeStampedModel):
         else:
             return False
 
-    def mark_as_ready(self, user, ready_comment):
-        self.ready = True
+    def set_rating(self, user, status=None):
+        if not status:
+            status = self.status
 
-        if ready_comment:
-            comment = Comment.objects.create(
-                user=user,
-                comment="Comment when marking as ready: {}".format(ready_comment)
-            )
-            self.comments.add(comment)
-
-        self.panel.add_activity(
-            user,
-            self.gene.get('gene_symbol'),
-            "marked {} as ready".format(self.gene.get('gene_symbol'))
-        )
-
-        status = self.status
         [self.clear_expert_evidence(e) for e in Evidence.EXPERT_REVIEWS]
 
         if status > 3:
@@ -208,16 +197,169 @@ class GenePanelEntrySnapshot(TimeStampedModel):
             self.evidence.add(evidence)
             self.flagged = True
         else:
-            return
+            return False
 
         track = TrackRecord.objects.create(
             gel_status=status,
             curator_status=0,
             user=user,
-            issue_type="Gene classified by Genomics England curator", issue_description=issue_description
+            issue_type=TrackRecord.ISSUE_TYPES.GeneClassifiedbyGenomicsEnglandCurator,
+            issue_description=issue_description
         )
         self.track.add(track)
         self.save()
+        return True
+
+    def mark_as_ready(self, user, ready_comment):
+        self.ready = True
+
+        status = self.status
+        rating_set = self.set_rating(user, status)
+        if not rating_set:
+            return
+
+        if ready_comment:
+            comment = Comment.objects.create(
+                user=user,
+                comment="Comment when marking as ready: {}".format(ready_comment)
+            )
+            self.comments.add(comment)
+
+        self.panel.add_activity(
+            user,
+            self.gene.get('gene_symbol'),
+            "marked {} as ready".format(self.gene.get('gene_symbol'))
+        )
+
+        self.save()
+
+    def update_moi(self, moi, user, moi_comment=None):
+        self.panel.increment_version()
+        self = self.panel.get_gene(self.gene.get('gene_symbol'))
+        self.moi = moi
+        self.save()
+
+        description = "Mode of inheritance for {} was changed to {}".format(self.gene.get('gene_symbol'), moi)
+        track = TrackRecord.objects.create(
+            gel_status=self.status,
+            curator_status=0,
+            user=user,
+            issue_type=TrackRecord.ISSUE_TYPES.SetModeofInheritance,
+            issue_description=description
+        )
+        self.track.add(track)
+
+        if moi_comment:
+            comment = Comment.objects.create(
+                user=user,
+                comment="Comment on mode of inheritance: {}".format(moi_comment)
+            )
+            self.comments.add(comment)
+
+    def update_pathogenicity(self, mop, user, mop_comment=None):
+        self.panel.increment_version()
+        self = self.panel.get_gene(self.gene.get('gene_symbol'))
+        self.mode_of_pathogenicity = mop
+        self.save()
+
+        description = "Mode of pathogenicity for {} was changed to {}".format(self.gene.get('gene_symbol'), mop)
+        track = TrackRecord.objects.create(
+            gel_status=self.status,
+            curator_status=0,
+            user=user,
+            issue_type=TrackRecord.ISSUE_TYPES.SetModeofPathogenicity,
+            issue_description=description
+        )
+        self.track.add(track)
+
+        if mop_comment:
+            comment = Comment.objects.create(
+                user=user,
+                comment="Comment on mode of pathogenicity: {}".format(mop_comment)
+            )
+            self.comments.add(comment)
+
+    def update_phenotypes(self, phenotypes, user, phenotypes_comment=None):
+        self.panel.increment_version()
+        self = self.panel.get_gene(self.gene.get('gene_symbol'))
+        self.phenotypes = phenotypes
+        self.save()
+
+        description = "Phenotypes for {} were set to {}".format(self.gene.get('gene_symbol'), "; ".join(phenotypes))
+        track = TrackRecord.objects.create(
+            gel_status=self.status,
+            curator_status=0,
+            user=user,
+            issue_type=TrackRecord.ISSUE_TYPES.SetPhenotypes,
+            issue_description=description
+        )
+        self.track.add(track)
+
+        if phenotypes_comment:
+            comment = Comment.objects.create(
+                user=user,
+                comment="Comment on phenotypes: {}".format(phenotypes_comment)
+            )
+            self.comments.add(comment)
+
+    def update_publications(self, publications, user, publications_comment=None):
+        self.panel.increment_version()
+        self = self.panel.get_gene(self.gene.get('gene_symbol'))
+        self.publications = publications
+        self.save()
+
+        gene = self.gene.get('gene_symbol')
+        description = "Publications for {} were set to {}".format(gene, "; ".join(publications))
+        track = TrackRecord.objects.create(
+            gel_status=self.status,
+            curator_status=0,
+            user=user,
+            issue_type=TrackRecord.ISSUE_TYPES.SetPublications,
+            issue_description=description
+        )
+        self.track.add(track)
+
+        if publications_comment:
+            comment = Comment.objects.create(
+                user=user,
+                comment="Comment on publications: {}".format(publications_comment)
+            )
+            self.comments.add(comment)
+
+    def update_rating(self, rating, user, rating_comment=None):
+        self.panel.increment_version()
+        gene = self.gene.get('gene_symbol')
+        self = self.panel.get_gene(gene)
+
+        status = self.status
+        rating_set = self.set_rating(user, status)
+        if not rating_set:
+            return
+
+        self.save()
+
+        if rating_comment:
+            comment = Comment.objects.create(
+                user=user,
+                comment="Comment on list classification: {}".format(rating_comment)
+            )
+            self.comments.add(comment)
+
+        human_status = get_gene_list_data(self, GeneDataType.LONG.value)
+        self.panel.add_activity(user, gene, "classified {} as {}".format(gene, human_status))
+
+    def delete_evaluation(self, evaluation_pk):
+        self.evaluation.get(pk=evaluation_pk).delete()
+
+    def delete_comment(self, comment_pk):
+        evaluation = self.evaluation.get(comments__pk=comment_pk)
+        evaluation.comments.get(pk=comment_pk).delete()
+
+    def edit_comment(self, comment_pk, new_comment):
+        evaluation = self.evaluation.get(comments__pk=comment_pk)
+        comment = evaluation.comments.get(pk=comment_pk)
+        comment.comment = new_comment
+        comment.save()
 
     def dict_tr(self):
         return {

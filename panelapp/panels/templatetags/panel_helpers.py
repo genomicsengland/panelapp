@@ -29,7 +29,7 @@ class GeneDataType(Enum):
 
 
 def get_gene_list_data(gene, list_type):
-    if gene.status > 2:
+    if gene.status > 3:
         return gene_list_data[GeneStatus.GREEN.value][list_type]
     elif gene.status == 2:
         return gene_list_data[GeneStatus.AMBER.value][list_type]

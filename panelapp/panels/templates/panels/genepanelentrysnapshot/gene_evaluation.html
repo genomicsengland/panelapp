@@ -16,7 +16,7 @@
   {% endif %}
 
   {% for comment in ev.comments.all %}
-    <blockquote class="add-top-margin" id="comment_{{ ev.user.pk }}_{{ forloop.counter0 }}">
+    <blockquote class="add-top-margin" id="comment_{{ comment.pk }}">
       {{ comment.comment }}
       <h6>{{ comment.created|date }}</h6>
       {% if request.user == ev.user and panel and gene %}

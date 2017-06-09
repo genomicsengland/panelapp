@@ -112,7 +112,7 @@ class GenePanelSnapshot(TimeStampedModel):
                 gene.track.add(track)
 
             for tag in tags:
-                gene.tag.add(tag)
+                gene.tags.add(tag)
 
             for comment in comments:
                 gene.comments.add(comment)
