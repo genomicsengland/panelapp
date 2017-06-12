@@ -18,6 +18,10 @@ from .views import PanelMarkNotReadyView
 from .views import GenePanelSpanshotView
 from .views import GeneReviewView
 from .views import MarkGeneReadyView
+from .views import DownloadPanelTSVView
+from .views import DownloadPanelVersionTSVView
+from .views import MarkGeneNotReadyView
+from .views import ComparePanelsView
 from .ajax_views import ClearPublicationsAjaxView
 from .ajax_views import ClearPhoenotypesAjaxView
 from .ajax_views import ClearModeOfPathogenicityAjaxView
@@ -41,6 +45,10 @@ from .ajax_views import SubmitGeneCommentFormAjaxView
 
 urlpatterns = [
     url(r'^$', PanelsIndexView.as_view(), name="index"),
+    url(r'^compare/$', ComparePanelsView.as_view(), name="compare_panels_form"),
+    url(r'^compare/(?P<panel_1_id>[0-9]+)/(?P<panel_2_id>[0-9]+)$', ComparePanelsView.as_view(), name="compare"),
+    url(r'^compare/(?P<panel_1_id>[0-9]+)/(?P<panel_2_id>[0-9]+)/(?P<gene_symbol>[\w\-]+)$',
+        ComparePanelsView.as_view(), name="compare_genes"),
     url(r'^(?P<pk>[0-9]+)/$', GenePanelView.as_view(), name="detail"),
     url(r'^(?P<pk>[0-9]+)/update$', UpdatePanelView.as_view(), name="update"),
     url(r'^(?P<pk>[0-9]+)/promote$', PromotePanelView.as_view(), name="promote"),
@@ -48,10 +56,17 @@ urlpatterns = [
     url(r'^(?P<pk>[0-9]+)/delete$', DeletePanelAjaxView.as_view(), name="delete_panel"),
     url(r'^(?P<pk>[0-9]+)/reject$', RejectPanelAjaxView.as_view(), name="reject_panel"),
     url(r'^(?P<pk>[0-9]+)/approve$', ApprovePanelAjaxView.as_view(), name="approve_panel"),
+    url(r'^(?P<pk>[0-9]+)/download/(?P<categories>[0-4]+)/$',
+        DownloadPanelTSVView.as_view(), name="download_panel_tsv"),
+    url(r'^(?P<pk>[0-9]+)/download_version/$',
+        DownloadPanelVersionTSVView.as_view(), name="download_old_panel_tsv"),
     url(r'^(?P<pk>[0-9]+)/(?P<gene_symbol>[\w\-]+)/evaluation$', GenePanelSpanshotView.as_view(), name="evaluation"),
     url(r'^(?P<pk>[0-9]+)/(?P<gene_symbol>[\w\-]+)/edit$', PanelEditGeneView.as_view(), name="edit_gene"),
     url(r'^(?P<pk>[0-9]+)/(?P<gene_symbol>[\w\-]+)/review$', GeneReviewView.as_view(), name="review_gene"),
-    url(r'^(?P<pk>[0-9]+)/(?P<gene_symbol>[\w\-]+)/mark_as_ready$', MarkGeneReadyView.as_view(), name="mark_gene_as_ready"),
+    url(r'^(?P<pk>[0-9]+)/(?P<gene_symbol>[\w\-]+)/mark_as_ready$',
+        MarkGeneReadyView.as_view(), name="mark_gene_as_ready"),
+    url(r'^(?P<pk>[0-9]+)/(?P<gene_symbol>[\w\-]+)/mark_as_not_ready$',
+        MarkGeneNotReadyView.as_view(), name="mark_gene_as_not_ready"),
 
     # AJAX endpoints
     url(r'^(?P<pk>[0-9]+)/(?P<gene_symbol>[\w\-]+)/delete$', DeleteGeneAjaxView.as_view(), name="delete_gene"),

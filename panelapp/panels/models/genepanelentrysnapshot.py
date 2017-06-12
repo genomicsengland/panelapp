@@ -361,6 +361,28 @@ class GenePanelEntrySnapshot(TimeStampedModel):
         comment.comment = new_comment
         comment.save()
 
+    def aggregate_ratings(self):
+        green, red, amber = 0, 0, 0
+        for ev in self.evaluation.all():
+            if ev.rating == Evaluation.RATINGS.GREEN:
+                green += 1
+            elif ev.rating == Evaluation.RATINGS.RED:
+                red += 1
+            elif ev.rating == Evaluation.RATINGS.AMBER:
+                amber += 1
+
+        total = green + red + amber
+        if green + red + amber > 0:
+            green_perc = round(green * 100.0 / (total))
+            red_prec = round(red * 100.0 / (total))
+            amber_perc = round(amber * 100.0 / (total))
+        else:
+            green_perc = 0
+            red_prec = 0
+            amber_perc = 0
+
+        return amber_perc, green_perc, red_prec
+
     def dict_tr(self):
         return {
             "gene": self.gene,

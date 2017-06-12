@@ -1,3 +1,5 @@
+import csv
+import re
 from django.contrib import messages
 from django.views.generic import TemplateView
 from django.views.generic.base import View
@@ -9,6 +11,7 @@ from django.views.generic import CreateView
 from django.shortcuts import redirect
 from django.urls import reverse_lazy
 from django.utils.functional import cached_property
+from django.http import HttpResponse
 
 from panelapp.mixins import GELReviewerRequiredMixin
 from panelapp.mixins import VerifiedReviewerRequiredMixin
@@ -21,6 +24,7 @@ from .forms import PromotePanelForm
 from .forms import PanelGeneForm
 from .forms import GeneReviewForm
 from .forms import GeneReadyForm
+from .forms import ComparePanelsForm
 from .forms.ajax import UpdateGeneTagsForm
 from .forms.ajax import UpdateGeneMOPForm
 from .forms.ajax import UpdateGeneMOIForm
@@ -33,6 +37,7 @@ from .models import GenePanelSnapshot
 from .models import GenePanelEntrySnapshot
 from .mixins import PanelMixin
 from .mixins import ActAndRedirectMixin
+from .utils import remove_non_ascii
 
 
 class EmptyView(View):
@@ -52,6 +57,7 @@ class PanelsIndexView(ListView):
 
     def get_context_data(self, *args, **kwargs):
         ctx = super().get_context_data(*args, **kwargs)
+        ctx['compare_panels_form'] = ComparePanelsForm(panels=self.get_queryset())
         return ctx
 
 
@@ -368,3 +374,143 @@ class MarkGeneReadyView(GELReviewerRequiredMixin, UpdateView):
             'pk': self.kwargs['pk'],
             'gene_symbol': self.kwargs['gene_symbol']
         })
+
+
+class MarkGeneNotReadyView(GELReviewerRequiredMixin, UpdateView):
+    def get_object(self):
+        return self.panel.get_gene(self.kwargs['gene_symbol'])
+
+    @cached_property
+    def panel(self):
+        return GenePanel.objects.get(pk=self.kwargs['pk']).active_panel
+
+    def post(self, *args, **kwargs):
+        self.object = self.get_object()
+        self.object.ready = False
+        self.object.save()
+
+        return redirect(self.get_success_url())
+
+    def get_success_url(self):
+        return reverse_lazy('panels:evaluation', kwargs={
+            'pk': self.kwargs['pk'],
+            'gene_symbol': self.kwargs['gene_symbol']
+        })
+
+
+class DownloadPanelTSVMixin(PanelMixin, DetailView):
+    model = GenePanelSnapshot
+
+    def get(self, *args, **kwargs):
+        return self.process()
+
+    def process(self):
+        self.object = self.get_object()
+
+        panel_name = self.object.panel.name
+        version = self.object.version
+
+        response = HttpResponse(content_type='text/tab-separated-values')
+        panel_name = remove_non_ascii(panel_name, replacemenet='_')
+        response['Content-Disposition'] = 'attachment; filename=' + panel_name + '.tsv'
+        writer = csv.writer(response, delimiter='\t')
+
+        writer.writerow((
+            "Gene_Symbol", "Sources(; separated)", "Level4", "Level3", "Level2", "Model_Of_Inheritance",
+            "Phenotypes",
+            "Omim", "Orphanet", "HPO", "Publications", "Description", "Flagged", "GEL_Status",
+            "UserRatings_Green_amber_red", "version", "ready", "Mode of pathogenicity"))
+
+        categories = self.get_categories()
+        for gpentry in self.object.get_all_entries:
+            if not gpentry.flagged and str(gpentry.status) in categories:
+                amber_perc, green_perc, red_prec = gpentry.aggregate_ratings()
+
+                evidence = ";".join([evidence.name for evidence in gpentry.evidence.all()])
+                export_gpentry = (gpentry.gene.get('gene_symbol'), evidence,
+                                  panel_name, self.object.level4title.level3title,
+                                  self.object.level4title.level2title,
+                                  "", gpentry.moi,
+                                  ";".join(map(remove_non_ascii, gpentry.phenotypes)),
+                                  ";".join(map(remove_non_ascii, self.object.level4title.omim)),
+                                  ";".join(map(remove_non_ascii, self.object.level4title.orphanet)),
+                                  ";".join(map(remove_non_ascii, self.object.level4title.hpo)),
+                                  ";".join(map(remove_non_ascii, gpentry.publications)),
+                                  "", str(gpentry.flagged), str(gpentry.saved_gel_status),
+                                  ";".join(map(str, [green_perc, amber_perc, red_prec])),
+                                  str(version),
+                                  gpentry.ready, gpentry.mode_of_pathogenicity)
+                writer.writerow(export_gpentry)
+
+        return response
+
+
+class DownloadPanelTSVView(DownloadPanelTSVMixin):
+    def get_categories(self):
+        return self.kwargs['categories']
+
+
+class DownloadPanelVersionTSVView(DownloadPanelTSVMixin):
+    def get_categories(self):
+        return '01234'
+
+    def get_object(self):
+        return GenePanel.objects.get(pk=self.kwargs['pk'])\
+            .get_panel_version(self.request.POST.get('panel_version'))
+
+    def post(self, *args, **kwargs):
+        self.object = self.get_object()
+        if not self.object:
+            msg = "Can't find panel with the version {}".format(self.request.POST.get('panel_version'))
+            messages.error(self.request, msg)
+            return redirect(reverse_lazy('panels:detail', kwargs={'pk': self.kwargs['pk']}))
+        else:
+            return self.process()
+
+
+class ComparePanelsView(FormView):
+    template_name = 'panels/compare/compare_panels.html'
+    form_class = ComparePanelsForm
+
+    def form_valid(self, form):
+        panel_1 = form.cleaned_data['panel_1']
+        panel_2 = form.cleaned_data['panel_2']
+        return redirect(reverse_lazy('panels:compare', args=(panel_1.panel.pk, panel_2.panel.pk)))
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['panels'] = GenePanelSnapshot.objects.get_active()
+        return kwargs
+
+    def get_context_data(self):
+        ctx = super().get_context_data()
+
+        if self.kwargs.get('panel_1_id') and self.kwargs.get('panel_2_id'):
+            ctx['panel_1'] = panel_1 = GenePanel.objects.get(pk=self.kwargs['panel_1_id']).active_panel
+            ctx['panel_2'] = panel_2 = GenePanel.objects.get(pk=self.kwargs['panel_2_id']).active_panel
+
+            panel_1_items = {e.gene.get('gene_symbol'): e for e in panel_1.get_all_entries}
+            panel_2_items = {e.gene.get('gene_symbol'): e for e in panel_2.get_all_entries}
+
+            all = list(set(panel_1_items.keys()) | set(panel_2_items.keys()))
+            all.sort()
+
+            intersection = list(set(panel_1_items.keys() & set(panel_2_items.keys())))
+            ctx['show_copy_reviews'] = self.request.user.reviewer.is_GEL() and len(intersection) > 0
+
+            comparison = [
+                [
+                    gene,
+                    panel_1_items[gene] if gene in panel_1_items else False,
+                    panel_2_items[gene] if gene in panel_2_items else False
+                ] for gene in all
+            ]
+
+            ctx['comparison'] = comparison
+        else:
+            ctx['panel_1'] = None
+            ctx['panel_2'] = None
+            ctx['show_copy_reviews'] = None
+            ctx['comparison'] = None
+
+        return ctx

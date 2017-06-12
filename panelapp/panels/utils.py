@@ -1,6 +1,7 @@
 import os
 from django.conf import settings
 import requests
+import re
 
 
 class CellBaseConnector:
@@ -99,3 +100,7 @@ class CellBaseConnector:
                         all_genes.append(gene)
 
         return all_genes
+
+
+def remove_non_ascii(text, replacemenet=' '):
+    return re.sub(r'[^\x00-\x7F]+', ' ', text)

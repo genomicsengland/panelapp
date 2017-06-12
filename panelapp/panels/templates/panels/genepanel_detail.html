@@ -109,40 +109,26 @@
 
   <h2>Downloads</h2>
   <div class="well">
-      <h3 class="remove-top-margin">Download lists</h3>
-      <ul>
-          {% comment %}
-          <li><a href="{% url 'PanelApp.views.views_main.download_panel_tsv' panel.id '01234' %}">Whole panel</a></li>
-          <li><a href="{% url 'PanelApp.views.views_main.download_panel_tsv' panel.id '34' %}">Green list (high evidence)</a></li>
-          <li><a href="{% url 'PanelApp.views.views_main.download_panel_tsv' panel.id '234' %}">Green and Amber Genes</a></li>
-          <li><a href="{% url 'PanelApp.views.views_main.download_panel_tsv' panel.id '2' %}">Amber Genes</a></li>
-          <li><a href="{% url 'PanelApp.views.views_main.download_panel_tsv' panel.id '01' %}">Red list (low evidence)</a></li>
-          {% endcomment %}
-      </ul>
-      <h3>Download Version</h3>
-      {% comment %}
-      <form class="form-inline" action="{% url 'PanelApp.views.views_main.download_old_panel_tsv' panel.id %}" method="post">{% csrf_token %}
-          <div class="form-group">
-              {% for field in form_download %}
-                  <div class="form-group">
-                      {% if field.errors %}
-                          {% for error in field.errors %}
-                              <div class="row">
-                                  <div class="col-lg-2"></div>
-                                  <div class="col-lg-10">
-                                      <span class="label label-danger">{{ error|escape }}</span>
-                                  </div>
-                              </div>
-                          {% endfor %}
-                      {% endif %}
-                      <div class="inline-group">
-                          {{ field }}  <button type="submit" class="btn btn-primary">Download</button>
-                      </div>
-                  </div>
-              {% endfor %}
+    <h3 class="remove-top-margin">Download lists</h3>
+    <ul>
+      <li><a href="{% url 'panels:download_panel_tsv' panel.panel.id '01234' %}">Whole panel</a></li>
+      <li><a href="{% url 'panels:download_panel_tsv' panel.panel.id '34' %}">Green list (high evidence)</a></li>
+      <li><a href="{% url 'panels:download_panel_tsv' panel.panel.id '234' %}">Green and Amber Genes</a></li>
+      <li><a href="{% url 'panels:download_panel_tsv' panel.panel.id '2' %}">Amber Genes</a></li>
+      <li><a href="{% url 'panels:download_panel_tsv' panel.panel.id '01' %}">Red list (low evidence)</a></li>
+    </ul>
+    <h3>Download Version</h3>
+    <form class="form-inline" action="{% url 'panels:download_old_panel_tsv' panel.panel.id %}" method="post">
+      {% csrf_token %}
+      <div class="form-group">
+        <div class="form-group">
+          <div class="inline-group">
+            <input type="text" value="" placeholder="Panel version, for example 0.1", name="panel_version" class="input form-control">
+            <button type="submit" class="btn btn-primary">Download</button>
           </div>
-      </form>
-      {% endcomment %}
+        </div>
+      </div>
+    </form>
   </div>
 </div>
 {% endblock %}

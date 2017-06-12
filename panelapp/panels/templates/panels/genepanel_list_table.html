@@ -39,7 +39,7 @@
                       <div class="input-group">
                         <input autofocus id="panel-filter" type="text" class="form-control normal js-filter-table-input" placeholder="Filter panels">
                         <span class="input-group-addon js-filter-table-count" data-singular="panel" data-plural="panels">
-                            {{ panels|length }} panel{{panels|pluralize}}
+                          {{ panels|length }} panel{{panels|pluralize}}
                         </span>
                       </div>
                   </form>
@@ -88,7 +88,7 @@
                   {% endif %}
               </td>
               <td class="nowrap">
-                  <a href="{% url 'panels:empty_items' '01234' %}" class="btn btn-default btn-sm" title="Download TSV file of panel">
+                  <a href="{% url 'panels:download_panel_tsv' entry.panel.pk '01234' %}" class="btn btn-default btn-sm" title="Download TSV file of panel">
                     <i class="fa fa-download"></i>{% if not request.user.reviewer.is_GEL %} Download {% endif %}
                   </a>
                   {% if request.user.reviewer.is_GEL %}

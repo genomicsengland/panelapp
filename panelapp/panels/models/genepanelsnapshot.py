@@ -6,7 +6,6 @@ from django.db.models import When
 from django.db.models import Value
 from django.db.models import Subquery
 from django.contrib.postgres.fields import ArrayField
-from django.db.models import IntegerField
 from django.utils.functional import cached_property
 from model_utils.models import TimeStampedModel
 
@@ -62,12 +61,12 @@ class GenePanelSnapshot(TimeStampedModel):
             number_of_ready_genes=Sum(Case(When(
                 ready=True, then=Value(1)),
                 default=Value(0),
-                output_field=IntegerField()
+                output_field=models.IntegerField()
             )),
             number_of_green_genes=Sum(Case(When(
-                saved_gel_status__gte=3, then=Value(1)),
+                saved_gel_status__gte=4, then=Value(1)),
                 default=Value(0),
-                output_field=IntegerField()
+                output_field=models.IntegerField()
             ))
         )
 
@@ -144,6 +143,28 @@ class GenePanelSnapshot(TimeStampedModel):
         return self.genepanelentrysnapshot_set\
             .filter(pk__in=Subquery(unique_genes))\
             .prefetch_related('evidence', 'evaluation', 'tags')\
+            .annotate(
+                number_of_green_genes=Sum(Case(When(
+                    saved_gel_status__gte=4, then=Value(1)),
+                    default=Value(0),
+                    output_field=models.IntegerField()
+                )),
+                number_of_amber_genes=Sum(Case(When(
+                    saved_gel_status__in=[2,3], then=Value(1)),
+                    default=Value(0),
+                    output_field=models.IntegerField()
+                )),
+                number_of_red_genes=Sum(Case(When(
+                    saved_gel_status=1, then=Value(1)),
+                    default=Value(0),
+                    output_field=models.IntegerField()
+                )),
+                number_of_gray_genes=Sum(Case(When(
+                    saved_gel_status=0, then=Value(1)),
+                    default=Value(0),
+                    output_field=models.IntegerField()
+                ))
+            )\
             .order_by('-saved_gel_status', 'gene_core__gene_symbol', '-created')
 
     def get_gene(self, gene_symbol):

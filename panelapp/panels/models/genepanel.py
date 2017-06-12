@@ -1,5 +1,10 @@
 from django.db import models
+from django.db.models import Sum
 from django.db.models import Count
+from django.db.models import Case
+from django.db.models import When
+from django.db.models import Value
+from django.db.models import Subquery
 from django.utils.functional import cached_property
 from model_utils.models import TimeStampedModel
 
@@ -21,14 +26,40 @@ class GenePanel(TimeStampedModel):
         self.approved = False
         self.save()
 
-    @cached_property
-    def active_panel(self):
+    def _prepare_panel_query(self):
         return self.genepanelsnapshot_set\
             .prefetch_related('panel', 'level4title')\
             .annotate(
                 number_of_reviewers=Count('genepanelentrysnapshot__evaluation__user', distinct=True),
                 number_of_evaluated_genes=Count('genepanelentrysnapshot__evaluation'),
                 number_of_genes=Count('genepanelentrysnapshot'),
+                number_of_green_genes=Sum(Case(When(
+                    genepanelentrysnapshot__saved_gel_status__gte=4, then=Value(1)),
+                    default=Value(0),
+                    output_field=models.IntegerField()
+                )),
+                number_of_amber_genes=Sum(Case(When(
+                    genepanelentrysnapshot__saved_gel_status__in=[2,3], then=Value(1)),
+                    default=Value(0),
+                    output_field=models.IntegerField()
+                )),
+                number_of_red_genes=Sum(Case(When(
+                    genepanelentrysnapshot__saved_gel_status=1, then=Value(1)),
+                    default=Value(0),
+                    output_field=models.IntegerField()
+                )),
+                number_of_gray_genes=Sum(Case(When(
+                    genepanelentrysnapshot__saved_gel_status=0, then=Value(1)),
+                    default=Value(0),
+                    output_field=models.IntegerField()
+                ))
             )\
-            .order_by('-created', '-major_version', '-minor_version')\
-            .first()
+            .order_by('-created', '-major_version', '-minor_version')
+
+    @cached_property
+    def active_panel(self):
+        return self._prepare_panel_query().first()
+
+    def get_panel_version(self, version):
+        major_version, minor_version = version.split('.')
+        return self._prepare_panel_query().filter(major_version=major_version, minor_version=minor_version).first()

@@ -129,3 +129,6 @@ class GenePanelTest(LoginGELUser):
         assert gps2.minor_version == 2
         gp2 = GenePanel.objects.get(pk=gps2.panel.pk)
         assert gp2.active_panel == gps2
+
+    def test_compare(self):
+        assert False

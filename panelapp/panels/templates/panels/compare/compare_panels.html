@@ -1,0 +1,74 @@
+{% extends "default.html" %}
+{% load staticfiles %}
+{% load panel_helpers %}
+{% block content %}
+
+  <ol class="breadcrumb">
+    <li>
+      <a href="{% url 'panels:index' %}">Panels</a>
+    </li>
+    <li class="active">Compare panels</li>
+  </ol>
+
+  <h1>
+    <p class="text-muted normal add-label-margin" style="font-size: 18px">Comparing panels</p>
+    {% block title %}“{{ panel_1.level4title.name }}” and “{{ panel_2.level4title.name }}”{% endblock %}
+  </h1>
+
+  {% if show_copy_reviews %}
+    <a href="{% url 'panels:empty' %}">'panels:copy_reviews' panel_1.id panel_2.id Copy reviews from “{{ panel_1.level4title.name }}” to “{{ panel_2.level4title.name }}”</a>
+  {% endif %}
+
+  <div class="table-responsive add-top-margin">
+    <table class="table table-bordered" data-module="filterable-table">
+      <thead>
+        {% include "panels/compare/compare_table_heading.html" %}
+        <tr class="if-no-js-hide table-header-secondary">
+          <td colspan="100">
+            <form>
+              <label for="panel-filter" class="rm">Filter genes</label>
+              <div class="input-group">
+                <input id="panel-filter" type="text" class="form-control normal js-filter-table-input" placeholder="Filter genes">
+                <span class="input-group-addon js-filter-table-count" data-singular="gene" data-plural="genes">
+                  0 genes
+                </span>
+              <div>
+            </form>
+          </td>
+        </tr>
+      </thead>
+      <tbody>
+        {% for gene in comparison %}
+          <tr>
+            <td class="text-right">
+              {% if gene.1 %}
+                <h4 class="remove-top-margin remove-bottom-margin">
+                  <span style="font-size: 16px" class="gel-banner {{ gene.1|gene_list_class }}" title="{{ gene.1|gene_list_name }}">
+                    {{ gene.1|gene_list_short_name }}
+                  </span> <a href="{% url 'panels:evaluation' gene.1.panel.panel.id gene.0 %}" class="link-inherit gel-text {{ gene.1|gene_list_class }} js-open-on-submit">{{ gene.0 }}</a>
+                </h4>
+                {{ gene.1.evaluation.count }} review{{gene.1.evaluation.count|pluralize}}
+              {% endif %}
+            </td>
+            <td class="text-center">
+              {% if gene.1 and gene.2 %}
+                <a class="btn btn-link btn-xs" href="{% url 'panels:compare_genes' gene.1.panel.id gene.2.panel.id gene.0 %}">Compare</a>
+              {% endif %}
+            </td>
+            <td>
+              {% if gene.2 %}
+                <h4 class="remove-top-margin remove-bottom-margin">
+                  <a href="{% url 'panels:evaluation' gene.2.panel.panel.id gene.0 %}" class="link-inherit gel-text {{ gene.2|gene_list_class }} js-open-on-submit">{{ gene.0 }}</a> <span style="font-size: 12px" class="gel-banner {{ gene.2|gene_list_class }}" title="{{ gene.2|gene_list_name }}">
+                    {{ gene.2|gene_list_short_name }}
+                  </span>
+                </h4>
+                {{ gene.2.evaluation.count }} review{{gene.2.evaluation.count|pluralize}}
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% include "panels/compare/compare_panels_form.html" %}
+{% endblock %}

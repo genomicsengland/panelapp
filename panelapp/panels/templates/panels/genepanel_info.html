@@ -36,7 +36,7 @@
 
             <button type="submit" class="btn btn-primary add-right-margin">Save</button>
             <a href="{% url 'panels:detail' panel.id %}" class="btn btn-link">Cancel</a>
-            <a href="{% url 'panels:empty_items' panel.id %}" class="btn btn-default pull-right">Mark all genes as not ready</a>
+            <a href="{% url 'panels:mark_not_ready' panel.id %}" class="btn btn-default pull-right">Mark all genes as not ready</a>
         </fieldset>
     </form>
 </div>

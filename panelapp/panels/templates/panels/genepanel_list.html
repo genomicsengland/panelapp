@@ -18,31 +18,6 @@
     <div id="table">
       {% include "panels/genepanel_list_table.html" %}
     </div>
-
-    <div class="modal" id="compare-modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
-      <form action="{% url 'panels:empty' %}" method="post" class="modal-dialog form">
-        <div class="modal-content">
-            <div class="modal-header">
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                <h4 class="modal-title" id="myModalLabel">Compare panels</h4>
-            </div>
-            <div class="modal-body">
-                {% csrf_token %}
-                {% comment %}
-                {% for field in compare_panels_form %}
-                    <div class="form-group">
-                        {{ field.label_tag }}
-                        <div class="add-label-margin">{{ field }}</div>
-                    </div>
-                {% endfor %}
-                {% endcomment %}
-            </div>
-            <div class="modal-footer">
-                <input type="submit" class="btn btn-primary" value="Compare panels">
-            </div>
-        </div>
-      </form>
-    </div>
-
+    {% include 'panels/compare/compare_panels_form.html' with form=compare_panels_form %}
 </div>
 {% endblock %}
