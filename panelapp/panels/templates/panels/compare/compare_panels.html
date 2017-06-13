@@ -16,7 +16,7 @@
   </h1>
 
   {% if show_copy_reviews %}
-    <a href="{% url 'panels:empty' %}">'panels:copy_reviews' panel_1.id panel_2.id Copy reviews from “{{ panel_1.level4title.name }}” to “{{ panel_2.level4title.name }}”</a>
+    <a href="{% url 'panels:copy_reviews' panel_1.panel.id panel_2.panel.id %}">Copy reviews from “{{ panel_1.level4title.name }}” to “{{ panel_2.level4title.name }}”</a>
   {% endif %}
 
   <div class="table-responsive add-top-margin">
@@ -52,7 +52,7 @@
             </td>
             <td class="text-center">
               {% if gene.1 and gene.2 %}
-                <a class="btn btn-link btn-xs" href="{% url 'panels:compare_genes' gene.1.panel.id gene.2.panel.id gene.0 %}">Compare</a>
+                <a class="btn btn-link btn-xs" href="{% url 'panels:compare_genes' gene.1.panel.panel.id gene.2.panel.panel.id gene.0 %}">Compare</a>
               {% endif %}
             </td>
             <td>

@@ -11,6 +11,7 @@ from django.views.generic import CreateView
 from django.shortcuts import redirect
 from django.urls import reverse_lazy
 from django.utils.functional import cached_property
+from django.template.defaultfilters import pluralize
 from django.http import HttpResponse
 
 from panelapp.mixins import GELReviewerRequiredMixin
@@ -25,6 +26,7 @@ from .forms import PanelGeneForm
 from .forms import GeneReviewForm
 from .forms import GeneReadyForm
 from .forms import ComparePanelsForm
+from .forms import CopyReviewsForm
 from .forms.ajax import UpdateGeneTagsForm
 from .forms.ajax import UpdateGeneMOPForm
 from .forms.ajax import UpdateGeneMOIForm
@@ -120,7 +122,7 @@ class ImportToolMixin(GELReviewerRequiredMixin, AdminContextMixin, FormView):
 
     def form_valid(self, form):
         ret = super().form_valid(form)
-        form.process_file()
+        form.process_file(user=self.request.user)
         messages.success(self.request, "Import successful")
         return ret
 
@@ -233,6 +235,7 @@ class PanelEditGeneView(GELReviewerRequiredMixin, UpdateView):
 
     def form_valid(self, form):
         ret = super().form_valid(form)
+        self.object = form.instance
         msg = "Successfully changed gene information for panel {}".format(self.object.panel.panel.name)
         messages.success(self.request, msg)
         return ret
@@ -511,6 +514,89 @@ class ComparePanelsView(FormView):
             ctx['panel_1'] = None
             ctx['panel_2'] = None
             ctx['show_copy_reviews'] = None
+            ctx['comparison'] = None
+
+        return ctx
+
+
+class CompareGeneView(FormView):
+    template_name = 'panels/compare/compare_genes.html'
+    form_class = ComparePanelsForm
+
+    def form_valid(self, form):
+        panel_1 = form.cleaned_data['panel_1']
+        panel_2 = form.cleaned_data['panel_2']
+        args = (panel_1.panel.pk, panel_2.panel.pk, self.kwargs['gene_symbol'])
+        return redirect(reverse_lazy('panels:compare_gene', args=args))
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['panels'] = GenePanelSnapshot.objects.get_active()
+        return kwargs
+
+    def get_context_data(self):
+        ctx = super().get_context_data()
+        gene_symbol = self.kwargs['gene_symbol']
+        ctx['gene_symbol'] = gene_symbol
+
+        if self.kwargs.get('panel_1_id') and self.kwargs.get('panel_2_id'):
+            ctx['panel_1'] = panel_1 = GenePanel.objects.get(pk=self.kwargs['panel_1_id']).active_panel
+            ctx['panel_2'] = panel_2 = GenePanel.objects.get(pk=self.kwargs['panel_2_id']).active_panel
+            ctx['panel_1_entry'] = panel_1.get_gene(gene_symbol)
+            ctx['panel_2_entry'] = panel_2.get_gene(gene_symbol)
+        else:
+            ctx['panel_1'] = None
+            ctx['panel_2'] = None
+            ctx['panel_1_entry'] = None
+            ctx['panel_2_entry'] = None
+
+        return ctx
+
+
+class CopyReviewsView(GELReviewerRequiredMixin, FormView):
+    template_name = 'panels/compare/copy_reviews.html'
+    form_class = CopyReviewsForm
+
+    def form_valid(self, form):
+        panel_1 = form.cleaned_data['panel_1']
+        panel_2 = form.cleaned_data['panel_2']
+
+        ctx = self.get_context_data()
+        total_count = form.copy_reviews(ctx['intersection'], ctx['panel_1'], ctx['panel_2'])
+
+        messages.success(self.request, "{} review{} copied".format(total_count, pluralize(total_count)))
+        return redirect(reverse_lazy('panels:compare', args=(ctx['panel_1'].panel.pk, ctx['panel_2'].panel.pk)))
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['initial'] = {
+            'panel_1': GenePanel.objects.get(pk=self.kwargs['panel_1_id']).active_panel.pk,
+            'panel_2': GenePanel.objects.get(pk=self.kwargs['panel_2_id']).active_panel.pk
+        }
+        return kwargs
+
+    def form_invalid(self, form):
+        return super().form_invalid(form)
+
+    def get_context_data(self, *args, **kwargs):
+        ctx = super().get_context_data(*args, **kwargs)
+
+        if self.kwargs.get('panel_1_id') and self.kwargs.get('panel_2_id'):
+            ctx['panel_1'] = panel_1 = GenePanel.objects.get(pk=self.kwargs['panel_1_id']).active_panel
+            ctx['panel_2'] = panel_2 = GenePanel.objects.get(pk=self.kwargs['panel_2_id']).active_panel
+
+            panel_1_items = {e.gene.get('gene_symbol'): e for e in panel_1.get_all_entries}
+            panel_2_items = {e.gene.get('gene_symbol'): e for e in panel_2.get_all_entries}
+
+            intersection = list(set(panel_1_items.keys() & set(panel_2_items.keys())))
+            intersection.sort()
+            ctx['intersection'] = intersection
+
+            comparison = [[gene, panel_1_items[gene], panel_2_items[gene]] for gene in intersection]
+            ctx['comparison'] = comparison
+        else:
+            ctx['panel_1'] = None
+            ctx['panel_2'] = None
             ctx['comparison'] = None
 
         return ctx

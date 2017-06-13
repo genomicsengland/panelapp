@@ -1,7 +1,12 @@
 import logging
+from more_itertools import unique_everseen
 from django.db import models
 from django.db import transaction
 from panels.utils import CellBaseConnector
+from panels.exceptions import TSVIncorrectFormat
+from panels.exceptions import UserDoesNotExist
+from panels.exceptions import GeneDoesNotExist
+from panels.utils import remove_non_ascii
 from .gene import Gene
 
 logger = logging.getLogger(__name__)
@@ -62,6 +67,136 @@ class UploadedGeneList(models.Model):
 class UploadedPanelList(models.Model):
     panel_list = models.FileField(upload_to='panels')
 
+    def process_file(self, user):
+        with open(self.reviews.path) as file:
+            logger.info('Started importing list of genes')
+            header = file.readline()  # noqa
+            with transaction.atomic():
+                active_panel = None
+                for i, line in enumerate(file):
+                    line = remove_non_ascii(line)
+                    aline = line.replace('"', "").rstrip("\n").split("\t")
+                    gene_symbol = re.sub("[^0-9a-zA-Z~#_@-]", '', aline[0])
+                    source = list(unique_everseen(aline[1].split(";")))
+                    level4 = aline[2].rstrip(" ")
+                    level3 = aline[3]
+                    level2 = aline[4]
+                    transcript = aline[5]
+                    model_of_inheritance = aline[6]
+                    phenotype = list(unique_everseen(aline[7].split(";")))
+                    omim = aline[8].split(";")
+                    oprahanet = aline[9].split(";")
+                    hpo = aline[10].split(";")
+                    publication = list(unique_everseen(aline[11].split(";")))
+                    description = aline[12]
+                    flagged = aline[13]
+
+                    if level4:
+                        fresh_panel = False
+                        panel = GenePanel.objects.filter(panel_name=level4).first()
+                        if not panel:
+                            level4_object = Level4Title.objects.create(
+                                level2title=level2,
+                                level3title=level3,
+                                name=level4,
+                                description=description,
+                                omim=omim,
+                                hpo=hpo,
+                                orphanet=oprahanet
+                            )
+                            panel = GenePanel.objects.create(
+                                name=level4
+                            )
+                            gps = GenePanelSnapshot.objects.create(
+                                panel=panel,
+                                level4title=level4_object
+                            )
+                            fresh_panel = True
+
+                        active_panel = panel.active_panel
+
+                        gene_data = {
+                            'moi': model_of_inheritance,
+                            'phenotypes': phenotype,
+                            'publications': publication,
+                            'sources': source,
+                            'gene_symbol': gene_symbol
+                        }
+                        if fresh_panel or not active_panel.has_gene(gene_symbol):
+                            try:
+                                gene = Gene.objects.get(gene_symbol=gene_symbol)
+                                name = gene.gene_name
+                                omim_gene = gene.omim_gene
+                                other_transcripts = gene.other_transcripts
+                                gene_data['gene_name'] = name
+                                gene_data['omim'] = omim
+                                gene_data['other_transcripts'] = other_transcripts
+                            except Gene.DoesNotExist:
+                                raise GeneDoesNotExist(str(i + 2))
+                            active_panel.add_gene(user, gene_symbol, gene_data)
+                        else:
+                            active_panel.update_gene(user, gene_symbol, gene_data)
+                    else:
+                        raise TSVIncorrectFormat(str(i + 2))
+                if active_panel:
+                    active_panel.increment_version()
+
 
 class UploadedReviewsList(models.Model):
     reviews = models.FileField(upload_to='reviews')
+
+    def process_file(self):
+        with open(self.reviews.path) as file:
+            logger.info('Started importing list of genes')
+            header = file.readline()  # noqa
+            with transaction.atomic():
+                for i, line in enumerate(file):
+                    line = re.sub(r'[^\x00-\x7F]+', ' ', line)
+                    aline = line.replace('"', "").rstrip("\n").split("\t")
+                    if len(aline) < 22:
+                        raise TSVIncorrectFormat(str(i + 2))
+
+                    gene_symbol = re.sub("[^0-9a-zA-Z~#_@-]", '', aline[0])
+                    source = aline[1].split(";")
+                    level4 = aline[2].rstrip(" ")
+                    level3 = aline[3]
+                    level2 = aline[4]
+                    transcript = aline[5]
+                    model_of_inheritance = aline[6]
+                    phenotype = aline[7].split(";")
+                    omim = aline[8].split(";")
+                    oprahanet = aline[9].split(";")
+                    hpo = aline[10].split(";")
+                    publication = aline[11].split(";")
+                    description = aline[12]
+
+                    mop = aline[17]
+                    rate = aline[18]
+                    current_diagnostic = aline[19]
+                    if current_diagnostic == "Yes":
+                        current_diagnostic = True
+                    else:
+                        current_diagnostic = False
+                    comments = aline[20]
+                    username = aline[21]
+
+                    user = User.objects.filter(username=username).first()
+                    if user:
+                        panels = GenePanel.objects.filter(panel_name=level4)
+                        if len(panels) == 1:
+                            panel = panels[0].active_panel
+                            gene = panel.get_gene(gene_symbol)
+                            if not gene:
+                                raise GeneDoesNotExist(str(i + 2))
+
+                            evaluation_data = {
+                                'comment': comments,
+                                'mode_of_pathogenicity': mode_of_pathogenicity,
+                                'phenotypes': phenotype,
+                                'moi': model_of_inheritance,
+                                'current_diagnostic': current_diagnostic,
+                                'rating': rate
+                            }
+                            gene.update_evaluation(user, evaluation_data)
+                    else:
+                        raise UserDoesNotExist(str(i + 2))

@@ -22,6 +22,8 @@ from .views import DownloadPanelTSVView
 from .views import DownloadPanelVersionTSVView
 from .views import MarkGeneNotReadyView
 from .views import ComparePanelsView
+from .views import CompareGeneView
+from .views import CopyReviewsView
 from .ajax_views import ClearPublicationsAjaxView
 from .ajax_views import ClearPhoenotypesAjaxView
 from .ajax_views import ClearModeOfPathogenicityAjaxView
@@ -48,7 +50,8 @@ urlpatterns = [
     url(r'^compare/$', ComparePanelsView.as_view(), name="compare_panels_form"),
     url(r'^compare/(?P<panel_1_id>[0-9]+)/(?P<panel_2_id>[0-9]+)$', ComparePanelsView.as_view(), name="compare"),
     url(r'^compare/(?P<panel_1_id>[0-9]+)/(?P<panel_2_id>[0-9]+)/(?P<gene_symbol>[\w\-]+)$',
-        ComparePanelsView.as_view(), name="compare_genes"),
+        CompareGeneView.as_view(), name="compare_genes"),
+    url(r'^copy/(?P<panel_1_id>[0-9]+)/(?P<panel_2_id>[0-9]+)$', CopyReviewsView.as_view(), name="copy_reviews"),
     url(r'^(?P<pk>[0-9]+)/$', GenePanelView.as_view(), name="detail"),
     url(r'^(?P<pk>[0-9]+)/update$', UpdatePanelView.as_view(), name="update"),
     url(r'^(?P<pk>[0-9]+)/promote$', PromotePanelView.as_view(), name="promote"),

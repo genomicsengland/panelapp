@@ -383,6 +383,103 @@ class GenePanelEntrySnapshot(TimeStampedModel):
 
         return amber_perc, green_perc, red_prec
 
+    def update_evaluation(self, user, evaluation_data):
+        """
+        This method adds or updates an evaluation in case the user has already
+        added an evaluation in the past. In this case it just checks the new values
+        and adds them instead. If the value isn't set, then we remove it.
+
+        args:
+            user (User): User that this evaluation belongs to
+            evaluation_data (dict): Dictionary with the new values for this evaluation,
+                it will use following parameters:
+
+                - comment
+                - mode_of_pathogenicity
+                - publications
+                - phenotypes
+                - moi
+                - current_diagnostic
+                - rating
+
+        returns:
+            Evaluation: new or updated evaluation
+        """
+
+        try:
+            evaluation = self.evaluation.get(user=user)
+
+            changed = False
+
+            if evaluation_data.get('comment'):
+                comment = Comment.objects.create(
+                    user=user,
+                    comment=evaluation_data.get('comment')
+                )
+                evaluation.comments.add(comment)
+
+            mop = evaluation_data.get('mode_of_pathogenicity')
+            if mop and evaluation.mode_of_pathogenicity != mop:
+                changed = True
+                evaluation.mode_of_pathogenicity = mop
+
+            publications = evaluation_data.get('publications')
+            if publications and evaluation.publications != publications:
+                changed = True
+                evaluation.publications = publications
+
+            phenotypes = evaluation_data.get('phenotypes')
+            if phenotypes and evaluation.phenotypes != phenotypes:
+                changed = True
+                evaluation.phenotypes = phenotypes
+
+            moi = evaluation_data.get('moi')
+            if moi and evaluation.moi != moi:
+                changed = True
+                evaluation.moi = moi
+
+            current_diagnostic = evaluation_data.get('current_diagnostic')
+            if moi and evaluation.current_diagnostic != current_diagnostic:
+                changed = True
+                evaluation.current_diagnostic = current_diagnostic
+
+            evaluation.version = self.panel.version
+
+            if changed:
+                activity_text = "commented on {}".format(self.gene.get('gene_symbol'))
+                self.panel.add_activity(user, self.gene.get('gene_symbol'), activity_text)
+            elif comment:
+                activity_text = "edited their review of {}".format(self.gene.get('gene_symbol'))
+                self.panel.add_activity(user, self.gene.get('gene_symbol'), activity_text)
+
+        except Evaluation.DoesNotExist:
+            evaluation = Evaluation.objects.create(
+                user=user,
+                rating=evaluation_data.get('rating'),
+                mode_of_pathogenicity=evaluation_data.get('mode_of_pathogenicity'),
+                publications=evaluation_data.get('publications'),
+                phenotypes=evaluation_data.get('phenotypes'),
+                moi=evaluation_data.get('moi'),
+                current_diagnostic=evaluation_data.get('current_diagnostic'),
+                version=self.panel.version
+            )
+            self.evaluation.add(evaluation)
+
+            if evaluation_data.get('comment'):
+                comment = Comment.objects.create(
+                    user=user,
+                    comment=evaluation_data.get('comment')
+                )
+                evaluation.comments.add(comment)
+            if evaluation.is_comment_without_review():
+                activity_text = "commented on {}".format(self.gene.get('gene_symbol'))
+                self.panel.add_activity(user, self.gene.get('gene_symbol'), activity_text)
+            else:
+                activity_text = "reviewed {}".format(self.gene.get('gene_symbol'))
+                self.panel.add_activity(user, self.gene.get('gene_symbol'), activity_text)
+
+            return evaluation
+
     def dict_tr(self):
         return {
             "gene": self.gene,

@@ -1,0 +1,83 @@
+{% extends "default.html" %}
+{% load staticfiles %}
+{% load panel_helpers %}
+
+{% block content %}
+    <ol class="breadcrumb">
+        <li><a href="{% url 'panels:index' %}">Panels</a></li>
+        <li><a href="{% url 'panels:compare' panel_1.panel.id panel_2.panel.id %}">“{{ panel_1.level4title.name }}” &amp; “{{ panel_2.level4title.name }}”</a></li>
+        <li class="active">Copy reviews</li>
+    </ol>
+
+    <h1>Copy reviews</h1>
+    <div class="row">
+        <div class="col-md-8 add-top-margin add-bottom-margin">
+            <p class="lead">For the {{comparison|length}} gene{{comparison|pluralize}} that appear in both panels, copy reviews from <b>“{{ panel_1.level4title.name }}” to “{{ panel_2.level4title.name }}”</b>. If a reviewer has reviewed the same gene in both panels, their reviews and comments will not be copied.</p>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-bordered" data-module="filterable-table">
+            <thead>
+                <tr class="table-header">
+                    <th>Gene</th>
+                    <th style="width: 43%">
+                        Reviews to be copied<br />
+                        <a href="{% url 'panels:detail' panel_1.panel.id %}">
+                            {{ panel_1.level4title.name }}
+                        </a>
+                    </th>
+                    <th style="width: 43%">
+                        Existing reviews<br />
+                        <a href="{% url 'panels:detail' panel_2.id %}">
+                            {{ panel_2.level4title.name }}
+                        </a>
+                    </th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for entry in comparison %}
+                    <tr>
+                        <th class="text-right">
+                            <h3 class="remove-top-margin remove-bottom-margin">
+                                {{ entry.0 }}
+                            </h3>
+                            <a href="{% url 'panels:compare_genes' panel_1.panel.id panel_2.panel.id entry.0 %}" class="normal">Compare</a>
+                        </th>
+                        <td>
+                            {% if entry.1.evaluation.all %}
+                            <ul class="remove-bottom-margin">
+                                {% for ev in entry.1.evaluation.all %}
+                                    <li>{{ ev.user.get_full_name }}</li>
+                                {% endfor %}
+                            </ul>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if entry.2.evaluation.all %}
+                            <ul class="remove-bottom-margin">
+                                {% for ev in entry.2.evaluation.all %}
+                                    <li>{{ ev.user.get_full_name }}</li>
+                                {% endfor %}
+                            </ul>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr class="table-header">
+                    <td colspan="3" class="text-center">
+                        <form class="add-top-margin add-bottom-margin" action="{% url 'panels:copy_reviews' panel_1.panel.id panel_2.panel.id %}" method="post">
+                            {% csrf_token %}
+                            {% for field in form %}
+                                {{ field }}
+                            {% endfor %}
+                            <input type="submit" class="btn btn-lg btn-primary" value="Copy all reviews" />
+                        </form>
+                    </td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+{% endblock %}

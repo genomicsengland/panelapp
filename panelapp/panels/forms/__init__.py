@@ -1,5 +1,6 @@
 from django import forms
 from panels.models import UploadedGeneList
+from panels.models import UploadedReviewsList
 from panels.models import GenePanel
 from .panel import PanelForm  # noqa
 from .promotepanel import PromotePanelForm  # noqa
@@ -11,7 +12,7 @@ from .geneready import GeneReadyForm  # noqa
 class UploadGenesForm(forms.Form):
     gene_list = forms.FileField(label='Select a file', required=True)
 
-    def process_file(self):
+    def process_file(self, **kwargs):
         gene_list = UploadedGeneList.objects.create(gene_list=self.cleaned_data['gene_list'])
         gene_list.create_genes()
 
@@ -19,15 +20,17 @@ class UploadGenesForm(forms.Form):
 class UploadPanelsForm(forms.Form):
     panel_list = forms.FileField(label='Select a file', required=True)
 
-    def process_file(self):
-        print('processing upload genes form')
+    def process_file(self, **kwargs):
+        panel_list = UploadedPanelList.objects.create(panel_list=self.cleaned_data['panel_list'])
+        panel_list.process_file(kwargs.pop('user'))
 
 
 class UploadReviewsForm(forms.Form):
     review_list = forms.FileField(label='Select a file', required=True)
 
-    def process_file(self):
-        print('processing upload genes form')
+    def process_file(self, **kwargs):
+        review_list = UploadedReviewsList.objects.create(reviews=self.cleaned_data['review_list'])
+        review_list.process_file()
 
 
 class ComparePanelsForm(forms.Form):
@@ -40,3 +43,44 @@ class ComparePanelsForm(forms.Form):
         super(ComparePanelsForm, self).__init__(*args, **kwargs)
         self.fields['panel_1'].queryset = qs
         self.fields['panel_2'].queryset = qs
+
+
+class CopyReviewsForm(forms.Form):
+    panel_1 = forms.CharField(required=True, widget=forms.widgets.HiddenInput())
+    panel_2 = forms.CharField(required=True, widget=forms.widgets.HiddenInput())
+
+    def copy_reviews(self, gene_symbols, panel_1, panel_2):
+        count = 0
+
+        for gene in gene_symbols:
+            count += self.copy_gene_evaluations(gene, panel_1, panel_2)
+
+        return count
+
+    def copy_gene_evaluations(self, gene, panel_1, panel_2):
+        count = 0
+
+        source_entry = panel_1.get_gene(gene)
+        destination_entry = panel_2.get_gene(gene)
+        panel_name = panel_1.level4title.name
+
+        if source_entry and destination_entry:
+            source_evaluations = source_entry.evaluation.all()
+            for ev in source_evaluations:
+                version = ev.version if ev.version else '0'
+                ev.version = "Imported from {} panel version {}".format(panel_name, version)
+
+            count = self.add_evaluation_list(gene, destination_entry, source_evaluations)
+
+        return count
+
+    def add_evaluation_list(self, gene, destination_entry, source_evaluations):
+        destination_users = destination_entry.evaluation.values_list('user', flat=True)
+        filtered_evaluations = [ev for ev in source_evaluations if ev.user.pk not in destination_users]
+
+        for ev in filtered_evaluations:
+            ev.pk = None
+            ev.save()
+            destination_entry.evaluation.add(ev)
+
+        return len(filtered_evaluations)

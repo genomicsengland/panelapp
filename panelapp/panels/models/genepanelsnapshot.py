@@ -1,3 +1,4 @@
+import logging
 from django.db import models
 from django.db.models import Sum
 from django.db.models import Count
@@ -12,6 +13,11 @@ from model_utils.models import TimeStampedModel
 from .activity import Activity
 from .genepanel import GenePanel
 from .level4title import Level4Title
+from .trackrecord import TrackRecord
+from .evidence import Evidence
+from .evaluation import Evaluation
+from .gene import Gene
+from .comment import Comment
 
 
 class GenePanelSnapshotManager(models.Manager):
@@ -184,6 +190,257 @@ class GenePanelSnapshot(TimeStampedModel):
             del self.get_all_entries  # clear cached values as it points to the previous instance
             self.get_all_entries.get(gene__gene_symbol=gene_symbol).delete()
             del self.get_all_entries  # clear cached values as we deleted item
+
+    def add_gene(self, user, gene_symbol, gene_data):
+        """Adds a new gene to the panel
+
+        Args:
+            user: User instance. It's the user who is adding a new gene, we need
+                this info to add to TrackRecord, Activities, Evidence, and Evaluation
+            gene_symbol: Gene symbol string
+            gene_data: A dict with the values:
+                - moi
+                - penetrance
+                - publications
+                - phenotypes
+                - mode_of_pathogenicity
+                - comment
+                - current_diagnostic
+                - sources
+                - rating
+
+        Returns:
+            GenePanelEntrySnapshot instance of a freshly created Gene in a Panel.
+            Or False in case the gene is already in the panel.
+        """
+
+        if self.has_gene(gene_symbol):
+            return False
+
+        self.increment_version()
+
+        gene_core = Gene.objects.get(gene_symbol=gene_symbol)
+        gene_info = gene_core.dict_tr()
+
+        gene = self.genepanelentrysnapshot_set.model(
+            gene=gene_info,
+            panel=self,
+            gene_core=gene_core,
+            moi=gene_data.get('moi'),
+            penetrance=gene_data.get('penetrance'),
+            publications=gene_data.get('publications'),
+            phenotypes=gene_data.get('phenotypes'),
+            mode_of_pathogenicity=gene_data.get('mode_of_pathogenicity'),
+            saved_gel_status=0,
+            flagged = False if user.reviewer.is_GEL() else True
+        )
+        gene.save()
+
+        if gene_data.get('comment'):
+            comment = Comment.objects.create(
+                user=user,
+                comment=gene_data.get('comment')
+            )
+            gene.comments.add(comment)
+
+        for source in gene_data.get('sources'):
+            evidence = Evidence.objects.create(
+                rating=5,
+                reviewer=user.reviewer,
+                name=source.strip()
+            )
+            gene.evidence.add(evidence)
+
+        evidence_status = gene.evidence_status()
+        track_created = TrackRecord.objects.create(
+            gel_status=evidence_status,
+            curator_status=0,
+            user=user,
+            issue_type=TrackRecord.ISSUE_TYPES.Created,
+            issue_description="{} was created by {}".format(gene_core.gene_symbol, user.get_full_name())
+        )
+        gene.track.add(track_created)
+        description = "{} was added to {} panel. Sources: {}".format(
+            gene_core.gene_symbol,
+            self.panel.name,
+            ",".join(gene_data.get('sources'))
+        )
+        track_sources = TrackRecord.objects.create(
+            gel_status=evidence_status,
+            curator_status=0,
+            user=user,
+            issue_type=TrackRecord.ISSUE_TYPES.NewSource,
+            issue_description=description
+        )
+        gene.track.add(track_sources)
+
+        evaluation = Evaluation.objects.create(
+            user=user,
+            rating=gene_data.get('rating'),
+            mode_of_pathogenicity=gene_data.get('mode_of_pathogenicity'),
+            phenotypes=gene_data.get('phenotypes'),
+            publications=gene_data.get('publications'),
+            moi=gene_data.get('moi'),
+            current_diagnostic=gene_data.get('current_diagnostic'),
+            version=self.version
+        )
+        if gene_data.get('comment'):
+            evaluation.comments.add(comment)
+        gene.evaluation.add(evaluation)
+        gene.evidence_status(update=True)
+        return gene
+
+    def update_gene(self, user, gene_symbol, gene_data):
+        """Updates a gene if it exists in this panel
+
+        Args:
+            user: User instance. It's the user who is updating a gene, we need
+                this info to add to TrackRecord, Activities, Evidence, and Evaluation
+            gene_symbol: Gene symbol string
+            gene_data: A dict with the values:
+                - moi
+                - penetrance
+                - publications
+                - phenotypes
+                - mode_of_pathogenicity
+                - comment
+                - current_diagnostic
+                - sources
+                - rating
+                - gene
+
+                if `gene` is in the gene_data and it's different to the stored gene
+                it will change the gene data, and remove the old gene from the panel.
+
+        Returns:
+            GenePanelEntrySnapshot if the gene was successfully updated, False otherwise
+        """
+
+        logging.debug("Updating gene:{} panel:{} gene_data:{}".format(gene_symbol, self, gene_data))
+        gene = self.get_gene(gene_symbol=gene_symbol)
+        print(gene)
+        if gene:
+            logging.debug("Found gene:{} in panel:{}. Incrementing version.".format(gene_symbol, self))
+            self.increment_version()
+            gene.pk = None
+            gene.panel = self
+            gene.save()
+
+            tracks = []
+            evidences_names = [ev.name.strip() for ev in gene.evidence.all()]
+
+            logging.debug("Updating evidences_names for gene:{} in panel:{}".format(gene_symbol, self))
+            for source in gene_data.get('sources'):
+                cleaned_source = source.strip()
+                if cleaned_source not in evidences_names:
+                    logging.debug("Adding new evidence:{} for gene:{} panel:{}".format(
+                        cleaned_source, gene_symbol, self
+                    ))
+                    evidence = Evidence.objects.create(
+                        name=cleaned_source,
+                        rating=5,
+                        reviewer=user.reviewer
+                    )
+                    gene.evidence.add(evidence)
+
+                    description = "{} was added to {} panel. Source: {}".format(
+                        gene_symbol,
+                        self.panel.name,
+                        cleaned_source
+                    )
+                    tracks.append((
+                        TrackRecord.ISSUE_TYPES.NewSource,
+                        description
+                    ))
+
+            moi = gene_data.get('moi')
+            if moi and gene.moi != moi:
+                logging.debug("Updating moi for gene:{} in panel:{}".format(gene_symbol, self))
+                gene.moi = moi
+
+                description = "Model of inheritance for gene {} was set to {}".format(
+                    gene_symbol,
+                    moi
+                )
+                tracks.append((
+                    TrackRecord.ISSUE_TYPES.SetModeofInheritance,
+                    description
+                ))
+            elif gene_symbol.startswith("MT-"):
+                logging.debug("Updating moi for gene:{} in panel:{}".format(gene_symbol, self))
+                entry.moi = "MITOCHONDRIAL"
+                description = "Model of inheritance for gene {} was set to {}".format(
+                    gene_symbol,
+                    "MITOCHONDRIAL"
+                )
+                tracks.append((
+                    TrackRecord.ISSUE_TYPES.SetModeofInheritance,
+                    description
+                ))
+
+            mop = gene_data.get('mode_of_pathogenicity')
+            if mop and gene.mode_of_pathogenicity != mop:
+                logging.debug("Updating mop for gene:{} in panel:{}".format(gene_symbol, self))
+                gene.mode_of_pathogenicity = mop
+
+                description = "Model of pathogenicity for gene {} was set to {}".format(
+                    gene_symbol,
+                    mop
+                )
+                tracks.append((
+                    TrackRecord.ISSUE_TYPES.SetModeofPathogenicity,
+                    description
+                ))
+
+            phenotypes = gene_data.get('phenotypes')
+            if phenotypes:
+                diff = set(phenotypes).difference(gene.phenotypes)
+                logging.debug("Updating phenotypes for gene:{} in panel:{}".format(gene_symbol, self))
+                for p in diff:
+                    gene.phenotypes.append(p)
+
+            if tracks:
+                logging.debug("Adding tracks for gene:{} in panel:{}".format(gene_symbol, self))
+                status = gene.evidence_status(True)
+                track = TrackRecord.objects.create(
+                    gel_status=status,
+                    curator_status=0,
+                    user=user,
+                    issue_type=",".join([t[0] for t in tracks]),
+                    issue_description="\n".join([t[1] for t in tracks])
+                )
+                gene.track.add(track)
+
+            new_gene = gene_data.get('gene')
+            gene_name = gene_data.get('gene_name')
+            print(new_gene, gene.gene_core)
+
+            if new_gene and gene.gene_core != new_gene:
+                logging.debug("Gene:{} in panel:{} has changed to gene:{}".format(gene_symbol, self, new_gene.gene_symbol))
+                old_gene_symbol = gene.gene_core.gene_symbol
+                description = "{} was changed to {}".format(old_gene_symbol, new_gene.gene_symbol)
+                track_gene = TrackRecord.objects.create(
+                    gel_status=gene.status,
+                    curator_status=0,
+                    user=user,
+                    issue_type=TrackRecord.ISSUE_TYPES.ChangedGeneName,
+                    issue_description=description
+                )
+                gene.track.add(track_gene)
+                gene.gene_core = new_gene
+                gene.gene = new_gene.dict_tr()
+                gene.save()
+                print("New gene symbol", new_gene.gene_symbol)
+                print("Old gene symbol", old_gene_symbol)
+                self.delete_gene(old_gene_symbol, increment=False)
+            elif gene.gene.get('gene_name') != gene_name:
+                logging.debug("Updating gene_name for gene:{} in panel:{}".format(gene_symbol, self))
+                gene.gene['gene_name'] = gene_name
+                gene.save()
+
+            return gene
+        else:
+            return False
 
     def add_activity(self, user, gene_symbol, text):
         Activity.objects.create(
