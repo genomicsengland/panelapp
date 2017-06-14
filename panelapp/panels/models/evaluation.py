@@ -34,7 +34,7 @@ class Evaluation(TimeStampedModel):
         ("Other - please specifiy in evaluation comments", "Other - please specifiy in evaluation comments"),
     )
 
-    MODES_OF_PHATHOGENICITY = Choices(
+    MODES_OF_PATHOGENICITY = Choices(
         ("", "Provide exceptions to loss-of-function"),
         ("Loss-of-function variants (as defined in pop up message) DO NOT cause this phenotype - please provide details in the comments", "Loss-of-function variants (as defined in pop up message) DO NOT cause this phenotype - please provide details in the comments"),  # noqa
         ("Other - please provide details in the comments", "Other - please provide details in the comments"),
@@ -42,7 +42,7 @@ class Evaluation(TimeStampedModel):
 
     user = models.ForeignKey(User)
     rating = models.CharField(max_length=255, choices=RATINGS, blank=True)
-    mode_of_pathogenicity = models.CharField(choices=MODES_OF_PHATHOGENICITY, null=True, blank=True, max_length=255)
+    mode_of_pathogenicity = models.CharField(choices=MODES_OF_PATHOGENICITY, null=True, blank=True, max_length=255)
     publications = ArrayField(models.CharField(null=True, max_length=255), blank=True, null=True)
     phenotypes = ArrayField(models.CharField(null=True, max_length=255), blank=True, null=True)
     moi = models.CharField("Mode of Inheritance", choices=MODES_OF_INHERITANCE, null=True,  blank=True, max_length=255)

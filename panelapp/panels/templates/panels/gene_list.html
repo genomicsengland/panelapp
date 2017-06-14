@@ -57,11 +57,9 @@
         <h3 class="remove-top-margin normal add-bottom-margin">Tagged</h3>
         <ul class="list-inline">
           {% for tag in tags %}
-            {% if tag %}
               <li class="add-label-margin">
                 <a href="?tag={{ tag }}">{{ tag }}</a>
               </li>
-            {% endif %}
           {% endfor %}
         </ul>
         {% endif %}

@@ -1,7 +1,6 @@
 from collections import OrderedDict
 from django import forms
 from django.contrib.postgres.forms import SimpleArrayField
-from panels.models import Comment
 from panels.models import Evaluation
 
 

@@ -30,7 +30,7 @@ class GenePanelSnapshotTest(LoginGELUser):
             "rating": Evaluation.RATINGS.AMBER,
             "comments": fake.sentence(),
             "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)],
-            "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PHATHOGENICITY][randint(1, 2)],
+            "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][randint(1, 2)],
             "penetrance": GenePanelEntrySnapshot.PENETRANCE.Incomplete,
             "current_diagnostic": "True"
         }
@@ -67,7 +67,7 @@ class GenePanelSnapshotTest(LoginGELUser):
             "publications": ";".join([publication, fake.sentence()]),
             "phenotypes": ";".join([phenotype, fake.sentence(), fake.sentence()]),
             "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)],
-            "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PHATHOGENICITY][randint(1, 2)],
+            "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][randint(1, 2)],
             "penetrance": GenePanelEntrySnapshot.PENETRANCE.Incomplete,
         }
         res = self.client.post(url, gene_data)
@@ -97,16 +97,17 @@ class GenePanelSnapshotTest(LoginGELUser):
             "publications": ";".join([publication, fake.sentence()]),
             "phenotypes": ";".join([phenotype, fake.sentence(), fake.sentence()]),
             "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)],
-            "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PHATHOGENICITY][randint(1, 2)],
+            "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][randint(1, 2)],
             "penetrance": GenePanelEntrySnapshot.PENETRANCE.Incomplete,
         }
         res = self.client.post(url, gene_data)
         assert res.status_code == 302
 
-        # check panel has no previous gene
         new_gps = GenePanel.objects.get(pk=gpes.panel.panel.pk).active_panel
+        old_gps = GenePanelSnapshot.objects.get(pk=gpes.panel.pk)
+
+        # check panel has no previous gene
         assert new_gps.has_gene(old_gene_symbol) is False
 
         # test previous panel contains old gene
-        old_gps = GenePanelSnapshot.objects.get(pk=gpes.panel.pk)
         assert old_gps.has_gene(old_gene_symbol) is True

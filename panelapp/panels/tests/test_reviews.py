@@ -26,7 +26,7 @@ class EvaluationTest(LoginGELUser):
             "publications": ";".join([fake.sentence(), fake.sentence()]),
             "phenotypes": ";".join([fake.sentence(), fake.sentence(), fake.sentence()]),
             "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)],
-            "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PHATHOGENICITY][randint(1, 2)],
+            "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][randint(1, 2)],
         }
         res = self.client.post(url, gene_data)
         assert res.status_code == 302
@@ -68,14 +68,14 @@ class EvaluationTest(LoginGELUser):
             "publications": ";".join([fake.sentence(), fake.sentence()]),
             "phenotypes": ";".join(old_phenotypes),
             "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)],
-            "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PHATHOGENICITY][randint(1, 2)],
+            "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][randint(1, 2)],
         }
         self.client.post(url, gene_data)
         assert Evaluation.objects.filter(user=self.gel_user).count() == 1
 
         gene_data = {
             "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)],
-            "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PHATHOGENICITY][randint(1, 2)],
+            "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][randint(1, 2)],
         }
         self.client.post(url, gene_data)
         assert Evaluation.objects.filter(user=self.gel_user).count() == 1
@@ -90,7 +90,7 @@ class GeneReviewTest(LoginGELUser):
             'gene_symbol': gpes.gene.get('gene_symbol')
         })
 
-        res = self.client.post(url, {'comments': fake.sentence()})
+        self.client.post(url, {'comments': fake.sentence()})
         gene = GenePanel.objects.get(pk=gpes.panel.panel.pk).active_panel.get_gene(gpes.gene.get('gene_symbol'))
         assert gene.ready is True
 
@@ -116,7 +116,7 @@ class GeneReviewTest(LoginGELUser):
             'gene_symbol': gpes.gene.get('gene_symbol')
         })
 
-        mop = [x for x in Evaluation.MODES_OF_PHATHOGENICITY][randint(1, 2)]
+        mop = [x for x in Evaluation.MODES_OF_PATHOGENICITY][randint(1, 2)]
         data = {'comment': fake.sentence(), 'mode_of_pathogenicity': mop[1]}
 
         res = self.client.post(url, data, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
@@ -140,7 +140,6 @@ class GeneReviewTest(LoginGELUser):
         assert res.json().get('status') == 200
         assert gene.comments.count() == 1
         assert gene.moi == moi[1]
-
 
     def test_update_phenotypes(self):
         gpes = GenePanelEntrySnapshotFactory()
@@ -207,7 +206,7 @@ class GeneReviewTest(LoginGELUser):
             "publications": ";".join([fake.sentence(), fake.sentence()]),
             "phenotypes": ";".join([fake.sentence(), fake.sentence(), fake.sentence()]),
             "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)],
-            "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PHATHOGENICITY][randint(1, 2)],
+            "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][randint(1, 2)],
         }
         self.client.post(evaluation_url, gene_data, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
         gene = GenePanel.objects.get(pk=gpes.panel.panel.pk).active_panel.get_gene(gpes.gene.get('gene_symbol'))
@@ -237,7 +236,7 @@ class GeneReviewTest(LoginGELUser):
             "publications": ";".join([fake.sentence(), fake.sentence()]),
             "phenotypes": ";".join([fake.sentence(), fake.sentence(), fake.sentence()]),
             "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)],
-            "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PHATHOGENICITY][randint(1, 2)],
+            "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][randint(1, 2)],
         }
         self.client.post(evaluation_url, gene_data, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
         gene = GenePanel.objects.get(pk=gpes.panel.panel.pk).active_panel.get_gene(gpes.gene.get('gene_symbol'))
@@ -271,7 +270,7 @@ class GeneReviewTest(LoginGELUser):
             "publications": ";".join([fake.sentence(), fake.sentence()]),
             "phenotypes": ";".join([fake.sentence(), fake.sentence(), fake.sentence()]),
             "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)],
-            "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PHATHOGENICITY][randint(1, 2)],
+            "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][randint(1, 2)],
         }
         self.client.post(evaluation_url, gene_data, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
         gene = GenePanel.objects.get(pk=gpes.panel.panel.pk).active_panel.get_gene(gpes.gene.get('gene_symbol'))
@@ -288,3 +287,6 @@ class GeneReviewTest(LoginGELUser):
         res = self.client.post(edit_comment_url, {'comment': new_comment})
         assert res.status_code == 302
         assert evaluation.comments.first().comment == new_comment
+
+    def test_import_reviews(self):
+        assert False

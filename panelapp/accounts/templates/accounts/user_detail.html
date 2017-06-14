@@ -4,11 +4,10 @@
 {% block body %}
 <div class="container">
   <div class="row">
-    <div class="col-md-8 col-md-offset-2">
-      <div class="page-header" id="banner">
-        <h1>{% block title %}{{ request.user }}{% endblock %}</h1>
+    <div class="col-md-6">
+      <div class="add-bottom-margin" id="banner">
+        <h2>{% block title %}{{ request.user }}{% endblock %}</h2>
       </div>
-
       <div id="user_info">
         <div class="list-group">
           <div class="list-group-item active">
@@ -51,9 +50,12 @@
           </div>
         </div>
 
-        <a href="{% url 'accounts:change_password' %}">Change password</a>
+        <a href="{% url 'accounts:change_password' %}" class="btn btn-primary">Change password</a>
       </div>
-      <h2 class="add-bottom-margin">Your Evaluations</h1>
+    </div>
+    <div class="col-md-6">
+      <h2 class="add-bottom-margin">Your Evaluations</h2>
+      {% include "accounts/user_evaluations.html" %}
     </div>
   </div>
 </div>

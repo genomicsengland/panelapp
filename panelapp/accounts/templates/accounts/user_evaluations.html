@@ -1,0 +1,22 @@
+{% load panel_helpers %}
+
+{% if user.is_authenticated and user.reviewer %}
+  {% for evaluation in user.get_evaluations %}
+    <div class="panel panel-default">
+      {% if request.user == evaluation.user %}
+      <div class="panel-heading">
+        <div class="panel-title">
+          {% with gene=evaluation.genepanelentrysnapshot_set.first %}
+            {% with panel=gene.panel.panel %}
+            <a href="{% url 'panels:detail' panel.pk %}" class="link-inherit">{{ panel.name }}</a>,
+            <a href="{% url 'panels:evaluation' panel.pk gene.gene.gene_symbol %}" class="link-inherit">{{ gene.gene.gene_symbol }}</a>
+            {% endwith %}
+          {% endwith %}
+        </div>
+      </div>
+      {% endif %}
+
+      {% include "panels/genepanelentrysnapshot/gene_evaluation.html" with ev=evaluation %}
+    </div>
+  {% endfor %}
+{% endif %}

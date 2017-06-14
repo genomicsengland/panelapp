@@ -1,18 +1,29 @@
 from django.db import models
+from django.db.models import Q
 from django.db.models import Sum
 from django.db.models import Count
 from django.db.models import Case
 from django.db.models import When
 from django.db.models import Value
-from django.db.models import Subquery
 from django.utils.functional import cached_property
 from model_utils.models import TimeStampedModel
 
 
+class GenePanelManager(models.Manager):
+    def get_panel(self, pk):
+        return super().get_queryset().get(Q(pk=pk) | Q(old_pk=pk))
+
+    def get_active_panel(self, pk):
+        return self.get_panel(pk).active_panel
+
+
 class GenePanel(TimeStampedModel):
+    old_pk = models.CharField(max_length=24, null=True, blank=True)  # Mongo ObjectID hex string
     name = models.CharField(max_length=255)
     approved = models.BooleanField(default=False)
     promoted = models.BooleanField(default=False)
+
+    objects = GenePanelManager()
 
     def __str__(self):
         ap = self.active_panel
@@ -39,7 +50,7 @@ class GenePanel(TimeStampedModel):
                     output_field=models.IntegerField()
                 )),
                 number_of_amber_genes=Sum(Case(When(
-                    genepanelentrysnapshot__saved_gel_status__in=[2,3], then=Value(1)),
+                    genepanelentrysnapshot__saved_gel_status__in=[2, 3], then=Value(1)),
                     default=Value(0),
                     output_field=models.IntegerField()
                 )),

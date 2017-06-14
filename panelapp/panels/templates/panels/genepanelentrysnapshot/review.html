@@ -1,7 +1,7 @@
 {% load bootstrap3 %}
 {% load panel_helpers %}
 <h3 class="remove-bottom-margin">Review feedback</h3>
-<p class="lead">{{ evaluation|length }} review{{evaluation|pluralize}}</p>
+<p class="lead">{{ gene.evaluation.all|length }} review{{ gene.evaluation.all|pluralize }}</p>
 
 <div id="review-evaluations">
   {% include "panels/genepanelentrysnapshot/review/review_evaluations.html" %}

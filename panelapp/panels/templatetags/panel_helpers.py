@@ -1,5 +1,4 @@
 import re
-import json
 from enum import Enum
 from django import template
 from django.utils.safestring import SafeString
@@ -30,7 +29,7 @@ class GeneDataType(Enum):
 
 
 def get_gene_list_data(gene, list_type):
-    if gene.status > 3:
+    if gene.status > 2:
         return gene_list_data[GeneStatus.GREEN.value][list_type]
     elif gene.status == 2:
         return gene_list_data[GeneStatus.AMBER.value][list_type]
@@ -86,7 +85,8 @@ def reviewed_by(gene, user):
 
 @register.filter
 def human_issue_type(issue_type):
-    return TrackRecord.ISSUE_TYPES[issue_type]
+    issue = issue_type.split(',')
+    return TrackRecord.ISSUE_TYPES[issue[0]]
 
 
 @register.filter

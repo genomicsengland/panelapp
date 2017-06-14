@@ -34,6 +34,9 @@ class User(AbstractUser, TimeStampedModel):
         else:
             return self.get_full_name()
 
+    def get_evaluations(self):
+        return self.evaluation_set.prefetch_related('genepanelentrysnapshot_set')
+
 
 class Reviewer(models.Model):
     TYPES = Choices(

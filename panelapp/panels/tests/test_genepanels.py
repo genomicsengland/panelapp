@@ -132,3 +132,6 @@ class GenePanelTest(LoginGELUser):
 
     def test_compare(self):
         assert False
+
+    def test_import_panel(self):
+        assert False

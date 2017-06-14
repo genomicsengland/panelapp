@@ -8,6 +8,8 @@ from django_ajax.mixin import AJAXMixin
 from panelapp.mixins import GELReviewerRequiredMixin
 from panelapp.mixins import VerifiedReviewerRequiredMixin
 from .forms import PanelGeneForm
+from .forms import GeneReadyForm
+from .forms import GeneReviewForm
 from .forms.ajax import UpdateGeneTagsForm
 from .forms.ajax import UpdateGeneMOPForm
 from .forms.ajax import UpdateGeneMOIForm
@@ -156,6 +158,25 @@ class DeleteGeneAjaxView(GELReviewerRequiredMixin, BaseAjaxGeneMixin, AJAXMixin,
         }
 
 
+class ApproveGeneAjaxView(GELReviewerRequiredMixin, BaseAjaxGeneMixin, AJAXMixin, View):
+    template_name = "panels/genepanel_table.html"
+
+    def process(self):
+        self.panel.get_gene(self.kwargs['gene_symbol']).approve_gene()
+        return self.return_data()
+
+    def return_data(self):
+        ctx = {
+            'panel': self.panel
+        }
+        table = render(self.request, self.template_name, ctx)
+        return {
+            'inner-fragments': {
+                '#table': table
+            }
+        }
+
+
 class GeneObjectMixin:
     @cached_property
     def gene(self):
@@ -190,10 +211,45 @@ class UpdateGeneTagsAjaxView(GELReviewerRequiredMixin, GeneObjectMixin, BaseAjax
 
 class UpdateEvaluationsMixin(VerifiedReviewerRequiredMixin, GeneObjectMixin, BaseAjaxGeneMixin, AJAXMixin, View):
     def get_context_data(self):
-        return {
+        ctx = {
             'panel': self.panel,
             'gene': self.gene,
+            'form_edit': PanelGeneForm(
+                instance=self.gene,
+                initial=self.gene.get_form_initial(),
+                panel=self.panel,
+                request=self.request
+            ),
+            'gene_ready_form': GeneReadyForm(
+                instance=self.gene,
+                initial={},
+                request=self.request,
+            )
         }
+
+        ctx['sharing_panels'] = GenePanelSnapshot.objects.get_gene_panels(self.kwargs['gene_symbol'])
+        ctx['feedback_review_parts'] = [
+            'Rating',
+            'Mode of inheritance',
+            'Mode of pathogenicity',
+            'Publications',
+            'Phenotypes'
+        ]
+        ctx['form'] = GeneReviewForm(
+            panel=self.panel,
+            request=self.request,
+            gene=self.gene
+        )
+
+        ctx['edit_gene_tags_form'] = UpdateGeneTagsForm(instance=self.gene)
+        ctx['edit_gene_mop_form'] = UpdateGeneMOPForm(instance=self.gene)
+        ctx['edit_gene_moi_form'] = UpdateGeneMOIForm(instance=self.gene)
+        ctx['edit_gene_phenotypes_form'] = UpdateGenePhenotypesForm(instance=self.gene)
+        ctx['edit_gene_publications_form'] = UpdateGenePublicationsForm(instance=self.gene)
+        ctx['edit_gene_rating_form'] = UpdateGeneRatingForm(instance=self.gene)
+        ctx['panel_genes'] = list(self.panel.get_all_entries)
+
+        return ctx
 
     def return_data(self):
         ctx = self.get_context_data()

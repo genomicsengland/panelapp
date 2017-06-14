@@ -1,5 +1,5 @@
 import csv
-import re
+from datetime import datetime
 from django.contrib import messages
 from django.views.generic import TemplateView
 from django.views.generic.base import View
@@ -9,6 +9,7 @@ from django.views.generic import UpdateView
 from django.views.generic import DetailView
 from django.views.generic import CreateView
 from django.shortcuts import redirect
+from django.urls import reverse
 from django.urls import reverse_lazy
 from django.utils.functional import cached_property
 from django.template.defaultfilters import pluralize
@@ -33,7 +34,9 @@ from .forms.ajax import UpdateGeneMOIForm
 from .forms.ajax import UpdateGenePhenotypesForm
 from .forms.ajax import UpdateGenePublicationsForm
 from .forms.ajax import UpdateGeneRatingForm
+from .models import Tag
 from .models import Gene
+from .models import Activity
 from .models import GenePanel
 from .models import GenePanelSnapshot
 from .models import GenePanelEntrySnapshot
@@ -74,7 +77,7 @@ class CreatePanelView(GELReviewerRequiredMixin, CreateView):
         return ret
 
     def get_success_url(self):
-        return reverse_lazy('panels:detail', kwargs={'pk': self.instance.pk})
+        return reverse_lazy('panels:detail', kwargs={'pk': self.instance.panel.pk})
 
 
 class UpdatePanelView(GELReviewerRequiredMixin, PanelMixin, UpdateView):
@@ -165,6 +168,17 @@ class GeneListView(ListView):
     model = Gene
     context_object_name = "genes"
 
+    def get_queryset(self, *args, **kwargs):
+        qs = super().get_queryset(*args, **kwargs)
+        qs = qs.prefetch_related()
+        return qs
+
+    def get_context_data(self, *args, **kwargs):
+        ctx = super().get_context_data(*args, **kwargs)
+        ctx['tags'] = Tag.objects.all()
+        ctx['tag_filter'] = self.request.GET.get('tag')
+        return ctx
+
 
 class PromotePanelView(GELReviewerRequiredMixin, PanelMixin, UpdateView):
     form_class = PromotePanelForm
@@ -183,7 +197,7 @@ class PanelAddGeneView(VerifiedReviewerRequiredMixin, CreateView):
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
-        kwargs['panel'] = GenePanel.objects.get(pk=self.kwargs['pk']).active_panel
+        kwargs['panel'] = GenePanel.objects.get_active_panel(pk=self.kwargs['pk'])
         kwargs['request'] = self.request
         return kwargs
 
@@ -194,7 +208,7 @@ class PanelAddGeneView(VerifiedReviewerRequiredMixin, CreateView):
 
     @property
     def panel(self):
-        return GenePanel.objects.get(pk=self.kwargs['pk']).active_panel
+        return GenePanel.objects.get_active_panel(pk=self.kwargs['pk'])
 
     def form_valid(self, form):
         ret = super().form_valid(form)
@@ -219,7 +233,7 @@ class PanelEditGeneView(GELReviewerRequiredMixin, UpdateView):
 
     @cached_property
     def panel(self):
-        return GenePanel.objects.get(pk=self.kwargs['pk']).active_panel
+        return GenePanel.objects.get_active_panel(pk=self.kwargs['pk'])
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
@@ -294,12 +308,13 @@ class GenePanelSpanshotView(DetailView):
         cgi = ctx['panel_genes'].index(self.object)
         ctx['next_gene'] = None if cgi == len(ctx['panel_genes']) - 1 else ctx['panel_genes'][cgi + 1]
         ctx['prev_gene'] = None if cgi == 0 else ctx['panel_genes'][cgi - 1]
+        ctx['updated'] = False
 
         return ctx
 
     @cached_property
     def panel(self):
-        return GenePanel.objects.get(pk=self.kwargs['pk']).active_panel
+        return GenePanel.objects.get_active_panel(pk=self.kwargs['pk'])
 
 
 class PanelMarkNotReadyView(GELReviewerRequiredMixin, PanelMixin, ActAndRedirectMixin, DetailView):
@@ -320,7 +335,7 @@ class GeneReviewView(VerifiedReviewerRequiredMixin, UpdateView):
 
     @cached_property
     def panel(self):
-        return GenePanel.objects.get(pk=self.kwargs['pk']).active_panel
+        return GenePanel.objects.get_active_panel(pk=self.kwargs['pk'])
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
@@ -358,7 +373,7 @@ class MarkGeneReadyView(GELReviewerRequiredMixin, UpdateView):
 
     @cached_property
     def panel(self):
-        return GenePanel.objects.get(pk=self.kwargs['pk']).active_panel
+        return GenePanel.objects.get_active_panel(pk=self.kwargs['pk'])
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
@@ -385,7 +400,7 @@ class MarkGeneNotReadyView(GELReviewerRequiredMixin, UpdateView):
 
     @cached_property
     def panel(self):
-        return GenePanel.objects.get(pk=self.kwargs['pk']).active_panel
+        return GenePanel.objects.get_active_panel(pk=self.kwargs['pk'])
 
     def post(self, *args, **kwargs):
         self.object = self.get_object()
@@ -458,7 +473,7 @@ class DownloadPanelVersionTSVView(DownloadPanelTSVMixin):
         return '01234'
 
     def get_object(self):
-        return GenePanel.objects.get(pk=self.kwargs['pk'])\
+        return GenePanel.objects.get_panel(pk=self.kwargs['pk'])\
             .get_panel_version(self.request.POST.get('panel_version'))
 
     def post(self, *args, **kwargs):
@@ -489,8 +504,8 @@ class ComparePanelsView(FormView):
         ctx = super().get_context_data()
 
         if self.kwargs.get('panel_1_id') and self.kwargs.get('panel_2_id'):
-            ctx['panel_1'] = panel_1 = GenePanel.objects.get(pk=self.kwargs['panel_1_id']).active_panel
-            ctx['panel_2'] = panel_2 = GenePanel.objects.get(pk=self.kwargs['panel_2_id']).active_panel
+            ctx['panel_1'] = panel_1 = GenePanel.objects.get_panel(pk=self.kwargs['panel_1_id']).active_panel
+            ctx['panel_2'] = panel_2 = GenePanel.objects.get_panel(pk=self.kwargs['panel_2_id']).active_panel
 
             panel_1_items = {e.gene.get('gene_symbol'): e for e in panel_1.get_all_entries}
             panel_2_items = {e.gene.get('gene_symbol'): e for e in panel_2.get_all_entries}
@@ -540,8 +555,8 @@ class CompareGeneView(FormView):
         ctx['gene_symbol'] = gene_symbol
 
         if self.kwargs.get('panel_1_id') and self.kwargs.get('panel_2_id'):
-            ctx['panel_1'] = panel_1 = GenePanel.objects.get(pk=self.kwargs['panel_1_id']).active_panel
-            ctx['panel_2'] = panel_2 = GenePanel.objects.get(pk=self.kwargs['panel_2_id']).active_panel
+            ctx['panel_1'] = panel_1 = GenePanel.objects.get_panel(pk=self.kwargs['panel_1_id']).active_panel
+            ctx['panel_2'] = panel_2 = GenePanel.objects.get_panel(pk=self.kwargs['panel_2_id']).active_panel
             ctx['panel_1_entry'] = panel_1.get_gene(gene_symbol)
             ctx['panel_2_entry'] = panel_2.get_gene(gene_symbol)
         else:
@@ -558,9 +573,6 @@ class CopyReviewsView(GELReviewerRequiredMixin, FormView):
     form_class = CopyReviewsForm
 
     def form_valid(self, form):
-        panel_1 = form.cleaned_data['panel_1']
-        panel_2 = form.cleaned_data['panel_2']
-
         ctx = self.get_context_data()
         total_count = form.copy_reviews(ctx['intersection'], ctx['panel_1'], ctx['panel_2'])
 
@@ -570,8 +582,8 @@ class CopyReviewsView(GELReviewerRequiredMixin, FormView):
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         kwargs['initial'] = {
-            'panel_1': GenePanel.objects.get(pk=self.kwargs['panel_1_id']).active_panel.pk,
-            'panel_2': GenePanel.objects.get(pk=self.kwargs['panel_2_id']).active_panel.pk
+            'panel_1': GenePanel.objects.get_panel(pk=self.kwargs['panel_1_id']).active_panel.pk,
+            'panel_2': GenePanel.objects.get_panel(pk=self.kwargs['panel_2_id']).active_panel.pk
         }
         return kwargs
 
@@ -582,8 +594,8 @@ class CopyReviewsView(GELReviewerRequiredMixin, FormView):
         ctx = super().get_context_data(*args, **kwargs)
 
         if self.kwargs.get('panel_1_id') and self.kwargs.get('panel_2_id'):
-            ctx['panel_1'] = panel_1 = GenePanel.objects.get(pk=self.kwargs['panel_1_id']).active_panel
-            ctx['panel_2'] = panel_2 = GenePanel.objects.get(pk=self.kwargs['panel_2_id']).active_panel
+            ctx['panel_1'] = panel_1 = GenePanel.objects.get_panel(pk=self.kwargs['panel_1_id']).active_panel
+            ctx['panel_2'] = panel_2 = GenePanel.objects.get_panel(pk=self.kwargs['panel_2_id']).active_panel
 
             panel_1_items = {e.gene.get('gene_symbol'): e for e in panel_1.get_all_entries}
             panel_2_items = {e.gene.get('gene_symbol'): e for e in panel_2.get_all_entries}
@@ -600,3 +612,113 @@ class CopyReviewsView(GELReviewerRequiredMixin, FormView):
             ctx['comparison'] = None
 
         return ctx
+
+
+class DownloadAllGenes(GELReviewerRequiredMixin, View):
+    def get(self, request, *args, **kwargs):
+        response = HttpResponse(content_type='text/tab-separated-values')
+        attachment = 'attachment; filename=All_genes_{}.tsv'.format(datetime.now().strftime('%Y%M%D%H%i'))
+        response['Content-Disposition'] = attachment
+        writer = csv.writer(response, delimiter='\t')
+        writer.writerow((
+            "Symbol",
+            "Panel",
+            "List",
+            "Sources",
+            "Mode of inheritance",
+            "Mode of pathogenicity",
+            "Tags"))
+
+        entries = GenePanelEntrySnapshot.objects\
+            .get_active()\
+            .prefetch_related('tags', 'evidence', 'panel__panel')\
+            .all()
+
+        for entry in entries:
+            colour = "grey"
+
+            if entry.flagged:
+                colour = "grey"
+            elif entry.status < 2:
+                colour = "red"
+            elif entry.status == 2:
+                colour = "amber"
+            else:
+                colour = "green"
+
+            row = [
+                entry.gene.get('gene_symbol'),
+                entry.panel.panel.pk,
+                colour,
+                ';'.join([evidence.name for evidence in entry.evidence.all()]),
+                entry.moi,
+                entry.mode_of_pathogenicity,
+                ';'.join([tag.name for tag in entry.tags.all()])
+            ]
+            writer.writerow(row)
+
+        return response
+
+
+class DownloadAllPanels(GELReviewerRequiredMixin, View):
+    def get(self, request, *args, **kwargs):
+        response = HttpResponse(content_type='text/tab-separated-values')
+        attachment = 'attachment; filename=All_panels_{}.tsv'.format(datetime.now().strftime('%Y%M%D%H%i'))
+        response['Content-Disposition'] = attachment
+        writer = csv.writer(response, delimiter='\t')
+
+        writer.writerow((
+            "Level 4 title",
+            "Level 3 title",
+            "Level 2 title",
+            "URL",
+            "Current Version",
+            "# rated genes/total genes",
+            "#reviewers",
+            "Reviewer name and affiliation (;)",
+            "Reviewer emails (;)",
+            "Approved",
+            "Relevant disorders"
+        ))
+
+        panels = GenePanelSnapshot.objects\
+            .get_active()\
+            .prefetch_related(
+                'genepanelentrysnapshot_set',
+                'genepanelentrysnapshot_set__evaluation',
+                'genepanelentrysnapshot_set__evaluation__user',
+                'genepanelentrysnapshot_set__evaluation__user__reviewer',
+            )\
+            .all()
+
+        for panel in panels:
+            rate = "{} of {} genes reviewed".format(panel.number_of_evaluated_genes, panel.number_of_genes)
+            reviewers = panel.contributors
+
+            row = [
+                panel.level4title.name,
+                panel.level4title.level3title,
+                panel.level4title.level2title,
+                request.build_absolute_uri(reverse('panels:detail', args=(panel.panel.id,))),
+                panel.version,
+                rate,
+                len(reviewers),
+                ";".join(["{} {} ({})".format(user[0], user[1], user[3]) for user in reviewers]),  # aff
+                ";".join([user[2] for user in reviewers if user[2]]),  # email
+                panel.panel.approved,
+                ";".join(panel.old_panels)
+            ]
+            writer.writerow(row)
+
+        return response
+
+
+class ActivityListView(ListView):
+    model = Activity
+    context_object_name = 'activities'
+    paginate_by = 200
+
+    def get_queryset(self, *args, **kwargs):
+        qs = super().get_queryset(*args, **kwargs)
+        qs = qs.prefetch_related('user', 'panel', 'user__reviewer')
+        return qs

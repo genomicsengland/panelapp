@@ -10,6 +10,7 @@ from django.contrib.postgres.fields import ArrayField
 from django.utils.functional import cached_property
 from model_utils.models import TimeStampedModel
 
+from panels.tasks import email_panel_promoted
 from .activity import Activity
 from .genepanel import GenePanel
 from .level4title import Level4Title
@@ -33,6 +34,7 @@ class GenePanelSnapshotManager(models.Manager):
             .filter(pk__in=Subquery(self.get_latest_ids()))\
             .annotate(
                 number_of_reviewers=Count('genepanelentrysnapshot__evaluation__user', distinct=True),
+                # FIXME number_of_evaluated_genes should be distinct per genepanelentrysnapshot
                 number_of_evaluated_genes=Count('genepanelentrysnapshot__evaluation'),
                 # FIXME the next line is incorrect, it lists all GenePanelEntrySnapshots,
                 # but it returns all, event the old versions of these genes
@@ -56,7 +58,7 @@ class GenePanelSnapshot(TimeStampedModel):
     major_version = models.IntegerField(default=0)
     minor_version = models.IntegerField(default=0)
     version_comment = models.TextField(null=True)
-    old_panels = ArrayField(models.CharField(max_length=255))
+    old_panels = ArrayField(models.CharField(max_length=255), blank=True)
 
     @cached_property
     def stats(self):
@@ -83,7 +85,7 @@ class GenePanelSnapshot(TimeStampedModel):
     def version(self):
         return "{}.{}".format(self.major_version, self.minor_version)
 
-    def increment_version(self, major=False):
+    def increment_version(self, major=False, user=None, comment=None):
         current_genes = self.get_all_entries
 
         self.pk = None
@@ -105,6 +107,7 @@ class GenePanelSnapshot(TimeStampedModel):
 
             gene.pk = None
             gene.panel = self
+            gene.ready = False
             gene.save()
 
             for evidence in evidences:
@@ -116,11 +119,48 @@ class GenePanelSnapshot(TimeStampedModel):
             for track in tracks:
                 gene.track.add(track)
 
+            if major and user and comment:
+                issue_type = "Panel promoted to version {}".format(self.version)
+                issue_description = comment
+
+                track_promoted = TrackRecord.objects.create(
+                    curator_status=user.reviewer.is_GEL(),
+                    issue_description=issue_description,
+                    gel_status=gene.status,
+                    issue_type=issue_type
+                )
+                gene.track.add(track_promoted)
+
             for tag in tags:
                 gene.tags.add(tag)
 
             for comment in comments:
                 gene.comments.add(comment)
+
+        if major:
+            email_panel_promoted.delay(self.pk)
+
+            activity = "promoted panel to version {}".format(self.version)
+            self.add_activity(user, '', activity)
+
+        return self
+
+    @property
+    def contributors(self):
+        """Returns a tuple with user data
+
+        Returns:
+            A tuple with the user first and last name, email, and reviewer affiliation
+        """
+
+        return self.genepanelentrysnapshot_set\
+            .distinct('evaluation__user')\
+            .values_list(
+                'evaluation__user__first_name',
+                'evaluation__user__last_name',
+                'evaluation__user__email',
+                'evaluation__user__reviewer__affiliation'
+            )
 
     def mark_genes_not_ready(self):
         for gene in self.genepanelentrysnapshot_set.all():
@@ -156,7 +196,7 @@ class GenePanelSnapshot(TimeStampedModel):
                     output_field=models.IntegerField()
                 )),
                 number_of_amber_genes=Sum(Case(When(
-                    saved_gel_status__in=[2,3], then=Value(1)),
+                    saved_gel_status__in=[2, 3], then=Value(1)),
                     default=Value(0),
                     output_field=models.IntegerField()
                 )),
@@ -180,9 +220,7 @@ class GenePanelSnapshot(TimeStampedModel):
         return True if self.get_all_entries.filter(gene__gene_symbol=gene_symbol).count() > 0 else False
 
     def delete_gene(self, gene_symbol, increment=True):
-        """
-        Removes gene from a panel, but leaves it in the previous versions of the same panel
-        """
+        """Removes gene from a panel, but leaves it in the previous versions of the same panel"""
 
         if self.has_gene(gene_symbol):
             if increment:
@@ -232,7 +270,7 @@ class GenePanelSnapshot(TimeStampedModel):
             phenotypes=gene_data.get('phenotypes'),
             mode_of_pathogenicity=gene_data.get('mode_of_pathogenicity'),
             saved_gel_status=0,
-            flagged = False if user.reviewer.is_GEL() else True
+            flagged=False if user.reviewer.is_GEL() else True
         )
         gene.save()
 
@@ -318,11 +356,12 @@ class GenePanelSnapshot(TimeStampedModel):
 
         logging.debug("Updating gene:{} panel:{} gene_data:{}".format(gene_symbol, self, gene_data))
         gene = self.get_gene(gene_symbol=gene_symbol)
-        print(gene)
         if gene:
             logging.debug("Found gene:{} in panel:{}. Incrementing version.".format(gene_symbol, self))
-            self.increment_version()
+            self = self.increment_version()
             gene.pk = None
+            if gene_data.get('flagged') is not None:
+                gene.flagged = gene_data.get('flagged')
             gene.panel = self
             gene.save()
 
@@ -368,7 +407,7 @@ class GenePanelSnapshot(TimeStampedModel):
                 ))
             elif gene_symbol.startswith("MT-"):
                 logging.debug("Updating moi for gene:{} in panel:{}".format(gene_symbol, self))
-                entry.moi = "MITOCHONDRIAL"
+                gene.moi = "MITOCHONDRIAL"
                 description = "Model of inheritance for gene {} was set to {}".format(
                     gene_symbol,
                     "MITOCHONDRIAL"
@@ -413,10 +452,11 @@ class GenePanelSnapshot(TimeStampedModel):
 
             new_gene = gene_data.get('gene')
             gene_name = gene_data.get('gene_name')
-            print(new_gene, gene.gene_core)
 
             if new_gene and gene.gene_core != new_gene:
-                logging.debug("Gene:{} in panel:{} has changed to gene:{}".format(gene_symbol, self, new_gene.gene_symbol))
+                logging.debug("Gene:{} in panel:{} has changed to gene:{}".format(
+                    gene_symbol, self, new_gene.gene_symbol
+                ))
                 old_gene_symbol = gene.gene_core.gene_symbol
                 description = "{} was changed to {}".format(old_gene_symbol, new_gene.gene_symbol)
                 track_gene = TrackRecord.objects.create(
@@ -430,14 +470,13 @@ class GenePanelSnapshot(TimeStampedModel):
                 gene.gene_core = new_gene
                 gene.gene = new_gene.dict_tr()
                 gene.save()
-                print("New gene symbol", new_gene.gene_symbol)
-                print("Old gene symbol", old_gene_symbol)
                 self.delete_gene(old_gene_symbol, increment=False)
             elif gene.gene.get('gene_name') != gene_name:
                 logging.debug("Updating gene_name for gene:{} in panel:{}".format(gene_symbol, self))
                 gene.gene['gene_name'] = gene_name
                 gene.save()
-
+            else:
+                gene.save()
             return gene
         else:
             return False
@@ -449,10 +488,3 @@ class GenePanelSnapshot(TimeStampedModel):
             gene_symbol=gene_symbol,
             text=text
         )
-
-    """
-    # move these to properties
-    number_of_green_rating = models.IntegerField(null=True,  blank=True,)
-    number_of_red_rating = models.IntegerField(null=True,  blank=True,)
-    number_of_amber_rating = models.IntegerField(null=True,  blank=True,)
-    """

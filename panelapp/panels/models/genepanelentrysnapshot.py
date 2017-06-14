@@ -7,7 +7,6 @@ from django.contrib.postgres.fields import ArrayField
 from model_utils import Choices
 from model_utils.models import TimeStampedModel
 
-from accounts.models import User
 from .genepanelsnapshot import GenePanelSnapshot
 from .gene import Gene
 from .evidence import Evidence
@@ -48,7 +47,7 @@ class GenePanelEntrySnapshot(TimeStampedModel):
     )
 
     GEL_STATUS = Choices(
-        (4, "Green List (high evidence)"),
+        (3, "Green List (high evidence)"),
         (2, "Amber List (moderate evidence)"),
         (1, "Red List (low evidence)"),
         (0, "No List (delete)"),
@@ -72,8 +71,7 @@ class GenePanelEntrySnapshot(TimeStampedModel):
     flagged = models.BooleanField(default=False)
     ready = models.BooleanField(default=False)
     comments = models.ManyToManyField(Comment)
-    contributors = models.ManyToManyField(User)
-    mode_of_pathogenicity = models.CharField(choices=Evaluation.MODES_OF_PHATHOGENICITY, max_length=255)
+    mode_of_pathogenicity = models.CharField(choices=Evaluation.MODES_OF_PATHOGENICITY, max_length=255)
     saved_gel_status = models.IntegerField(null=True)
 
     objects = GenePanelEntrySnapshotManager()
@@ -176,12 +174,12 @@ class GenePanelEntrySnapshot(TimeStampedModel):
 
         [self.clear_expert_evidence(e) for e in Evidence.EXPERT_REVIEWS]
 
-        if status > 3:
+        if status > 2:
             evidence = Evidence.objects.create(name="Expert Review Green", rating=5, reviewer=user.reviewer)
             issue_description = "This gene has been classified as Green List (High Evidence)."
             self.flagged = False
             self.evidence.add(evidence)
-        elif status > 1:
+        elif status == 2:
             evidence = Evidence.objects.create(name="Expert Review Amber", rating=5, reviewer=user.reviewer)
             issue_description = "This gene has been classified as Amber List (Moderate Evidence)."
             self.flagged = False
@@ -193,7 +191,7 @@ class GenePanelEntrySnapshot(TimeStampedModel):
             self.flagged = False
         elif status == 0:
             evidence = Evidence.objects.create(name="Expert Review Removed", rating=5, reviewer=user.reviewer)
-            issue_description="This gene has been removed from the panel."
+            issue_description = "This gene has been removed from the panel."
             self.evidence.add(evidence)
             self.flagged = True
         else:
@@ -209,6 +207,10 @@ class GenePanelEntrySnapshot(TimeStampedModel):
         self.track.add(track)
         self.save()
         return True
+
+    def approve_gene(self):
+        self.flagged = False
+        self.save()
 
     def mark_as_ready(self, user, ready_comment):
         self.ready = True

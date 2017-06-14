@@ -103,9 +103,8 @@ class UpdateGeneRatingForm(forms.ModelForm):
 
     def save(self, *args, **kwargs):
         status = self.cleaned_data['status']
-        comment = self.cleaned_data['comment']
         user = kwargs.pop('user')
-        self.instance.update_rating(status, user, status)
+        self.instance.update_rating(status, user, self.cleaned_data['comment'])
 
 
 class EditCommentForm(forms.Form):

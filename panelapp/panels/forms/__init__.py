@@ -1,6 +1,7 @@
 from django import forms
 from panels.models import UploadedGeneList
 from panels.models import UploadedReviewsList
+from panels.models import UploadedPanelList
 from panels.models import GenePanel
 from .panel import PanelForm  # noqa
 from .promotepanel import PromotePanelForm  # noqa
@@ -35,8 +36,8 @@ class UploadReviewsForm(forms.Form):
 
 class ComparePanelsForm(forms.Form):
     panels = GenePanel.objects.none()
-    panel_1 = forms.ModelChoiceField(queryset = panels, widget=forms.Select(attrs={'class': 'form-control'}))
-    panel_2 = forms.ModelChoiceField(queryset = panels, widget=forms.Select(attrs={'class': 'form-control'}))
+    panel_1 = forms.ModelChoiceField(queryset=panels, widget=forms.Select(attrs={'class': 'form-control'}))
+    panel_2 = forms.ModelChoiceField(queryset=panels, widget=forms.Select(attrs={'class': 'form-control'}))
 
     def __init__(self, *args, **kwargs):
         qs = kwargs.pop('panels')

@@ -1,18 +1,24 @@
+import re
 import logging
 from more_itertools import unique_everseen
 from django.db import models
 from django.db import transaction
+from model_utils.models import TimeStampedModel
+from accounts.models import User
 from panels.utils import CellBaseConnector
 from panels.exceptions import TSVIncorrectFormat
 from panels.exceptions import UserDoesNotExist
 from panels.exceptions import GeneDoesNotExist
 from panels.utils import remove_non_ascii
 from .gene import Gene
+from .genepanel import GenePanel
+from .genepanelsnapshot import GenePanelSnapshot
+from .level4title import Level4Title
 
 logger = logging.getLogger(__name__)
 
 
-class UploadedGeneList(models.Model):
+class UploadedGeneList(TimeStampedModel):
     imported = models.BooleanField(default=False)
     gene_list = models.FileField(upload_to='genes')
 
@@ -64,7 +70,8 @@ class UploadedGeneList(models.Model):
         return transcripts
 
 
-class UploadedPanelList(models.Model):
+class UploadedPanelList(TimeStampedModel):
+    imported = models.BooleanField(default=False)
     panel_list = models.FileField(upload_to='panels')
 
     def process_file(self, user):
@@ -81,7 +88,6 @@ class UploadedPanelList(models.Model):
                     level4 = aline[2].rstrip(" ")
                     level3 = aline[3]
                     level2 = aline[4]
-                    transcript = aline[5]
                     model_of_inheritance = aline[6]
                     phenotype = list(unique_everseen(aline[7].split(";")))
                     omim = aline[8].split(";")
@@ -107,7 +113,7 @@ class UploadedPanelList(models.Model):
                             panel = GenePanel.objects.create(
                                 name=level4
                             )
-                            gps = GenePanelSnapshot.objects.create(
+                            GenePanelSnapshot.objects.create(
                                 panel=panel,
                                 level4title=level4_object
                             )
@@ -120,13 +126,13 @@ class UploadedPanelList(models.Model):
                             'phenotypes': phenotype,
                             'publications': publication,
                             'sources': source,
-                            'gene_symbol': gene_symbol
+                            'gene_symbol': gene_symbol,
+                            'flagged': flagged
                         }
                         if fresh_panel or not active_panel.has_gene(gene_symbol):
                             try:
                                 gene = Gene.objects.get(gene_symbol=gene_symbol)
                                 name = gene.gene_name
-                                omim_gene = gene.omim_gene
                                 other_transcripts = gene.other_transcripts
                                 gene_data['gene_name'] = name
                                 gene_data['omim'] = omim
@@ -140,9 +146,12 @@ class UploadedPanelList(models.Model):
                         raise TSVIncorrectFormat(str(i + 2))
                 if active_panel:
                     active_panel.increment_version()
+            self.imported = True
+            self.save()
 
 
-class UploadedReviewsList(models.Model):
+class UploadedReviewsList(TimeStampedModel):
+    imported = models.BooleanField(default=False)
     reviews = models.FileField(upload_to='reviews')
 
     def process_file(self):
@@ -157,18 +166,18 @@ class UploadedReviewsList(models.Model):
                         raise TSVIncorrectFormat(str(i + 2))
 
                     gene_symbol = re.sub("[^0-9a-zA-Z~#_@-]", '', aline[0])
-                    source = aline[1].split(";")
+                    # source = aline[1].split(";")
                     level4 = aline[2].rstrip(" ")
-                    level3 = aline[3]
-                    level2 = aline[4]
-                    transcript = aline[5]
+                    # level3 = aline[3]
+                    # level2 = aline[4]
+                    # transcript = aline[5]
                     model_of_inheritance = aline[6]
                     phenotype = aline[7].split(";")
-                    omim = aline[8].split(";")
-                    oprahanet = aline[9].split(";")
-                    hpo = aline[10].split(";")
+                    # omim = aline[8].split(";")
+                    # oprahanet = aline[9].split(";")
+                    # hpo = aline[10].split(";")
                     publication = aline[11].split(";")
-                    description = aline[12]
+                    # description = aline[12] # ? What description
 
                     mop = aline[17]
                     rate = aline[18]
@@ -191,12 +200,15 @@ class UploadedReviewsList(models.Model):
 
                             evaluation_data = {
                                 'comment': comments,
-                                'mode_of_pathogenicity': mode_of_pathogenicity,
+                                'mode_of_pathogenicity': mop,
                                 'phenotypes': phenotype,
                                 'moi': model_of_inheritance,
                                 'current_diagnostic': current_diagnostic,
-                                'rating': rate
+                                'rating': rate,
+                                'publications': publication
                             }
                             gene.update_evaluation(user, evaluation_data)
                     else:
                         raise UserDoesNotExist(str(i + 2))
+                self.imported = True
+                self.save()

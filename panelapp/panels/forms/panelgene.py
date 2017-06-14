@@ -5,13 +5,11 @@ from dal_select2.widgets import ModelSelect2
 from dal_select2.widgets import Select2Multiple
 from dal_select2.widgets import ModelSelect2Multiple
 from panelapp.forms import Select2ListMultipleChoiceField
-from panels.models import Comment
 from panels.models import Tag
 from panels.models import Gene
 from panels.models import Evidence
 from panels.models import Evaluation
 from panels.models import GenePanelEntrySnapshot
-from panels.models import TrackRecord
 from panels.models import GenePanel
 
 
@@ -65,9 +63,9 @@ class PanelGeneForm(forms.ModelForm):
         delimiter=";"
     )
 
-    rating = forms.ChoiceField(choices=[('', 'Provide rating')] + Evaluation.RATINGS)
+    rating = forms.ChoiceField(choices=[('', 'Provide rating')] + Evaluation.RATINGS, required=False)
     current_diagnostic = forms.BooleanField(required=False)
-    comments = forms.CharField(widget=forms.Textarea)
+    comments = forms.CharField(widget=forms.Textarea, required=False)
 
     class Meta:
         model = GenePanelEntrySnapshot

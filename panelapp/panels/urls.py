@@ -24,6 +24,9 @@ from .views import MarkGeneNotReadyView
 from .views import ComparePanelsView
 from .views import CompareGeneView
 from .views import CopyReviewsView
+from .views import DownloadAllGenes
+from .views import DownloadAllPanels
+from .views import ActivityListView
 from .ajax_views import ClearPublicationsAjaxView
 from .ajax_views import ClearPhoenotypesAjaxView
 from .ajax_views import ClearModeOfPathogenicityAjaxView
@@ -43,6 +46,7 @@ from .ajax_views import DeleteGeneEvaluationAjaxView
 from .ajax_views import DeleteGeneCommentAjaxView
 from .ajax_views import GetGeneCommentFormAjaxView
 from .ajax_views import SubmitGeneCommentFormAjaxView
+from .ajax_views import ApproveGeneAjaxView
 
 
 urlpatterns = [
@@ -73,6 +77,7 @@ urlpatterns = [
 
     # AJAX endpoints
     url(r'^(?P<pk>[0-9]+)/(?P<gene_symbol>[\w\-]+)/delete$', DeleteGeneAjaxView.as_view(), name="delete_gene"),
+    url(r'^(?P<pk>[0-9]+)/(?P<gene_symbol>[\w\-]+)/approve$', ApproveGeneAjaxView.as_view(), name="approve_gene"),
     url(r'^(?P<pk>[0-9]+)/(?P<gene_symbol>[\w\-]+)/clear_gene_sources$',
         ClearSourcesAjaxView.as_view(), name="clear_gene_sources"),
     url(r'^(?P<pk>[0-9]+)/(?P<gene_symbol>[\w\-]+)/clear_gene_source/(?P<source>(.*))/$',
@@ -112,9 +117,13 @@ urlpatterns = [
     url(r'^genes/$', GeneListView.as_view(), name="gene_list"),
     url(r'^genes/(?P<slug>[\w\-]+)$', GeneDetailView.as_view(), name="gene_detail"),
 
+    url(r'^activity/$', ActivityListView.as_view(), name="activity"),
+
     url(r'^admin/', AdminView.as_view(), name="admin"),
     url(r'^upload_genes/', AdminUploadGenesView.as_view(), name="upload_genes"),
+    url(r'^download_genes/', DownloadAllGenes.as_view(), name="download_genes"),
     url(r'^upload_panel/', AdminUploadPanelsView.as_view(), name="upload_panels"),
+    url(r'^download_panel/', DownloadAllPanels.as_view(), name="download_panels"),
     url(r'^upload_reviews/', AdminUploadReviewsView.as_view(), name="upload_reviews"),
 
     url(r'^empty/', EmptyView.as_view(), name="empty"),  # used for debuggig

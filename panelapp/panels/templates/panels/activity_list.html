@@ -1,0 +1,73 @@
+{% extends "default.html" %}
+{% load staticfiles %}
+{% load panel_helpers %}
+
+{% block content %}
+  <h1 class="add-bottom-margin">{% block title %}Activity{% endblock %}</h1>
+  
+  <table class="table table-bordered" data-module="filterable-table">
+    <thead>
+      <tr class="table-header">
+        <th style="width: 10%">Date</th>
+        <th style="width: 25%">Panel</th>
+        <th style="width: 8%">Gene</th>
+        <th>Activity</th>
+      </tr>
+      <tr class="if-no-js-hide table-header-secondary">
+        <td colspan="100">
+          <form>
+            <label for="gene-filter" class="rm">Filter genes</label>
+            <div class="input-group">
+              <input id="gene-filter" type="text" class="form-control normal js-filter-table-input" placeholder="Filter genes">
+              <span class="input-group-addon js-filter-table-count" data-singular="action" data-plural="actions">
+                {{ activities|length }} actions
+              </span>
+            </div>
+          </form>
+        </td>
+      </tr>
+    </thead>
+    <tbody>
+      {% for activity in activities %}
+        {% if request.user.reviewer.is_GEL or activity.panel and activity.panel.approved %}
+          <tr>
+            <td>
+              <time title="{{activity.created}}" datetime={{activity.created|date:'c'}}>{{ activity.created|date:"d M Y" }}</time>
+            </td>
+            <td>
+              {% if activity.panel %}
+                <a href="{% url 'panels:detail' activity.panel.pk %}">{{ activity.panel.name }}</a>
+              {% endif %}
+            </td>
+            <td>
+              {% if activity.gene_symbol %}
+                <a href="{% url 'panels:evaluation' activity.panel.pk activity.gene_symbol %}">{{ activity.gene_symbol }}</a>
+              {% endif %}
+            </td>
+            <td>
+              {{ activity.user.get_full_name }} {{ activity.text }}
+            </td>
+          </tr>
+        {% endif %}
+      {% endfor %}
+    </tbody>
+  </table>
+
+  {% if is_paginated %}
+  <div class="pagination">
+    <span class="step-links">
+      {% if page_obj.has_previous %}
+        <a href="?page={{ page_obj.previous_page_number }}">Previous page</a>
+      {% endif %}
+
+      <span class="current">
+        Page {{ page_obj.number }} of {{ paginator.num_pages }}.
+      </span>
+
+      {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}">Next page</a>
+      {% endif %}
+    </span>
+  </div>
+  {% endif %}
+{% endblock %}
