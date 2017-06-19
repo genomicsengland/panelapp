@@ -12,6 +12,14 @@ class PromotePanelForm(forms.ModelForm):
         model = GenePanelSnapshot
         fields = ('version_comment',)
 
+    def __init__(self, *args, **kwargs):
+        self.request = kwargs.pop('request')
+        super().__init__(*args, **kwargs)
+
     def save(self, *args, commit=True, **kwargs):
-        self.instance.increment_version(major=True)
+        self.instance.increment_version(
+            major=True,
+            user=self.request.user,
+            comment=self.cleaned_data['version_comment']
+        )
         return self.instance

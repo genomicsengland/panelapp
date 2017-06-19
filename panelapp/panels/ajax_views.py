@@ -1,4 +1,5 @@
 import datetime
+from django.core.exceptions import PermissionDenied
 from django.views.generic.base import View
 from django.shortcuts import render
 from django.utils.functional import cached_property
@@ -143,7 +144,7 @@ class DeleteGeneAjaxView(GELReviewerRequiredMixin, BaseAjaxGeneMixin, AJAXMixin,
     template_name = "panels/genepanel_table.html"
 
     def process(self):
-        self.panel.delete_gene(self.kwargs['gene_symbol'])
+        self.panel.delete_gene(self.kwargs['gene_symbol'], True)
         return self.return_data()
 
     def return_data(self):
@@ -397,11 +398,10 @@ class DeleteGeneCommentAjaxView(UpdateEvaluationsMixin):
 
 class SubmitGeneCommentFormAjaxView(VerifiedReviewerRequiredMixin, GeneObjectMixin, BaseAjaxGeneMixin, View):
     def process(self):
+        comment = Comment.objects.get(pk=self.kwargs['comment_pk'])
         form = EditCommentForm(data=self.request.POST)
-        if form.is_valid():
-            comment = Comment.objects.get(pk=self.kwargs['comment_pk'])
-            comment.comment = self.request.POST.get('comment')
-            comment.save()
+        if form.is_valid() and self.request.user == comment.user:
+            self.gene.edit_comment(comment.pk, self.request.POST.get('comment'))
 
         return self.return_post_data()
 
@@ -422,6 +422,8 @@ class GetGeneCommentFormAjaxView(UpdateEvaluationsMixin):
 
     def return_get_data(self):
         comment = Comment.objects.get(pk=self.kwargs['comment_pk'])
+        if comment.user != self.request.user:
+            raise PermissionDenied
         edit_comment_form = EditCommentForm(initial={'comment': comment.comment})
         comment_form = render(self.request, 'panels/genepanelentrysnapshot/edit_comment.html', {
             "edit_comment_form": edit_comment_form,

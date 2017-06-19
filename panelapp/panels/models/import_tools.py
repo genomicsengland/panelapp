@@ -75,7 +75,7 @@ class UploadedPanelList(TimeStampedModel):
     panel_list = models.FileField(upload_to='panels')
 
     def process_file(self, user):
-        with open(self.reviews.path) as file:
+        with open(self.panel_list.path) as file:
             logger.info('Started importing list of genes')
             header = file.readline()  # noqa
             with transaction.atomic():
@@ -99,7 +99,7 @@ class UploadedPanelList(TimeStampedModel):
 
                     if level4:
                         fresh_panel = False
-                        panel = GenePanel.objects.filter(panel_name=level4).first()
+                        panel = GenePanel.objects.filter(name=level4).first()
                         if not panel:
                             level4_object = Level4Title.objects.create(
                                 level2title=level2,
@@ -144,8 +144,6 @@ class UploadedPanelList(TimeStampedModel):
                             active_panel.update_gene(user, gene_symbol, gene_data)
                     else:
                         raise TSVIncorrectFormat(str(i + 2))
-                if active_panel:
-                    active_panel.increment_version()
             self.imported = True
             self.save()
 
@@ -191,7 +189,7 @@ class UploadedReviewsList(TimeStampedModel):
 
                     user = User.objects.filter(username=username).first()
                     if user:
-                        panels = GenePanel.objects.filter(panel_name=level4)
+                        panels = GenePanel.objects.filter(name=level4)
                         if len(panels) == 1:
                             panel = panels[0].active_panel
                             gene = panel.get_gene(gene_symbol)
@@ -207,7 +205,7 @@ class UploadedReviewsList(TimeStampedModel):
                                 'rating': rate,
                                 'publications': publication
                             }
-                            gene.update_evaluation(user, evaluation_data)
+                            res = gene.update_evaluation(user, evaluation_data)
                     else:
                         raise UserDoesNotExist(str(i + 2))
                 self.imported = True

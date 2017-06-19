@@ -1,9 +1,15 @@
+import os
+from django.core import mail
+from django.core.exceptions import ValidationError
 from django.test import Client
 from django.urls import reverse_lazy
 from faker import Factory
 from accounts.tests.setup import LoginGELUser
 from panels.models import GenePanel
+from panels.models import GenePanelSnapshot
 from panels.models import GenePanelEntrySnapshot
+from panels.tasks import email_panel_promoted
+from .factories import GeneFactory
 from .factories import GenePanelSnapshotFactory
 from .factories import GenePanelEntrySnapshotFactory
 
@@ -48,6 +54,22 @@ class GenePanelTest(LoginGELUser):
         assert gp
         assert gp.active_panel.major_version == 0
         assert gp.active_panel.minor_version == 0
+
+    def test_panel_index(self):
+        GenePanelEntrySnapshotFactory.create_batch(4)
+        r = self.client.get(reverse_lazy('panels:index'))
+        self.assertEqual(r.status_code, 200)
+
+    def test_view_add_gene_to_panel(self):
+        gpes = GenePanelEntrySnapshotFactory()
+        r = self.client.get(reverse_lazy('panels:add_gene', args=(gpes.panel.panel.pk,)))
+        self.assertEqual(r.status_code, 200)
+
+    def test_view_edit_gene_in_panel(self):
+        gpes = GenePanelEntrySnapshotFactory()
+        url = reverse_lazy('panels:edit_gene', args=(gpes.panel.panel.pk, gpes.gene.get('gene_symbol'),))
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
 
     def test_panel_detail_view(self):
         gps = GenePanelSnapshotFactory()
@@ -96,6 +118,30 @@ class GenePanelTest(LoginGELUser):
         genes = GenePanelEntrySnapshotFactory.create_batch(5, panel=gps)
         gene_symbol = genes[2].gene['gene_symbol']
 
+        assert gps.has_gene(gene_symbol) is True
+        gps.delete_gene(gene_symbol)
+        assert gps.has_gene(gene_symbol) is False
+
+        old_gps = GenePanel.objects.get(pk=gps.panel.pk).genepanelsnapshot_set.last()
+        assert old_gps.version != gps.version
+        assert old_gps.has_gene(gene_symbol) is True
+
+        new_gps = GenePanel.objects.get(pk=gps.panel.pk).active_panel
+        assert new_gps.has_gene(gene_symbol) is False
+
+        gene_symbol = genes[3].gene['gene_symbol']
+        assert new_gps.has_gene(gene_symbol) is True
+        new_gps.delete_gene(gene_symbol, False)
+        assert new_gps.has_gene(gene_symbol) is False
+
+        new_gps = GenePanel.objects.get(pk=gps.panel.pk).active_panel
+        assert new_gps.has_gene(gene_symbol) is False
+
+    def test_delete_gene_ajax(self):
+        gps = GenePanelSnapshotFactory()
+        genes = GenePanelEntrySnapshotFactory.create_batch(5, panel=gps)
+        gene_symbol = genes[2].gene['gene_symbol']
+
         url = reverse_lazy('panels:delete_gene', kwargs={'pk': gps.panel.pk, 'gene_symbol': gene_symbol})
         res = self.client.get(url, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
 
@@ -130,8 +176,133 @@ class GenePanelTest(LoginGELUser):
         gp2 = GenePanel.objects.get(pk=gps2.panel.pk)
         assert gp2.active_panel == gps2
 
-    def test_compare(self):
-        assert False
+    def prepare_compare(self):
+        gene = GeneFactory()
+
+        gps = GenePanelSnapshotFactory()
+        GenePanelEntrySnapshotFactory.create_batch(2, panel=gps)  # random genes
+        GenePanelEntrySnapshotFactory.create(gene_core=gene, panel=gps)
+
+        gps2 = GenePanelSnapshotFactory()
+        GenePanelEntrySnapshotFactory.create_batch(2, panel=gps2)  # random genes
+        GenePanelEntrySnapshotFactory.create(gene_core=gene, panel=gps2)
+
+        return gene, gps, gps2
+
+    def test_compare_panels(self):
+        gene, gps, gps2 = self.prepare_compare()
+
+        data = {
+            'panel_1': gps.pk,
+            'panel_2': gps2.pk,
+        }
+
+        url = reverse_lazy('panels:compare_panels_form')
+        res = self.client.get(url)
+        self.assertEqual(res.status_code, 200)
+
+        url = reverse_lazy('panels:compare', args=(gps.panel.pk, gps2.panel.pk,))
+        res = self.client.get(url)
+        self.assertEqual(res.status_code, 200)
+
+        url = reverse_lazy('panels:compare', args=(gps.panel.pk, gps2.panel.pk,))
+        res = self.client.post(url, data)
+        self.assertEqual(res.status_code, 302)
+
+        url = reverse_lazy('panels:compare_genes', args=(gps.panel.pk, gps2.panel.pk, gene.gene_symbol,))
+        res = self.client.get(url)
+        self.assertEqual(res.status_code, 200)
+
+        url = reverse_lazy('panels:compare_genes', args=(gps.panel.pk, gps2.panel.pk, gene.gene_symbol,))
+        res = self.client.post(url, data)
+        self.assertEqual(res.status_code, 302)
+
+    def test_copy_reviews(self):
+        gene, gps, gps2 = self.prepare_compare()
+
+        res = self.client.get(reverse_lazy('panels:copy_reviews', args=(gps.panel.pk, gps2.panel.pk,)))
+        self.assertEqual(res.status_code, 200)
+        data = {
+            'panel_1': gps.pk,
+            'panel_2': gps2.pk,
+        }
+        res = self.client.post(reverse_lazy('panels:copy_reviews', args=(gps.panel.pk, gps2.panel.pk,)), data)
+        self.assertEqual(res.status_code, 302)
+
+    def test_promote_panel(self):
+        gpes = GenePanelEntrySnapshotFactory()
+
+        data = {
+            'version_comment': fake.sentence()
+        }
+        url = reverse_lazy('panels:promote', args=(gpes.panel.panel.pk,))
+        res = self.client.post(url, data)
+        self.assertEqual(res.status_code, 302)
+
+    def test_import_view(self):
+        r = self.client.get(reverse_lazy('panels:admin'))
+        self.assertEqual(r.status_code, 200)
 
     def test_import_panel(self):
-        assert False
+        gene = GeneFactory(gene_symbol="ABCC5-AS1")
+        gene = GeneFactory(gene_symbol="A1CF")
+
+        file_path = os.path.join(os.path.dirname(__file__), 'import_panel_data.tsv')
+        test_panel_file = os.path.abspath(file_path)
+
+        with open(test_panel_file) as f:
+            url = reverse_lazy('panels:upload_panels')
+            self.client.post(url, {'panel_list': f})
+
+        gp = GenePanel.objects.get(name="Panel One")
+        active_panel = gp.active_panel
+        entries = active_panel.get_all_entries
+        assert entries.count() == 2
+
+    def test_import_wrong_panel(self):
+        file_path = os.path.join(os.path.dirname(__file__), 'import_panel_data.tsv')
+        test_panel_file = os.path.abspath(file_path)
+
+        with open(test_panel_file) as f:
+            url = reverse_lazy('panels:upload_panels')
+            with self.assertRaises(ValidationError):
+                self.client.post(url, {'panel_list': f})
+
+        assert GenePanelEntrySnapshot.objects.count() == 0
+
+    def test_download_panel(self):
+        gene, gps, gps2 = self.prepare_compare()
+        res = self.client.get(reverse_lazy('panels:download_panel_tsv', args=(gps.panel.pk, '01234')))
+        self.assertEqual(res.status_code, 200)
+
+    def test_download_old_panel(self):
+        gene, gps, gps2 = self.prepare_compare()
+        gps.increment_version()
+
+        data = {
+            'panel_version': '0.1'
+        }
+
+        res = self.client.post(reverse_lazy('panels:download_old_panel_tsv', args=(gps.panel.pk,)), data)
+        self.assertEqual(res.status_code, 200)
+
+    def test_download_old_panel_wrong_version(self):
+        gene, gps, gps2 = self.prepare_compare()
+        data = {
+            'panel_version': '1.125'
+        }
+
+        res = self.client.post(reverse_lazy('panels:download_old_panel_tsv', args=(gps.panel.pk,)), data)
+        self.assertEqual(res.status_code, 302)
+
+    def test_download_all_panels(self):
+        gps = GenePanelSnapshotFactory()
+        GenePanelEntrySnapshotFactory.create_batch(2, panel=gps)
+
+        res = self.client.get(reverse_lazy('panels:download_panels'))
+        self.assertEqual(res.status_code, 200)
+
+    def test_email_panel_promoted(self):
+        gpes = GenePanelEntrySnapshotFactory()
+        email_panel_promoted(gpes.panel.panel.pk)
+        self.assertEqual(len(mail.outbox), 4)

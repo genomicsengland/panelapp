@@ -10,7 +10,7 @@ def email_panel_promoted(panel_pk):
     """Emails everyone who contributed to the panel about the new major version"""
 
     from panels.models import GenePanel
-    active_panel = GenePanel.objects.get(pk=panel_pk).active_panel.prefetch_related('panel')
+    active_panel = GenePanel.objects.get(pk=panel_pk).active_panel
 
     subject = 'A panel you reviewed has been promoted'
     messages = []

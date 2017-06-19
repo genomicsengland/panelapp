@@ -8,6 +8,9 @@ from .promotepanel import PromotePanelForm  # noqa
 from .panelgene import PanelGeneForm  # noqa
 from .genereview import GeneReviewForm  # noqa
 from .geneready import GeneReadyForm  # noqa
+from panels.exceptions import UserDoesNotExist
+from panels.exceptions import GeneDoesNotExist
+from panels.exceptions import TSVIncorrectFormat
 
 
 class UploadGenesForm(forms.Form):
@@ -23,7 +26,17 @@ class UploadPanelsForm(forms.Form):
 
     def process_file(self, **kwargs):
         panel_list = UploadedPanelList.objects.create(panel_list=self.cleaned_data['panel_list'])
-        panel_list.process_file(kwargs.pop('user'))
+        try:
+            panel_list.process_file(kwargs.pop('user'))
+        except GeneDoesNotExist as e:
+            message =  'Line: {} has a wrong gene, please check it and try again.'.format(e)
+            raise forms.ValidationError(message)
+        except UserDoesNotExist as e:
+            message =  'Line: {} has a wrong username, please check it and try again.'.format(e)
+            raise forms.ValidationError(message)
+        except TSVIncorrectFormat as e:
+            message = "Line: {} is not properly formatted, please check it and try again.".format(e)
+            raise forms.ValidationError(message)
 
 
 class UploadReviewsForm(forms.Form):
@@ -31,7 +44,17 @@ class UploadReviewsForm(forms.Form):
 
     def process_file(self, **kwargs):
         review_list = UploadedReviewsList.objects.create(reviews=self.cleaned_data['review_list'])
-        review_list.process_file()
+        try:
+            review_list.process_file()
+        except GeneDoesNotExist as e:
+            message =  'Line: {} has a wrong gene, please check it and try again.'.format(e)
+            raise forms.ValidationError(message)
+        except UserDoesNotExist as e:
+            message =  'Line: {} has a wrong username, please check it and try again.'.format(e)
+            raise forms.ValidationError(message)
+        except TSVIncorrectFormat as e:
+            message = "Line: {} is not properly formatted, please check it and try again.".format(e)
+            raise forms.ValidationError(message)
 
 
 class ComparePanelsForm(forms.Form):

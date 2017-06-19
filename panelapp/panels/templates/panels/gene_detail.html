@@ -66,7 +66,7 @@
                   <div class="input-group">
                     <input autofocus id="panel-filter" type="text" class="form-control normal js-filter-table-input" placeholder="Filter panels"{% if tag_filter %} value="{{ tag_filter }}"{% endif %}>
                     <span class="input-group-addon js-filter-table-count" data-singular="panel" data-plural="panels">
-                      {{ panels|length }} panel{{panels|pluralize}}
+                      {{ entries|length }} panel{{entries|pluralize}}
                     </span>
                   <div>
                 </form>
@@ -79,15 +79,16 @@
               <tr
                 data-panel="{{ entry.panel.level4title.name }}"
                 data-gene="{{ entry.gene.gene_symbol }}"
-                data-list-index="{{ entry.get_list_index }}"
+                data-list-index="{{ entry.saved_gel_status }}"
                 data-moi="{{ entry.moi }}"
                 data-reviews="{{ entry.evaluation|length }}"
               >
                 <td>
+                  {{ entry.pk }} FIXME remove this line
                   <h4 class="remove-top-margin" title="Level 4 title">
                     <span style="font-size: 16px" class="gel-banner {{ entry|gene_list_class }}" title="{{ entry|gene_list_name }}">
                       {{ entry|gene_list_short_name }}
-                    </span> <a href="{% url 'panels:evaluation' entry.panel.panel.id entry.gene.gene_symbol %}" class="link-inherit gel-text {{ entry|gene_list_class }} js-open-on-submit">{{ entry.gene.gene_symbol }}</a> in <a href="{% url 'panels:update' entry.panel.panel.id %}" class="js-open-on-submit">
+                    </span> <a href="{% url 'panels:evaluation' entry.panel.panel.id entry.gene.gene_symbol %}" class="link-inherit gel-text {{ entry|gene_list_class }} js-open-on-submit">{{ entry.gene.gene_symbol }}</a> in <a href="{% url 'panels:detail' entry.panel.panel.id %}" class="js-open-on-submit">
                       {{ entry.panel.level4title.name }}
                     </a>
                   </h4>
@@ -124,7 +125,7 @@
                   {% if entry.phenotypes %}
                     <h6 class="add-label-margin">Phenotypes</h6>
                     <ul>
-                      {% for phenotype in entry.phenotypes.all %}
+                      {% for phenotype in entry.phenotypes %}
                         {% if phenotype %}
                           <li class="word-break">{{ phenotype }}</li>
                         {% endif %}

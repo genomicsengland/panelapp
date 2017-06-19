@@ -1,6 +1,5 @@
 from django.conf.urls import url
 
-from .views import EmptyView
 from .views import AdminView
 from .views import AdminUploadGenesView
 from .views import AdminUploadPanelsView
@@ -125,7 +124,4 @@ urlpatterns = [
     url(r'^upload_panel/', AdminUploadPanelsView.as_view(), name="upload_panels"),
     url(r'^download_panel/', DownloadAllPanels.as_view(), name="download_panels"),
     url(r'^upload_reviews/', AdminUploadReviewsView.as_view(), name="upload_reviews"),
-
-    url(r'^empty/', EmptyView.as_view(), name="empty"),  # used for debuggig
-    url(r'^empty/(.+)', EmptyView.as_view(), name="empty_items"),  # used for debugging
 ]

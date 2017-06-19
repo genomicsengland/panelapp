@@ -22,7 +22,7 @@ class GeneTest(LoginGELUser):
         requests to the server. We can mock it later if necessary.
         """
 
-        file_path = os.path.join(os.path.dirname(__file__), 'test_gene_data.tsv')
+        file_path = os.path.join(os.path.dirname(__file__), 'import_gene_data.tsv')
         test_gene_file = os.path.abspath(file_path)
 
         with open(test_gene_file) as f:
@@ -30,6 +30,24 @@ class GeneTest(LoginGELUser):
             self.client.post(url, {'gene_list': f})
 
         assert Gene.objects.count() == 1
+
+    def test_download_genes(self):
+        gps = GenePanelSnapshotFactory()
+        GenePanelEntrySnapshotFactory.create_batch(2, panel=gps)
+
+        res = self.client.get(reverse_lazy('panels:download_genes'))
+        self.assertEqual(res.status_code, 200)
+
+    def test_list_genes(self):
+        GenePanelEntrySnapshotFactory.create_batch(3)
+        r = self.client.get(reverse_lazy('panels:gene_list'))
+        self.assertEqual(r.status_code, 200)
+
+    def test_gene_not_ready(self):
+        gpes = GenePanelEntrySnapshotFactory()
+        url = reverse_lazy('panels:mark_gene_as_not_ready', args=(gpes.panel.panel.pk, gpes.gene.get('gene_symbol')))
+        r = self.client.post(url, {})
+        self.assertEqual(r.status_code, 302)
 
     def test_get_panels_for_a_gene(self):
         gene = GeneFactory()

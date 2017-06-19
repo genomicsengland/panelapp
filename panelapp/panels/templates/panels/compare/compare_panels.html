@@ -19,6 +19,7 @@
     <a href="{% url 'panels:copy_reviews' panel_1.panel.id panel_2.panel.id %}">Copy reviews from “{{ panel_1.level4title.name }}” to “{{ panel_2.level4title.name }}”</a>
   {% endif %}
 
+  {% if panel_1 and panel_2 %}
   <div class="table-responsive add-top-margin">
     <table class="table table-bordered" data-module="filterable-table">
       <thead>
@@ -70,5 +71,6 @@
       </tbody>
     </table>
   </div>
+  {% endif %}
   {% include "panels/compare/compare_panels_form.html" %}
 {% endblock %}

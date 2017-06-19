@@ -57,12 +57,14 @@ CUSTOM_APPS = [
     'django_object_actions',
     'mathfilters',
     'django_ajax',
+    'rest_framework',
 ]
 
 PROJECT_APPS = [
     'panelapp',
     'accounts',
     'panels',
+    'webservices',
 ]
 
 INSTALLED_APPS = DJANGO_APPS + CUSTOM_APPS + PROJECT_APPS

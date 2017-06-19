@@ -39,7 +39,7 @@
           {% include "panels/genepanel_info.html" %}
       </div>
       <div class="col-md-4">
-          {% if contributors %}
+          {% if panel.contributors %}
               <h3 class="remove-top-margin add-bottom-margin">{{ contributors|length }} reviewer{{contributors|pluralize}}</h3>
               <ul class="list-group remove-bottom-margin">
               {% for contributor in contributors %}

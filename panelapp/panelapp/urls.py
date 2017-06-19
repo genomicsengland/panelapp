@@ -27,6 +27,7 @@ urlpatterns = [
     url(r'^$', Homepage.as_view(), name="home"),
     url(r'^accounts/', include('accounts.urls', namespace="accounts")),
     url(r'^panels/', include('panels.urls', namespace="panels")),
+    url(r'^WebServices/', include('webservices.urls', namespace="webservices")),
     url(r'^markdownx/', include('markdownx.urls')),
     url(r'^GeL-admin/', admin.site.urls),
     url(r'^autocomplete/gene/$', GeneAutocomplete.as_view(), name="autocomplete-gene"),

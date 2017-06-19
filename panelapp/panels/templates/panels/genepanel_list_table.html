@@ -107,10 +107,6 @@
                       </a>
                       <a href="#lock_{{ entry.pk }}" class="lock_{{ entry.pk }} btn btn-default btn-sm hidden" data-module="showhide" data-show="a.btn.unlock_{{ entry.pk }}" data-hide="a.btn.lock_{{ entry.pk }}, a.btn.delete_{{ entry.pk }}" title="Lock panel"> <i class="fa fa-lock fa-lg"></i></a>
                       <a href="#unlock_{{ entry.pk }}" class="unlock_{{ entry.pk }} btn btn-default btn-sm" data-module="showhide" data-show="a.btn.lock_{{ entry.pk }}, a.btn.delete_{{ entry.pk }}" data-hide="a.btn.unlock_{{ entry.pk }}" title="Unlock panel for editing"> <i class="fa fa-unlock fa-lg"></i></a>
-                  {% else %}
-                  <a href="{% url 'panels:empty_items' entry.id %}" class="btn btn-default btn-sm" title="Download TSV file of panel">
-                      <i class="fa fa-download"></i> Download
-                  </a>
                   {% endif %}
               </td>
           </tr>

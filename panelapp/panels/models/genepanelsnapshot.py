@@ -19,6 +19,7 @@ from .evidence import Evidence
 from .evaluation import Evaluation
 from .gene import Gene
 from .comment import Comment
+from .genepanelentrysnapshot import GenePanelEntrySnapshot
 
 
 class GenePanelSnapshotManager(models.Manager):
@@ -30,14 +31,15 @@ class GenePanelSnapshotManager(models.Manager):
 
     def get_active(self):
         return super().get_queryset()\
-            .prefetch_related('panel', 'level4title')\
+            .prefetch_related('panel', 'level4title', 'genepanelentrysnapshot_set')\
             .filter(pk__in=Subquery(self.get_latest_ids()))\
             .annotate(
                 number_of_reviewers=Count('genepanelentrysnapshot__evaluation__user', distinct=True),
-                # FIXME number_of_evaluated_genes should be distinct per genepanelentrysnapshot
-                number_of_evaluated_genes=Count('genepanelentrysnapshot__evaluation'),
-                # FIXME the next line is incorrect, it lists all GenePanelEntrySnapshots,
-                # but it returns all, event the old versions of these genes
+                number_of_evaluated_genes=Sum(Case(When(
+                    genepanelentrysnapshot__evaluation__gt=0, then=Value(1)),
+                    default=Value(0),
+                    output_field=models.IntegerField()
+                )),
                 number_of_genes=Count('genepanelentrysnapshot'),
             )\
             .order_by('panel', '-major_version', '-minor_version')
@@ -58,11 +60,13 @@ class GenePanelSnapshot(TimeStampedModel):
     major_version = models.IntegerField(default=0)
     minor_version = models.IntegerField(default=0)
     version_comment = models.TextField(null=True)
-    old_panels = ArrayField(models.CharField(max_length=255), blank=True)
+    old_panels = ArrayField(models.CharField(max_length=255), blank=True, null=True)
 
     @cached_property
     def stats(self):
-        return self.genepanelentrysnapshot_set.aggregate(
+        ids = GenePanelEntrySnapshot.objects.get_active().filter(panel__pk=self.pk).values('pk')
+
+        return self.genepanelentrysnapshot_set.filter(pk__in=Subquery(ids)).aggregate(
             number_of_reviewers=Count('evaluation__user', distinct=True),
             number_of_evaluated_genes=Count('evaluation'),
             number_of_genes=Count('pk'),
@@ -85,7 +89,7 @@ class GenePanelSnapshot(TimeStampedModel):
     def version(self):
         return "{}.{}".format(self.major_version, self.minor_version)
 
-    def increment_version(self, major=False, user=None, comment=None):
+    def increment_version(self, major=False, user=None, comment=None, ignore_gene=None):
         current_genes = self.get_all_entries
 
         self.pk = None
@@ -99,6 +103,9 @@ class GenePanelSnapshot(TimeStampedModel):
         self.save()
 
         for gene in current_genes:
+            if ignore_gene and ignore_gene == gene.gene.get('gene_symbol'):
+                continue
+
             evidences = gene.evidence.all()
             evaluations = gene.evaluation.all()
             tracks = gene.track.all()
@@ -107,7 +114,8 @@ class GenePanelSnapshot(TimeStampedModel):
 
             gene.pk = None
             gene.panel = self
-            gene.ready = False
+            if major:
+                gene.ready = False
             gene.save()
 
             for evidence in evidences:
@@ -127,7 +135,8 @@ class GenePanelSnapshot(TimeStampedModel):
                     curator_status=user.reviewer.is_GEL(),
                     issue_description=issue_description,
                     gel_status=gene.status,
-                    issue_type=issue_type
+                    issue_type=issue_type,
+                    user=user
                 )
                 gene.track.add(track_promoted)
 
@@ -143,6 +152,9 @@ class GenePanelSnapshot(TimeStampedModel):
             activity = "promoted panel to version {}".format(self.version)
             self.add_activity(user, '', activity)
 
+            self.version_comment = comment
+
+        del self.get_all_entries
         return self
 
     @property
@@ -160,7 +172,7 @@ class GenePanelSnapshot(TimeStampedModel):
                 'evaluation__user__last_name',
                 'evaluation__user__email',
                 'evaluation__user__reviewer__affiliation'
-            )
+            ).order_by('evaluation__user')
 
     def mark_genes_not_ready(self):
         for gene in self.genepanelentrysnapshot_set.all():
@@ -214,7 +226,7 @@ class GenePanelSnapshot(TimeStampedModel):
             .order_by('-saved_gel_status', 'gene_core__gene_symbol', '-created')
 
     def get_gene(self, gene_symbol):
-        return self.get_all_entries.filter(gene__gene_symbol=gene_symbol).first()
+        return self.get_all_entries.get(gene__gene_symbol=gene_symbol)
 
     def has_gene(self, gene_symbol):
         return True if self.get_all_entries.filter(gene__gene_symbol=gene_symbol).count() > 0 else False
@@ -224,10 +236,13 @@ class GenePanelSnapshot(TimeStampedModel):
 
         if self.has_gene(gene_symbol):
             if increment:
-                self.increment_version()
-            del self.get_all_entries  # clear cached values as it points to the previous instance
-            self.get_all_entries.get(gene__gene_symbol=gene_symbol).delete()
-            del self.get_all_entries  # clear cached values as we deleted item
+                self.increment_version(ignore_gene=gene_symbol)
+            else:
+                self.get_all_entries.get(gene__gene_symbol=gene_symbol).delete()
+                del self.get_all_entries
+            return True
+        else:
+            return False
 
     def add_gene(self, user, gene_symbol, gene_data):
         """Adds a new gene to the panel
@@ -255,7 +270,7 @@ class GenePanelSnapshot(TimeStampedModel):
         if self.has_gene(gene_symbol):
             return False
 
-        self.increment_version()
+        self = self.increment_version()
 
         gene_core = Gene.objects.get(gene_symbol=gene_symbol)
         gene_info = gene_core.dict_tr()
@@ -273,7 +288,6 @@ class GenePanelSnapshot(TimeStampedModel):
             flagged=False if user.reviewer.is_GEL() else True
         )
         gene.save()
-
         if gene_data.get('comment'):
             comment = Comment.objects.create(
                 user=user,
@@ -312,19 +326,20 @@ class GenePanelSnapshot(TimeStampedModel):
         )
         gene.track.add(track_sources)
 
-        evaluation = Evaluation.objects.create(
-            user=user,
-            rating=gene_data.get('rating'),
-            mode_of_pathogenicity=gene_data.get('mode_of_pathogenicity'),
-            phenotypes=gene_data.get('phenotypes'),
-            publications=gene_data.get('publications'),
-            moi=gene_data.get('moi'),
-            current_diagnostic=gene_data.get('current_diagnostic'),
-            version=self.version
-        )
-        if gene_data.get('comment'):
-            evaluation.comments.add(comment)
-        gene.evaluation.add(evaluation)
+        if gene_data.get('rating') or gene_data.get('comment'):
+            evaluation = Evaluation.objects.create(
+                user=user,
+                rating=gene_data.get('rating'),
+                mode_of_pathogenicity=gene_data.get('mode_of_pathogenicity'),
+                phenotypes=gene_data.get('phenotypes'),
+                publications=gene_data.get('publications'),
+                moi=gene_data.get('moi'),
+                current_diagnostic=gene_data.get('current_diagnostic'),
+                version=self.version
+            )
+            if gene_data.get('comment'):
+                evaluation.comments.add(comment)
+            gene.evaluation.add(evaluation)
         gene.evidence_status(update=True)
         return gene
 
@@ -354,43 +369,56 @@ class GenePanelSnapshot(TimeStampedModel):
             GenePanelEntrySnapshot if the gene was successfully updated, False otherwise
         """
 
+        print('updating gene')
+
         logging.debug("Updating gene:{} panel:{} gene_data:{}".format(gene_symbol, self, gene_data))
-        gene = self.get_gene(gene_symbol=gene_symbol)
-        if gene:
+        has_gene = self.has_gene(gene_symbol=gene_symbol)
+        if has_gene:
+            del self.get_all_entries
             logging.debug("Found gene:{} in panel:{}. Incrementing version.".format(gene_symbol, self))
-            self = self.increment_version()
-            gene.pk = None
+            self.increment_version()
+            gene = self.get_gene(gene_symbol=gene_symbol)
+
+            print('fresh panel version', gene.panel.version)
+            print('self panel vresion', self.version)
+            print('has gene', self.has_gene(gene_symbol))
+
             if gene_data.get('flagged') is not None:
                 gene.flagged = gene_data.get('flagged')
-            gene.panel = self
-            gene.save()
+            #gene.panel = self
+            #gene.save()
+
+            # WTF???
+            del self.get_all_entries
+            print('has gene', self.has_gene(gene_symbol))
 
             tracks = []
             evidences_names = [ev.name.strip() for ev in gene.evidence.all()]
 
             logging.debug("Updating evidences_names for gene:{} in panel:{}".format(gene_symbol, self))
-            for source in gene_data.get('sources'):
-                cleaned_source = source.strip()
-                if cleaned_source not in evidences_names:
-                    logging.debug("Adding new evidence:{} for gene:{} panel:{}".format(
-                        cleaned_source, gene_symbol, self
-                    ))
-                    evidence = Evidence.objects.create(
-                        name=cleaned_source,
-                        rating=5,
-                        reviewer=user.reviewer
-                    )
-                    gene.evidence.add(evidence)
+            if gene_data.get('sources'):
+                for source in gene_data.get('sources'):
+                    cleaned_source = source.strip()
+                    if cleaned_source not in evidences_names:
+                        logging.debug("Adding new evidence:{} for gene:{} panel:{}".format(
+                            cleaned_source, gene_symbol, self
+                        ))
+                        evidence = Evidence.objects.create(
+                            name=cleaned_source,
+                            rating=5,
+                            reviewer=user.reviewer
+                        )
+                        gene.evidence.add(evidence)
 
-                    description = "{} was added to {} panel. Source: {}".format(
-                        gene_symbol,
-                        self.panel.name,
-                        cleaned_source
-                    )
-                    tracks.append((
-                        TrackRecord.ISSUE_TYPES.NewSource,
-                        description
-                    ))
+                        description = "{} was added to {} panel. Source: {}".format(
+                            gene_symbol,
+                            self.panel.name,
+                            cleaned_source
+                        )
+                        tracks.append((
+                            TrackRecord.ISSUE_TYPES.NewSource,
+                            description
+                        ))
 
             moi = gene_data.get('moi')
             if moi and gene.moi != moi:
@@ -453,24 +481,64 @@ class GenePanelSnapshot(TimeStampedModel):
             new_gene = gene_data.get('gene')
             gene_name = gene_data.get('gene_name')
 
+            print(new_gene, gene.gene_core != new_gene)
+            print('481 has gene', self.has_gene(gene_symbol))
             if new_gene and gene.gene_core != new_gene:
                 logging.debug("Gene:{} in panel:{} has changed to gene:{}".format(
                     gene_symbol, self, new_gene.gene_symbol
                 ))
                 old_gene_symbol = gene.gene_core.gene_symbol
+
+                evidences = gene.evidence.all()
+                evaluations = gene.evaluation.all()
+                tracks = gene.track.all()
+                tags = gene.tags.all()
+                comments = gene.comments.all()
+
+                new_gpes = gene
+                new_gpes.gene_core = new_gene
+                new_gpes.gene = new_gene.dict_tr()
+                new_gpes.pk = None
+                new_gpes.panel = self
+                new_gpes.save()
+
+                for evidence in evidences:
+                    new_gpes.evidence.add(evidence)
+
+                for evaluation in evaluations:
+                    new_gpes.evaluation.add(evaluation)
+
+                for track in tracks:
+                    new_gpes.track.add(track)
+
+                for tag in tags:
+                    new_gpes.tags.add(tag)
+
+                for comment in comments:
+                    new_gpes.comments.add(comment)
+
                 description = "{} was changed to {}".format(old_gene_symbol, new_gene.gene_symbol)
                 track_gene = TrackRecord.objects.create(
-                    gel_status=gene.status,
+                    gel_status=new_gpes.status,
                     curator_status=0,
                     user=user,
                     issue_type=TrackRecord.ISSUE_TYPES.ChangedGeneName,
                     issue_description=description
                 )
-                gene.track.add(track_gene)
-                gene.gene_core = new_gene
-                gene.gene = new_gene.dict_tr()
-                gene.save()
+                # create a new gene here
+                new_gpes.track.add(track_gene)
+                #gene.gene_core = new_gene
+                #gene.gene = new_gene.dict_tr()
+                #print(gene.gene)
+                #gene.save()
+                #print(gene.panel.version)
+
+                print(self.version)
+                print('old exists', self.has_gene(old_gene_symbol))
+                del self.get_all_entries
                 self.delete_gene(old_gene_symbol, increment=False)
+                print(self.panel.active_panel.has_gene(new_gene.gene_symbol))
+                print('new exists', self.has_gene(new_gene.gene_symbol))
             elif gene.gene.get('gene_name') != gene_name:
                 logging.debug("Updating gene_name for gene:{} in panel:{}".format(gene_symbol, self))
                 gene.gene['gene_name'] = gene_name

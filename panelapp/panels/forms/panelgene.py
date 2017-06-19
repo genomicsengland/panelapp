@@ -44,7 +44,8 @@ class PanelGeneForm(forms.ModelForm):
 
     source = Select2ListMultipleChoiceField(
         choice_list=Evidence.ALL_SOURCES,
-        widget=Select2Multiple(url="autocomplete-source")
+        widget=Select2Multiple(url="autocomplete-source"),
+        required=False
     )
     tags = forms.ModelMultipleChoiceField(
         queryset=Tag.objects.all(),
@@ -55,12 +56,14 @@ class PanelGeneForm(forms.ModelForm):
     publications = SimpleArrayField(
         forms.CharField(max_length=255),
         label="Publications (PMID: 1234;4321)",
-        delimiter=";"
+        delimiter=";",
+        required=False
     )
     phenotypes = SimpleArrayField(
         forms.CharField(max_length=255),
         label="Phenotypes (separate using a semi-colon - ;)",
-        delimiter=";"
+        delimiter=";",
+        required=False
     )
 
     rating = forms.ChoiceField(choices=[('', 'Provide rating')] + Evaluation.RATINGS, required=False)
@@ -118,22 +121,29 @@ class PanelGeneForm(forms.ModelForm):
         return self.cleaned_data['gene']
 
     def save(self, *args, **kwargs):
+        return False
+
+    def save_gene(self, *args, **kwargs):
         gene_data = self.cleaned_data
         gene_data['sources'] = gene_data.pop('source')
+
         if gene_data.get('comments'):
             gene_data['comment'] = gene_data.pop('comments')
 
-        if not self.instance.pk:
-            return self.panel.add_gene(
-                self.request.user,
-                gene_data.get('gene').gene_symbol,
-                gene_data
-            )
-        else:
+        initial_gene_symbol = self.initial['gene'].gene_symbol
+        new_gene_symbol = gene_data.get('gene').gene_symbol
+
+        if self.panel.has_gene(initial_gene_symbol):
             self.panel.update_gene(
                 self.request.user,
-                self.initial.get('gene').gene_symbol,
+                initial_gene_symbol,
                 gene_data
             )
             self.panel = GenePanel.objects.get(pk=self.panel.panel.pk).active_panel
-            return self.panel.get_gene(gene_data.get('gene').gene_symbol)
+            return self.panel.get_gene(new_gene_symbol)
+        else:
+            return self.panel.add_gene(
+                self.request.user,
+                new_gene_symbol,
+                gene_data
+            )

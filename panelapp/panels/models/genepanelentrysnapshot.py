@@ -7,7 +7,6 @@ from django.contrib.postgres.fields import ArrayField
 from model_utils import Choices
 from model_utils.models import TimeStampedModel
 
-from .genepanelsnapshot import GenePanelSnapshot
 from .gene import Gene
 from .evidence import Evidence
 from .evaluation import Evaluation
@@ -21,22 +20,27 @@ from panels.templatetags.panel_helpers import GeneDataType
 class GenePanelEntrySnapshotManager(models.Manager):
     def get_latest_ids(self):
         return super().get_queryset()\
-            .distinct('panel__panel')\
-            .values_list('pk', flat=True)\
-            .order_by('panel__panel', '-panel__major_version', '-panel__minor_version')
+            .distinct('panel__panel__pk')\
+            .values_list('panel__pk', flat=True)\
+            .order_by('panel__panel__pk', '-panel__major_version', '-panel__minor_version')
 
     def get_active(self):
         return super().get_queryset()\
-            .filter(pk__in=Subquery(self.get_latest_ids()))\
+            .filter(panel__pk__in=Subquery(self.get_latest_ids()))\
             .annotate(
                 number_of_reviewers=Count('evaluation__user', distinct=True),
                 number_of_evaluated_genes=Count('evaluation'),
                 number_of_genes=Count('pk'),
             )\
-            .order_by('panel', '-panel__major_version', '-panel__minor_version')
+            .prefetch_related('evaluation', 'tags', 'evidence', 'panel', 'panel__level4title', 'panel__panel')\
+            .order_by('panel__pk', '-panel__major_version', '-panel__minor_version')
 
     def get_gene_panels(self, gene_symbol):
-        return self.get_active().filter(gene__gene_symbol=gene_symbol)
+        return super().get_queryset()\
+            .filter(gene__gene_symbol=gene_symbol)\
+            .distinct('panel__panel__pk')\
+            .prefetch_related('evaluation', 'tags', 'evidence', 'panel', 'panel__level4title', 'panel__panel')\
+            .order_by('panel__panel__pk', '-panel__major_version', '-panel__minor_version')
 
 
 class GenePanelEntrySnapshot(TimeStampedModel):
@@ -57,21 +61,26 @@ class GenePanelEntrySnapshot(TimeStampedModel):
         get_latest_by = "created"
         ordering = ['-saved_gel_status', '-created', ]
 
-    panel = models.ForeignKey(GenePanelSnapshot)
+    panel = models.ForeignKey('panels.GenePanelSnapshot')
     gene = JSONField()  # copy data from Gene.dict_tr
     gene_core = models.ForeignKey(Gene)  # reference to the original Gene
     evidence = models.ManyToManyField(Evidence)
     evaluation = models.ManyToManyField(Evaluation)
     moi = models.CharField("Mode of inheritance", choices=Evaluation.MODES_OF_INHERITANCE, max_length=255)
-    penetrance = models.CharField(choices=PENETRANCE, max_length=255)
+    penetrance = models.CharField(choices=PENETRANCE, max_length=255, blank=True, null=True)
     track = models.ManyToManyField(TrackRecord)
-    publications = ArrayField(models.CharField(max_length=255))
-    phenotypes = ArrayField(models.CharField(max_length=255))
+    publications = ArrayField(models.CharField(max_length=255), blank=True, null=True)
+    phenotypes = ArrayField(models.CharField(max_length=255), blank=True, null=True)
     tags = models.ManyToManyField(Tag)
     flagged = models.BooleanField(default=False)
     ready = models.BooleanField(default=False)
     comments = models.ManyToManyField(Comment)
-    mode_of_pathogenicity = models.CharField(choices=Evaluation.MODES_OF_PATHOGENICITY, max_length=255)
+    mode_of_pathogenicity = models.CharField(
+        choices=Evaluation.MODES_OF_PATHOGENICITY,
+        max_length=255,
+        null=True,
+        blank=True
+    )
     saved_gel_status = models.IntegerField(null=True)
 
     objects = GenePanelEntrySnapshotManager()
@@ -174,6 +183,9 @@ class GenePanelEntrySnapshot(TimeStampedModel):
 
         [self.clear_expert_evidence(e) for e in Evidence.EXPERT_REVIEWS]
 
+        if isinstance(status, str):
+            status = int(status)
+
         if status > 2:
             evidence = Evidence.objects.create(name="Expert Review Green", rating=5, reviewer=user.reviewer)
             issue_description = "This gene has been classified as Green List (High Evidence)."
@@ -205,6 +217,7 @@ class GenePanelEntrySnapshot(TimeStampedModel):
             issue_description=issue_description
         )
         self.track.add(track)
+        self.saved_gel_status = status
         self.save()
         return True
 
@@ -333,12 +346,9 @@ class GenePanelEntrySnapshot(TimeStampedModel):
         gene = self.gene.get('gene_symbol')
         self = self.panel.get_gene(gene)
 
-        status = self.status
-        rating_set = self.set_rating(user, status)
+        rating_set = self.set_rating(user, rating)
         if not rating_set:
             return
-
-        self.save()
 
         if rating_comment:
             comment = Comment.objects.create(

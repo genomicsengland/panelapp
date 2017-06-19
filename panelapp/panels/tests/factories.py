@@ -50,7 +50,7 @@ class GeneFactory(factory.django.DjangoModelFactory):
         model = Gene
 
     gene_symbol = factory.LazyAttribute(lambda g: factory.Faker('md5').evaluate(0, 0, 0)[:7])
-    other_transcripts = json.dumps({})
+    other_transcripts = {}
 
 
 class EvidenceFactory(factory.django.DjangoModelFactory):
@@ -72,6 +72,7 @@ class EvaluationFactory(factory.django.DjangoModelFactory):
 class TrackRecordFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = TrackRecord
+    user = factory.SubFactory('accounts.tests.factories.UserFactory')
 
 
 class TagFactory(factory.django.DjangoModelFactory):
@@ -101,16 +102,16 @@ class GenePanelEntrySnapshotFactory(factory.django.DjangoModelFactory):
     gene = factory.LazyAttribute(lambda g: g.gene_core.dict_tr())
 
     @factory.post_generation
-    def evaluation(self, create, extracted, **kwargs):
+    def evaluation(self, create, evaluations, **kwargs):
         if not create:
             return
 
-        evaluations = extracted
-        if not extracted:
+        if not evaluations:
             evaluations = EvaluationFactory.create_batch(4)
 
         for evaluation in evaluations:
-            self.evaluation.add(evaluation)
+            if evaluation:
+                self.evaluation.add(evaluation)
 
     @factory.post_generation
     def evidence(self, create, extracted, **kwargs):

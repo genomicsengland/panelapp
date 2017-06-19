@@ -39,8 +39,12 @@ class GenePanel(TimeStampedModel):
 
     def _prepare_panel_query(self):
         return self.genepanelsnapshot_set\
-            .prefetch_related('panel', 'level4title')\
-            .annotate(
+            .prefetch_related(
+                'panel',
+                'level4title',
+                'genepanelentrysnapshot_set__evaluation__user',
+                'genepanelentrysnapshot_set__evaluation__user__reviewer'
+            ).annotate(
                 number_of_reviewers=Count('genepanelentrysnapshot__evaluation__user', distinct=True),
                 number_of_evaluated_genes=Count('genepanelentrysnapshot__evaluation'),
                 number_of_genes=Count('genepanelentrysnapshot'),
