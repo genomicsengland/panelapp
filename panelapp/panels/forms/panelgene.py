@@ -130,10 +130,16 @@ class PanelGeneForm(forms.ModelForm):
         if gene_data.get('comments'):
             gene_data['comment'] = gene_data.pop('comments')
 
-        initial_gene_symbol = self.initial['gene'].gene_symbol
+        if self.initial:
+            initial_gene_symbol = self.initial['gene'].gene_symbol
+        else:
+            initial_gene_symbol = None
+
         new_gene_symbol = gene_data.get('gene').gene_symbol
 
-        if self.panel.has_gene(initial_gene_symbol):
+        if self.initial and self.panel.has_gene(initial_gene_symbol):
+            self.panel.increment_version()
+            self.panel = GenePanel.objects.get(pk=self.panel.panel.pk).active_panel
             self.panel.update_gene(
                 self.request.user,
                 initial_gene_symbol,

@@ -369,28 +369,16 @@ class GenePanelSnapshot(TimeStampedModel):
             GenePanelEntrySnapshot if the gene was successfully updated, False otherwise
         """
 
-        print('updating gene')
-
         logging.debug("Updating gene:{} panel:{} gene_data:{}".format(gene_symbol, self, gene_data))
         has_gene = self.has_gene(gene_symbol=gene_symbol)
         if has_gene:
-            del self.get_all_entries
             logging.debug("Found gene:{} in panel:{}. Incrementing version.".format(gene_symbol, self))
-            self.increment_version()
             gene = self.get_gene(gene_symbol=gene_symbol)
-
-            print('fresh panel version', gene.panel.version)
-            print('self panel vresion', self.version)
-            print('has gene', self.has_gene(gene_symbol))
 
             if gene_data.get('flagged') is not None:
                 gene.flagged = gene_data.get('flagged')
             #gene.panel = self
             #gene.save()
-
-            # WTF???
-            del self.get_all_entries
-            print('has gene', self.has_gene(gene_symbol))
 
             tracks = []
             evidences_names = [ev.name.strip() for ev in gene.evidence.all()]
@@ -481,8 +469,6 @@ class GenePanelSnapshot(TimeStampedModel):
             new_gene = gene_data.get('gene')
             gene_name = gene_data.get('gene_name')
 
-            print(new_gene, gene.gene_core != new_gene)
-            print('481 has gene', self.has_gene(gene_symbol))
             if new_gene and gene.gene_core != new_gene:
                 logging.debug("Gene:{} in panel:{} has changed to gene:{}".format(
                     gene_symbol, self, new_gene.gene_symbol
@@ -525,20 +511,8 @@ class GenePanelSnapshot(TimeStampedModel):
                     issue_type=TrackRecord.ISSUE_TYPES.ChangedGeneName,
                     issue_description=description
                 )
-                # create a new gene here
                 new_gpes.track.add(track_gene)
-                #gene.gene_core = new_gene
-                #gene.gene = new_gene.dict_tr()
-                #print(gene.gene)
-                #gene.save()
-                #print(gene.panel.version)
-
-                print(self.version)
-                print('old exists', self.has_gene(old_gene_symbol))
-                del self.get_all_entries
                 self.delete_gene(old_gene_symbol, increment=False)
-                print(self.panel.active_panel.has_gene(new_gene.gene_symbol))
-                print('new exists', self.has_gene(new_gene.gene_symbol))
             elif gene.gene.get('gene_name') != gene_name:
                 logging.debug("Updating gene_name for gene:{} in panel:{}".format(gene_symbol, self))
                 gene.gene['gene_name'] = gene_name
