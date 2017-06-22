@@ -1,6 +1,7 @@
 import csv
 from datetime import datetime
 from django.contrib import messages
+from django.db.models import Q
 from django.views.generic import TemplateView
 from django.views.generic.base import View
 from django.views.generic import FormView
@@ -49,16 +50,28 @@ class PanelsIndexView(ListView):
     template_name = "panels/genepanel_list.html"
     model = GenePanelSnapshot
     context_object_name = 'panels'
+    objects = []
 
     def get_queryset(self, *args, **kwargs):
         if self.request.GET.get('gene'):
-            return GenePanelSnapshot.objects.get_gene_panels(self.request.GET.get('gene'))
+            self.objects = GenePanelSnapshot.objects.get_gene_panels(self.request.GET.get('gene'))
         else:
-            return GenePanelSnapshot.objects.get_active()
+            if self.request.user.is_authenticated and self.request.user.reviewer.is_GEL():
+                self.objects = GenePanelSnapshot.objects.get_active_anotated(all=True)
+            else:
+                self.objects = GenePanelSnapshot.objects.get_active_anotated()
+        return self.panels
+
+    @cached_property
+    def panels(self):
+        return self.objects
+
+    @cached_property
+    def compare_panels_form(self):
+        return ComparePanelsForm(panels=self.panels)
 
     def get_context_data(self, *args, **kwargs):
         ctx = super().get_context_data(*args, **kwargs)
-        ctx['compare_panels_form'] = ComparePanelsForm(panels=self.get_queryset())
         return ctx
 
 
@@ -177,8 +190,14 @@ class GeneListView(ListView):
 
     def get_queryset(self, *args, **kwargs):
         qs = super().get_queryset(*args, **kwargs)
-        qs = qs.prefetch_related()
-        return qs
+        if self.request.user.is_authenticated and self.request.user.reviewer.is_GEL:
+            qs = qs.filter(
+                Q(genepanelentrysnapshot__panel__panel__approved=True)
+                | Q(genepanelentrysnapshot__panel__panel__approved=False)
+            )
+        else:
+            qs = qs.filter(genepanelentrysnapshot__panel__panel__approved=True)
+        return qs.distinct('gene_symbol')
 
     def get_context_data(self, *args, **kwargs):
         ctx = super().get_context_data(*args, **kwargs)
@@ -524,10 +543,11 @@ class ComparePanelsView(FormView):
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
-        kwargs['panels'] = GenePanelSnapshot.objects.get_active()
+        all = True if self.request.user.is_authenticated and self.request.user.reviewer.is_GEL() else False
+        kwargs['panels'] = GenePanelSnapshot.objects.get_active(all)
         return kwargs
 
-    def get_context_data(self):
+    def get_context_data(self, *args, **kwargs):
         ctx = super().get_context_data()
 
         if self.kwargs.get('panel_1_id') and self.kwargs.get('panel_2_id'):
@@ -573,10 +593,11 @@ class CompareGeneView(FormView):
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
-        kwargs['panels'] = GenePanelSnapshot.objects.get_active()
+        all = True if self.request.user.is_authenticated and self.request.user.reviewer.is_GEL() else False
+        kwargs['panels'] = GenePanelSnapshot.objects.get_active(all)
         return kwargs
 
-    def get_context_data(self):
+    def get_context_data(self, *args, **kwargs):
         ctx = super().get_context_data()
         gene_symbol = self.kwargs['gene_symbol']
         ctx['gene_symbol'] = gene_symbol

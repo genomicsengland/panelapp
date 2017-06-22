@@ -12,7 +12,8 @@ class UserManager(BaseUserManager):
     def panel_contributors(self, panel_id):
         return super().get_queryset()\
             .distinct('pk')\
-            .filter(evaluation__genepanelentrysnapshot__panel__pk=panel_id)
+            .filter(evaluation__genepanelentrysnapshot__panel__pk=panel_id)\
+            .prefetch_related('reviewer')
 
 
 class User(AbstractUser, TimeStampedModel):

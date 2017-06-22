@@ -80,13 +80,21 @@ def reviewed_by(gene, user):
 
 @register.filter
 def human_issue_type(issue_type):
-    issue = issue_type.split(',')
-    return TrackRecord.ISSUE_TYPES[issue[0]]
+    issues = issue_type.split(',')
+    out_arr = []
+
+    for issue in issues:
+        try:
+            out_arr.append(TrackRecord.ISSUE_TYPES[issue])
+        except KeyError:
+            out_arr.append(issue)
+
+    return ", ".join(out_arr)
 
 
 @register.filter
 def get_ensembleId(transcripts):
-    return sorted(list(set(map(lambda t: t if isinstance(t, str) else t.get('name'), transcripts))))
+    return sorted(list(set(map(lambda t: t if isinstance(t, str) else t.get('geneid'), transcripts))))
 
 
 @register.filter

@@ -29,10 +29,10 @@ class UploadPanelsForm(forms.Form):
         try:
             panel_list.process_file(kwargs.pop('user'))
         except GeneDoesNotExist as e:
-            message =  'Line: {} has a wrong gene, please check it and try again.'.format(e)
+            message = 'Line: {} has a wrong gene, please check it and try again.'.format(e)
             raise forms.ValidationError(message)
         except UserDoesNotExist as e:
-            message =  'Line: {} has a wrong username, please check it and try again.'.format(e)
+            message = 'Line: {} has a wrong username, please check it and try again.'.format(e)
             raise forms.ValidationError(message)
         except TSVIncorrectFormat as e:
             message = "Line: {} is not properly formatted, please check it and try again.".format(e)
@@ -47,10 +47,10 @@ class UploadReviewsForm(forms.Form):
         try:
             review_list.process_file()
         except GeneDoesNotExist as e:
-            message =  'Line: {} has a wrong gene, please check it and try again.'.format(e)
+            message = 'Line: {} has a wrong gene, please check it and try again.'.format(e)
             raise forms.ValidationError(message)
         except UserDoesNotExist as e:
-            message =  'Line: {} has a wrong username, please check it and try again.'.format(e)
+            message = 'Line: {} has a wrong username, please check it and try again.'.format(e)
             raise forms.ValidationError(message)
         except TSVIncorrectFormat as e:
             message = "Line: {} is not properly formatted, please check it and try again.".format(e)

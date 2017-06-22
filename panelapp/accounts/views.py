@@ -13,7 +13,7 @@ from .models import User
 
 class UserRegistrationView(CreateView):
     template_name = "accounts/user_create.html"
-    
+
     model = User
     form_class = RegistrationForm
 

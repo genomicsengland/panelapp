@@ -5,10 +5,8 @@ from faker import Factory
 from accounts.tests.setup import LoginGELUser
 from panels.models import GenePanel
 from panels.models import Evaluation
-from panels.models import GenePanelEntrySnapshot
 from .factories import TagFactory
 from .factories import GeneFactory
-from .factories import GenePanelFactory
 from .factories import GenePanelSnapshotFactory
 from .factories import GenePanelEntrySnapshotFactory
 
@@ -346,7 +344,6 @@ class GeneReviewTest(LoginGELUser):
         file_path = os.path.join(os.path.dirname(__file__), 'import_reviews_data.tsv')
         test_reviews_file = os.path.abspath(file_path)
 
-        res = None
         with open(test_reviews_file) as f:
             url = reverse_lazy('panels:upload_reviews')
             self.client.post(url, {'review_list': f})

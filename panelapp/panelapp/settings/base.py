@@ -22,7 +22,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.pa
 # See https://docs.djangoproject.com/en/1.11/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = '-0-&v=+ghegh&l51=rdmvz_5hlf1t-^e&#5d8f07iome#ljg=a'
+SECRET_KEY = os.getenv('SECRET_KEY', '-0-&v=+ghegh&l51=rdmvz_5hlf1t-^e&#5d8f07iome#ljg=a')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -33,7 +33,9 @@ EMAIL_HOST = 'localhost'
 EMAIL_PORT = 25
 EMAIL_HOST_USER = 'vagrant'
 EMAIL_HOST_PASSWORD = '1'
-DEFAULT_FROM_EMAIL = 'PanelApp <panelapp@genomicsengland.co.uk>'
+DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'PanelApp <panelapp@genomicsengland.co.uk>')
+PANEL_APP_EMAIL = os.getenv('PANEL_APP_EMAIL', "panelapp@genomicsengland.co.uk")
+
 
 # Application definition
 
@@ -65,6 +67,7 @@ PROJECT_APPS = [
     'accounts',
     'panels',
     'webservices',
+    'v2import'
 ]
 
 INSTALLED_APPS = DJANGO_APPS + CUSTOM_APPS + PROJECT_APPS
@@ -192,4 +195,8 @@ MARKDOWN_DEUX_STYLES = {
 }
 
 PANEL_APP_EMAIL = None
-CELL_BASE_CONNECTOR_REST = "http://bioinfo.hpc.cam.ac.uk/cellbase/webservices/rest/"
+CELL_BASE_CONNECTOR_REST = os.getenv(
+    "CELL_BASE_CONNECTOR_REST",
+    "http://bioinfo.hpc.cam.ac.uk/cellbase/webservices/rest/"
+)
+HEALTH_CHECK_TOKEN = os.getenv('HEALTH_CHECK_TOKEN', None)

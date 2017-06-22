@@ -11,13 +11,15 @@
 
 {% block body %}
 <div class="container">
-    <h1>{{ panels|length }} panel{{panels|pluralize}}</h1>
-    <button type="button" class="btn btn-default text-right" data-toggle="modal" data-target="#compare-modal">
-      Compare two panels
-    </button>
-    <div id="table">
-      {% include "panels/genepanel_list_table.html" %}
-    </div>
-    {% include 'panels/compare/compare_panels_form.html' with form=compare_panels_form %}
+    {% with panels_count=view.panels.count %}
+      <h1>{{ panels_count }} panel{{ panels_count|pluralize }}</h1>
+    {% endwith %}
+      <button type="button" class="btn btn-default text-right" data-toggle="modal" data-target="#compare-modal">
+        Compare two panels
+      </button>
+      <div id="table">
+        {% include "panels/genepanel_list_table.html" %}
+      </div>
+      {% include 'panels/compare/compare_panels_form.html' with form=view.compare_panels_form %}
 </div>
 {% endblock %}

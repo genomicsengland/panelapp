@@ -6,7 +6,6 @@ from django.urls import reverse_lazy
 from faker import Factory
 from accounts.tests.setup import LoginGELUser
 from panels.models import GenePanel
-from panels.models import GenePanelSnapshot
 from panels.models import GenePanelEntrySnapshot
 from panels.tasks import email_panel_promoted
 from .factories import GeneFactory
@@ -179,7 +178,7 @@ class GenePanelTest(LoginGELUser):
     def prepare_compare(self):
         gene = GeneFactory()
 
-        gps = GenePanelSnapshotFactory()
+        gps = GenePanelSnapshotFactory(panel__approved=True)
         GenePanelEntrySnapshotFactory.create_batch(2, panel=gps)  # random genes
         GenePanelEntrySnapshotFactory.create(gene_core=gene, panel=gps)
 
@@ -244,8 +243,8 @@ class GenePanelTest(LoginGELUser):
         self.assertEqual(r.status_code, 200)
 
     def test_import_panel(self):
-        gene = GeneFactory(gene_symbol="ABCC5-AS1")
-        gene = GeneFactory(gene_symbol="A1CF")
+        GeneFactory(gene_symbol="ABCC5-AS1")
+        GeneFactory(gene_symbol="A1CF")
 
         file_path = os.path.join(os.path.dirname(__file__), 'import_panel_data.tsv')
         test_panel_file = os.path.abspath(file_path)

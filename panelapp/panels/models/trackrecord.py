@@ -22,6 +22,9 @@ class TrackRecord(TimeStampedModel):
         ("SetModeofInheritance", "Set mode of inheritance"),
         ("SetPhenotypes", "Set phenotypes"),
         ("SetPublications", "Set publications"),
+        ("ApprovedGene", "Approved Gene"),
+        ("GelStatusUpdate", "GelStatusUpdate"),
+        ("UploadGeneInformation", "Upload gene information"),
     )
 
     class Meta:

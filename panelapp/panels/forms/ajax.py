@@ -3,6 +3,7 @@ from django import forms
 from django.contrib.postgres.forms import SimpleArrayField
 from dal_select2.widgets import ModelSelect2Multiple
 from panels.models import Tag
+from panels.models import GenePanel
 from panels.models import GenePanelEntrySnapshot
 
 
@@ -29,6 +30,9 @@ class UpdateGeneMOPForm(forms.ModelForm):
         mop = self.cleaned_data['mode_of_pathogenicity']
         comment = self.cleaned_data['comment']
         user = kwargs.pop('user')
+        self.instance.panel.increment_version()
+        self.instance = GenePanel.objects.get(pk=self.instance.panel.panel.pk)\
+            .active_panel.get_gene(self.instance.gene['gene_symbol'])
         self.instance.update_pathogenicity(mop, user, comment)
 
 
@@ -43,6 +47,9 @@ class UpdateGeneMOIForm(forms.ModelForm):
         moi = self.cleaned_data['moi']
         comment = self.cleaned_data['comment']
         user = kwargs.pop('user')
+        self.instance.panel.increment_version()
+        self.instance = GenePanel.objects.get(pk=self.instance.panel.panel.pk)\
+            .active_panel.get_gene(self.instance.gene['gene_symbol'])
         self.instance.update_moi(moi, user, comment)
 
 
@@ -62,6 +69,9 @@ class UpdateGenePhenotypesForm(forms.ModelForm):
         phenotypes = self.cleaned_data['phenotypes']
         comment = self.cleaned_data['comment']
         user = kwargs.pop('user')
+        self.instance.panel.increment_version()
+        self.instance = GenePanel.objects.get(pk=self.instance.panel.panel.pk)\
+            .active_panel.get_gene(self.instance.gene['gene_symbol'])
         self.instance.update_phenotypes(phenotypes, user, comment)
 
 
@@ -82,6 +92,9 @@ class UpdateGenePublicationsForm(forms.ModelForm):
         publications = self.cleaned_data['publications']
         comment = self.cleaned_data['comment']
         user = kwargs.pop('user')
+        self.instance.panel.increment_version()
+        self.instance = GenePanel.objects.get(pk=self.instance.panel.panel.pk)\
+            .active_panel.get_gene(self.instance.gene['gene_symbol'])
         self.instance.update_publications(publications, user, comment)
 
 
@@ -104,6 +117,9 @@ class UpdateGeneRatingForm(forms.ModelForm):
     def save(self, *args, **kwargs):
         status = self.cleaned_data['status']
         user = kwargs.pop('user')
+        self.instance.panel.increment_version()
+        self.instance = GenePanel.objects.get(pk=self.instance.panel.panel.pk)\
+            .active_panel.get_gene(self.instance.gene['gene_symbol'])
         self.instance.update_rating(status, user, self.cleaned_data['comment'])
 
 

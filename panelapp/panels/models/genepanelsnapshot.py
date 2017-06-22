@@ -1,10 +1,8 @@
 import logging
 from django.db import models
-from django.db.models import Sum
 from django.db.models import Count
 from django.db.models import Case
 from django.db.models import When
-from django.db.models import Value
 from django.db.models import Subquery
 from django.contrib.postgres.fields import ArrayField
 from django.utils.functional import cached_property
@@ -19,33 +17,40 @@ from .evidence import Evidence
 from .evaluation import Evaluation
 from .gene import Gene
 from .comment import Comment
-from .genepanelentrysnapshot import GenePanelEntrySnapshot
 
 
 class GenePanelSnapshotManager(models.Manager):
     def get_latest_ids(self):
         return super().get_queryset()\
-            .distinct('panel')\
+            .distinct('panel__pk')\
             .values('pk')\
-            .order_by('panel', '-major_version', '-minor_version')
+            .order_by('panel__pk', '-major_version', '-minor_version')
 
-    def get_active(self):
-        return super().get_queryset()\
-            .prefetch_related('panel', 'level4title', 'genepanelentrysnapshot_set')\
-            .filter(pk__in=Subquery(self.get_latest_ids()))\
+    def get_active(self, all=False):
+        qs = super().get_queryset()
+
+        if not all:
+            qs = qs.filter(panel__approved=True)
+
+        return qs.filter(pk__in=Subquery(self.get_latest_ids()))\
+            .prefetch_related('panel', 'level4title')\
+            .order_by('panel__name', '-major_version', '-minor_version')
+
+    def get_active_anotated(self, all=False):
+        "This method adds additional values to the queryset, such as number_of_genes, etc"
+
+        return self.get_active(all)\
             .annotate(
                 number_of_reviewers=Count('genepanelentrysnapshot__evaluation__user', distinct=True),
-                number_of_evaluated_genes=Sum(Case(When(
-                    genepanelentrysnapshot__evaluation__gt=0, then=Value(1)),
-                    default=Value(0),
-                    output_field=models.IntegerField()
-                )),
-                number_of_genes=Count('genepanelentrysnapshot'),
-            )\
-            .order_by('panel', '-major_version', '-minor_version')
+                number_of_evaluated_genes=Count(Case(
+                    # Count unique genes if that gene has more than 1 evaluation
+                    When(genepanelentrysnapshot__evaluation__isnull=False, then=models.F('genepanelentrysnapshot__pk'))
+                ), distinct=True),
+                number_of_genes=Count('genepanelentrysnapshot', distinct=True),
+            )
 
     def get_gene_panels(self, gene_symbol):
-        return self.get_active().filter(genepanelentrysnapshot__gene__gene_symbol=gene_symbol)
+        return self.get_active_anotated().filter(genepanelentrysnapshot__gene__gene_symbol=gene_symbol)
 
 
 class GenePanelSnapshot(TimeStampedModel):
@@ -64,22 +69,12 @@ class GenePanelSnapshot(TimeStampedModel):
 
     @cached_property
     def stats(self):
-        ids = GenePanelEntrySnapshot.objects.get_active().filter(panel__pk=self.pk).values('pk')
-
-        return self.genepanelentrysnapshot_set.filter(pk__in=Subquery(ids)).aggregate(
+        return self.genepanelentrysnapshot_set.aggregate(
             number_of_reviewers=Count('evaluation__user', distinct=True),
-            number_of_evaluated_genes=Count('evaluation'),
+            number_of_evaluated_genes=Count(Case(When(evaluation__isnull=False, then=models.F('pk'))), distinct=True),
             number_of_genes=Count('pk'),
-            number_of_ready_genes=Sum(Case(When(
-                ready=True, then=Value(1)),
-                default=Value(0),
-                output_field=models.IntegerField()
-            )),
-            number_of_green_genes=Sum(Case(When(
-                saved_gel_status__gte=4, then=Value(1)),
-                default=Value(0),
-                output_field=models.IntegerField()
-            ))
+            number_of_ready_genes=Count(Case(When(ready=True, then=models.F('pk'))), distinct=True),
+            number_of_green_genes=Count(Case(When(saved_gel_status__gte=3, then=models.F('pk'))), distinct=True)
         )
 
     def __str__(self):
@@ -193,40 +188,30 @@ class GenePanelSnapshot(TimeStampedModel):
 
     @cached_property
     def get_all_entries(self):
-        unique_genes = self.genepanelentrysnapshot_set\
-            .distinct('gene_core__gene_symbol')\
-            .values_list('pk', flat=True)\
-            .order_by('gene_core__gene_symbol', '-created')
-
         return self.genepanelentrysnapshot_set\
-            .filter(pk__in=Subquery(unique_genes))\
             .prefetch_related('evidence', 'evaluation', 'tags')\
             .annotate(
-                number_of_green_genes=Sum(Case(When(
-                    saved_gel_status__gte=4, then=Value(1)),
-                    default=Value(0),
-                    output_field=models.IntegerField()
-                )),
-                number_of_amber_genes=Sum(Case(When(
-                    saved_gel_status__in=[2, 3], then=Value(1)),
-                    default=Value(0),
-                    output_field=models.IntegerField()
-                )),
-                number_of_red_genes=Sum(Case(When(
-                    saved_gel_status=1, then=Value(1)),
-                    default=Value(0),
-                    output_field=models.IntegerField()
-                )),
-                number_of_gray_genes=Sum(Case(When(
-                    saved_gel_status=0, then=Value(1)),
-                    default=Value(0),
-                    output_field=models.IntegerField()
-                ))
+                number_of_green_evaluations=Count(Case(When(
+                    evaluation__rating="GREEN", then=models.F('evaluation__pk'))
+                ), distinct=True),
+                number_of_amber_evaluations=Count(Case(When(
+                    evaluation__rating="AMBER", then=models.F('evaluation__pk'))
+                ), distinct=True),
+                number_of_red_evaluations=Count(Case(When(
+                    evaluation__rating="RED", then=models.F('evaluation__pk'))
+                ), distinct=True),
             )\
             .order_by('-saved_gel_status', 'gene_core__gene_symbol', '-created')
 
     def get_gene(self, gene_symbol):
-        return self.get_all_entries.get(gene__gene_symbol=gene_symbol)
+        return self.get_all_entries.prefetch_related(
+            'evaluation__comments',
+            'evaluation__user',
+            'evaluation__user__reviewer',
+            'track',
+            'track__user',
+            'track__user__reviewer'
+        ).get(gene__gene_symbol=gene_symbol)
 
     def has_gene(self, gene_symbol):
         return True if self.get_all_entries.filter(gene__gene_symbol=gene_symbol).count() > 0 else False
@@ -377,8 +362,6 @@ class GenePanelSnapshot(TimeStampedModel):
 
             if gene_data.get('flagged') is not None:
                 gene.flagged = gene_data.get('flagged')
-            #gene.panel = self
-            #gene.save()
 
             tracks = []
             evidences_names = [ev.name.strip() for ev in gene.evidence.all()]

@@ -97,14 +97,14 @@
       {% endif %}
     {% endif %}
     {% if entry.evaluation.count > 0 %}
-      {% if entry.number_of_green_genes > 0 %}
+      {% if entry.number_of_green_evaluations > 0 %}
       <span class="add-right-margin gel-text gel-green">
-          {{ entry.number_of_green_genes }} green
+          {{ entry.number_of_green_evaluations }} green
       </span>
       {% endif %}
-      {% if entry.number_of_red_genes > 0 %}
+      {% if entry.number_of_red_evaluations > 0 %}
       <span class="add-right-margin gel-text gel-red">
-          {{ entry.number_of_red_genes }} red
+          {{ entry.number_of_red_evaluations }} red
       </span>
       {% endif %}
     {% endif %}

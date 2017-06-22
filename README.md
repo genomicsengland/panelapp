@@ -50,40 +50,21 @@ locations: one for static files, the other for uploads.
 
 The location for these two directories in configures in `panelapp/settings/<environment>.py` file
 
-- [] FIXME this should be done automatically with settings file selecting the folder if environment variable isn't set.
-
 Run
 `/path/to/ve/bin/python /path/to/app/panelapp/manage.py collectstatic --noinput` for pulling all statics inside the `_staticfiles` folder
 
+Tests
+-----
 
-nginx configuration
---------------------
-
-Create a normal file in `/etc/nginx/site-available/` directory called
-`panelapp.conf` and make the contents:
-
-```
-# TODO
-```
-
-
-TODO
-----
-
-- [ ] Add nginx config
-- [ ] Add supervisor config
-- [ ] Add notes on how to run tests and coverage
-- [ ] Add Ansible scripts for setting up local, staging, and production environments
-- [ ] Add flake8
+To run unit tests SSH into Vagrant instance and run `pytest`. It does take some time.
 
 
 Migration notes
 ---------------
 
-- [ ] Script to migrate users
-- [ ] Script to migrate images
-- [ ] Script to migrate HomeText
-  - [ ] Replace HomeText images urls from `/static/uploads/` to `/media/`
+- [x] Script to migrate users
+- [x] Script to migrate images
+- [x] Script to migrate HomeText
+  - [x] Replace HomeText images urls from `/static/uploads/` to `/media/`
   - [ ] nginx 301 redirects for images `/static/uploads/` to `/media/`
-- [ ] nginx 301 redirects for panels
-- [ ] nginx 301 redirects for genes
+- [ ] Django redirects for panels

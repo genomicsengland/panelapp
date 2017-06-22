@@ -15,7 +15,7 @@
     </li>
     <li>
         <a href="{% url 'panels:detail' view.panel.panel.pk  %}">
-            {{ view.panel.level4title.name }}
+            {{ view.panel.panel.name }}
         </a>
     </li>
     <li class="active">
@@ -95,7 +95,7 @@
     </div>
     <div class="col-sm-10">
         <h1 class="remove-top-margin">
-            <p class="text-muted normal add-label-margin" style="font-size: 18px">{{ view.panel.level4title.name }}</p>
+            <p class="text-muted normal add-label-margin" style="font-size: 18px">{{ view.panel.panel.name }}</p>
             {{ gene.gene.gene_symbol }}
         </h1>
         <span id="gene-banner-heading"><span class="gel-banner {{ gene|gene_list_class }}">{{ gene|gene_list_name }}</span></span>
@@ -119,7 +119,9 @@
             {% if gene.gene.omim_gene %}
               <a href="http://omim.org/entry/{{ gene.gene.omim_gene }}" target="_blank">OMIM: {{ gene.gene.omim_gene }}</a>, <a href=" http://www.ebi.ac.uk/gene2phenotype/gene2phenotype-webcode/cgi-bin/handler.cgi?panel=ALL&search_term={{ entry.gene.gene_symbol }}" target="_blank">Gene2Phenotype</a><br />
             {% endif %}
-            {{ gene.gene.gene_symbol }} is in <a href="{% url 'panels:gene_detail' gene.gene.gene_symbol %}">{{ sharing_panels.count }} panel{{sharing_panels.count|pluralize}}</a>
+            {% with shared_panels=sharing_panels %}
+            {{ gene.gene.gene_symbol }} is in <a href="{% url 'panels:gene_detail' gene.gene.gene_symbol %}">{{ shared_panels|length }} panel{{ shared_panels|pluralize }}</a>
+            {% endwith %}
         </p>
 
         <div data-module="tab-switcher" data-default-tab="evaluate">

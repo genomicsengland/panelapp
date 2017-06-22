@@ -13,6 +13,7 @@ from .evaluation import Evaluation
 from .trackrecord import TrackRecord
 from .comment import Comment
 from .tag import Tag
+from .genepanelsnapshot import GenePanelSnapshot
 from panels.templatetags.panel_helpers import get_gene_list_data
 from panels.templatetags.panel_helpers import GeneDataType
 
@@ -61,7 +62,7 @@ class GenePanelEntrySnapshot(TimeStampedModel):
         get_latest_by = "created"
         ordering = ['-saved_gel_status', '-created', ]
 
-    panel = models.ForeignKey('panels.GenePanelSnapshot')
+    panel = models.ForeignKey(GenePanelSnapshot)
     gene = JSONField()  # copy data from Gene.dict_tr
     gene_core = models.ForeignKey(Gene)  # reference to the original Gene
     evidence = models.ManyToManyField(Evidence)
@@ -69,8 +70,8 @@ class GenePanelEntrySnapshot(TimeStampedModel):
     moi = models.CharField("Mode of inheritance", choices=Evaluation.MODES_OF_INHERITANCE, max_length=255)
     penetrance = models.CharField(choices=PENETRANCE, max_length=255, blank=True, null=True)
     track = models.ManyToManyField(TrackRecord)
-    publications = ArrayField(models.CharField(max_length=255), blank=True, null=True)
-    phenotypes = ArrayField(models.CharField(max_length=255), blank=True, null=True)
+    publications = ArrayField(models.TextField(), blank=True, null=True)
+    phenotypes = ArrayField(models.TextField(), blank=True, null=True)
     tags = models.ManyToManyField(Tag)
     flagged = models.BooleanField(default=False)
     ready = models.BooleanField(default=False)
@@ -249,8 +250,6 @@ class GenePanelEntrySnapshot(TimeStampedModel):
         self.save()
 
     def update_moi(self, moi, user, moi_comment=None):
-        self.panel.increment_version()
-        self = self.panel.get_gene(self.gene.get('gene_symbol'))
         self.moi = moi
         self.save()
 
@@ -272,7 +271,6 @@ class GenePanelEntrySnapshot(TimeStampedModel):
             self.comments.add(comment)
 
     def update_pathogenicity(self, mop, user, mop_comment=None):
-        self.panel.increment_version()
         self = self.panel.get_gene(self.gene.get('gene_symbol'))
         self.mode_of_pathogenicity = mop
         self.save()
@@ -295,7 +293,6 @@ class GenePanelEntrySnapshot(TimeStampedModel):
             self.comments.add(comment)
 
     def update_phenotypes(self, phenotypes, user, phenotypes_comment=None):
-        self.panel.increment_version()
         self = self.panel.get_gene(self.gene.get('gene_symbol'))
         self.phenotypes = phenotypes
         self.save()
@@ -318,7 +315,6 @@ class GenePanelEntrySnapshot(TimeStampedModel):
             self.comments.add(comment)
 
     def update_publications(self, publications, user, publications_comment=None):
-        self.panel.increment_version()
         self = self.panel.get_gene(self.gene.get('gene_symbol'))
         self.publications = publications
         self.save()
@@ -342,7 +338,6 @@ class GenePanelEntrySnapshot(TimeStampedModel):
             self.comments.add(comment)
 
     def update_rating(self, rating, user, rating_comment=None):
-        self.panel.increment_version()
         gene = self.gene.get('gene_symbol')
         self = self.panel.get_gene(gene)
 

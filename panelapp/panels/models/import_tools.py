@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 class UploadedGeneList(TimeStampedModel):
     imported = models.BooleanField(default=False)
-    gene_list = models.FileField(upload_to='genes')
+    gene_list = models.FileField(upload_to='genes', max_length=255)
 
     def create_genes(self):
         with open(self.gene_list.path) as file:
@@ -72,7 +72,7 @@ class UploadedGeneList(TimeStampedModel):
 
 class UploadedPanelList(TimeStampedModel):
     imported = models.BooleanField(default=False)
-    panel_list = models.FileField(upload_to='panels')
+    panel_list = models.FileField(upload_to='panels', max_length=255)
 
     def process_file(self, user):
         with open(self.panel_list.path) as file:
@@ -150,7 +150,7 @@ class UploadedPanelList(TimeStampedModel):
 
 class UploadedReviewsList(TimeStampedModel):
     imported = models.BooleanField(default=False)
-    reviews = models.FileField(upload_to='reviews')
+    reviews = models.FileField(upload_to='reviews', max_length=255)
 
     def process_file(self):
         with open(self.reviews.path) as file:
@@ -205,7 +205,7 @@ class UploadedReviewsList(TimeStampedModel):
                                 'rating': rate,
                                 'publications': publication
                             }
-                            res = gene.update_evaluation(user, evaluation_data)
+                            gene.update_evaluation(user, evaluation_data)
                     else:
                         raise UserDoesNotExist(str(i + 2))
                 self.imported = True

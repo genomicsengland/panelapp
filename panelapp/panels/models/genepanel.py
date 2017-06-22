@@ -49,12 +49,12 @@ class GenePanel(TimeStampedModel):
                 number_of_evaluated_genes=Count('genepanelentrysnapshot__evaluation'),
                 number_of_genes=Count('genepanelentrysnapshot'),
                 number_of_green_genes=Sum(Case(When(
-                    genepanelentrysnapshot__saved_gel_status__gte=4, then=Value(1)),
+                    genepanelentrysnapshot__saved_gel_status__gt=3, then=Value(1)),
                     default=Value(0),
                     output_field=models.IntegerField()
                 )),
                 number_of_amber_genes=Sum(Case(When(
-                    genepanelentrysnapshot__saved_gel_status__in=[2, 3], then=Value(1)),
+                    genepanelentrysnapshot__saved_gel_status=2, then=Value(1)),
                     default=Value(0),
                     output_field=models.IntegerField()
                 )),

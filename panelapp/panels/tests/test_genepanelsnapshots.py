@@ -89,8 +89,8 @@ class GenePanelSnapshotTest(LoginGELUser):
 
         # make sure new data has at least 1 of the same items
 
-        publication = gpes.publications[0]
-        phenotype = gpes.publications[1]
+        gpes.publications[0]
+        gpes.publications[1]
 
         gene_data = {
             "gene": gpes.gene_core.pk,
@@ -121,7 +121,7 @@ class GenePanelSnapshotTest(LoginGELUser):
             "gene_name": "Other name"
         }
         ap.update_gene(self.verified_user, old_gene_symbol, new_data)
-        
+
         new_ap = GenePanel.objects.get(pk=gpes.panel.panel.pk).active_panel
         assert new_ap.has_gene(old_gene_symbol) is False
         assert new_ap.has_gene(new_gene.gene_symbol) is True

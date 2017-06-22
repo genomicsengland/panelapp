@@ -1,4 +1,3 @@
-import json
 import factory
 from random import randint
 from panels.models import Gene

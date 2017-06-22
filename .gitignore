@@ -109,3 +109,4 @@ ENV/
 .Rhistory
 _mediafiles
 _staticfiles
+temp_dump_data

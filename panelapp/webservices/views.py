@@ -117,7 +117,7 @@ def list_panels(request):
     if "Name" in request.GET:
         filters["panel__name__icontains"] = request.GET["Name"]
 
-    queryset = GenePanelSnapshot.objects.get_active().filter(panel__approved=True, **filters)
+    queryset = GenePanelSnapshot.objects.get_active_anotated().filter(**filters)
     serializer = ListPanelSerializer(instance=queryset,)
     return Response(serializer.data)
 
