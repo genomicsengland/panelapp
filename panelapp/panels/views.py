@@ -175,7 +175,7 @@ class GeneDetailView(DetailView):
 
         entries = GenePanelEntrySnapshot.objects.get_gene_panels(self.kwargs['slug'])
         if not self.request.user.is_authenticated or not self.request.user.reviewer.is_GEL():
-            entries = entries.filter(panel__panel__aproved=True)
+            entries = entries.filter(panel__panel__approved=True)
 
         if tag_filter:
             entries = entries.filter(tag__name=tag_filter)

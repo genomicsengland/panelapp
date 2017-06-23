@@ -21,7 +21,7 @@ class PanelSerializer(serializers.BaseSerializer):
         }
 
         for gene in self.list_of_genes:
-            ensemblId = set([t for t in gene.gene.get('other_transcripts')])
+            ensemblId = set([t.get('geneid') for t in gene.gene.get('other_transcripts')])
             result["result"]["Genes"].append({
                 "GeneSymbol": gene.gene.get('gene_symbol'),
                 "EnsembleGeneIds": make_null(ensemblId),
@@ -57,7 +57,7 @@ class GenesSerializer(serializers.BaseSerializer):
         result = []
         for gene in self.list_of_genes:
             panel = panels[gene.panel.panel.pk][1]
-            ensemblId = set([t for t in gene.gene.get('other_transcripts')])
+            ensemblId = set([t.get('geneid') for t in gene.gene.get('other_transcripts')])
             result.append({
                 "GeneSymbol": gene.gene.get('gene_symbol'),
                 "EnsembleGeneIds": make_null(ensemblId),

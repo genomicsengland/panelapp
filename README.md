@@ -68,3 +68,11 @@ Migration notes
   - [x] Replace HomeText images urls from `/static/uploads/` to `/media/`
   - [ ] nginx 301 redirects for images `/static/uploads/` to `/media/`
 - [ ] Django redirects for panels
+- [ ] We need to copy upload files and images
+
+
+# V1 to V2 data migration
+
+If you have a local panelappv1 running you can checkout branch `feat/v2export` and run `python manage.py v2export` - this will create a new directory with the JSON files.
+
+To import the data simply copy `v1dump_...` folder to your Vagrant synced folder and run `python manage.py v2import <full path to the new folder>`. The import will take some time depending on how much data you have.
