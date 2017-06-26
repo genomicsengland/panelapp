@@ -3,6 +3,8 @@
 .DS_Store
 .coverag
 *.swp
+.vscode/
+v1dump_*/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

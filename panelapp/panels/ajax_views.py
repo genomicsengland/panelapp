@@ -24,6 +24,12 @@ from .models import Comment
 
 
 class BaseAjaxGeneMixin:
+    """Abstract Base Ajax Mixin with methods used by other views.
+
+    Any GET or POST request will call `process` method on the child class or
+    throws NotImprementedError in case the method isn't defined
+    """
+
     def process(self):
         raise NotImplementedError
 
@@ -39,6 +45,8 @@ class BaseAjaxGeneMixin:
 
 
 class GeneClearDataAjaxMixin(BaseAjaxGeneMixin):
+    "Mixin for clearing various elements of a gene, for example sources, phenotypes, etc"
+
     template_name = 'panels/genepanelentrysnapshot/details.html'
 
     def return_data(self):
@@ -93,6 +101,9 @@ class ClearModeOfPathogenicityAjaxView(GELReviewerRequiredMixin, GeneClearDataAj
 
 class ClearSourcesAjaxView(GELReviewerRequiredMixin, GeneClearDataAjaxMixin, AJAXMixin, View):
     def process(self):
+        self.gene.panel.increment_version()
+        del self.gene
+        del self.panel
         self.gene.clear_evidences(self.request.user)
         del self.panel
         del self.gene
@@ -101,6 +112,9 @@ class ClearSourcesAjaxView(GELReviewerRequiredMixin, GeneClearDataAjaxMixin, AJA
 
 class ClearSingleSourceAjaxView(GELReviewerRequiredMixin, GeneClearDataAjaxMixin, AJAXMixin, View):
     def process(self):
+        self.gene.panel.increment_version()
+        del self.gene
+        del self.panel
         self.gene.clear_evidences(self.request.user, evidence=self.kwargs['source'])
         del self.panel
         del self.gene

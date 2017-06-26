@@ -38,6 +38,8 @@ class GenePanel(TimeStampedModel):
         self.save()
 
     def _prepare_panel_query(self):
+        "Returns a queryset for all snapshots ordered by version"
+
         return self.genepanelsnapshot_set\
             .prefetch_related(
                 'panel',
@@ -69,12 +71,19 @@ class GenePanel(TimeStampedModel):
                     output_field=models.IntegerField()
                 ))
             )\
-            .order_by('-created', '-major_version', '-minor_version')
+            .order_by('-major_version', '-minor_version', '-created')
 
     @cached_property
     def active_panel(self):
+        "Return the panel with biggest version"
+
         return self._prepare_panel_query().first()
 
     def get_panel_version(self, version):
+        "Get a specific version. Version argument should be a string"
+
         major_version, minor_version = version.split('.')
-        return self._prepare_panel_query().filter(major_version=major_version, minor_version=minor_version).first()
+        return self._prepare_panel_query().filter(
+            major_version=int(major_version),
+            minor_version=int(minor_version)
+        ).first()

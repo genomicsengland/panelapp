@@ -2,6 +2,7 @@ from django.urls import reverse_lazy
 from accounts.tests.setup import LoginGELUser
 from panels.tests.factories import GenePanelEntrySnapshotFactory
 from panels.models import GenePanel
+from panels.models import TrackRecord
 
 
 class AjaxGenePanelEntrySnapshotTest(LoginGELUser):
@@ -43,6 +44,8 @@ class AjaxGenePanelEntrySnapshotTest(LoginGELUser):
     def test_clear_sources(self):
         gene = self.helper_clear('clear_gene_sources')
         assert gene.evidence.count() == 0
+        
+        self.assertTrue(gene.track.filter(issue_type=TrackRecord.ISSUE_TYPES.ClearSources).count() > 0)
 
     def test_clear_single_source(self):
         evidence = self.gpes.evidence.all()[0]

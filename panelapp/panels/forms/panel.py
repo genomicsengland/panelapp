@@ -6,13 +6,13 @@ from panels.models import GenePanelSnapshot
 
 
 class PanelForm(forms.ModelForm):
-    level2 = forms.CharField()
-    level3 = forms.CharField()
+    level2 = forms.CharField(required=False)
+    level3 = forms.CharField(required=False)
     level4 = forms.CharField()
     description = forms.CharField(widget=forms.Textarea)
-    omim = forms.CharField()
-    orphanet = forms.CharField()
-    hpo = forms.CharField()
+    omim = forms.CharField(required=False)
+    orphanet = forms.CharField(required=False)
+    hpo = forms.CharField(required=False)
 
     class Meta:
         model = GenePanelSnapshot

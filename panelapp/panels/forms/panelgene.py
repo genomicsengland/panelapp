@@ -1,3 +1,5 @@
+"""Contains a form which is used to add/edit a gene in a panel."""
+
 from collections import OrderedDict
 from django import forms
 from django.contrib.postgres.forms import SimpleArrayField
@@ -19,10 +21,12 @@ class PanelGeneForm(forms.ModelForm):
 
     How this works:
 
-    This form actually contains data for multiple models: GenePanelEntrySnapshot, Evidence, Evaluation.
-    Some of this data is duplicated, and it's not clear if it needs to stay this way or should be refactored
-    and moved to the models where it belongs. I.e. GenePanelEntrySnapshot has moi, mop, comments, etc. It's
-    not clear if we need to keep it here, or move it to Evaluation model since it has the same values.
+    This form actually contains data for multiple models: GenePanelEntrySnapshot,
+    Evidence, Evaluation. Some of this data is duplicated, and it's not clear if
+    it needs to stay this way or should be refactored and moved to the models where
+    it belongs. I.e. GenePanelEntrySnapshot has moi, mop, comments, etc. It's
+    not clear if we need to keep it here, or move it to Evaluation model since
+    it has the same values.
 
     When user clicks save we:
 
@@ -54,19 +58,22 @@ class PanelGeneForm(forms.ModelForm):
     )
 
     publications = SimpleArrayField(
-        forms.CharField(max_length=255),
+        forms.CharField(),
         label="Publications (PMID: 1234;4321)",
         delimiter=";",
         required=False
     )
     phenotypes = SimpleArrayField(
-        forms.CharField(max_length=255),
+        forms.CharField(),
         label="Phenotypes (separate using a semi-colon - ;)",
         delimiter=";",
         required=False
     )
 
-    rating = forms.ChoiceField(choices=[('', 'Provide rating')] + Evaluation.RATINGS, required=False)
+    rating = forms.ChoiceField(
+        choices=[('', 'Provide rating')] + Evaluation.RATINGS,
+        required=False
+    )
     current_diagnostic = forms.BooleanField(required=False)
     comments = forms.CharField(widget=forms.Textarea, required=False)
 
@@ -104,6 +111,8 @@ class PanelGeneForm(forms.ModelForm):
             self.fields['comments'] = original_fields.get('comments')
 
     def clean_gene(self):
+        "Check if gene exists in a panel if we add a new gene or change the gene"
+
         gene_symbol = self.cleaned_data['gene'].gene_symbol
         if not self.instance.pk and self.panel.has_gene(gene_symbol):
             raise forms.ValidationError(
@@ -121,9 +130,12 @@ class PanelGeneForm(forms.ModelForm):
         return self.cleaned_data['gene']
 
     def save(self, *args, **kwargs):
+        "Don't save the original panel as we need to increment version first"
         return False
 
     def save_gene(self, *args, **kwargs):
+        "Saves the gene, increments version and returns the gene back"
+        
         gene_data = self.cleaned_data
         gene_data['sources'] = gene_data.pop('source')
 

@@ -6,9 +6,7 @@ from accounts.models import User
 
 
 class TrackRecord(TimeStampedModel):
-    """
-    TODO @migrate issue_types need to be migrated
-    """
+    "Keeps track of what's changed in a gene for a specific panel"
 
     ISSUE_TYPES = Choices(
         ("Created", "Created"),

@@ -14,13 +14,13 @@ class GeneReviewForm(forms.ModelForm):
         )
 
     publications = SimpleArrayField(
-        forms.CharField(max_length=255),
+        forms.CharField(),
         label="Publications (PMID: 1234;4321)",
         delimiter=";",
         required=False
     )
     phenotypes = SimpleArrayField(
-        forms.CharField(max_length=255),
+        forms.CharField(),
         label="Phenotypes (separate using a semi-colon - ;)",
         delimiter=";",
         required=False

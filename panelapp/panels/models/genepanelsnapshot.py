@@ -21,12 +21,16 @@ from .comment import Comment
 
 class GenePanelSnapshotManager(models.Manager):
     def get_latest_ids(self):
+        "Get latest versions for GenePanelsSnapshots"
+
         return super().get_queryset()\
             .distinct('panel__pk')\
             .values('pk')\
             .order_by('panel__pk', '-major_version', '-minor_version')
 
     def get_active(self, all=False):
+        "Get all active panels"
+
         qs = super().get_queryset()
 
         if not all:
@@ -37,26 +41,40 @@ class GenePanelSnapshotManager(models.Manager):
             .order_by('panel__name', '-major_version', '-minor_version')
 
     def get_active_anotated(self, all=False):
-        "This method adds additional values to the queryset, such as number_of_genes, etc"
+        "This method adds additional values to the queryset, such as number_of_genes, etc and returns active panels"
 
         return self.get_active(all)\
             .annotate(
                 number_of_reviewers=Count('genepanelentrysnapshot__evaluation__user', distinct=True),
                 number_of_evaluated_genes=Count(Case(
                     # Count unique genes if that gene has more than 1 evaluation
-                    When(genepanelentrysnapshot__evaluation__isnull=False, then=models.F('genepanelentrysnapshot__pk'))
+                    When(
+                        genepanelentrysnapshot__evaluation__isnull=False,
+                        then=models.F('genepanelentrysnapshot__pk')
+                    )
                 ), distinct=True),
                 number_of_genes=Count('genepanelentrysnapshot', distinct=True),
             )
 
     def get_gene_panels(self, gene_symbol):
+        "Get all panels for a specific gene"
+
         return self.get_active_anotated().filter(genepanelentrysnapshot__gene__gene_symbol=gene_symbol)
 
 
 class GenePanelSnapshot(TimeStampedModel):
+    """Main Gene Panel model
+
+    GenePanel is just a placeholder with a static ID for a panel, all
+    information for the genes is actually stored in GenePanelSnapshot.
+
+    Every time we change something in a gene or in a panel we create a new
+    spanshot and make the changes there. This allows us to preserve the changes
+    between versions and we can retrieve a specific version.
+    """
     class Meta:
         get_latest_by = "created"
-        ordering = ['-created', '-major_version', '-minor_version']
+        ordering = ['-major_version', '-minor_version', '-created',]
 
     objects = GenePanelSnapshotManager()
 
@@ -69,6 +87,8 @@ class GenePanelSnapshot(TimeStampedModel):
 
     @cached_property
     def stats(self):
+        "Get stats for a panel, i.e. number of reviewers, genes, evaluated genes, etc"
+
         return self.genepanelentrysnapshot_set.aggregate(
             number_of_reviewers=Count('evaluation__user', distinct=True),
             number_of_evaluated_genes=Count(Case(When(evaluation__isnull=False, then=models.F('pk'))), distinct=True),
@@ -85,6 +105,15 @@ class GenePanelSnapshot(TimeStampedModel):
         return "{}.{}".format(self.major_version, self.minor_version)
 
     def increment_version(self, major=False, user=None, comment=None, ignore_gene=None):
+        """Creates a new version of the panel.
+
+        This script copies all genes, all information for these genes, and also
+        you can add a comment and a user if it's a major vresion increment.
+
+        DO NOT use it inside the methods of either genes or GenePanelSnapshot.
+        This has weird behaviour as self refernces still goes to the previous
+        snapshot and not the new one.
+        """
         current_genes = self.get_all_entries
 
         self.pk = None
@@ -188,6 +217,8 @@ class GenePanelSnapshot(TimeStampedModel):
 
     @cached_property
     def get_all_entries(self):
+        "Returns all Genes for this panel"
+
         return self.genepanelentrysnapshot_set\
             .prefetch_related('evidence', 'evaluation', 'tags')\
             .annotate(
@@ -204,6 +235,8 @@ class GenePanelSnapshot(TimeStampedModel):
             .order_by('-saved_gel_status', 'gene_core__gene_symbol', '-created')
 
     def get_gene(self, gene_symbol):
+        "Get a gene for a specific gene symbol."
+
         return self.get_all_entries.prefetch_related(
             'evaluation__comments',
             'evaluation__user',
@@ -214,6 +247,8 @@ class GenePanelSnapshot(TimeStampedModel):
         ).get(gene__gene_symbol=gene_symbol)
 
     def has_gene(self, gene_symbol):
+        "Check if the panel has a gene with the provided gene symbol"
+
         return True if self.get_all_entries.filter(gene__gene_symbol=gene_symbol).count() > 0 else False
 
     def delete_gene(self, gene_symbol, increment=True):
@@ -507,6 +542,8 @@ class GenePanelSnapshot(TimeStampedModel):
             return False
 
     def add_activity(self, user, gene_symbol, text):
+        "Adds activity for this panel"
+        
         Activity.objects.create(
             user=user,
             panel=self.panel,

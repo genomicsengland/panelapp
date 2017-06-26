@@ -91,9 +91,7 @@ class GenePanelEntrySnapshot(TimeStampedModel):
 
     @property
     def status(self):
-        """
-        Save gel_status in the gene panel snapshot
-        """
+        "Save gel_status in the gene panel snapshot if saved_gel_status isn't set"
 
         if self.saved_gel_status is None:
             self.status = self.evidence_status()
@@ -109,8 +107,8 @@ class GenePanelEntrySnapshot(TimeStampedModel):
         self.saved_gel_status = None
 
     def evidence_status(self, update=False):
-        """
-        This is a refactored `get_gel_status` function.
+        """ This is a refactored `get_gel_status` function.
+
         It goes through evidences, check if they are valid or were provided by
         curators, and returns the status.
         This status is later used to determine the colour on the frontend and APIs
@@ -134,10 +132,12 @@ class GenePanelEntrySnapshot(TimeStampedModel):
         return gel_status
 
     def is_reviewd_by_user(self, user):
+        "Check if the gene was reviewed by the specific user"
+
         return True if self.evaluation.filter(user=user).count() > 0 else False
 
     def clear_evidences(self, user, evidence=None):
-        self.panel.increment_version()
+        "Remove sources from this gene. If `evidence` argument provided, check only that source"
 
         if evidence:
             evidences = self.evidence.filter(name=evidence)
@@ -158,6 +158,7 @@ class GenePanelEntrySnapshot(TimeStampedModel):
                 self.gene_core.gene_symbol,
                 self.gene_core.gene_symbol
             )
+
         evidence_status = self.evidence_status(update=True)
         track_sources = TrackRecord.objects.create(
             gel_status=evidence_status,
@@ -171,6 +172,8 @@ class GenePanelEntrySnapshot(TimeStampedModel):
         return True
 
     def clear_expert_evidence(self, evidence):
+        "Remove expert evidences. This is used when we set the new expert evidence"
+
         evidences = self.evidence.filter(name=evidence)
         if len(evidences) > 0:
             evidences.delete()
@@ -179,6 +182,8 @@ class GenePanelEntrySnapshot(TimeStampedModel):
             return False
 
     def set_rating(self, user, status=None):
+        "This method is used when a GeL curator changes the rating via website"
+
         if not status:
             status = self.status
 
@@ -369,6 +374,8 @@ class GenePanelEntrySnapshot(TimeStampedModel):
         comment.save()
 
     def aggregate_ratings(self):
+        "Gets stats about the gene, i.e. % of green, red, amber evaluations"
+
         green, red, amber = 0, 0, 0
         for ev in self.evaluation.all():
             if ev.rating == Evaluation.RATINGS.GREEN:
@@ -503,6 +510,10 @@ class GenePanelEntrySnapshot(TimeStampedModel):
         }
 
     def get_form_initial(self):
+        """Since we create a new version every time we want to update something this method
+        gets the initial data for the form.
+        """
+
         return {
             "gene": self.gene_core,
             "gene_name": self.gene.get('gene_name'),

@@ -719,7 +719,7 @@ class DownloadAllPanels(GELReviewerRequiredMixin, View):
         ))
 
         panels = GenePanelSnapshot.objects\
-            .get_active()\
+            .get_active_anotated()\
             .prefetch_related(
                 'genepanelentrysnapshot_set',
                 'genepanelentrysnapshot_set__evaluation',
