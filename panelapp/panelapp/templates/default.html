@@ -1,60 +1,70 @@
 {% load staticfiles %}
 <!DOCTYPE html>
 <html class="no-js">
-    <head lang="en">
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta http-equiv="X-UA-Compatible" content="IE=edge">
-        <script>(function(d){d.className=d.className.replace(/^no-js\b/,'js');}(document.documentElement));</script>
-        <link rel="stylesheet" href="{% static "bootstrap.min.css" %}" >
-        <link rel="stylesheet" href="{% static "font-awesome-4.3.0/css/font-awesome.min.css" %}">
-        <link rel="stylesheet" href="{% static "panel_app.css" %}" >
-        <script src="{% static "jquery-1.10.2.min.js" %}"></script>
-        {% block header %}{% endblock %}
-        <title>{% block title %}PanelApp{% endblock %}</title>
-    </head>
+  <head lang="en">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <script>(function(d){d.className=d.className.replace(/^no-js\b/,'js');}(document.documentElement));</script>
+    <link rel="stylesheet" href="{% static "bootstrap.min.css" %}" >
+    <link rel="stylesheet" href="{% static "font-awesome-4.3.0/css/font-awesome.min.css" %}">
+    <link rel="stylesheet" href="{% static "panel_app.css" %}" >
+    <script src="{% static "jquery-1.10.2.min.js" %}"></script>
+    {% block header %}{% endblock %}
+    <title>{% block title %}PanelApp{% endblock %}</title>
+  </head>
 <body>
 <div class="navbar navbar-default">
-    <div class="container">
-        <div class="navbar-header">
-            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar">
-                <span class="sr-only">Toggle navigation</span>
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-            </button>
-            <a class="navbar-brand" href="{% url 'home' %}">PanelApp</a>
-        </div>
-        <div class="collapse navbar-collapse" id="navbar">
-            <ul class="nav navbar-nav">
-              <li><a href="panels">Panels</a></li>
-              <li><a href="genes">Genes</a></li>
-              <li><a href="activity">Activity</a></li>
-              {% if request.user.is_authenticated and request.user.reviewer.is_GEL %}
-              <li><a href="{% url 'PanelApp.views.views_main.creation' %}">Add panel</a></li>
-              <li><a href="{% url 'PanelApp.views.views_main.admin' %}">Import panel</a></li>
-              <li class="dropdown">
-                  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">Resources <span class="caret"></span></a>
-                  <ul class="dropdown-menu" role="menu">
-                      <li><a href="{% url 'PanelApp.views.views_main.download_all_genes' %}">Download all genes</a></li>
-                      <li><a href="{% url 'PanelApp.views.views_main.download_all_panels' %}">Download all panels</a></li>
-                  </ul>
-              </li>
-              {% endif %}
-            </ul>
-
-            {% if request.user.is_authenticated %}
-            <ul class="nav navbar-nav navbar-right">
-                <li><a href="user-page"><strong>{{ request.user }}</strong></a></li>
-                <li><a href="{% url 'accounts:logout' %}?next={% url 'accounts:login' %}">Log out</a></li>
-            </ul>
-            {% else %}
-            <ul class="nav navbar-nav navbar-right">
-                <li><a href="{% url 'accounts:login' %}">Log in</a></li>
-            </ul>
-            {% endif %}
-        </div>
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="{% url 'home' %}">PanelApp</a>
     </div>
+    <div class="collapse navbar-collapse" id="navbar">
+      <ul class="nav navbar-nav">
+        <li><a href="panels">Panels</a></li>
+        <li><a href="genes">Genes</a></li>
+        <li><a href="activity">Activity</a></li>
+        {% if request.user.is_authenticated and request.user.reviewer.is_GEL %}
+        <li><a href="{% url 'PanelApp.views.views_main.creation' %}">Add panel</a></li>
+        <li><a href="{% url 'PanelApp.views.views_main.admin' %}">Import panel</a></li>
+        <li class="dropdown">
+          <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">Resources <span class="caret"></span></a>
+          <ul class="dropdown-menu" role="menu">
+            <li><a href="{% url 'PanelApp.views.views_main.download_all_genes' %}">Download all genes</a></li>
+            <li><a href="{% url 'PanelApp.views.views_main.download_all_panels' %}">Download all panels</a></li>
+          </ul>
+        </li>
+        {% endif %}
+      </ul>
+
+      {% if request.user.is_authenticated %}
+      <ul class="nav navbar-nav navbar-right">
+        <li><a href="{% url 'accounts:profile' %}"><strong>{{ request.user }}</strong></a></li>
+        <li><a href="{% url 'accounts:logout' %}?next={% url 'accounts:login' %}">Log out</a></li>
+      </ul>
+      {% else %}
+      <ul class="nav navbar-nav navbar-right">
+        <li><a href="{% url 'accounts:login' %}">Log in</a></li>
+        <li><a href="{% url 'accounts:register' %}">Register</a></li>
+      </ul>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  {% if messages %}
+    {% for message in messages %}
+      <div class="add-bottom-margin alert alert-{% if message.tags %}{{ message.tags }}{% else %}info{% endif %}">{{ message }}</div>
+    {% endfor %}
+  {% endif %}
+  {% block content %}{% endblock %}
 </div>
 
 {% block body %}{% endblock %}

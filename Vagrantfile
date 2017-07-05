@@ -73,7 +73,7 @@ Vagrant.configure("2") do |config|
   config.vm.provision "shell", inline: <<-SHELL
     sudo apt-get update
     sudo apt-get upgrade -y
-    sudo apt-get install -y build-essential python3.5 python3.5-dev python-pip python-virtualenv postgresql postgresql-contrib
+    sudo apt-get install -y build-essential python3.5 python3.5-dev python-pip python-virtualenv postgresql postgresql-contrib rabbitmq-server
 
     sudo -u postgres createuser -d panelapp
     sudo -u postgres createdb panelapp -O panelapp
