@@ -11,7 +11,7 @@ from model_utils.models import TimeStampedModel
 from panels.tasks import email_panel_promoted
 from .activity import Activity
 from .genepanel import GenePanel
-from .level4title import Level4Title
+from .Level4Title import Level4Title
 from .trackrecord import TrackRecord
 from .evidence import Evidence
 from .evaluation import Evaluation

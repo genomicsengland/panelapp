@@ -32,7 +32,7 @@ to the Postgres it makes sense to keep the gene panel entry backup as a JSON.
 from .tag import Tag  # noqa
 from .gene import Gene  # noqa
 from .activity import Activity  # noqa
-from .level4title import Level4Title  # noqa
+from .Level4Title import Level4Title  # noqa
 from .comment import Comment  # noqa
 from .evaluation import Evaluation  # noqa
 from .evidence import Evidence  # noqa
