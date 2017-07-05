@@ -80,7 +80,7 @@ class UserAdmin(DjangoObjectActions, BaseUserAdmin):
 
     def is_reviewer(self, obj):
         try:
-            return obj.reviewer.is_reviewer()
+            return obj.reviewer.is_REVIEWER()
         except Reviewer.DoesNotExist:
             return False
     is_reviewer.boolean = True
@@ -98,7 +98,7 @@ class UserAdmin(DjangoObjectActions, BaseUserAdmin):
 
         try:
             obj = self.model.objects.get(pk=object_id)
-            if obj.reviewer.is_reviewer():
+            if obj.reviewer.is_REVIEWER():
                 return []
         except Reviewer.DoesNotExist:
             return []
