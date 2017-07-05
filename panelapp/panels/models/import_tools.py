@@ -13,7 +13,7 @@ from panels.utils import remove_non_ascii
 from .gene import Gene
 from .genepanel import GenePanel
 from .genepanelsnapshot import GenePanelSnapshot
-from .level4title import Level4Title
+from .Level4Title import Level4Title
 
 logger = logging.getLogger(__name__)
 
