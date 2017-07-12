@@ -71,6 +71,36 @@ Migration notes
 - [ ] We need to copy upload files and images
 
 
+# Redirects
+
+We can actually leave /static/uploads/ and use uWSGi to point to the new location which will be the same folder where /media/ endpoint requests files from.
+
+For example `--static-map /static/uploads=/opt/panelapp/_mediafiles`
+
+# Environment Variables
+
+## App Secrets
+
+* `SECRET_KEY` - used to encrypt cookies
+* `DATABASE_URL` - PostgreSQL config url in the following format: postgresql://username:password@host:port/database_name
+* `CELERY_BROKER_URL` - Celery config for RabbitMQ, in the following format: amqp://username:password@host:port/virtual
+* `HEALTH_CHECK_TOKEN` - URL token for authorizing status checks
+* `EMAIL_HOST_PASSWORD` - SMTP password
+
+## Other variables
+
+* `DEFAULT_FROM_EMAIL` - we send emails as this address
+* `PANEL_APP_EMAIL` - PanelApp email address
+* `DJANGO_LOG_LEVEL` - by default set to INFO, other options: DEBUG, ERROR
+* `STATIC_ROOT` - location for static files which are collected with `python manage.py collectstatic --noinput`
+* `MEDIA_ROOT` - location for user uploaded files
+* `CELL_BASE_CONNECTOR_REST` - Cell Base API endpoint, by default it's http://bioinfo.hpc.cam.ac.uk/cellbase/webservices/rest/
+* `EMAIL_HOST` - SMTP host 
+* `EMAIL_HOST_USER` - SMTP username
+* `EMAIL_PORT` - SMTP server port
+* `EMAIL_USE_TLS` - Set to True (default) if SMTP server uses TLS
+
+
 # V1 to V2 data migration
 
 If you have a local panelappv1 running you can checkout branch `feat/v2export` and run `python manage.py v2export` - this will create a new directory with the JSON files.
