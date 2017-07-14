@@ -10,7 +10,7 @@ setup(
     name='panelapp',
     version='2.0.0',
     author='Antonio Rueda-Martin,Oleg Gerasimenko',
-    author_email='duncan.gordenantonio.rueda-martin@genomicsengland.co.uk,oleg.gerasimenko@genomicsengland.co.uk',
+    author_email='antonio.rueda-martin@genomicsengland.co.uk,oleg.gerasimenko@genomicsengland.co.uk',
     url='https://github.com/genomicsengland/PanelApp2',
     description='PanelApp',
     license='Internal GEL use only',  # example license
