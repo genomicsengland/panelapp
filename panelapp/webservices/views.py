@@ -158,8 +158,6 @@ def search_by_gene(request, gene):
     else:
         all_panels = GenePanelSnapshot.objects.get_active().filter(panel__approved=True)
 
-    print(all_panels)
-
     panels_ids_dict = {panel.panel.pk: (panel.panel.pk, panel) for panel in all_panels}
     filters.update({'panel__panel__pk__in': list(panels_ids_dict.keys())})
     active_genes = GenePanelEntrySnapshot.objects.get_active()

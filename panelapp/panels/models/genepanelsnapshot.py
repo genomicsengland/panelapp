@@ -74,7 +74,7 @@ class GenePanelSnapshot(TimeStampedModel):
     """
     class Meta:
         get_latest_by = "created"
-        ordering = ['-major_version', '-minor_version', '-created',]
+        ordering = ['-major_version', '-minor_version', '-created']
 
     objects = GenePanelSnapshotManager()
 
@@ -543,7 +543,7 @@ class GenePanelSnapshot(TimeStampedModel):
 
     def add_activity(self, user, gene_symbol, text):
         "Adds activity for this panel"
-        
+
         Activity.objects.create(
             user=user,
             panel=self.panel,

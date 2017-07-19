@@ -32,7 +32,6 @@ class HealthCheckView(View):
             cb.get_coding_transcripts_by_length(["BTK"])
             out['cellbase'] = "OK"
         except Exception as e:
-            print(e)
             out['cellbase'] = "Error"
 
         return JsonResponse(out)

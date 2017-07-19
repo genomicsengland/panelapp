@@ -35,7 +35,7 @@ class RedirectGenePanelView(V1RedirectMixin):
 
     def check(self):
         try:
-            gp = GenePanel.objects.get(old_pk=kwargs.get('old_pk'))
+            gp = GenePanel.objects.get(old_pk=self.kwargs.get('old_pk'))
             self.url = reverse_lazy('panels:evalution', args=(gp.pk, self.kwargs.get('gene_symbol')))
         except GenePanel.DoesNotExist:
             self.url = '/panels/'

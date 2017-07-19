@@ -44,7 +44,7 @@ class AjaxGenePanelEntrySnapshotTest(LoginGELUser):
     def test_clear_sources(self):
         gene = self.helper_clear('clear_gene_sources')
         assert gene.evidence.count() == 0
-        
+
         self.assertTrue(gene.track.filter(issue_type=TrackRecord.ISSUE_TYPES.ClearSources).count() > 0)
 
     def test_clear_single_source(self):

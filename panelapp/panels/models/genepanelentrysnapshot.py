@@ -145,9 +145,9 @@ class GenePanelEntrySnapshot(TimeStampedModel):
                 evidences.delete()
 
                 description = "{} Source: {} was removed from gene: {}".format(
-                    self.gene_core.gene_symbol,
+                    self.gene.get('gene_symbol'),
                     evidence,
-                    self.gene_core.gene_symbol
+                    self.gene.get('gene_symbol')
                 )
             else:
                 return False
@@ -155,8 +155,8 @@ class GenePanelEntrySnapshot(TimeStampedModel):
             self.evidence.all().delete()
 
             description = "{} All sources for gene: {} were removed".format(
-                self.gene_core.gene_symbol,
-                self.gene_core.gene_symbol
+                self.gene.get('gene_symbol'),
+                self.gene.get('gene_symbol')
             )
 
         evidence_status = self.evidence_status(update=True)
@@ -515,7 +515,7 @@ class GenePanelEntrySnapshot(TimeStampedModel):
         """
 
         return {
-            "gene": self.gene_core,
+            "gene": self.gene,
             "gene_name": self.gene.get('gene_name'),
             "source": [e.name for e in self.evidence.all()],
             "tags": self.tags.all(),

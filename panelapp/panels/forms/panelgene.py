@@ -119,7 +119,9 @@ class PanelGeneForm(forms.ModelForm):
                 "Gene has already been added to the panel",
                 code='gene_exists_in_panel',
             )
-        elif self.instance.pk and 'gene' in self.changed_data and self.panel.has_gene(gene_symbol):
+        elif self.instance.pk and 'gene' in self.changed_data \
+                and gene_symbol != self.instance.gene.get('gene_symbol')\
+                and self.panel.has_gene(gene_symbol):
             raise forms.ValidationError(
                 "Gene has already been added to the panel",
                 code='gene_exists_in_panel',
@@ -135,7 +137,7 @@ class PanelGeneForm(forms.ModelForm):
 
     def save_gene(self, *args, **kwargs):
         "Saves the gene, increments version and returns the gene back"
-        
+
         gene_data = self.cleaned_data
         gene_data['sources'] = gene_data.pop('source')
 
@@ -143,7 +145,7 @@ class PanelGeneForm(forms.ModelForm):
             gene_data['comment'] = gene_data.pop('comments')
 
         if self.initial:
-            initial_gene_symbol = self.initial['gene'].gene_symbol
+            initial_gene_symbol = self.initial['gene'].get('gene_symbol')
         else:
             initial_gene_symbol = None
 
