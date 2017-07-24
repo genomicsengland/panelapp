@@ -1162,7 +1162,7 @@ html[dir="rtl"] .select2-container-multi .select2-search-choice-close {
     }
 
     .select2-search input {
-        background-position: 100% -21px !important;
+        background-position: 90% -21px !important;
     }
 }
 
@@ -1255,4 +1255,14 @@ html[dir="rtl"] .select2-container-multi .select2-search-choice-close {
 .control-group.success .select2-container .select2-choice div {
     border-left: 1px solid #468847 !important;
     background: #DFF0D8 !important;
+}
+
+.select2-container .select2-selection--single {
+  height: 38px !important;
+}
+.select2-container--default .select2-selection--single .select2-selection__rendered {
+  line-height: 36px !important;
+}
+.select2-container {
+  width: 100% !important;
 }

@@ -3,9 +3,9 @@ from .base import *  # noqa
 
 RUNSERVERPLUS_SERVER_ADDRESS_PORT = '0.0.0.0:8000'
 
-INSTALLED_APPS += ('debug_toolbar',)
+INSTALLED_APPS += ('debug_toolbar',)  # noqa
 
-MIDDLEWARE += ('debug_toolbar.middleware.DebugToolbarMiddleware',)
+MIDDLEWARE += ('debug_toolbar.middleware.DebugToolbarMiddleware',)  # noqa
 
 INTERNAL_IPS = [
     '127.0.0.1',

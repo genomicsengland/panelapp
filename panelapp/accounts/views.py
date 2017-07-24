@@ -1,4 +1,3 @@
-from django.views.generic.base import View
 from django.views.generic import FormView
 from django.views.generic.edit import CreateView
 from django.views.generic import DetailView
@@ -12,18 +11,16 @@ from .forms import ChangePasswordForm
 from .models import User
 
 
-class EmptyView(View):
-    pass
-
-
 class UserRegistrationView(CreateView):
+    template_name = "accounts/user_create.html"
 
     model = User
     form_class = RegistrationForm
 
     def form_valid(self, form):
         ret = super().form_valid(form)
-        messages.success(self.request,
+        messages.success(
+            self.request,
             "Your account has been created. You can contribute once we confirm your account."
         )
         login(self.request, form.instance)  # login new user

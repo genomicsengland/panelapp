@@ -13,9 +13,9 @@ from .tasks import reviewer_confirmation_requset_email
 class RegistrationForm(UserCreationForm):
     confirm_email = forms.EmailField()
     affiliation = forms.CharField()
-    role = forms.ChoiceField(choices=[('','Please select a role')] + Reviewer.ROLES)
-    workplace = forms.ChoiceField(choices=[('','Please select a workspace')] + Reviewer.WORKPLACES)
-    group = forms.ChoiceField(choices=[('','Please select a group')] + Reviewer.GROUPS)
+    role = forms.ChoiceField(choices=[('', 'Please select a role')] + Reviewer.ROLES)
+    workplace = forms.ChoiceField(choices=[('', 'Please select a workspace')] + Reviewer.WORKPLACES)
+    group = forms.ChoiceField(choices=[('', 'Please select a group')] + Reviewer.GROUPS)
 
     class Meta:
         model = User

@@ -1,0 +1,27 @@
+{% extends "modals/modal_template.html" %}
+{% block id %}rating_help{% endblock %}
+{% block title %}Rating{% endblock %}
+{% block text %}
+<p>If promoting or demoting a gene, please provide comments to justify a decision to move it. </p>
+<hr />
+<h4>Green list criteria</h4>
+<p>Genes included in a Genomics England gene panel for a rare disease category (green list) should fit the criteria A-E outlined below.</p>
+<p>These guidelines were developed as a combination of the ClinGen DEFINITIVE evidence for a causal role of the gene in the disease(a), and the Developmental Disorder Genotype-Phenotype (DDG2P) CONFIRMED DD Gene evidence level(b) (please see the original references provided below for full details). These help provide a guideline for expert reviewers when assessing whether a gene should be on the green or the red list of a panel.</p>
+<div class="well add-top-margin">
+  <p>A. There are plausible disease-causing mutations(i) within, affecting or encompassing an interpretable functional region(ii) of this gene identified in multiple (&gt;3) unrelated cases/families with the phenotype(iii).</p>
+  <p>OR</p>
+  <p>B. There are plausible disease-causing mutations(i) within, affecting or encompassing cis-regulatory elements convincingly affecting the expression of a single gene identified in multiple (&gt;3) unrelated cases/families with the phenotype(iii).</p>
+  <p>OR</p>
+  <p>C. As definitions A or B but in 2 or 3 unrelated cases/families with the phenotype, with the addition of convincing bioinformatic or functional evidence of causation e.g. known inborn error of metabolism with mutation in orthologous gene which is known to have the relevant deficient enzymatic activity in other species; existence of an animal model which recapitulates the human phenotype.</p>
+  <p>AND</p>
+  <p>D. Evidence indicates that disease-causing mutations follow a Mendelian pattern of causation appropriate for reporting in a diagnostic setting(iv).</p>
+  <p>AND</p>
+  <p>E. No convincing evidence exists or has emerged that contradicts the role of the gene in the specified phenotype.</p>
+  <p>(i)Plausible disease-causing mutations: Recurrent de novo mutations convincingly affecting gene function. Rare, fully-penetrant mutations - relevant genotype never, or very rarely, seen in controls. (ii) Interpretable functional region: ORF in protein coding genes miRNA stem or loop. (iii) Phenotype: the rare disease category, as described in the eligibility statement. (iv) Intermediate penetrance genes should not be included.</p>
+</div>
+<h4>References</h4>
+<ul>
+  <li>(a) ClinGen Clinical Validity Classifications originally dated July 2014, and updated Oct 2015</li>
+  <li>(b) The Development Disorder Genotype - Phenotype Database and PMID: <a href="http://www.ncbi.nlm.nih.gov/pubmed/25529582">25529582</a></li>
+</ul>
+{% endblock %}

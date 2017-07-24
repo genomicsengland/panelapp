@@ -46,6 +46,7 @@ def revierwer_confirmed_email(user_id):
 
     ctx = {
         'user': user,
+        'site': site
     }
     text = render_to_string('registration/emails/reviewer_approved.txt', ctx)
     send_email(user.email, "Congratulations, you have been approved please authenticate your account", text)

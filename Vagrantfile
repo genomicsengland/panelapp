@@ -23,7 +23,7 @@ Vagrant.configure("2") do |config|
   # within the machine from a port on the host machine. In the example below,
   # accessing "localhost:8080" will access port 80 on the guest machine.
   # NOTE: This will enable public access to the opened port
-  config.vm.network "forwarded_port", guest: 8000, host: 9500
+  config.vm.network "forwarded_port", guest: 8000, host: 9500, auto_correct: true
 
   # Create a forwarded port mapping which allows access to a specific port
   # within the machine from a port on the host machine and only allow access
@@ -49,13 +49,13 @@ Vagrant.configure("2") do |config|
   # backing providers for Vagrant. These expose provider-specific options.
   # Example for VirtualBox:
   #
-  # config.vm.provider "virtualbox" do |vb|
+  config.vm.provider "virtualbox" do |vb|
   #   # Display the VirtualBox GUI when booting the machine
   #   vb.gui = true
   #
   #   # Customize the amount of memory on the VM:
-  #   vb.memory = "1024"
-  # end
+    vb.memory = "2048"
+  end
   #
   # View the documentation for the provider you are using for more
   # information on available options.
@@ -72,8 +72,8 @@ Vagrant.configure("2") do |config|
   # documentation for more information about their specific syntax and use.
   config.vm.provision "shell", inline: <<-SHELL
     sudo apt-get update
-    sudo apt-get upgrade -y
-    sudo apt-get install -y build-essential python3.5 python3.5-dev python-pip python-virtualenv postgresql postgresql-contrib rabbitmq-server
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" upgrade
+    sudo apt-get install -y build-essential ntp python3.5 python3.5-dev python-pip python-virtualenv postgresql postgresql-contrib rabbitmq-server
 
     sudo -u postgres createuser -d panelapp
     sudo -u postgres createdb panelapp -O panelapp
@@ -81,6 +81,7 @@ Vagrant.configure("2") do |config|
 
     echo "export DATABASE_URL=postgres://panelapp:panelapp@localhost/panelapp" >> /home/vagrant/.bashrc
     echo "export DJANGO_SETTINGS_MODULE=panelapp.settings.dev" >> /home/vagrant/.bashrc
+    echo "export DJANGO_LOG_LEVEL=DEBUG" >> /home/vagrant/.bashrc
 
     sudo -u vagrant virtualenv -p python3.5 /home/vagrant/.panelappv2
     sudo -H -u vagrant /home/vagrant/.panelappv2/bin/pip install setuptools==33.1.1

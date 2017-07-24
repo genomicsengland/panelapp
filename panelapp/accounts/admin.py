@@ -67,8 +67,8 @@ class UserAdmin(DjangoObjectActions, BaseUserAdmin):
     add_fieldsets = (
         (None, {
             'classes': ('wide',),
-            'fields': ('username', 'email', 'first_name', 'last_name', 'password1', 'password2')}
-        ),
+            'fields': ('username', 'email', 'first_name', 'last_name', 'password1', 'password2')
+        }),
     )
     search_fields = ('email',)
     ordering = ('email',)
@@ -80,7 +80,7 @@ class UserAdmin(DjangoObjectActions, BaseUserAdmin):
 
     def is_reviewer(self, obj):
         try:
-            return obj.reviewer.is_reviewer()
+            return obj.reviewer.is_REVIEWER()
         except Reviewer.DoesNotExist:
             return False
     is_reviewer.boolean = True
@@ -98,14 +98,14 @@ class UserAdmin(DjangoObjectActions, BaseUserAdmin):
 
         try:
             obj = self.model.objects.get(pk=object_id)
-            if obj.reviewer.is_reviewer():
+            if obj.reviewer.is_REVIEWER():
                 return []
         except Reviewer.DoesNotExist:
             return []
 
         return actions
 
-    change_actions = ['confirm_reviewer',]
+    change_actions = ['confirm_reviewer', ]
 
 
 class ReviewerAdmin(admin.ModelAdmin):

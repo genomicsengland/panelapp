@@ -1,0 +1,22 @@
+{% extends "default.html" %}
+{% load bootstrap3 %}
+
+{% block body %}
+<div class="container">
+    <div class="page-header" id="banner">
+      <h1>{% block title %}Panel Creation{% endblock %}</h1>
+    </div>
+
+    <div class="well">
+      <form class="" action="{% url "panels:create" %}" method="post">{% csrf_token %}
+        <legend>Panel Creation Tool</legend>
+        {% bootstrap_form form %}
+
+        <div>
+          <button type="reset" class="btn btn-default">Cancel</button>
+          <button type="submit" class="btn btn-primary">Submit</button>
+        </div>
+      </form>
+    </div>
+</div>
+{% endblock %}

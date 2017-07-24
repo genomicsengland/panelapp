@@ -1,0 +1,25 @@
+{% extends "default.html" %}
+{% load staticfiles %}
+{% load mathfilters %}
+
+{% block title %}Panels{% endblock %}
+{% block header %}
+<script type="text/javascript" src="{% static 'django_ajax/js/jquery.ajax.min.js' %}"></script>
+<script type="text/javascript" src="{% static 'django_ajax/js/jquery.ajax-plugin.min.js' %}"></script>
+
+{% endblock %}
+
+{% block body %}
+<div class="container">
+    {% with panels_count=view.panels.count %}
+      <h1>{{ panels_count }} panel{{ panels_count|pluralize }}</h1>
+    {% endwith %}
+      <button type="button" class="btn btn-default text-right" data-toggle="modal" data-target="#compare-modal">
+        Compare two panels
+      </button>
+      <div id="table">
+        {% include "panels/genepanel_list_table.html" %}
+      </div>
+      {% include 'panels/compare/compare_panels_form.html' with form=view.compare_panels_form %}
+</div>
+{% endblock %}

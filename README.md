@@ -41,6 +41,7 @@ permissions via `shell_plus` or use `python manage.py createsuperuser` command.
 
 We also run Celery with RabbitMQ backend for async tasks. To run celery simply run `celery -A panelapp worker`
 
+
 Project configuration
 ---------------------
 
@@ -49,38 +50,59 @@ locations: one for static files, the other for uploads.
 
 The location for these two directories in configures in `panelapp/settings/<environment>.py` file
 
-- [] FIXME this should be done automatically with settings file selecting the folder if environment variable isn't set.
-
 Run
 `/path/to/ve/bin/python /path/to/app/panelapp/manage.py collectstatic --noinput` for pulling all statics inside the `_staticfiles` folder
 
-nginx configuration
---------------------
+Tests
+-----
 
-Create a normal file in `/etc/nginx/site-available/` directory called
-`panelapp.conf` and make the contents:
-
-```
-# TODO
-```
-
-TODO
-----
-
-- [ ] Add nginx config
-- [ ] Add supervisor config
-- [ ] Add notes on how to run tests and coverage
-- [ ] Add Ansible scripts for setting up local, staging, and production environments
-- [ ] Add flake8
+To run unit tests SSH into Vagrant instance and run `pytest`. It does take some time.
 
 
 Migration notes
 ---------------
 
-- [ ] Script to migrate users
-- [ ] Script to migrate images
-- [ ] Script to migrate HomeText
-  - [ ] Replace HomeText images urls from `/static/uploads/` to `/media/`
+- [x] Script to migrate users
+- [x] Script to migrate images
+- [x] Script to migrate HomeText
+  - [x] Replace HomeText images urls from `/static/uploads/` to `/media/`
   - [ ] nginx 301 redirects for images `/static/uploads/` to `/media/`
-- [ ] nginx 301 redirects for panels
-- [ ] nginx 301 redirects for genes
+- [ ] Django redirects for panels
+- [ ] We need to copy upload files and images
+
+
+# Redirects
+
+We can actually leave /static/uploads/ and use uWSGi to point to the new location which will be the same folder where /media/ endpoint requests files from.
+
+For example `--static-map /static/uploads=/opt/panelapp/_mediafiles`
+
+# Environment Variables
+
+## App Secrets
+
+* `SECRET_KEY` - used to encrypt cookies
+* `DATABASE_URL` - PostgreSQL config url in the following format: postgresql://username:password@host:port/database_name
+* `CELERY_BROKER_URL` - Celery config for RabbitMQ, in the following format: amqp://username:password@host:port/virtual
+* `HEALTH_CHECK_TOKEN` - URL token for authorizing status checks
+* `EMAIL_HOST_PASSWORD` - SMTP password
+
+## Other variables
+
+* `DEFAULT_FROM_EMAIL` - we send emails as this address
+* `PANEL_APP_EMAIL` - PanelApp email address
+* `DJANGO_LOG_LEVEL` - by default set to INFO, other options: DEBUG, ERROR
+* `STATIC_ROOT` - location for static files which are collected with `python manage.py collectstatic --noinput`
+* `MEDIA_ROOT` - location for user uploaded files
+* `CELL_BASE_CONNECTOR_REST` - Cell Base API endpoint, by default it's http://bioinfo.hpc.cam.ac.uk/cellbase/webservices/rest/
+* `EMAIL_HOST` - SMTP host 
+* `EMAIL_HOST_USER` - SMTP username
+* `EMAIL_PORT` - SMTP server port
+* `EMAIL_USE_TLS` - Set to True (default) if SMTP server uses TLS
+
+
+# V1 to V2 data migration
+
+If you have a local panelappv1 running you can checkout branch `feat/v2export` and run `python manage.py v2export` - this will create a new directory with the JSON files.
+
+To import the data simply copy `v1dump_...` folder to your Vagrant synced folder and run `python manage.py v2import <full path to the new folder>`. The import will take some time depending on how much data you have.

@@ -1,0 +1,32 @@
+{% extends "default.html" %}
+{% load static %}
+{% load staticfiles %}
+
+{% block content %}
+<ol class="breadcrumb">
+    <li>
+        <a href="{% url 'panels:index' %}">Panels</a>
+    </li>
+    <li>
+        <a href="{% url 'panels:detail' panel.id  %}">
+            {{ panel.level4title.name }}
+        </a>
+    </li>
+    <li>
+        <a href="{% url 'panels:evaluation' panel.id gene.gene_symbol  %}">
+            {{ gene.gene_symbol }}
+        </a>
+    </li>
+    <li class="active">
+        Review gene
+    </li>
+</ol>
+
+<h1>
+    {% block title %}Review gene {{ gene.gene_symbol }} in panel {{ panel.level4title.name }}{% endblock %}
+</h1>
+
+{% if request.user.reviewer.is_verified %}
+{% include "panels/genepanelentrysnapshot/evaluation_form.html" %}
+{% endif %}
+{% endblock %}

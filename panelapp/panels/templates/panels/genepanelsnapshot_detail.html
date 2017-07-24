@@ -1,0 +1,177 @@
+{% extends "default.html" %}
+{% load static %}
+{% load staticfiles %}
+{% load panel_helpers %}
+{% block title %}{{ gene.gene.gene_symbol }} ({{ panel.level4title.name }}){% endblock %}
+{% block header %}
+  <script src="{% static 'django_ajax/js/jquery.ajax.min.js' %}"></script>
+  <script src="{% static 'django_ajax/js/jquery.ajax-plugin.min.js' %}"></script>
+{% endblock %}
+
+{% block content %}
+<ol class="breadcrumb">
+    <li>
+        <a href="{% url 'panels:index' %}">Panels</a>
+    </li>
+    <li>
+        <a href="{% url 'panels:detail' view.panel.panel.pk  %}">
+            {{ view.panel.panel.name }}
+        </a>
+    </li>
+    <li class="active">
+        {{ gene.gene.gene_symbol }}
+    </li>
+</ol>
+
+<div class="row">
+    <div class="col-sm-2">
+        <div class="panel panel-default">
+            <div class="panel-heading">Genes in panel</div>
+            <div class="btn-group btn-group-justified" role="group" data-module="gene-nav">
+                {% if prev_gene %}
+                    <a href="{% url 'panels:evaluation' view.panel.panel.pk prev_gene.gene.gene_symbol %}"
+                       class="gene-nav-prev btn btn-default" title="{{ prev_gene.gene.gene_symbol }}">
+                        <i class="fa fa-arrow-up add-right-margin"></i>Prev
+                    </a>
+                {% else %}
+                    <span class="gene-nav-prev btn btn-default disabled">
+                        <i class="fa fa-arrow-up add-right-margin"></i>Prev
+                    </span>
+                {% endif %}
+                {% if next_gene %}
+                    <a href="{% url 'panels:evaluation' view.panel.panel.pk next_gene.gene.gene_symbol %}"
+                       class="gene-nav-next btn btn-default" title="{{ next_gene.gene.gene_symbol }}">
+                        Next<i class="fa fa-arrow-down add-left-margin"></i>
+                    </a>
+                {% else %}
+                    <span class="gene-nav-next btn btn-default disabled">
+                        Next<i class="fa fa-arrow-down add-left-margin"></i>
+                    </span>
+                {% endif %}
+            </div>
+            <ul class="list-group" data-module="gene-nav" id="gene-nav">
+              {% for entry in view.panel.get_all_entries %}
+                <li
+                    class="list-group-item {% if gene.gene.gene_symbol == entry.gene.gene_symbol %}list-group-item-active{% endif %}"
+                    {% if gene.gene.gene_symbol == entry.gene.gene_symbol %}id="gene-nav-active-item"{% endif %}
+                >
+                  <a href="{% url 'panels:evaluation' view.panel.panel.id entry.gene.gene_symbol %}">
+                  {% if entry|reviewed_by:request.user %}
+                      <i
+                          class="fa fa-check-circle {{ entry|gene_list_class }} add-right-margin gel-badge pull-left"
+                          data-toggle="tooltip"
+                          title="You have reviewed"
+                      ></i>
+                  {% else %}
+                      <i
+                          class="fa fa-circle gel-badge add-right-margin pull-left {{ entry|gene_list_class }}"
+                          data-toggle="tooltip"
+                          title="{{ entry|gene_list_name }}"
+                      ></i>
+                  {% endif %}
+                  {{ entry.gene.gene_symbol }}
+                  <span
+                      class="pull-right text-muted"
+                      data-toggle="tooltip"
+                      data-placement="left"
+                      title="{{ entry.evaluation.count }} review{{entry.evaluation.count|pluralize}}"
+                  >{{ entry.evaluation.count }}</span>
+                  </a>
+
+                </li>
+              {% endfor %}
+
+            </ul>
+            {% if request.user.reviewer.is_verified %}
+                <ul class="list-group">
+                    <li class="list-group-item" style="border-top: none">
+                        <a href="{% url 'panels:add_gene' view.panel.panel.pk %}">
+                            <i class="fa fa-plus add-right-margin"></i>Add a gene
+                        </a>
+                    </li>
+                </ul>
+            {% endif %}
+        </div>
+    </div>
+    <div class="col-sm-10">
+        <h1 class="remove-top-margin">
+            <p class="text-muted normal add-label-margin" style="font-size: 18px">{{ view.panel.panel.name }}</p>
+            {{ gene.gene.gene_symbol }}
+        </h1>
+        <span id="gene-banner-heading"><span class="gel-banner {{ gene|gene_list_class }}">{{ gene|gene_list_name }}</span></span>
+        {% if gene.ready and request.user.reviewer.is_GEL %}
+            <span class="banner banner-ready">Ready for major version</span>
+        {% endif %}
+        {% if gene|reviewed_by:request.user %}
+            <span class="banner banner-reviewed">
+                <i class="fa fa-check"></i> You reviewed
+            </span>
+        {% endif %}
+        <hr />
+        <p class="lead">
+            {{ gene.gene.gene_name }}<br />
+            {% if gene.gene.other_transcripts %}
+              EnsemblGeneIds:
+              {% for t in gene.gene.other_transcripts|get_ensembleId %}
+                <a href="http://Dec2016.archive.ensembl.org/Homo_sapiens/Gene/Summary?db=core;g={{t}}" target="_blank">{{t}}</a>{% if not forloop.last %},{% endif %}
+              {% endfor %}<br />
+            {% endif %}
+            {% if gene.gene.omim_gene %}
+              <a href="http://omim.org/entry/{{ gene.gene.omim_gene }}" target="_blank">OMIM: {{ gene.gene.omim_gene }}</a>, <a href=" http://www.ebi.ac.uk/gene2phenotype/gene2phenotype-webcode/cgi-bin/handler.cgi?panel=ALL&search_term={{ entry.gene.gene_symbol }}" target="_blank">Gene2Phenotype</a><br />
+            {% endif %}
+            {% with shared_panels=sharing_panels %}
+            {{ gene.gene.gene_symbol }} is in <a href="{% url 'panels:gene_detail' gene.gene.gene_symbol %}">{{ shared_panels|length }} panel{{ shared_panels|pluralize }}</a>
+            {% endwith %}
+        </p>
+
+        <div data-module="tab-switcher" data-default-tab="evaluate">
+            <ul class="nav nav-tabs" role="tablist">
+                <li role="presentation" class="active">
+                    <a href="#evaluate" aria-controls="evaluate" role="tab" data-toggle="tab">Reviews ({{ gene.evaluation.count }})</a>
+                </li>
+                <li role="presentation">
+                    <a href="#details" aria-controls="details" role="tab" data-toggle="tab">Details</a>
+                </li>
+                <li role="presentation">
+                    <a href="#history" aria-controls="history" role="tab" data-toggle="tab">History</a>
+                </li>
+                {% if request.user.reviewer.is_GEL %}
+                <li role="presentation">
+                    <a href="#review" aria-controls="review" role="tab" data-toggle="tab">Review feedback</a>
+                </li>
+                {% endif %}
+            </ul>
+
+            <div class="tab-content">
+                <div role="tabpanel" class="tab-pane active" id="evaluate">
+                    {% include "panels/genepanelentrysnapshot/evaluate.html" %}
+                </div>
+                <div role="tabpanel" class="tab-pane" id="details">
+                    {% include "panels/genepanelentrysnapshot/details.html" %}
+                </div>
+                <div role="tabpanel" class="tab-pane" id="history">
+                    {% include "panels/genepanelentrysnapshot/history.html" %}
+                </div>
+                {% if request.user.reviewer.is_GEL %}
+                <div role="tabpanel" class="tab-pane" id="review">
+                    {% include "panels/genepanelentrysnapshot/review.html" %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block modals %}
+  {% include "panels/modals/rating.html" %}
+  {% include "panels/modals/mode_of_path.html" %}
+  {% include "panels/modals/diagnostic.html" %}
+  {% include "panels/modals/mode_of_inheritance.html" %}
+{% endblock %}
+
+{% block js %}
+<script>
+    window.GeneTags = [{% for tag in gene.tags.all %}{% if tag %}'{{ tag }}'{% if not forloop.last %},{% endif %}{% endif %}{% endfor %}];
+</script>
+{% endblock %}

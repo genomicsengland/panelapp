@@ -1,0 +1,6 @@
+<h4 class="remove-top-margin add-label-margin">
+  <a href="{% url 'panels:detail' panel.panel.id %}">
+    {{ panel.level4title.name }}
+  </a>
+</h4>
+<span class="normal">{% if panel.level4title.level3title %}Level 3: {{ panel.level4title.level3title }}{% endif %}<br />{% if panel.level4title.level2title %}Level 2: {{ panel.level4title.level2title }}{% endif %}<br />Version {{ panel.major_version }}.{{ panel.minor_version }}</span>

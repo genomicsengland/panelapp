@@ -292,6 +292,20 @@ window.Modules = {};
         }
     };
 
+    Modules['showhide'] = function() {
+      var that = this;
+
+      this.start = function(element) {
+        $(element).click(function(ev) {
+          ev.preventDefault();
+          var show = $(this).data('show');
+          var hide = $(this).data('hide');
+          $(show).removeClass('hidden');
+          $(hide).addClass('hidden');
+        });
+      }
+    };
+
 })(window.Modules);
 
 $(function(){

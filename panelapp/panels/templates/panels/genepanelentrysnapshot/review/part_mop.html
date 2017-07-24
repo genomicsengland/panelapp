@@ -1,0 +1,15 @@
+{% load bootstrap3 %}
+<div class="js-toggle-target">
+    {{ gene.mode_of_pathogenicity }}
+    <a href="#" class="add-left-margin link-inherit js-toggle">Edit</a>
+</div>
+<form data-ajax-action="{% url 'panels:update_gene_mop' panel.panel.id  gene.gene.gene_symbol %}" action="{% url 'panels:update_gene_mop' panel.panel.id  gene.gene.gene_symbol %}#!review" method="post" class="form hide js-toggle-target">
+    {% csrf_token %}
+    {% for field in edit_gene_mop_form %}
+      {{ field.label_tag }}
+      <div class="add-label-margin">{% bootstrap_field field show_label=False %}</div>
+      <span class="rm">{{ field.label_tag }}</span>
+    {% endfor %}
+    <input type="submit" class="btn btn-info" value="Update">
+    <a href="#" class="add-left-margin btn btn-link js-toggle">Cancel</a>
+</form>
