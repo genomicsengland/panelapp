@@ -86,6 +86,7 @@ For example `--static-map /static/uploads=/opt/panelapp/_mediafiles`
 * `CELERY_BROKER_URL` - Celery config for RabbitMQ, in the following format: amqp://username:password@host:port/virtual
 * `HEALTH_CHECK_TOKEN` - URL token for authorizing status checks
 * `EMAIL_HOST_PASSWORD` - SMTP password
+* `ALLOWED_HOSTS` - whitelisted hostnames, if user tries to access website which isn't here Django will throw 500 error
 
 ## Other variables
 
