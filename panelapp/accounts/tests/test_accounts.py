@@ -2,7 +2,7 @@ import random
 from django.core import mail
 from django.urls import reverse_lazy
 from faker import Factory
-from .setup import SetupUsers
+from accounts.tests.setup import SetupUsers
 from accounts.models import User
 from accounts.models import Reviewer
 from accounts.tasks import registration_email

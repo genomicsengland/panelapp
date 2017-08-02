@@ -4,8 +4,8 @@ from panels.templatetags.panel_helpers import evaluation_rating_class
 from panels.templatetags.panel_helpers import human_issue_type
 from panels.models import Evaluation
 from panels.models import TrackRecord
-from .factories import EvaluationFactory
-from .factories import TrackRecordFactory
+from panels.tests.factories import EvaluationFactory
+from panels.tests.factories import TrackRecordFactory
 
 
 class TestTemplatetags(TransactionTestCase):

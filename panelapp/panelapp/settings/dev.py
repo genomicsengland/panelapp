@@ -1,9 +1,8 @@
 from .base import *  # noqa
 
-
 RUNSERVERPLUS_SERVER_ADDRESS_PORT = '0.0.0.0:8000'
 
-INSTALLED_APPS += ('debug_toolbar',)  # noqa
+INSTALLED_APPS += ('debug_toolbar', 'django_extensions',)  # noqa
 
 MIDDLEWARE += ('debug_toolbar.middleware.DebugToolbarMiddleware',)  # noqa
 

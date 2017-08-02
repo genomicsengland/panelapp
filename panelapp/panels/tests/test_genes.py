@@ -5,9 +5,9 @@ from accounts.tests.setup import LoginGELUser
 from panels.models import Gene
 from panels.models import GenePanelEntrySnapshot
 from panels.utils import CellBaseConnector
-from .factories import GeneFactory
-from .factories import GenePanelSnapshotFactory
-from .factories import GenePanelEntrySnapshotFactory
+from panels.tests.factories import GeneFactory
+from panels.tests.factories import GenePanelSnapshotFactory
+from panels.tests.factories import GenePanelEntrySnapshotFactory
 
 
 fake = Factory.create()

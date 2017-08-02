@@ -5,10 +5,10 @@ from faker import Factory
 from accounts.tests.setup import LoginGELUser
 from panels.models import GenePanel
 from panels.models import Evaluation
-from .factories import TagFactory
-from .factories import GeneFactory
-from .factories import GenePanelSnapshotFactory
-from .factories import GenePanelEntrySnapshotFactory
+from panels.tests.factories import TagFactory
+from panels.tests.factories import GeneFactory
+from panels.tests.factories import GenePanelSnapshotFactory
+from panels.tests.factories import GenePanelEntrySnapshotFactory
 
 
 fake = Factory.create()

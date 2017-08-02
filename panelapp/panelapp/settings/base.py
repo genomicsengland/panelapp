@@ -25,7 +25,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.pa
 SECRET_KEY = os.getenv('SECRET_KEY', '-0-&v=+ghegh&l51=rdmvz_5hlf1t-^e&#5d8f07iome#ljg=a')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = [host for host in os.getenv('ALLOWED_HOSTS', '').split(';')]
 
@@ -52,7 +52,6 @@ DJANGO_APPS = [
 ]
 
 CUSTOM_APPS = [
-    'django_extensions',
     'markdownx',
     'markdown_deux',
     'bootstrap3',

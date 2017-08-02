@@ -1,6 +1,6 @@
 from django.conf import settings
 from django.urls import reverse_lazy
-from .setup import SetupUsers
+from accounts.tests.setup import SetupUsers
 
 
 class ReviewerTest(SetupUsers):

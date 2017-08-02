@@ -1,6 +1,6 @@
 from django.test import TestCase
 from django.urls import reverse_lazy
-from .factories import GenePanelEntrySnapshotFactory
+from panels.tests.factories import GenePanelEntrySnapshotFactory
 
 
 class TestActivities(TestCase):
