@@ -51,8 +51,10 @@
                     {% endfor %}
                 </dd>
             {% endif %}
+            {% if gene.gene.omim_gene|length > 0 %}
             <dt>OMIM</dt>
-            <dd><a href="http://omim.org/entry/{{ gene.gene.omim_gene }}" target="_blank">{{ gene.gene.omim_gene }}</a></dd>
+            <dd><a href="http://omim.org/entry/{{ gene.gene.omim_gene.0 }}" target="_blank">{{ gene.gene.omim_gene.0 }}</a></dd>
+            {% endif %}
             <dt>Clinvar variants</dt>
             <dd>
                 <a href="http://www.ncbi.nlm.nih.gov/clinvar?term={{ gene.gene.gene_symbol }}%5BGene%20Name%5D" target="_blank"> Variants in {{ gene.gene.gene_symbol }}</a>

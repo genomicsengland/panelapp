@@ -2,6 +2,7 @@ from django.db import models
 from django.db.models import Count
 from django.db.models import Subquery
 
+from django.core.serializers.json import DjangoJSONEncoder
 from django.contrib.postgres.fields import JSONField
 from django.contrib.postgres.fields import ArrayField
 from model_utils import Choices
@@ -63,7 +64,7 @@ class GenePanelEntrySnapshot(TimeStampedModel):
         ordering = ['-saved_gel_status', '-created', ]
 
     panel = models.ForeignKey(GenePanelSnapshot)
-    gene = JSONField()  # copy data from Gene.dict_tr
+    gene = JSONField(encoder=DjangoJSONEncoder)  # copy data from Gene.dict_tr
     gene_core = models.ForeignKey(Gene)  # reference to the original Gene
     evidence = models.ManyToManyField(Evidence)
     evaluation = models.ManyToManyField(Evaluation)

@@ -1,0 +1,941 @@
+{
+  "insert": [
+    {
+      "alias": [],
+      "alias_name": null,
+      "hgnc_id": "HGNC:31989",
+      "gene_symbol": "NBPF7",
+      "biotype": "unprocessed_pseudogene",
+      "ensembl_genes": {
+        "GRch38": {
+          "89": {
+            "ensembl_id": "ENSG00000215864",
+            "location": "1:119834870-119844514"
+          }
+        },
+        "GRch37": {
+          "82": {
+            "ensembl_id": "ENSG00000215864",
+            "location": "1:120377388-120387779"
+          }
+        }
+      },
+      "hgnc_symbol": "NBPF7",
+      "omim_gene": [
+        "613997"
+      ],
+      "hgnc_release": "2017-07-21",
+      "gene_name": "NBPF member 7",
+      "hgnc_date_symbol_changed": "2005-11-23"
+    },
+    {
+      "alias": [],
+      "alias_name": null,
+      "hgnc_id": "HGNC:50587",
+      "gene_symbol": "LINC01356",
+      "biotype": "lincRNA",
+      "ensembl_genes": {
+        "GRch38": {
+          "89": {
+            "ensembl_id": "ENSG00000215866",
+            "location": "1:112820170-112850643"
+          }
+        },
+        "GRch37": {
+          "82": {
+            "ensembl_id": "ENSG00000215866",
+            "location": "1:113362792-113393265"
+          }
+        }
+      },
+      "hgnc_symbol": "LINC01356",
+      "omim_gene": null,
+      "hgnc_release": "2017-07-21",
+      "gene_name": "long intergenic non-protein coding RNA 1356",
+      "hgnc_date_symbol_changed": "2014-05-21"
+    },
+    {
+      "alias": [],
+      "alias_name": null,
+      "hgnc_id": "HGNC:48884",
+      "gene_symbol": "KRT18P57",
+      "biotype": "processed_pseudogene",
+      "ensembl_genes": {
+        "GRch38": {
+          "89": {
+            "ensembl_id": "ENSG00000215867",
+            "location": "1:111648291-111649544"
+          }
+        },
+        "GRch37": {
+          "82": {
+            "ensembl_id": "ENSG00000215867",
+            "location": "1:112190913-112192166"
+          }
+        }
+      },
+      "hgnc_symbol": "KRT18P57",
+      "omim_gene": null,
+      "hgnc_release": "2017-07-21",
+      "gene_name": "keratin 18 pseudogene 57",
+      "hgnc_date_symbol_changed": "2013-06-25"
+    },
+    {
+      "alias": [],
+      "alias_name": null,
+      "hgnc_id": "HGNC:46236",
+      "gene_symbol": "RN7SL220P",
+      "biotype": "misc_RNA",
+      "ensembl_genes": {
+        "GRch38": {
+          "89": {
+            "ensembl_id": "ENSG00000266467",
+            "location": "10:68007718-68008017"
+          }
+        },
+        "GRch37": {
+          "82": {
+            "ensembl_id": "ENSG00000266467",
+            "location": "10:69767477-69767774"
+          }
+        }
+      },
+      "hgnc_symbol": "RN7SL220P",
+      "omim_gene": null,
+      "hgnc_release": "2017-07-21",
+      "gene_name": "RNA, 7SL, cytoplasmic 220, pseudogene",
+      "hgnc_date_symbol_changed": "2013-04-02"
+    },
+    {
+      "alias": [],
+      "alias_name": null,
+      "hgnc_id": "HGNC:8808",
+      "gene_symbol": "PDHB",
+      "biotype": "protein_coding",
+      "ensembl_genes": {
+        "GRch38": {
+          "89": {
+            "ensembl_id": "ENSG00000168291",
+            "location": "3:58427630-58433857"
+          }
+        },
+        "GRch37": {
+          "82": {
+            "ensembl_id": "ENSG00000168291",
+            "location": "3:58413357-58419584"
+          }
+        }
+      },
+      "hgnc_symbol": "PDHB",
+      "omim_gene": [
+        "179060"
+      ],
+      "hgnc_release": "2017-07-21",
+      "gene_name": "pyruvate dehydrogenase (lipoamide) beta",
+      "hgnc_date_symbol_changed": "1989-06-30"
+    },
+    {
+      "alias": [],
+      "alias_name": null,
+      "hgnc_id": "HGNC:49227",
+      "gene_symbol": "ZBTB45P1",
+      "biotype": "processed_pseudogene",
+      "ensembl_genes": {
+        "GRch38": {
+          "89": {
+            "ensembl_id": "ENSG00000225108",
+            "location": "2:109986939-109988394"
+          }
+        },
+        "GRch37": {
+          "82": {
+            "ensembl_id": "ENSG00000225108",
+            "location": "2:110744516-110745971"
+          }
+        }
+      },
+      "hgnc_symbol": "ZBTB45P1",
+      "omim_gene": null,
+      "hgnc_release": "2017-07-21",
+      "gene_name": "zinc finger and BTB domain containing 45 pseudogene 1",
+      "hgnc_date_symbol_changed": "2013-10-10"
+    },
+    {
+      "alias": [],
+      "alias_name": null,
+      "hgnc_id": "HGNC:51620",
+      "gene_symbol": "DPY19L2P5",
+      "biotype": "processed_pseudogene",
+      "ensembl_genes": {
+        "GRch38": {
+          "89": {
+            "ensembl_id": "ENSG00000225100",
+            "location": "10:79982910-79983240"
+          }
+        },
+        "GRch37": {
+          "82": {
+            "ensembl_id": "ENSG00000225100",
+            "location": "10:81742666-81742996"
+          }
+        }
+      },
+      "hgnc_symbol": "DPY19L2P5",
+      "omim_gene": null,
+      "hgnc_release": "2017-07-21",
+      "gene_name": "DPY19L2 pseudogene 5",
+      "hgnc_date_symbol_changed": "2015-03-26"
+    },
+    {
+      "alias": [],
+      "alias_name": null,
+      "hgnc_id": "HGNC:15224",
+      "gene_symbol": "OR52K3P",
+      "biotype": "unprocessed_pseudogene",
+      "ensembl_genes": {
+        "GRch38": {
+          "89": {
+            "ensembl_id": "ENSG00000225101",
+            "location": "11:4474813-4475755"
+          }
+        },
+        "GRch37": {
+          "82": {
+            "ensembl_id": "ENSG00000225101",
+            "location": "11:4496043-4497123"
+          }
+        }
+      },
+      "hgnc_symbol": "OR52K3P",
+      "omim_gene": null,
+      "hgnc_release": "2017-07-21",
+      "gene_name": "olfactory receptor family 52 subfamily K member 3 pseudogene",
+      "hgnc_date_symbol_changed": "2001-03-28"
+    },
+    {
+      "alias": [],
+      "alias_name": null,
+      "hgnc_id": "HGNC:49119",
+      "gene_symbol": "LINC01076",
+      "biotype": "lincRNA",
+      "ensembl_genes": {
+        "GRch38": {
+          "89": {
+            "ensembl_id": "ENSG00000225105",
+            "location": "13:25193107-25210295"
+          }
+        },
+        "GRch37": {
+          "82": {
+            "ensembl_id": "ENSG00000225105",
+            "location": "13:25767245-25784433"
+          }
+        }
+      },
+      "hgnc_symbol": "LINC01076",
+      "omim_gene": null,
+      "hgnc_release": "2017-07-21",
+      "gene_name": "long intergenic non-protein coding RNA 1076",
+      "hgnc_date_symbol_changed": "2013-09-05"
+    },
+    {
+      "alias": [],
+      "alias_name": null,
+      "hgnc_id": "HGNC:26963",
+      "gene_symbol": "MISP3",
+      "biotype": "protein_coding",
+      "ensembl_genes": {
+        "GRch38": {
+          "89": {
+            "ensembl_id": "ENSG00000141854",
+            "location": "19:14072536-14075062"
+          }
+        },
+        "GRch37": {
+          "82": {
+            "ensembl_id": "ENSG00000141854",
+            "location": "19:14183348-14185874"
+          }
+        }
+      },
+      "hgnc_symbol": "MISP3",
+      "omim_gene": null,
+      "hgnc_release": "2017-07-21",
+      "gene_name": "MISP family member 3",
+      "hgnc_date_symbol_changed": "2016-07-08"
+    }
+  ],
+  "update_symbol": [
+    [
+      {
+        "alias": [],
+        "alias_name": null,
+        "hgnc_id": "HGNC:31989",
+        "gene_symbol": "NBPF7",
+        "biotype": "unprocessed_pseudogene",
+        "ensembl_genes": {
+          "GRch38": {
+            "89": {
+              "ensembl_id": "ENSG00000215864",
+              "location": "1:119834870-119844514"
+            }
+          },
+          "GRch37": {
+            "82": {
+              "ensembl_id": "ENSG00000215864",
+              "location": "1:120377388-120387779"
+            }
+          }
+        },
+        "hgnc_symbol": "NBPF7",
+        "omim_gene": [
+          "613997"
+        ],
+        "hgnc_release": "2017-07-21",
+        "gene_name": "NBPF member 7",
+        "hgnc_date_symbol_changed": "2005-11-23"
+      },
+      "NBPF7-test"
+    ],
+    [
+      {
+        "alias": [
+          "CLIM1",
+          "LDB1"
+        ],
+        "alias_name": null,
+        "hgnc_id": "HGNC:6533",
+        "gene_symbol": "LDB2",
+        "biotype": "protein_coding",
+        "ensembl_genes": {
+          "GRch38": {
+            "89": {
+              "ensembl_id": "ENSG00000169744",
+              "location": "4:16501541-16898809"
+            }
+          },
+          "GRch37": {
+            "82": {
+              "ensembl_id": "ENSG00000169744",
+              "location": "4:16503164-16900432"
+            }
+          }
+        },
+        "hgnc_symbol": "LDB2",
+        "omim_gene": [
+          "603450"
+        ],
+        "hgnc_release": "2017-07-21",
+        "gene_name": "LIM domain binding 2",
+        "hgnc_date_symbol_changed": "1999-01-22"
+      },
+      "LDB1"
+    ],
+    [
+      {
+        "alias": [
+          "RN7SL579P"
+        ],
+        "alias_name": null,
+        "hgnc_id": "HGNC:46369",
+        "gene_symbol": "RN7SL353P",
+        "biotype": "misc_RNA",
+        "ensembl_genes": {
+          "GRch38": {
+            "89": {
+              "ensembl_id": "ENSG00000263608",
+              "location": "6:30751038-30751289"
+            }
+          },
+          "GRch37": {
+            "82": {
+              "ensembl_id": "ENSG00000263608",
+              "location": "6:30718815-30719062"
+            }
+          }
+        },
+        "hgnc_symbol": "RN7SL353P",
+        "omim_gene": null,
+        "hgnc_release": "2017-07-21",
+        "gene_name": "RNA, 7SL, cytoplasmic 353, pseudogene",
+        "hgnc_date_symbol_changed": "2013-04-02"
+      },
+      "RN7SL579P"
+    ],
+    [
+      {
+        "alias": [
+          "C17orf36",
+          "REN",
+          "KCASH1"
+        ],
+        "alias_name": null,
+        "hgnc_id": "HGNC:21302",
+        "gene_symbol": "KCTD11",
+        "biotype": "protein_coding",
+        "ensembl_genes": {
+          "GRch38": {
+            "89": {
+              "ensembl_id": "ENSG00000213859",
+              "location": "17:7351889-7354944"
+            }
+          },
+          "GRch37": {
+            "82": {
+              "ensembl_id": "ENSG00000213859",
+              "location": "17:7255208-7258258"
+            }
+          }
+        },
+        "hgnc_symbol": "KCTD11",
+        "omim_gene": [
+          "609848"
+        ],
+        "hgnc_release": "2017-07-21",
+        "gene_name": "potassium channel tetramerization domain containing 11",
+        "hgnc_date_symbol_changed": "2003-11-26"
+      },
+      "REN"
+    ],
+    [
+      {
+        "alias": [
+          "PNMAL1",
+          "KIAA1183L",
+          "FLJ10781"
+        ],
+        "alias_name": null,
+        "hgnc_id": "HGNC:25578",
+        "gene_symbol": "PNMA8A",
+        "biotype": "protein_coding",
+        "ensembl_genes": {
+          "GRch38": {
+            "89": {
+              "ensembl_id": "ENSG00000182013",
+              "location": "19:46466491-46471563"
+            }
+          },
+          "GRch37": {
+            "82": {
+              "ensembl_id": "ENSG00000182013",
+              "location": "19:46969748-46974820"
+            }
+          }
+        },
+        "hgnc_symbol": "PNMA8A",
+        "omim_gene": null,
+        "hgnc_release": "2017-07-21",
+        "gene_name": "paraneoplastic Ma antigen family member 8A",
+        "hgnc_date_symbol_changed": "2017-03-31"
+      },
+      "PNMAL1"
+    ],
+    [
+      {
+        "alias": [
+          "BRI3",
+          "E25",
+          "hRPC.1050_D_4",
+          "ITM3",
+          "BRICD2C"
+        ],
+        "alias_name": [
+          "BRICHOS domain containing 2C"
+        ],
+        "hgnc_id": "HGNC:6175",
+        "gene_symbol": "ITM2C",
+        "biotype": "protein_coding",
+        "ensembl_genes": {
+          "GRch38": {
+            "89": {
+              "ensembl_id": "ENSG00000135916",
+              "location": "2:230864639-230879248"
+            }
+          },
+          "GRch37": {
+            "82": {
+              "ensembl_id": "ENSG00000135916",
+              "location": "2:231729354-231743963"
+            }
+          }
+        },
+        "hgnc_symbol": "ITM2C",
+        "omim_gene": [
+          "609554"
+        ],
+        "hgnc_release": "2017-07-21",
+        "gene_name": "integral membrane protein 2C",
+        "hgnc_date_symbol_changed": "1999-07-22"
+      },
+      "BRI3"
+    ],
+    [
+      {
+        "alias": [
+          "MOP2",
+          "PASD2",
+          "HIF2A",
+          "HLF",
+          "bHLHe73"
+        ],
+        "alias_name": [
+          "HIF-1 alpha-like factor"
+        ],
+        "hgnc_id": "HGNC:3374",
+        "gene_symbol": "EPAS1",
+        "biotype": "protein_coding",
+        "ensembl_genes": {
+          "GRch38": {
+            "89": {
+              "ensembl_id": "ENSG00000116016",
+              "location": "2:46293667-46386703"
+            }
+          },
+          "GRch37": {
+            "82": {
+              "ensembl_id": "ENSG00000116016",
+              "location": "2:46520806-46613836"
+            }
+          }
+        },
+        "hgnc_symbol": "EPAS1",
+        "omim_gene": [
+          "603349"
+        ],
+        "hgnc_release": "2017-07-21",
+        "gene_name": "endothelial PAS domain protein 1",
+        "hgnc_date_symbol_changed": "1998-05-29"
+      },
+      "HLF"
+    ],
+    [
+      {
+        "alias": [
+          "ZNF33AP1",
+          "BA393J16.4"
+        ],
+        "alias_name": null,
+        "hgnc_id": "HGNC:30957",
+        "gene_symbol": "ZNF33CP",
+        "biotype": "processed_pseudogene",
+        "ensembl_genes": {
+          "GRch38": {
+            "89": {
+              "ensembl_id": "ENSG00000235197",
+              "location": "10:37894637-37896666"
+            }
+          },
+          "GRch37": {
+            "82": {
+              "ensembl_id": "ENSG00000235197",
+              "location": "10:38183565-38185594"
+            }
+          }
+        },
+        "hgnc_symbol": "ZNF33CP",
+        "omim_gene": null,
+        "hgnc_release": "2017-07-21",
+        "gene_name": "zinc finger protein 33C, pseudogene",
+        "hgnc_date_symbol_changed": "2015-10-30"
+      },
+      "ZNF33AP1"
+    ],
+    [
+      {
+        "alias": [
+          "CYP21",
+          "CYP21B",
+          "P450c21B",
+          "CA21H",
+          "CPS1",
+          "CAH1"
+        ],
+        "alias_name": [
+          "Steroid 21-monooxygenase"
+        ],
+        "hgnc_id": "HGNC:2600",
+        "gene_symbol": "CYP21A2",
+        "biotype": "protein_coding",
+        "ensembl_genes": {
+          "GRch38": {
+            "89": {
+              "ensembl_id": "ENSG00000231852",
+              "location": "6:32038265-32041670"
+            }
+          },
+          "GRch37": {
+            "82": {
+              "ensembl_id": "ENSG00000231852",
+              "location": "6:32006042-32009447"
+            }
+          }
+        },
+        "hgnc_symbol": "CYP21A2",
+        "omim_gene": [
+          "613815"
+        ],
+        "hgnc_release": "2017-07-21",
+        "gene_name": "cytochrome P450 family 21 subfamily A member 2",
+        "hgnc_date_symbol_changed": "1986-01-01"
+      },
+      "CPS1"
+    ],
+    [
+      {
+        "alias": [
+          "FLJ10330",
+          "NET1"
+        ],
+        "alias_name": null,
+        "hgnc_id": "HGNC:25512",
+        "gene_symbol": "PRPF38B",
+        "biotype": "protein_coding",
+        "ensembl_genes": {
+          "GRch38": {
+            "89": {
+              "ensembl_id": "ENSG00000134186",
+              "location": "1:108692323-108701803"
+            }
+          },
+          "GRch37": {
+            "82": {
+              "ensembl_id": "ENSG00000134186",
+              "location": "1:109234945-109244425"
+            }
+          }
+        },
+        "hgnc_symbol": "PRPF38B",
+        "omim_gene": null,
+        "hgnc_release": "2017-07-21",
+        "gene_name": "pre-mRNA processing factor 38B",
+        "hgnc_date_symbol_changed": "2005-05-24"
+      },
+      "NET1"
+    ],
+    [
+      {
+        "alias": [
+          "MICE",
+          "MGC119078",
+          "MGC119079"
+        ],
+        "alias_name": [
+          "apoptosis-related cysteine protease"
+        ],
+        "hgnc_id": "HGNC:1502",
+        "gene_symbol": "CASP14",
+        "biotype": "protein_coding",
+        "ensembl_genes": {
+          "GRch38": {
+            "89": {
+              "ensembl_id": "ENSG00000105141",
+              "location": "19:15049384-15058293"
+            }
+          },
+          "GRch37": {
+            "82": {
+              "ensembl_id": "ENSG00000105141",
+              "location": "19:15160195-15169104"
+            }
+          }
+        },
+        "hgnc_symbol": "CASP14",
+        "omim_gene": [
+          "605848"
+        ],
+        "hgnc_release": "2017-07-21",
+        "gene_name": "caspase 14",
+        "hgnc_date_symbol_changed": "1998-11-09"
+      },
+      "MICE"
+    ]
+  ],
+  "update": [
+    {
+      "alias": [
+        "SPRL1A",
+        "LEP12"
+      ],
+      "alias_name": null,
+      "hgnc_id": "HGNC:16518",
+      "gene_symbol": "LCE2D",
+      "biotype": "protein_coding",
+      "ensembl_genes": {
+      },
+      "hgnc_symbol": "LCE2D",
+      "omim_gene": [
+        "612612"
+      ],
+      "hgnc_release": "2017-07-21",
+      "gene_name": "late cornified envelope 2D",
+      "hgnc_date_symbol_changed": "2004-10-15"
+    },
+    {
+      "alias": [
+        "DENN",
+        "KIAA0358",
+        "RAB3GEP"
+      ],
+      "alias_name": null,
+      "hgnc_id": "HGNC:6766",
+      "gene_symbol": "MADD",
+      "biotype": "protein_coding",
+      "ensembl_genes": {
+        "GRch38": {
+          "89": {
+            "ensembl_id": "ENSG00000110514",
+            "location": "11:47269161-47330031"
+          }
+        },
+        "GRch37": {
+          "82": {
+            "ensembl_id": "ENSG00000110514",
+            "location": "11:47290712-47351582"
+          }
+        }
+      },
+      "hgnc_symbol": "MADD",
+      "omim_gene": [
+        "603584"
+      ],
+      "hgnc_release": "2017-07-21",
+      "gene_name": "MAP kinase activating death domain",
+      "hgnc_date_symbol_changed": "1999-12-17"
+    },
+    {
+      "alias": [
+        "MAST205",
+        "KIAA0807"
+      ],
+      "alias_name": null,
+      "hgnc_id": "HGNC:19035",
+      "gene_symbol": "MAST2",
+      "biotype": "protein_coding",
+      "ensembl_genes": {
+        "GRch38": {
+          "89": {
+            "ensembl_id": "ENSG00000086015",
+            "location": "1:45786987-46036124"
+          }
+        },
+        "GRch37": {
+          "82": {
+            "ensembl_id": "ENSG00000086015",
+            "location": "1:46252659-46501796"
+          }
+        }
+      },
+      "hgnc_symbol": "MAST2",
+      "omim_gene": [
+        "612257"
+      ],
+      "hgnc_release": "2017-07-21",
+      "gene_name": "microtubule associated serine/threonine kinase 2",
+      "hgnc_date_symbol_changed": "2004-02-10"
+    },
+    {
+      "alias": [
+        "TRBJ25",
+        "TCRBJ2S5"
+      ],
+      "alias_name": null,
+      "hgnc_id": "HGNC:12173",
+      "gene_symbol": "TRBJ2-5",
+      "biotype": "TR_J_gene",
+      "ensembl_genes": {
+        "GRch38": {
+          "89": {
+            "ensembl_id": "ENSG00000211769",
+            "location": "7:142797119-142797166"
+          }
+        },
+        "GRch37": {
+          "82": {
+            "ensembl_id": "ENSG00000211769",
+            "location": "7:142494803-142494850"
+          }
+        }
+      },
+      "hgnc_symbol": "TRBJ2-5",
+      "omim_gene": null,
+      "hgnc_release": "2017-07-21",
+      "gene_name": "T-cell receptor beta joining 2-5",
+      "hgnc_date_symbol_changed": "2000-05-15"
+    },
+    {
+      "alias": [
+        "TRBJ24",
+        "TCRBJ2S4"
+      ],
+      "alias_name": null,
+      "hgnc_id": "HGNC:12172",
+      "gene_symbol": "TRBJ2-4",
+      "biotype": "TR_J_gene",
+      "ensembl_genes": {
+        "GRch38": {
+          "89": {
+            "ensembl_id": "ENSG00000211768",
+            "location": "7:142796998-142797047"
+          }
+        },
+        "GRch37": {
+          "82": {
+            "ensembl_id": "ENSG00000211768",
+            "location": "7:142494682-142494731"
+          }
+        }
+      },
+      "hgnc_symbol": "TRBJ2-4",
+      "omim_gene": null,
+      "hgnc_release": "2017-07-21",
+      "gene_name": "T-cell receptor beta joining 2-4",
+      "hgnc_date_symbol_changed": "2000-05-15"
+    },
+    {
+      "alias": [
+        "TRBJ23",
+        "TCRBJ2S3"
+      ],
+      "alias_name": null,
+      "hgnc_id": "HGNC:12171",
+      "gene_symbol": "TRBJ2-3",
+      "biotype": "TR_J_gene",
+      "ensembl_genes": {
+        "GRch38": {
+          "89": {
+            "ensembl_id": "ENSG00000211767",
+            "location": "7:142796847-142796895"
+          }
+        },
+        "GRch37": {
+          "82": {
+            "ensembl_id": "ENSG00000211767",
+            "location": "7:142494531-142494579"
+          }
+        }
+      },
+      "hgnc_symbol": "TRBJ2-3",
+      "omim_gene": null,
+      "hgnc_release": "2017-07-21",
+      "gene_name": "T-cell receptor beta joining 2-3",
+      "hgnc_date_symbol_changed": "2000-05-15"
+    },
+    {
+      "alias": [
+        "TRBJ22P"
+      ],
+      "alias_name": null,
+      "hgnc_id": "HGNC:12170",
+      "gene_symbol": "TRBJ2-2P",
+      "biotype": "TR_J_gene",
+      "ensembl_genes": {
+        "GRch38": {
+          "89": {
+            "ensembl_id": "ENSG00000211766",
+            "location": "7:142796697-142796742"
+          }
+        },
+        "GRch37": {
+          "82": {
+            "ensembl_id": "ENSG00000211766",
+            "location": "7:142494381-142494426"
+          }
+        }
+      },
+      "hgnc_symbol": "TRBJ2-2P",
+      "omim_gene": null,
+      "hgnc_release": "2017-07-21",
+      "gene_name": "T-cell receptor beta joining 2-2P (non-functional)",
+      "hgnc_date_symbol_changed": "2000-05-15"
+    },
+    {
+      "alias": [
+        "TRBJ22",
+        "TCRBJ2S2"
+      ],
+      "alias_name": null,
+      "hgnc_id": "HGNC:12169",
+      "gene_symbol": "TRBJ2-2",
+      "biotype": "TR_J_gene",
+      "ensembl_genes": {
+        "GRch38": {
+          "89": {
+            "ensembl_id": "ENSG00000211765",
+            "location": "7:142796560-142796610"
+          }
+        },
+        "GRch37": {
+          "82": {
+            "ensembl_id": "ENSG00000211765",
+            "location": "7:142494244-142494294"
+          }
+        }
+      },
+      "hgnc_symbol": "TRBJ2-2",
+      "omim_gene": null,
+      "hgnc_release": "2017-07-21",
+      "gene_name": "T-cell receptor beta joining 2-2",
+      "hgnc_date_symbol_changed": "2000-05-15"
+    },
+    {
+      "alias": [
+        "TRBJ21",
+        "TCRBJ2S1"
+      ],
+      "alias_name": null,
+      "hgnc_id": "HGNC:12168",
+      "gene_symbol": "TRBJ2-1",
+      "biotype": "TR_J_gene",
+      "ensembl_genes": {
+        "GRch38": {
+          "89": {
+            "ensembl_id": "ENSG00000211764",
+            "location": "7:142796365-142796414"
+          }
+        },
+        "GRch37": {
+          "82": {
+            "ensembl_id": "ENSG00000211764",
+            "location": "7:142494049-142494098"
+          }
+        }
+      },
+      "hgnc_symbol": "TRBJ2-1",
+      "omim_gene": null,
+      "hgnc_release": "2017-07-21",
+      "gene_name": "T-cell receptor beta joining 2-1",
+      "hgnc_date_symbol_changed": "2000-05-15"
+    },
+    {
+      "alias": [
+        "KOX30"
+      ],
+      "alias_name": null,
+      "hgnc_id": "HGNC:13095",
+      "gene_symbol": "ZNF32",
+      "biotype": "protein_coding",
+      "ensembl_genes": {
+        "GRch38": {
+          "89": {
+            "ensembl_id": "ENSG00000169740",
+            "location": "10:43643859-43648856"
+          }
+        },
+        "GRch37": {
+          "82": {
+            "ensembl_id": "ENSG00000169740",
+            "location": "10:44139307-44144304"
+          }
+        }
+      },
+      "hgnc_symbol": "ZNF32",
+      "omim_gene": [
+        "194539"
+      ],
+      "hgnc_release": "2017-07-21",
+      "gene_name": "zinc finger protein 32",
+      "hgnc_date_symbol_changed": "1990-06-13"
+    }
+  ],
+  "delete": []
+}

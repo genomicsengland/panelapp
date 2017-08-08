@@ -40,7 +40,7 @@ class PanelGeneForm(forms.ModelForm):
 
     gene = forms.ModelChoiceField(
         label="Gene symbol",
-        queryset=Gene.objects.all(),
+        queryset=Gene.objects.filter(active=True),
         widget=ModelSelect2(url="autocomplete-gene")
     )
 

@@ -660,19 +660,26 @@ class DownloadAllGenes(GELReviewerRequiredMixin, View):
         writer.writerow((
             "Symbol",
             "Panel",
+            "Panel Version",
             "List",
             "Sources",
             "Mode of inheritance",
             "Mode of pathogenicity",
-            "Tags"))
+            "Tags",
+            "EnsemblId(GRch37)",
+            "EnsemblId(GRch38)",
+            "Biotype",
+            "Phenotypes",
+            "GeneLocation((GRch37)",
+            "GeneLocation((GRch38)"
 
+        ))
         entries = GenePanelEntrySnapshot.objects\
             .get_active()\
             .prefetch_related('tags', 'evidence', 'panel__panel')\
             .all()
 
         for entry in entries:
-            colour = "grey"
 
             if entry.flagged:
                 colour = "grey"
@@ -683,14 +690,26 @@ class DownloadAllGenes(GELReviewerRequiredMixin, View):
             else:
                 colour = "green"
 
+            if isinstance(entry.phenotypes, list):
+                phenotypes = ';'.join(entry.phenotypes)
+            else:
+                phenotypes = '-'
+
             row = [
                 entry.gene.get('gene_symbol'),
                 entry.panel.panel.pk,
+                entry.panel.version,
                 colour,
                 ';'.join([evidence.name for evidence in entry.evidence.all()]),
                 entry.moi,
                 entry.mode_of_pathogenicity,
-                ';'.join([tag.name for tag in entry.tags.all()])
+                ';'.join([tag.name for tag in entry.tags.all()]),
+                entry.gene.get('GRch37', {}).get('ensemble_id', '-'),
+                entry.gene.get('GRch38', {}).get('ensemble_id', '-'),
+                entry.gene.get('biotype', '-'),
+                phenotypes,
+                entry.gene.get('GRch37', {}).get('location', '-'),
+                entry.gene.get('GRch38', {}).get('location', '-'),
             ]
             writer.writerow(row)
 

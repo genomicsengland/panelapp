@@ -94,7 +94,7 @@ def human_issue_type(issue_type):
 
 @register.filter
 def get_ensembleId(transcripts):
-    return sorted(list(set(map(lambda t: t if isinstance(t, str) else t.get('geneid'), transcripts))))
+    return transcripts.get('GRch38', {}).get('89', {}).get('ensembl_id', None)
 
 
 @register.filter

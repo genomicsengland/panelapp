@@ -1,5 +1,9 @@
 import os
 import ijson
+try:
+    import simplejson as json
+except ImportError:
+    import json
 from datetime import datetime
 from django.core.management.base import BaseCommand
 from django.db import transaction
@@ -26,6 +30,7 @@ from panels.models import Tag
 from panels.models import TrackRecord
 from panels.models import GenePanelEntrySnapshot
 from panels.models import Comment
+from panels.models.import_tools import update_gene_collection
 
 
 class Command(BaseCommand):
@@ -48,6 +53,10 @@ class Command(BaseCommand):
 
         self.files_path = dump_path
 
+        if not os.path.isfile(os.path.join(self.files_path, 'new_genes.json')):
+            self.stderr.write("Can't find new genes JSON file")
+            os.sys.exit(1)
+
         with transaction.atomic():
             self.import_users()
             self.import_admin_files()
@@ -56,12 +65,17 @@ class Command(BaseCommand):
             self.import_activities()
             self.import_gene_panel_entries()
             self.import_backup_panels()
+            self.migrate_genes()
 
     def _iterate_file(self, filename, json_path):
         with open(os.path.join(self.files_path, filename), 'r') as f:
             items = ijson.items(f, json_path)
             for item in items:
                 yield item
+
+    def migrate_genes(self):
+        with open(os.path.join(self.files_path, 'new_genes.json'), 'r') as genes_json:
+            update_gene_collection(json.load(genes_json))
 
     def import_backup_panels(self):
         total = 0
@@ -83,7 +97,11 @@ class Command(BaseCommand):
         self.stdout.write('Created {} backup panels'.format(total))
 
     def create_gene_panel_entry_snapshot(self, gpe, panel):
+        if gpe['gene']['gene_symbol'][-1] == '*':
+            gpe['gene']['gene_symbol'] = gpe['gene']['gene_symbol'][:-1]
+
         gene = self.genes.get(gpe['gene']['gene_symbol'])
+
         if not gene:
             try:
                 gene = Gene.objects.get(gene_symbol=gpe['gene']['gene_symbol'])
@@ -91,8 +109,8 @@ class Command(BaseCommand):
                 gene = Gene.objects.create(
                     gene_symbol=gpe['gene']['gene_symbol'],
                     gene_name=gpe['gene']['gene_name'],
-                    omim_gene=gpe['gene']['omim_gene'],
-                    other_transcripts=gpe['gene']['other_transcripts']
+                    omim_gene=[gpe['gene']['omim_gene'],],
+                    ensembl_genes="{}"
                 )
                 self.stdout.write("Gene:{} not in database, creating".format(gpe['gene']['gene_symbol']))
 
@@ -335,12 +353,16 @@ class Command(BaseCommand):
     def import_genes(self):
         total = 0
         for gene in self._iterate_file('genes.json', 'genes.item'):
+            if gene['gene_symbol'][-1] == "*":
+                gene['gene_symbol'] = gene['gene_symbol'][:-1]
+
             total += 1
+
             g = Gene.objects.create(
                 gene_symbol=gene['gene_symbol'],
                 gene_name=gene['gene_name'],
-                omim_gene=gene['omim_gene'],
-                other_transcripts=gene['other_transcripts']
+                omim_gene=[gene['omim_gene'],],
+                ensembl_genes="{}"
             )
             self.genes[g.gene_symbol] = g
 

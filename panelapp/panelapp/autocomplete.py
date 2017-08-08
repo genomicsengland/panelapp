@@ -8,7 +8,7 @@ from panels.models import Tag
 
 class GeneAutocomplete(Select2QuerySetView):
     def get_queryset(self):
-        qs = Gene.objects.all()
+        qs = Gene.objects.filter(active=True)
 
         if self.q:
             qs = qs.filter(Q(gene_symbol__istartswith=self.q) | Q(gene_name__istartswith=self.q))

@@ -1,10 +1,13 @@
+import json
 import re
 import logging
+from datetime import datetime
 from more_itertools import unique_everseen
 from django.db import models
 from django.db import transaction
 from model_utils.models import TimeStampedModel
 from accounts.models import User
+from .genepanelentrysnapshot import GenePanelEntrySnapshot
 from panels.utils import CellBaseConnector
 from panels.exceptions import TSVIncorrectFormat
 from panels.exceptions import UserDoesNotExist
@@ -18,6 +21,113 @@ from .Level4Title import Level4Title
 logger = logging.getLogger(__name__)
 
 
+def update_gene_collection(results):
+    with transaction.atomic():
+        to_insert = results['insert']
+        to_update = results['update']
+        to_update_gene_symbol = results['update_symbol']
+        to_delete = results['delete']
+        for p in GenePanelSnapshot.objects.get_active(all=True):
+            p.increment_version()
+
+        for record in to_insert:
+            new_gene = Gene.from_dict(record)
+            if not new_gene.ensembl_genes:
+                new_gene.active = False
+            new_gene.save()
+            logger.debug("Inserted {} gene".format(record['gene_symbol']))
+
+        for record in to_update:
+            try:
+                gene = Gene.objects.get(gene_symbol=record['gene_symbol'])
+            except Gene.DoesNotExist:
+                gene = Gene(gene_symbol=record['gene_symbol'])
+
+            gene.gene_name = record.get('gene_name', None)
+            gene.ensembl_genes = record.get('ensembl_genes', {})
+            gene.omim_gene = record.get('omim_gene', [])
+            gene.alias = record.get('alias', [])
+            gene.biotype = record.get('biotype', 'unknown')
+            gene.alias_name = record.get('alias_name', [])
+            gene.hgnc_symbol = record['hgnc_symbol']
+            gene.hgnc_date_symbol_changed = record.get('hgnc_date_symbol_changed', None)
+            gene.hgnc_release = record.get('hgnc_release', None)
+            gene.hgnc_id = record.get('hgnc_id', None)
+            if not gene.ensembl_genes:
+                gene.active = False
+            
+            gene.clean_import_dates(record)
+
+            gene.save()
+            for gene_entry in GenePanelEntrySnapshot.objects.get_active().filter(
+                    gene_core__gene_symbol=record['gene_symbol']):
+                gene_entry.gene_core = gene
+                gene_entry.gene = gene.dict_tr()
+                gene_entry.save()
+            logger.debug("Updated {} gene".format(record['gene_symbol']))
+
+        for record in to_update_gene_symbol:
+            active = True
+            if not record[0].get('ensembl_genes', {}):
+                active = False
+            
+            # some dates are in the wrong format: %d-%m-%y, Django expects %Y-%m-%-d
+            if record[0].get('hgnc_date_symbol_changed', '') and  len(record[0].get('hgnc_date_symbol_changed', '')) == 8:
+                record[0]['hgnc_date_symbol_changed'] = datetime.strptime(record[0]['hgnc_date_symbol_changed'], '%d-%m-%y')
+
+            if record[0].get('hgnc_release', '') and len(record[0].get('hgnc_release', '')) == 8:
+                record[0]['hgnc_release'] = datetime.strptime(record[0]['hgnc_release'], '%d-%m-%y')
+
+            try:
+                new_gene = Gene.objects.get(gene_symbol=record[0]['gene_symbol'])
+            except Gene.DoesNotExist:
+                new_gene = Gene()
+
+            new_gene.gene_symbol = record[0]['gene_symbol']
+            new_gene.gene_name = record[0].get('gene_name', None)
+            new_gene.ensembl_genes = record[0].get('ensembl_genes', {})
+            new_gene.omim_gene = record[0].get('omim_gene', [])
+            new_gene.alias = record[0].get('alias', [])
+            new_gene.biotype = record[0].get('biotype', 'unknown')
+            new_gene.alias_name = record[0].get('alias_name', [])
+            new_gene.hgnc_symbol = record[0]['hgnc_symbol']
+            new_gene.hgnc_date_symbol_changed = record[0].get('hgnc_date_symbol_changed', None)
+            new_gene.hgnc_release = record[0].get('hgnc_release', None)
+            new_gene.hgnc_id = record[0].get('hgnc_id', None)
+            new_gene.active = active
+
+            new_gene.clean_import_dates(record[0])
+            new_gene.save()
+            
+            for gene_entry in GenePanelEntrySnapshot.objects.get_active().filter(
+                    gene_core__gene_symbol=record[1]):
+                gene_entry.gene_core = new_gene
+                gene_entry.gene = new_gene.dict_tr()
+                gene_entry.save()
+            
+            try:
+                d = Gene.objects.get(gene_symbol=record[1])
+                d.active = False
+                d.save()
+                logger.debug("Updated {} gene. Renamed to {}".format(record[1], record[0]['gene_symbol']))
+            except Gene.DoesNotExist:
+                logger.debug("Created {} gene. Old gene {} didn't exist".format(record[0]['gene_symbol'], record[1]))
+
+        for record in to_delete:
+            gene_in_panels = GenePanelEntrySnapshot.objects.get_active().filter(gene_core__gene_symbol=record)
+            if gene_in_panels.count() > 0:
+                distinct_panels = gene_in_panels.distinct().values_list('panel__panel__name', flat=True)
+                logger.warning("Deleted {} gene, this one is still used in {}".format(record, distinct_panels))
+            
+            try:
+                old_gene = Gene.objects.get(gene_symbol=record)
+                old_gene.active = False
+                old_gene.save()
+                logger.debug("Deleted {} gene".format(record))
+            except Gene.DoesNotExist:
+                logger.debug("Didn't delete {} gene - doesn't exist".format(record))
+
+
 class UploadedGeneList(TimeStampedModel):
     imported = models.BooleanField(default=False)
     gene_list = models.FileField(upload_to='genes', max_length=255)
@@ -25,49 +135,11 @@ class UploadedGeneList(TimeStampedModel):
     def create_genes(self):
         with open(self.gene_list.path) as file:
             logger.info('Started importing list of genes')
-            header = file.readline()  # noqa
-
-            with transaction.atomic():
-                for line in file:
-                    l = line.split("\t")
-                    symbol = l[1]
-                    name = l[1]
-                    OMIM = l[33].split(", ")[0]
-
-                    transcripts = self.get_other_transcripts(symbol)
-
-                    Gene.objects.get_or_create(
-                        gene_symbol=symbol,
-                        gene_name=name,
-                        omim_gene=OMIM,
-                        other_transcripts=transcripts
-                    )
-
-                    logger.debug("Imported {} gene".format(symbol))
+            results = json.load(file)
+            update_gene_collection(results)
 
             self.imported = True
             self.save()
-
-    def get_other_transcripts(self, gene_symbol, biotype="protein_coding"):
-        connector = CellBaseConnector()
-        genes = [gene_symbol.replace("/", "_").replace("#", "")]
-        results = [gene for gene in connector.get_coding_transcripts_by_length(genes)]
-        logger.debug("{} Received {} results from CellBaseConnector url({})".format(
-            gene_symbol, len(results), connector.url)
-        )
-        transcripts = []
-        if len(results) > 0:
-            if len(results[0]) > 0:
-                all_transcripts = []
-                for trn in results[0]:
-                    for t in trn["transcripts"]:
-                        all_transcripts.append(t)
-
-                transcripts = [t for t in all_transcripts if t["biotype"] == biotype]
-                for t in transcripts:
-                    t["name"] = t["id"]
-                    del t["id"]
-        return transcripts
 
 
 class UploadedPanelList(TimeStampedModel):
@@ -127,16 +199,12 @@ class UploadedPanelList(TimeStampedModel):
                             'publications': publication,
                             'sources': source,
                             'gene_symbol': gene_symbol,
-                            'flagged': flagged
+                            'flagged': flagged,
+                            'omim': omim
                         }
                         if fresh_panel or not active_panel.has_gene(gene_symbol):
                             try:
-                                gene = Gene.objects.get(gene_symbol=gene_symbol)
-                                name = gene.gene_name
-                                other_transcripts = gene.other_transcripts
-                                gene_data['gene_name'] = name
-                                gene_data['omim'] = omim
-                                gene_data['other_transcripts'] = other_transcripts
+                                Gene.objects.get(gene_symbol=gene_symbol, active=True)
                             except Gene.DoesNotExist:
                                 raise GeneDoesNotExist(str(i + 2))
                             active_panel.add_gene(user, gene_symbol, gene_data)

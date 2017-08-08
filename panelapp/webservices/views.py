@@ -106,7 +106,11 @@ def get_panel(request, panel_name):
 
         gene_list = queryset[0].get_all_entries
 
-    serializer = PanelSerializer(filter_gene_list(gene_list, **filters), instance=queryset[0])
+    serializer = PanelSerializer(
+        filter_gene_list(gene_list, **filters),
+        instance=queryset[0],
+        context={'request': request}
+    )
     return Response(serializer.data)
 
 
@@ -166,7 +170,11 @@ def search_by_gene(request, gene):
     if genes_qs:
         genes = genes.filter(genes_qs)
 
-    serializer = GenesSerializer(filter_gene_list(genes, **post_filters), instance=queryset)
+    serializer = GenesSerializer(
+        filter_gene_list(genes, **post_filters),
+        instance=queryset,
+        context={'request': request}
+    )
     data["results"] = serializer.to_representation(panels_ids_dict)
     data["meta"]["numOfResults"] = len(data["results"])
     return Response(data)

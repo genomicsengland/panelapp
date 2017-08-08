@@ -16,7 +16,7 @@
 </h1>
 
 <p class="lead">
-  {{ gene.gene_name }}<br />{% if gene.omim_gene %}<a href="http://omim.org/entry/{{ gene.omim_gene }}" target="_blank">OMIM: {{ gene.omim_gene }}</a>, {% endif %}<a href=" http://www.ebi.ac.uk/gene2phenotype/gene2phenotype-webcode/cgi-bin/handler.cgi?panel=ALL&search_term={{ gene.gene_symbol }}" target="_blank">Gene2Phenotype</a>
+  {{ gene.gene_name }}<br />{% if gene.omim_gene|length > 0 %}<a href="http://omim.org/entry/{{ gene.omim_gene.0 }}" target="_blank">OMIM: {{ gene.omim_gene.0 }}</a>, {% endif %}<a href=" http://www.ebi.ac.uk/gene2phenotype/gene2phenotype-webcode/cgi-bin/handler.cgi?panel=ALL&search_term={{ gene.gene_symbol }}" target="_blank">Gene2Phenotype</a>
 </p>
 
 {% if entries|length > 0 %}

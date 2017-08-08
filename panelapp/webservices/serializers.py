@@ -1,13 +1,38 @@
 from rest_framework import serializers
+from rest_framework.exceptions import APIException
+
 from .utils import make_null
 from .utils import convert_moi
 from .utils import convert_gel_status
 
+class NotAcceptedValue(APIException):
+    status_code = 404
+    default_detail = 'Unaccepted value for one of the fields.'
+    default_code = 'bad_request'
 
 class PanelSerializer(serializers.BaseSerializer):
     def __init__(self, list_of_genes, **kwargs):
         super(PanelSerializer, self).__init__(**kwargs)
         self.list_of_genes = list_of_genes
+
+    def get_ensemblId(self, gene):
+        query_prams = self.context['request'].query_params
+        assembly = 'GRch37'
+        version = '82'
+        if 'assembly' in query_prams:
+            if query_prams['assembly'].lower() == 'grch38':
+                assembly = 'GRch38'
+                version = '89'
+            elif query_prams['assembly'].lower() == 'grch37':
+                assembly = 'GRch37'
+                version = '82'
+            else:
+                raise NotAcceptedValue(detail='Unaccepted value for assembly, please use: GRch37 or GRch38')
+
+        ensemblId = gene.gene.get('ensembl_genes').get(assembly, {}).get(version)
+        if ensemblId is None:
+            return []
+        return [ensemblId]
 
     def to_representation(self, panel):
         result = {
@@ -21,7 +46,7 @@ class PanelSerializer(serializers.BaseSerializer):
         }
 
         for gene in self.list_of_genes:
-            ensemblId = set([t.get('geneid') for t in gene.gene.get('other_transcripts')])
+            ensemblId = self.get_ensemblId(gene)
             result["result"]["Genes"].append({
                 "GeneSymbol": gene.gene.get('gene_symbol'),
                 "EnsembleGeneIds": make_null(ensemblId),
@@ -53,11 +78,31 @@ class GenesSerializer(serializers.BaseSerializer):
     def update(self, instance, validated_data):
         pass
 
+    def get_ensemblId(self, gene):
+        query_prams = self.context['request'].query_params
+
+        assembly = 'GRch37'
+        version = '82'
+        if 'assembly' in query_prams:
+            if query_prams['assembly'].lower() == 'grch38':
+                assembly = 'GRch38'
+                version = '89'
+            elif query_prams['assembly'].lower() == 'grch37':
+                assembly = 'GRch37'
+                version = '82'
+            else:
+                raise NotAcceptedValue(detail='Unaccepted value for assembly, please use: GRch37 or GRch38')
+
+        ensemblId = gene.gene.get('ensembl_genes').get(assembly, {}).get(version)
+        if ensemblId is None:
+            return []
+        return [ensemblId]
+
     def to_representation(self, panels):
         result = []
         for gene in self.list_of_genes:
             panel = panels[gene.panel.panel.pk][1]
-            ensemblId = set([t.get('geneid') for t in gene.gene.get('other_transcripts')])
+            ensemblId = self.get_ensemblId(gene)
             result.append({
                 "GeneSymbol": gene.gene.get('gene_symbol'),
                 "EnsembleGeneIds": make_null(ensemblId),
