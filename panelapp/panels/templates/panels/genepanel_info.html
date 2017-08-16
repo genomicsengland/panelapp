@@ -5,7 +5,7 @@
     <div class="panel-body">
         <pre class="panel-description">{{ panel.level4title.description }}</pre>
     </div>
-    {% if request.user.reviewer.is_GEL %}
+    {% if request.user.is_authenticated and request.user.reviewer.is_GEL %}
     <div class="panel-footer">
         <a href="#editform" class="btn btn-default" data-module="showhide" data-show=".panel-form" data-hide=".panel-default">
             <i class="fa fa-edit"></i> Edit panel
@@ -13,7 +13,7 @@
     </div>
     {% endif %}
 </div>
-{% if request.user.reviewer.is_GEL %}
+{% if request.user.is_authenticated and request.user.reviewer.is_GEL %}
 <div class="well panel-form hidden">
     <form class="form" action="{% url 'panels:update' panel.panel.id %}" method="post">{% csrf_token %}
         <fieldset>

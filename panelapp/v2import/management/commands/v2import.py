@@ -1,9 +1,12 @@
 import os
 import ijson
 try:
-    import simplejson as json
+    import ujson as json
 except ImportError:
-    import json
+    try:
+        import simplejson as json
+    except ImportError:
+        import json
 from datetime import datetime
 from django.core.management.base import BaseCommand
 from django.db import transaction
@@ -45,8 +48,9 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument('dump_path', type=str, help="Full path to the dump location")
+        parser.add_argument('--backups_only', action='store_true', dest='backups_only', default=False, help="Only import panel backups")
 
-    def handle(self, dump_path, *args, **options):
+    def handle(self, dump_path, backups_only, *args, **options):
         if not os.path.isdir(dump_path):
             self.stderr.write("Can't find v1 dump location")
             os.sys.exit(1)
@@ -58,14 +62,18 @@ class Command(BaseCommand):
             os.sys.exit(1)
 
         with transaction.atomic():
-            self.import_users()
-            self.import_admin_files()
-            self.import_genes()
-            self.import_gene_panels()
-            self.import_activities()
-            self.import_gene_panel_entries()
-            self.import_backup_panels()
-            self.migrate_genes()
+            if backups_only is True:
+                self.load_users_from_database()
+                self.load_genes_from_database()
+                self.import_backup_panels()
+            else:
+                self.import_users()
+                self.import_admin_files()
+                self.import_genes()
+                self.import_gene_panels()
+                self.import_activities()
+                self.import_gene_panel_entries()
+                self.migrate_genes()
 
     def _iterate_file(self, filename, json_path):
         with open(os.path.join(self.files_path, filename), 'r') as f:
@@ -77,10 +85,21 @@ class Command(BaseCommand):
         with open(os.path.join(self.files_path, 'new_genes.json'), 'r') as genes_json:
             update_gene_collection(json.load(genes_json))
 
+    def load_users_from_database(self):
+        for user in User.objects.all():
+            self.users[user.username] = user
+
+    def load_genes_from_database(self):
+        for gene in Gene.objects.all():
+            self.genes[gene.gene_symbol] = gene
+
     def import_backup_panels(self):
         total = 0
         for gp in self._iterate_file('gene_panel_backups.json', 'gene_backups.item'):
             total += 1
+            if total % 100 == 0:
+                print('total backup panels created: {}'.format(total))
+
             _gp = self.gene_panels.get(gp['pk'])
             if not _gp:
                 try:
@@ -105,24 +124,29 @@ class Command(BaseCommand):
         if not gene:
             try:
                 gene = Gene.objects.get(gene_symbol=gpe['gene']['gene_symbol'])
+                self.genes[gpe['gene']['gene_symbol']] = gene
             except Gene.DoesNotExist:
                 gene = Gene.objects.create(
                     gene_symbol=gpe['gene']['gene_symbol'],
                     gene_name=gpe['gene']['gene_name'],
                     omim_gene=[gpe['gene']['omim_gene'],],
-                    ensembl_genes="{}"
+                    ensembl_genes="{}",
+                    active=False
                 )
                 self.stdout.write("Gene:{} not in database, creating".format(gpe['gene']['gene_symbol']))
 
-        gel_status = gpe['track'][-1]['gel_status']
-        if gpe['flagged']:
+        try:
+            gel_status = gpe['track'][-1]['gel_status']
+            if gpe['flagged']:
+                gel_status = 0
+            elif gel_status < 2:
+                gel_status = 1
+            elif gel_status == 2:
+                gel_status = 2
+            else:
+                gel_status = 3
+        except IndexError:
             gel_status = 0
-        elif gel_status < 2:
-            gel_status = 1
-        elif gel_status == 2:
-            gel_status = 2
-        else:
-            gel_status = 3
 
         gpes = GenePanelEntrySnapshot.objects.create(
             panel=panel,
@@ -163,7 +187,7 @@ class Command(BaseCommand):
             else:
                 r = ''
 
-            user = self.users[evaluation['user']]
+            user = self.get_create_user(evaluation['user'])
             if evaluation['publications']:
                 publications = [p for p in evaluation['publications'] if p]
             else:
@@ -228,12 +252,13 @@ class Command(BaseCommand):
                 else:
                     new_it.add(it)
 
-            user = self.users.get(track['user'])
-            if not user:
-                user = self.users[track['user']] = User.objects.create(
+            track_user = self.users.get(track['user'])
+            if not track_user:
+                track_user = self.users[track['user']] = User.objects.create(
                     username=track['user'],
                     first_name=track['user']
                 )
+                
                 Reviewer.objects.create(
                     user=self.users[track['user']],
                     user_type="REVIEWER",
@@ -246,7 +271,7 @@ class Command(BaseCommand):
             t = TrackRecord.objects.create(
                 created=date,
                 modified=date,
-                user=user,
+                user=track_user,
                 gel_status=track['gel_status'],
                 curator_status=track['curator_status'],
                 issue_type=",".join(new_it),
@@ -262,8 +287,8 @@ class Command(BaseCommand):
                 gpes.tags.add(t[0])
 
         if gpe.get('curator_comments'):
-            date = timezone.make_aware(convert_date(comment['date']), self.tz)
             for comment in gpe['curator_comments']:
+                date = timezone.make_aware(convert_date(comment['date']), self.tz)
                 c = Comment.objects.create(
                     user=self.users[comment['user']],
                     comment=comment['comment'],
@@ -446,6 +471,34 @@ class Command(BaseCommand):
             _r.imported = True
             _r.save()
         self.stdout.write('Created {} review lists'.format(total))
+
+    def get_create_user(self, username):
+        "Get user from local cache or create if it doesn't exist"
+
+        try:
+            user = self.users[username]
+        except KeyError:
+            user = User.objects.create(
+                username=username,
+                is_superuser=False,
+                is_staff=False,
+                is_active=False,
+                email='uknown-user-{}@example.com'.format(username),
+                first_name='',
+                last_name=''
+            )
+
+            Reviewer.objects.create(
+                user=user,
+                user_type=Reviewer.TYPES.EXTERNAL,
+                affiliation='',
+                workplace=Reviewer.WORKPLACES.Other,
+                role=Reviewer.ROLES.Other,
+                group=Reviewer.GROUPS.Other
+            )
+            self.users[username] = user
+
+        return user
 
     def import_users(self):
         total = 0

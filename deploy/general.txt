@@ -31,3 +31,4 @@ requests==2.18.2
 
 #v2import dependencies
 ijson==2.3
+ujson==1.3.5

@@ -63,13 +63,13 @@
 >
 <td class="text-right">
     <span class="gel-banner gel-banner-block {{ entry|gene_list_class }}" title="{{ entry|gene_list_name }}">
-        {{ entry|gene_list_short_name }}{% if entry.ready and request.user.reviewer.is_GEL %}<br /><span class="gene-cell-ready">Ready</span>{% endif %}
+        {{ entry|gene_list_short_name }}{% if entry.ready and request.user.is_authenticated and request.user.reviewer.is_GEL %}<br /><span class="gene-cell-ready">Ready</span>{% endif %}
     </span>
-    {% if not entry.ready and request.user.reviewer.is_GEL %}
+    {% if not entry.ready and request.user.is_authenticated and request.user.reviewer.is_GEL %}
         <span class="rm">Not ready</span>
     {% endif %}
     <span class="rm">{{ entry|gene_list_name }}</span>
-    {% if request.user.reviewer.is_GEL %}
+    {% if request.user.is_authenticated and request.user.reviewer.is_GEL %}
       <div class="add-top-margin">
         <a href="#lock_{{ entry.gene.gene_symbol }}" class="hidden lock_{{ entry.gene.gene_symbol }}" data-module="showhide" data-show="a.btn.unlock_{{ entry.gene.gene_symbol }}" data-hide="a.lock_{{ entry.gene.gene_symbol }}, a.btn.delete_gene_{{ entry.gene.gene_symbol }}, a.btn.delete_source_{{ entry.gene.gene_symbol }}"> <i class="fa fa-lock fa-lg"></i></a>
         <a href="#unlock_{{ entry.gene.gene_symbol }}" class="unlock_{{ entry.gene.gene_symbol }}" data-module="showhide" data-show="a.btn.lock_{{ entry.gene.gene_symbol }}, a.delete_gene_{{ entry.gene.gene_symbol }}, a.delete_source_{{ entry.gene.gene_symbol }}" data-hide="a.btn.unlock_{{ entry.gene.gene_symbol }}" onClick="alert('{{ 'Gene '|add:entry.gene.gene_symbol|add:' is now unlocked, and you can delete it.' }}')"> <i class="fa fa-unlock fa-lg"></i></a>
@@ -90,7 +90,7 @@
     {% if request.user.is_authenticated %}
       {% if entry|reviewed_by:request.user %}
           <div class="text-muted add-bottom-margin"><i class="fa fa-check"></i> You reviewed</div>
-      {% elif request.user.reviewer.is_verified %}
+      {% elif request.user.is_authenticated and request.user.reviewer.is_verified %}
           <div class="text-muted add-bottom-margin">
               <a href="{% url 'panels:evaluation' panel.panel.id entry.gene.gene_symbol %}" class="link-muted">Add review</a>
           </div>
@@ -125,7 +125,7 @@
           <li>
             {{ ev.name }}
 
-            {% if request.user.reviewer.is_GEL %}
+            {% if request.user.is_authenticated and request.user.reviewer.is_GEL %}
               <a type="url" href="{% url 'panels:clear_gene_source' panel.id entry.gene.gene_symbol ev.name %}" class="hidden delete_source_{{ entry.gene.gene_symbol }}" data-ajax="true"> <i class="fa fa-times-circle-o"></i></a>
             {% endif %}
           </li>
@@ -153,7 +153,7 @@
 </tr>
 {% endfor %}
 </tbody>
-{% if request.user.reviewer.is_verified %}
+{% if request.user.is_authenticated and request.user.reviewer.is_verified %}
 <tfoot>
     <tr class="table-header">
         <td colspan="100">

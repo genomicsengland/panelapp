@@ -79,7 +79,7 @@ class Reviewer(models.Model):
 
     user = models.OneToOneField(User)
     user_type = models.CharField(max_length=255, choices=TYPES, default=TYPES.EXTERNAL)
-    affiliation = models.CharField(max_length=255)
+    affiliation = models.CharField(max_length=1024)
     workplace = models.CharField(max_length=255, choices=WORKPLACES)
     role = models.CharField(max_length=255, choices=ROLES)
     group = models.CharField(max_length=255, choices=GROUPS)
