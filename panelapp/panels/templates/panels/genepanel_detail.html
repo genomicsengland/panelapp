@@ -48,7 +48,7 @@
                       <p class="text-muted">
                           Group: {{ contributor.reviewer.group }}<br />
                           Workplace: {{ contributor.reviewer.workplace }}
-                          {% if request.user.reviewer.is_GEL %}
+                          {% if request.user.is_authenticated and request.user.reviewer.is_GEL %}
                               <br /><a href="mailto:{{ contributor.email }}" class="link-muted word-break">{{ contributor.email }}</a>
                           {% endif %}
                       </p>
@@ -60,7 +60,7 @@
   </div>
 
   <h2 class="add-label-margin">{{ panel.get_all_entries.count }} gene{{ panel.get_all_entries.count|pluralize}}</h2>
-  <h3 class="text-muted normal remove-top-margin add-bottom-margin">{{ panel.stats.number_of_evaluated_genes }} reviewed{% if request.user.reviewer.is_GEL %}, {{ panel.stats.number_of_ready_genes }} ready{% endif %}, {{ panel.stats.number_of_green_genes }} green</h3>
+  <h3 class="text-muted normal remove-top-margin add-bottom-margin">{{ panel.stats.number_of_evaluated_genes }} reviewed{% if request.user.is_authenticated and request.user.reviewer.is_GEL %}, {{ panel.stats.number_of_ready_genes }} ready{% endif %}, {{ panel.stats.number_of_green_genes }} green</h3>
 
   <div data-module="sortable-table" data-default-key="gene">
       <div class="table-responsive" data-module="filterable-table">
@@ -79,7 +79,7 @@
       </ul>
   {% endif %}
 
-  {% if request.user.reviewer.is_GEL %}
+  {% if request.user.is_authenticated and request.user.reviewer.is_GEL %}
       <h3 class="add-top-margin">Promote to version {{ panel.major_version|add:"1" }}</h3>
       <div class="well">
           <p>Promoting a panel will:</p>
