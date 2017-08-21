@@ -407,39 +407,48 @@ class Command(BaseCommand):
         for ht in self._iterate_file('admin.json', 'hometext.item'):
             total += 1
 
-            s = ht['section']
-            if s == 0:
-                title = "Home"
-                href = ""
+            s = int(ht['section'])
+            print('-'*80)
+            print(s)
+
             if s == 1:
+                title = "Home"
+                href = "Introduction"
+            elif s == 2:
                 title = "Gene Panel Guidelines"
                 href = "Principles"
-            if s == 2:
+            elif s == 3:
                 title = "The Role of Expert Reviewers"
                 href = "Reviewers"
-            if s == 3:
+            elif s == 4:
                 title = "News"
                 href = "Guidelines"
-            if s == 4:
+            elif s == 5:
                 title = "PanelApp Instructions"
                 href = "Instructions"
-            if s == 5:
+            elif s == 6:
                 title = "How to..."
                 href = "HowTo"
-            if s == 6:
+            elif s == 7:
                 title = "FAQs"
                 href = "FAQs"
-            if s == 7:
+            elif s == 8:
                 title = "Contact, Sources and Glossary"
                 href = "Information"
             else:
                 title = ht['text'][:10]
                 href = ht['text'][:10]
+            
+            text = ht['text'].replace('/static/uploads/', '/media/')
+            text = text.replace(
+                'https://panelapp.extge.co.uk/crowdsourcing/PanelApp/',
+                'https://panelapp.extge.co.uk'
+            )
 
             if HomeText.objects.filter(href=href).count() == 0:
                 ht = HomeText.objects.create(
                     section=s,
-                    text=ht['text'].replace('/static/uploads/', '/media/'),
+                    text=text,
                     title=title,
                     href=href
                 )

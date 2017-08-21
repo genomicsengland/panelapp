@@ -54,11 +54,17 @@ def get_panel(request, panel_name):
         major_version = int(version.split(".")[0])
         minor_version = int(version.split(".")[1])
         queryset = GenePanel.objects.filter(name=panel_name)
+        if queryset.first():
+            queryset = [queryset[0].active_panel]
         if not queryset:
             queryset = GenePanelSnapshot.objects.get_active().filter(old_panels__icontains=panel_name)
             if not queryset:
                 try:
-                    queryset = GenePanelSnapshot.objects.get_active().filter(panel__id=panel_name)
+                    try:
+                        int(panel_name)
+                        queryset = GenePanelSnapshot.objects.get_active().filter(panel__id=panel_name)
+                    except ValueError:
+                        queryset = GenePanelSnapshot.objects.get_active().filter(panel__old_pk=panel_name)
                     if not queryset:
                         return Response({"Query Error: " + panel_name + " not found."})
                 except DatabaseError:
@@ -72,11 +78,19 @@ def get_panel(request, panel_name):
             )
 
             if not queryset:
-                queryset = GenePanelSnapshot.objects.filter(
-                    panel__pk=panel_name,
-                    major_version=major_version,
-                    minor_version=minor_version
-                )
+                try:
+                    int(panel_name)
+                    queryset = GenePanelSnapshot.objects.filter(
+                        panel__pk=panel_name,
+                        major_version=major_version,
+                        minor_version=minor_version
+                    )
+                except ValueError:
+                    queryset = GenePanelSnapshot.objects.filter(
+                        panel__old_pk=panel_name,
+                        major_version=major_version,
+                        minor_version=minor_version
+                    )
 
             if not queryset:
                 return Response({"Query Error: The version requested for panel:" + panel_name + " was not found."})
@@ -87,23 +101,29 @@ def get_panel(request, panel_name):
             gene_list = queryset[0].get_all_entries
 
     else:
-        queryset = GenePanelSnapshot.objects.get_active().filter(
-            panel__name__icontains=panel_name,
-            panel__approved=True
-        )
-        if not queryset:
-            queryset = GenePanelSnapshot.objects.get_active().filter(
-                old_panels__icontains=panel_name,
-                panel__approved=True
-            )
-            if not queryset:
-                try:
-                    queryset = GenePanelSnapshot.objects.filter(panel__pk=panel_name, panel__approved=True)
-                    if not queryset:
-                        return Response({"Query Error: " + panel_name + " not found."})
-                except (DatabaseError, ValueError):
-                    return Response({"Query Error: " + panel_name + " not found."})
+        queryset = GenePanelSnapshot.objects.get_active().filter(panel__approved=True)
 
+        queryset_name = queryset.filter(panel__name__icontains=panel_name)
+        if not queryset_name:
+            queryset_old_names = queryset_name.filter(old_panels__icontains=panel_name)
+            if not queryset_old_names:
+                try:
+                    try:
+                        int(panel_name)
+                        queryset_pk = queryset.filter(panel__pk=panel_name)
+                    except ValueError:
+                        queryset_pk = queryset.filter(panel__old_pk=panel_name)
+
+                    if not queryset_pk:
+                        return Response({"Query Error: " + panel_name + " not found."})
+                    else:
+                        queryset = queryset_pk
+                except (DatabaseError, ValueError) as e:
+                    return Response({"Query Error: " + panel_name + " not found."})
+            else:
+                queryset = queryset_old_names
+        else:
+            queryset = queryset_name
         gene_list = queryset[0].get_all_entries
 
     serializer = PanelSerializer(

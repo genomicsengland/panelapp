@@ -62,7 +62,7 @@ class UserAdmin(DjangoObjectActions, BaseUserAdmin):
     fieldsets = (
         (None, {'fields': ('email', 'password')}),
         ('Personal info', {'fields': ('first_name', 'last_name',)}),
-        ('Permissions', {'fields': ('is_staff',)}),
+        ('Permissions', {'fields': ('is_staff', 'is_superuser', 'is_active',)}),
     )
     add_fieldsets = (
         (None, {

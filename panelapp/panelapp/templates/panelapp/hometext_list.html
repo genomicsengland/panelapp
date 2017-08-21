@@ -27,7 +27,7 @@
       <div id="myTabContent" class="tab-content">
         {% for hometext in object_list %}
         <div class="tab-pane active in" id="{{ hometext.href }}">
-          <div class="copy-container">{{ hometext.text|markdown }}</div>
+          <div class="copy-container">{{ hometext.render_markdown|safe }}</div>
         </div>
         {% endfor %}
       </div>
