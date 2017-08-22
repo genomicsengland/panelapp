@@ -63,10 +63,17 @@ class ComparePanelsForm(forms.Form):
     panel_2 = forms.ModelChoiceField(queryset=panels, widget=forms.Select(attrs={'class': 'form-control'}))
 
     def __init__(self, *args, **kwargs):
-        qs = kwargs.pop('panels')
+        qs = None
+
+        try:
+            qs = kwargs.pop('panels')
+        except KeyError:
+            pass
+
         super(ComparePanelsForm, self).__init__(*args, **kwargs)
-        self.fields['panel_1'].queryset = qs
-        self.fields['panel_2'].queryset = qs
+        if qs:
+            self.fields['panel_1'].queryset = qs
+            self.fields['panel_2'].queryset = qs
 
 
 class CopyReviewsForm(forms.Form):

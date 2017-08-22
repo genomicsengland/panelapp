@@ -68,7 +68,7 @@ class PanelsIndexView(ListView):
 
     @cached_property
     def compare_panels_form(self):
-        return ComparePanelsForm(panels=self.panels)
+        return ComparePanelsForm()
 
     def get_context_data(self, *args, **kwargs):
         ctx = super().get_context_data(*args, **kwargs)

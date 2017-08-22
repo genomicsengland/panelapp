@@ -46,7 +46,7 @@
                 <div class="input-group">
                     <input id="gene-filter" type="text" class="form-control normal js-filter-table-input" placeholder="Filter genes">
                     <span class="input-group-addon js-filter-table-count" data-singular="gene" data-plural="genes">
-                        {{ panel.get_all_entries|length }} gene{{panel.get_all_entries|pluralize}}
+                        {{ panel.get_all_entries|length }} gene{{panel.get_all_entries|length|pluralize}}
                     </span>
                 </div>
             </form>
@@ -59,7 +59,7 @@
     data-gene="{{ entry.gene.gene_symbol }}"
     data-list-index="{{ entry.status }}"
     data-moi="{{ entry.moi }}"
-    data-reviews="{{ entry.evaluation.count }}"
+    data-reviews="{{ entry.evaluation|length }}"
 >
 <td class="text-right">
     <span class="gel-banner gel-banner-block {{ entry|gene_list_class }}" title="{{ entry|gene_list_name }}">
@@ -86,28 +86,30 @@
     </h5>
 </td>
 <td>
-    <h5 class="normal gene-cell-title add-label-margin text-muted">{{ entry.evaluation.count }} review{{entry.evaluation.count|pluralize}}</h5>
-    {% if request.user.is_authenticated %}
-      {% if entry|reviewed_by:request.user %}
-          <div class="text-muted add-bottom-margin"><i class="fa fa-check"></i> You reviewed</div>
-      {% elif request.user.is_authenticated and request.user.reviewer.is_verified %}
-          <div class="text-muted add-bottom-margin">
-              <a href="{% url 'panels:evaluation' panel.panel.id entry.gene.gene_symbol %}" class="link-muted">Add review</a>
-          </div>
-      {% endif %}
-    {% endif %}
-    {% if entry.evaluation.count > 0 %}
-      {% if entry.number_of_green_evaluations > 0 %}
-      <span class="add-right-margin gel-text gel-green">
-          {{ entry.number_of_green_evaluations }} green
-      </span>
-      {% endif %}
-      {% if entry.number_of_red_evaluations > 0 %}
-      <span class="add-right-margin gel-text gel-red">
-          {{ entry.number_of_red_evaluations }} red
-      </span>
-      {% endif %}
-    {% endif %}
+    {% with evaluation_count=entry.evaluation.count %}
+        <h5 class="normal gene-cell-title add-label-margin text-muted">{{ evaluation_count }} review{{evaluation_count|pluralize}}</h5>
+        {% if request.user.is_authenticated %}
+        {% if request.user.pk in entry.evaluators %}
+            <div class="text-muted add-bottom-margin"><i class="fa fa-check"></i> You reviewed</div>
+        {% elif request.user.is_authenticated and request.user.reviewer.is_verified %}
+            <div class="text-muted add-bottom-margin">
+                <a href="{% url 'panels:evaluation' panel.panel.id entry.gene.gene_symbol %}" class="link-muted">Add review</a>
+            </div>
+        {% endif %}
+        {% endif %}
+        {% if evaluation_count > 0 %}
+        {% if entry.number_of_green_evaluations > 0 %}
+        <span class="add-right-margin gel-text gel-green">
+            {{ entry.number_of_green_evaluations }} green
+        </span>
+        {% endif %}
+        {% if entry.number_of_red_evaluations > 0 %}
+        <span class="add-right-margin gel-text gel-red">
+            {{ entry.number_of_red_evaluations }} red
+        </span>
+        {% endif %}
+        {% endif %}
+    {% endwith %}
 </td>
 <td>
     {% if entry.moi %}

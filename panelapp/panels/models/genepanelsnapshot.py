@@ -4,7 +4,9 @@ from django.db.models import Count
 from django.db.models import Case
 from django.db.models import When
 from django.db.models import Subquery
+from django.db.models import OuterRef
 from django.contrib.postgres.fields import ArrayField
+from django.contrib.postgres.aggregates import ArrayAgg
 from django.utils.functional import cached_property
 from model_utils.models import TimeStampedModel
 
@@ -45,7 +47,7 @@ class GenePanelSnapshotManager(models.Manager):
 
         return self.get_active(all)\
             .annotate(
-                number_of_reviewers=Count('genepanelentrysnapshot__evaluation__user', distinct=True),
+                number_of_reviewers=Count('genepanelentrysnapshot__evaluation__user__pk', distinct=True),
                 number_of_evaluated_genes=Count(Case(
                     # Count unique genes if that gene has more than 1 evaluation
                     When(
@@ -53,7 +55,7 @@ class GenePanelSnapshotManager(models.Manager):
                         then=models.F('genepanelentrysnapshot__pk')
                     )
                 ), distinct=True),
-                number_of_genes=Count('genepanelentrysnapshot', distinct=True),
+                number_of_genes=Count('genepanelentrysnapshot__pk', distinct=True),
             )
 
     def get_gene_panels(self, gene_symbol):
@@ -74,14 +76,17 @@ class GenePanelSnapshot(TimeStampedModel):
     """
     class Meta:
         get_latest_by = "created"
-        ordering = ['-major_version', '-minor_version', '-created']
+        ordering = ['-major_version', '-minor_version',]
+        indexes = [
+            models.Index(fields=['panel_id']),
+        ]
 
     objects = GenePanelSnapshotManager()
 
     level4title = models.ForeignKey(Level4Title)
     panel = models.ForeignKey(GenePanel)
-    major_version = models.IntegerField(default=0)
-    minor_version = models.IntegerField(default=0)
+    major_version = models.IntegerField(default=0, db_index=True)
+    minor_version = models.IntegerField(default=0, db_index=True)
     version_comment = models.TextField(null=True)
     old_panels = ArrayField(models.CharField(max_length=255), blank=True, null=True)
 
@@ -220,7 +225,7 @@ class GenePanelSnapshot(TimeStampedModel):
         "Returns all Genes for this panel"
 
         return self.genepanelentrysnapshot_set\
-            .prefetch_related('evidence', 'evaluation', 'tags')\
+            .prefetch_related('evidence', 'evaluation', 'evaluation__user', 'tags')\
             .annotate(
                 number_of_green_evaluations=Count(Case(When(
                     evaluation__rating="GREEN", then=models.F('evaluation__pk'))
@@ -231,8 +236,9 @@ class GenePanelSnapshot(TimeStampedModel):
                 number_of_red_evaluations=Count(Case(When(
                     evaluation__rating="RED", then=models.F('evaluation__pk'))
                 ), distinct=True),
+                evaluators=ArrayAgg('evaluation__user__pk')
             )\
-            .order_by('-saved_gel_status', 'gene_core__gene_symbol', '-created')
+            .order_by('-saved_gel_status', 'gene_core__gene_symbol')
 
     def get_gene(self, gene_symbol):
         "Get a gene for a specific gene symbol."

@@ -61,12 +61,12 @@ class Command(BaseCommand):
             self.stderr.write("Can't find new genes JSON file")
             os.sys.exit(1)
 
-        with transaction.atomic():
-            if backups_only is True:
-                self.load_users_from_database()
-                self.load_genes_from_database()
-                self.import_backup_panels()
-            else:
+        if backups_only is True:
+            self.load_users_from_database()
+            self.load_genes_from_database()
+            self.import_backup_panels()
+        else:
+            with transaction.atomic():
                 self.import_users()
                 self.import_admin_files()
                 self.import_genes()
@@ -95,23 +95,32 @@ class Command(BaseCommand):
 
     def import_backup_panels(self):
         total = 0
-        for gp in self._iterate_file('gene_panel_backups.json', 'gene_backups.item'):
-            total += 1
-            if total % 100 == 0:
-                print('total backup panels created: {}'.format(total))
+        temp_gp_list = []
 
-            _gp = self.gene_panels.get(gp['pk'])
-            if not _gp:
-                try:
-                    _gp = GenePanel.objects.get(old_pk=gp['pk'])
-                except GenePanel.DoesNotExist:
-                    _gp = self.create_gene_panel(gp)
+        for temp_gp in self._iterate_file('gene_panel_backups.json', 'gene_backups.item'):
+            temp_gp_list.append(temp_gp)
 
-            gps = self.create_gene_panel_snapshot(gp, _gp)
+            if len(temp_gp_list) == 100:
+                with transaction.atomic():
+                    for gp in temp_gp_list:
+                        total += 1
+                        if total % 100 == 0:
+                            print('total backup panels created: {}'.format(total))
 
-            for gpe in gp['panellist']:
-                gpe['ready'] = False
-                self.create_gene_panel_entry_snapshot(gpe, gps)
+                        _gp = self.gene_panels.get(gp['pk'])
+                        if not _gp:
+                            try:
+                                _gp = GenePanel.objects.get(old_pk=gp['pk'])
+                            except GenePanel.DoesNotExist:
+                                _gp = self.create_gene_panel(gp)
+
+                        gps = self.create_gene_panel_snapshot(gp, _gp)
+
+                        for gpe in gp['panellist']:
+                            gpe['ready'] = False
+                            self.create_gene_panel_entry_snapshot(gpe, gps)
+
+                    temp_gp_list = []
 
         self.stdout.write('Created {} backup panels'.format(total))
 

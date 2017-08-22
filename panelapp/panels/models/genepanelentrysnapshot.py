@@ -61,13 +61,16 @@ class GenePanelEntrySnapshot(TimeStampedModel):
 
     class Meta:
         get_latest_by = "created"
-        ordering = ['-saved_gel_status', '-created', ]
+        ordering = ['-saved_gel_status', ]
+        indexes = [
+            models.Index(fields=['panel_id']),
+        ]
 
     panel = models.ForeignKey(GenePanelSnapshot)
     gene = JSONField(encoder=DjangoJSONEncoder)  # copy data from Gene.dict_tr
     gene_core = models.ForeignKey(Gene)  # reference to the original Gene
     evidence = models.ManyToManyField(Evidence)
-    evaluation = models.ManyToManyField(Evaluation)
+    evaluation = models.ManyToManyField(Evaluation, db_index=True)
     moi = models.CharField("Mode of inheritance", choices=Evaluation.MODES_OF_INHERITANCE, max_length=255)
     penetrance = models.CharField(choices=PENETRANCE, max_length=255, blank=True, null=True)
     track = models.ManyToManyField(TrackRecord)
@@ -83,7 +86,7 @@ class GenePanelEntrySnapshot(TimeStampedModel):
         null=True,
         blank=True
     )
-    saved_gel_status = models.IntegerField(null=True)
+    saved_gel_status = models.IntegerField(null=True, db_index=True)
 
     objects = GenePanelEntrySnapshotManager()
 

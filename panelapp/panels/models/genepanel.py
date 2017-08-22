@@ -18,9 +18,9 @@ class GenePanelManager(models.Manager):
 
 
 class GenePanel(TimeStampedModel):
-    old_pk = models.CharField(max_length=24, null=True, blank=True)  # Mongo ObjectID hex string
-    name = models.CharField(max_length=255)
-    approved = models.BooleanField(default=False)
+    old_pk = models.CharField(max_length=24, null=True, blank=True, db_index=True)  # Mongo ObjectID hex string
+    name = models.CharField(max_length=255, db_index=True)
+    approved = models.BooleanField(default=False, db_index=True)
     promoted = models.BooleanField(default=False)
 
     objects = GenePanelManager()

@@ -69,8 +69,8 @@ class PanelForm(forms.ModelForm):
                 self.instance.old_panels = self.cleaned_data['old_panels']
 
             if data_changed:
-                self.instance.panel.save()
                 self.instance.increment_version()
+                self.instance.panel.save()
 
         else:
             panel = GenePanel.objects.create(name=self.cleaned_data['level4'].strip())
