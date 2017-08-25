@@ -187,14 +187,20 @@ class GeneDetailView(DetailView):
 class GeneListView(ListView):
     model = Gene
     context_object_name = "genes"
+    template_name = "panels/gene_list.html"
 
     def get_queryset(self, *args, **kwargs):
-        qs = super().get_queryset(*args, **kwargs)
         if self.request.user.is_authenticated and self.request.user.reviewer.is_GEL:
-            qs = qs.filter(genepanelentrysnapshot__isnull=False, active=True)
+            panel_ids = GenePanelSnapshot.objects.get_latest_ids().values('pk')
         else:
-            qs = qs.filter(genepanelentrysnapshot__panel__panel__approved=True, active=True)
-        return qs.distinct('gene_symbol')
+            panel_ids = GenePanelSnapshot.objects.get_latest_ids().filter(panel__approved=True).values('pk')
+
+        genes = GenePanelEntrySnapshot.objects.filter(
+            gene_core__active=True,
+            panel__in=panel_ids
+        ).order_by().distinct('gene_core__gene_symbol').values_list('gene_core__gene_symbol', flat=True)
+
+        return genes
 
     def get_context_data(self, *args, **kwargs):
         ctx = super().get_context_data(*args, **kwargs)

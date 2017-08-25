@@ -44,9 +44,9 @@
               <ul class="list-inline gene-filter-list js-filter-list">
                 
               {% for gene in genes %}
-                {% if gene.gene_symbol %}
-                  <li data-text="{{ gene.gene_symbol }}">
-                    <a href="{% url 'panels:gene_detail' gene.gene_symbol %}{% if tag_filter %}?tag={{ tag_filter}}{% endif %}">{{ gene.gene_symbol }}</a>
+                {% if gene %}
+                  <li data-text="{{ gene }}">
+                    <a href="{% url 'panels:gene_detail' gene %}{% if tag_filter %}?tag={{ tag_filter}}{% endif %}">{{ gene }}</a>
                   </li>
                 {% endif %}
               {% endfor %}

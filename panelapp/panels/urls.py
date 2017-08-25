@@ -114,7 +114,7 @@ urlpatterns = [
     url(r'^create/', CreatePanelView.as_view(), name="create"),
 
     url(r'^genes/$', GeneListView.as_view(), name="gene_list"),
-    url(r'^genes/(?P<slug>[\w\-~#@*]+)$', GeneDetailView.as_view(), name="gene_detail"),
+    url(r'^genes/(?P<slug>[\w\.\-~#@*]+)$', GeneDetailView.as_view(), name="gene_detail"),
 
     url(r'^activity/$', ActivityListView.as_view(), name="activity"),
 
