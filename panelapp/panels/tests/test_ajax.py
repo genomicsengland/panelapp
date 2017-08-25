@@ -27,6 +27,7 @@ class AjaxGenePanelEntrySnapshotTest(LoginGELUser):
 
         gps = GenePanel.objects.get(pk=self.gpes.panel.panel.pk).active_panel
         gene = gps.get_gene(self.gpes.gene.get('gene_symbol'))
+        assert gps.version != self.gpes.panel.version
         return gene
 
     def test_clear_phenotypes(self):

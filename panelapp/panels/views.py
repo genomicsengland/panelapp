@@ -191,12 +191,9 @@ class GeneListView(ListView):
     def get_queryset(self, *args, **kwargs):
         qs = super().get_queryset(*args, **kwargs)
         if self.request.user.is_authenticated and self.request.user.reviewer.is_GEL:
-            qs = qs.filter(
-                Q(genepanelentrysnapshot__panel__panel__approved=True)
-                | Q(genepanelentrysnapshot__panel__panel__approved=False)
-            )
+            qs = qs.filter(genepanelentrysnapshot__isnull=False, active=True)
         else:
-            qs = qs.filter(genepanelentrysnapshot__panel__panel__approved=True)
+            qs = qs.filter(genepanelentrysnapshot__panel__panel__approved=True, active=True)
         return qs.distinct('gene_symbol')
 
     def get_context_data(self, *args, **kwargs):

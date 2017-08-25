@@ -152,7 +152,7 @@ class PanelGeneForm(forms.ModelForm):
         new_gene_symbol = gene_data.get('gene').gene_symbol
 
         if self.initial and self.panel.has_gene(initial_gene_symbol):
-            self.panel.increment_version()
+            self.panel = self.panel.increment_version()
             self.panel = GenePanel.objects.get(pk=self.panel.panel.pk).active_panel
             self.panel.update_gene(
                 self.request.user,
@@ -162,8 +162,11 @@ class PanelGeneForm(forms.ModelForm):
             self.panel = GenePanel.objects.get(pk=self.panel.panel.pk).active_panel
             return self.panel.get_gene(new_gene_symbol)
         else:
-            return self.panel.add_gene(
+            gene = self.panel.add_gene(
                 self.request.user,
                 new_gene_symbol,
                 gene_data
             )
+            self.panel = GenePanel.objects.get(pk=self.panel.panel.pk).active_panel
+            self.panel.update_saved_stats()
+            return gene

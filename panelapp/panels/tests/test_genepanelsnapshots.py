@@ -20,6 +20,9 @@ class GenePanelSnapshotTest(LoginGELUser):
     def test_add_gene_to_panel(self):
         gene = GeneFactory()
         gps = GenePanelSnapshotFactory()
+
+        number_of_genes = gps.number_of_genes
+
         url = reverse_lazy('panels:add_gene', kwargs={'pk': gps.panel.pk})
         gene_data = {
             "gene": gene.pk,
@@ -36,7 +39,12 @@ class GenePanelSnapshotTest(LoginGELUser):
         }
         res = self.client.post(url, gene_data)
 
+        new_current_number = gps.panel.active_panel.number_of_genes
+
+        assert gps.panel.active_panel.version != gps.version
+
         assert res.status_code == 302
+        assert number_of_genes + 1 == new_current_number
 
     def test_gene_evaluation(self):
         gpes = GenePanelEntrySnapshotFactory()
@@ -53,6 +61,8 @@ class GenePanelSnapshotTest(LoginGELUser):
             'pk': gpes.panel.panel.pk,
             'gene_symbol': gpes.gene.get('gene_symbol')
         })
+
+        number_of_genes = gpes.panel.number_of_genes
 
         # make sure new data has at least 1 of the same items
         source = gpes.evidence.last().name
@@ -78,6 +88,9 @@ class GenePanelSnapshotTest(LoginGELUser):
         assert res.status_code == 302
         gene = GenePanel.objects.get(pk=gpes.panel.panel.pk).active_panel.get_gene(gpes.gene_core.gene_symbol)
         assert sorted(original_evidences) == sorted(set([ev.name for ev in gene.evidence.all()]))
+        assert gpes.panel.panel.active_panel.version != gpes.panel.version
+        new_current_number = gpes.panel.panel.active_panel.number_of_genes
+        assert number_of_genes == new_current_number
 
     def test_mitochondrial_gene(self):
         gene = GeneFactory(gene_symbol="MT-LORUM")

@@ -192,6 +192,7 @@ class UploadedPanelList(TimeStampedModel):
                             fresh_panel = True
 
                         active_panel = panel.active_panel
+                        active_panel = active_panel.increment_version()
 
                         gene_data = {
                             'moi': model_of_inheritance,
@@ -208,6 +209,7 @@ class UploadedPanelList(TimeStampedModel):
                             except Gene.DoesNotExist:
                                 raise GeneDoesNotExist(str(i + 2))
                             active_panel.add_gene(user, gene_symbol, gene_data)
+                            active_panel.update_saved_stats()
                         else:
                             active_panel.update_gene(user, gene_symbol, gene_data)
                     else:

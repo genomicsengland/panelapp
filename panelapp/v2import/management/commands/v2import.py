@@ -329,6 +329,9 @@ class Command(BaseCommand):
             if user and (not a['panel_id'] or a['panel_id'] and panel):
                 total += 1
                 date = timezone.make_aware(convert_date(a['date']), self.tz)
+                if a['gene_symbol'][-1] == '*':
+                    a['gene_symbol'] = a['gene_symbol'][:-1]
+
                 Activity.objects.create(
                     panel=panel,
                     gene_symbol=a['gene_symbol'],

@@ -45,18 +45,7 @@ class GenePanelSnapshotManager(models.Manager):
     def get_active_anotated(self, all=False):
         "This method adds additional values to the queryset, such as number_of_genes, etc and returns active panels"
 
-        return self.get_active(all)\
-            .annotate(
-                number_of_reviewers=Count('genepanelentrysnapshot__evaluation__user__pk', distinct=True),
-                number_of_evaluated_genes=Count(Case(
-                    # Count unique genes if that gene has more than 1 evaluation
-                    When(
-                        genepanelentrysnapshot__evaluation__isnull=False,
-                        then=models.F('genepanelentrysnapshot__pk')
-                    )
-                ), distinct=True),
-                number_of_genes=Count('genepanelentrysnapshot__pk', distinct=True),
-            )
+        return self.get_active(all)
 
     def get_gene_panels(self, gene_symbol):
         "Get all panels for a specific gene"
@@ -90,20 +79,54 @@ class GenePanelSnapshot(TimeStampedModel):
     version_comment = models.TextField(null=True)
     old_panels = ArrayField(models.CharField(max_length=255), blank=True, null=True)
 
+    current_number_of_reviewers = models.IntegerField(null=True, blank=True)
+    current_number_of_evaluated_genes = models.IntegerField(null=True, blank=True)
+    current_number_of_genes = models.IntegerField(null=True, blank=True)
+
+    def __str__(self):
+        return "Panel {} v{}.{}".format(self.level4title.name, self.major_version, self.minor_version)
+
     @cached_property
     def stats(self):
         "Get stats for a panel, i.e. number of reviewers, genes, evaluated genes, etc"
 
-        return self.genepanelentrysnapshot_set.aggregate(
-            number_of_reviewers=Count('evaluation__user', distinct=True),
-            number_of_evaluated_genes=Count(Case(When(evaluation__isnull=False, then=models.F('pk'))), distinct=True),
-            number_of_genes=Count('pk'),
-            number_of_ready_genes=Count(Case(When(ready=True, then=models.F('pk'))), distinct=True),
-            number_of_green_genes=Count(Case(When(saved_gel_status__gte=3, then=models.F('pk'))), distinct=True)
+        return GenePanelSnapshot.objects.filter(pk=self.pk).aggregate(
+            number_of_reviewers=Count('genepanelentrysnapshot__evaluation__user__pk', distinct=True),
+            number_of_evaluated_genes=Count(Case(
+                # Count unique genes if that gene has more than 1 evaluation
+                When(
+                    genepanelentrysnapshot__evaluation__isnull=False,
+                    then=models.F('genepanelentrysnapshot__pk')
+                )
+            ), distinct=True),
+            number_of_genes=Count('genepanelentrysnapshot__pk', distinct=True),
+            number_of_ready_genes=Count(Case(When(genepanelentrysnapshot__ready=True, then=models.F('genepanelentrysnapshot__pk'))), distinct=True),
+            number_of_green_genes=Count(Case(When(genepanelentrysnapshot__saved_gel_status__gte=3, then=models.F('genepanelentrysnapshot__pk'))), distinct=True)
         )
 
-    def __str__(self):
-        return "Panel {} v{}.{}".format(self.level4title.name, self.major_version, self.minor_version)
+    @property
+    def number_of_reviewers(self):
+        "Get number of reviewers or set it if it's None"
+
+        if self.current_number_of_reviewers is None:
+            self.update_saved_stats()
+        return self.current_number_of_reviewers
+
+    @property
+    def number_of_evaluated_genes(self):
+        "Get number of evaluated genes or set it if it's None"
+
+        if self.current_number_of_evaluated_genes is None:
+            self.update_saved_stats()
+        return self.current_number_of_evaluated_genes
+
+    @property
+    def number_of_genes(self):
+        "Get number of genes or set it if it's None"
+
+        if self.current_number_of_genes is None:
+            self.update_saved_stats()
+        return self.current_number_of_genes
 
     @property
     def version(self):
@@ -184,7 +207,24 @@ class GenePanelSnapshot(TimeStampedModel):
             self.version_comment = comment
 
         del self.get_all_entries
-        return self
+        if self.panel.active_panel:
+            del self.panel.active_panel
+        return self.panel.active_panel
+
+    def update_saved_stats(self):
+        "Get the new values from the database"
+
+        if self.stats:
+            del self.stats
+
+        self.current_number_of_reviewers = self.stats.get('number_of_reviewers', 0)
+        self.current_number_of_evaluated_genes = self.stats.get('number_of_evaluated_genes', 0)
+        self.current_number_of_genes = self.stats.get('number_of_genes', 0)
+        self.save(update_fields=[
+            'current_number_of_evaluated_genes',
+            'current_number_of_reviewers',
+            'current_number_of_genes'
+        ])
 
     @property
     def contributors(self):
@@ -262,10 +302,11 @@ class GenePanelSnapshot(TimeStampedModel):
 
         if self.has_gene(gene_symbol):
             if increment:
-                self.increment_version(ignore_gene=gene_symbol)
+                self = self.increment_version(ignore_gene=gene_symbol)
             else:
                 self.get_all_entries.get(gene__gene_symbol=gene_symbol).delete()
                 del self.get_all_entries
+            self.update_saved_stats()
             return True
         else:
             return False
@@ -367,6 +408,7 @@ class GenePanelSnapshot(TimeStampedModel):
                 evaluation.comments.add(comment)
             gene.evaluation.add(evaluation)
         gene.evidence_status(update=True)
+        self.update_saved_stats()
         return gene
 
     def update_gene(self, user, gene_symbol, gene_data):

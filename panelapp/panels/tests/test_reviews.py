@@ -5,6 +5,7 @@ from faker import Factory
 from accounts.tests.setup import LoginGELUser
 from panels.models import GenePanel
 from panels.models import Evaluation
+from panels.models import GenePanelSnapshot
 from panels.tests.factories import TagFactory
 from panels.tests.factories import GeneFactory
 from panels.tests.factories import GenePanelSnapshotFactory
@@ -17,10 +18,13 @@ fake = Factory.create()
 class EvaluationTest(LoginGELUser):
     def test_add_evaluation(self):
         gpes = GenePanelEntrySnapshotFactory()
+        gpes.evaluation.all().delete()
         url = reverse_lazy('panels:review_gene', kwargs={
             'pk': gpes.panel.panel.pk,
             'gene_symbol': gpes.gene.get('gene_symbol')
         })
+
+        number_of_evaluated_genes = gpes.panel.number_of_evaluated_genes
 
         gene_data = {
             "rating": Evaluation.RATINGS.AMBER,
@@ -33,9 +37,11 @@ class EvaluationTest(LoginGELUser):
         }
         res = self.client.post(url, gene_data)
         assert res.status_code == 302
+        assert number_of_evaluated_genes + 1 == gpes.panel.panel.active_panel.number_of_evaluated_genes
 
     def test_add_evaluation_comments_only(self):
         gpes = GenePanelEntrySnapshotFactory()
+        gpes.evaluation.all().delete()
         url = reverse_lazy('panels:review_gene', kwargs={
             'pk': gpes.panel.panel.pk,
             'gene_symbol': gpes.gene.get('gene_symbol')
@@ -47,17 +53,19 @@ class EvaluationTest(LoginGELUser):
         res = self.client.post(url, gene_data)
         assert res.status_code == 302
 
-        assert gpes.evaluation.get(user=self.gel_user).comments.count() == 1
+        v01gene = gpes.panel.panel.active_panel.get_gene(gpes.gene.get('gene_symbol'))
+        assert v01gene.evaluation.get(user=self.gel_user).comments.count() == 1
 
         gene_data = {
             "comments": fake.sentence(),
         }
         res = self.client.post(url, gene_data)
-        gpes = GenePanel.objects.get(pk=gpes.panel.panel.pk).active_panel.get_gene(gpes.gene.get('gene_symbol'))
-        assert gpes.evaluation.get(user=self.gel_user).comments.count() == 2
+
+        assert v01gene.evaluation.get(user=self.gel_user).comments.count() == 2
 
     def test_change_evaluation(self):
         gpes = GenePanelEntrySnapshotFactory()
+        gpes.evaluation.all().delete()
         url = reverse_lazy('panels:review_gene', kwargs={
             'pk': gpes.panel.panel.pk,
             'gene_symbol': gpes.gene.get('gene_symbol')
@@ -88,6 +96,7 @@ class EvaluationTest(LoginGELUser):
 class GeneReviewTest(LoginGELUser):
     def test_mark_as_ready(self):
         gpes = GenePanelEntrySnapshotFactory()
+        gpes.evaluation.all().delete()
         url = reverse_lazy('panels:mark_gene_as_ready', kwargs={
             'pk': gpes.panel.panel.pk,
             'gene_symbol': gpes.gene.get('gene_symbol')
@@ -99,6 +108,7 @@ class GeneReviewTest(LoginGELUser):
 
     def test_update_tags(self):
         gpes = GenePanelEntrySnapshotFactory()
+        gpes.evaluation.all().delete()
         url = reverse_lazy('panels:update_gene_tags', kwargs={
             'pk': gpes.panel.panel.pk,
             'gene_symbol': gpes.gene.get('gene_symbol')
@@ -114,6 +124,7 @@ class GeneReviewTest(LoginGELUser):
 
     def test_update_mop(self):
         gpes = GenePanelEntrySnapshotFactory()
+        gpes.evaluation.all().delete()
         url = reverse_lazy('panels:update_gene_mop', kwargs={
             'pk': gpes.panel.panel.pk,
             'gene_symbol': gpes.gene.get('gene_symbol')
@@ -127,9 +138,11 @@ class GeneReviewTest(LoginGELUser):
         assert res.json().get('status') == 200
         assert gene.comments.count() == 1
         assert gene.mode_of_pathogenicity == mop[1]
+        assert gene.panel.version != gpes.panel.version
 
     def test_update_moi(self):
         gpes = GenePanelEntrySnapshotFactory()
+        gpes.evaluation.all().delete()
         url = reverse_lazy('panels:update_gene_moi', kwargs={
             'pk': gpes.panel.panel.pk,
             'gene_symbol': gpes.gene.get('gene_symbol')
@@ -143,9 +156,11 @@ class GeneReviewTest(LoginGELUser):
         assert res.json().get('status') == 200
         assert gene.comments.count() == 1
         assert gene.moi == moi[1]
+        assert gene.panel.version != gpes.panel.version
 
     def test_update_phenotypes(self):
         gpes = GenePanelEntrySnapshotFactory()
+        gpes.evaluation.all().delete()
         url = reverse_lazy('panels:update_gene_phenotypes', kwargs={
             'pk': gpes.panel.panel.pk,
             'gene_symbol': gpes.gene.get('gene_symbol')
@@ -160,9 +175,11 @@ class GeneReviewTest(LoginGELUser):
         assert res.json().get('status') == 200
         assert gene.comments.count() == 1
         assert gene.phenotypes == phenotypes_array
+        assert gene.panel.version != gpes.panel.version
 
     def test_update_publications(self):
         gpes = GenePanelEntrySnapshotFactory()
+        gpes.evaluation.all().delete()
         url = reverse_lazy('panels:update_gene_publications', kwargs={
             'pk': gpes.panel.panel.pk,
             'gene_symbol': gpes.gene.get('gene_symbol')
@@ -177,9 +194,11 @@ class GeneReviewTest(LoginGELUser):
         assert res.json().get('status') == 200
         assert gene.comments.count() == 1
         assert gene.publications == publications_array
+        assert gene.panel.version != gpes.panel.version
 
     def test_update_rating(self):
         gpes = GenePanelEntrySnapshotFactory()
+        gpes.evaluation.all().delete()
         url = reverse_lazy('panels:update_gene_rating', kwargs={
             'pk': gpes.panel.panel.pk,
             'gene_symbol': gpes.gene.get('gene_symbol')
@@ -220,10 +239,12 @@ class GeneReviewTest(LoginGELUser):
         assert res.json().get('status') == 200
         assert gene.comments.count() == 4
         assert gene.saved_gel_status == new_status
+        assert gene.panel.version != gpes.panel.version
 
     def test_delete_evaluation(self):
         gpes = GenePanelEntrySnapshotFactory()
-
+        gpes.evaluation.all().delete()
+        
         evaluation_url = reverse_lazy('panels:review_gene', kwargs={
             'pk': gpes.panel.panel.pk,
             'gene_symbol': gpes.gene.get('gene_symbol')
@@ -240,6 +261,7 @@ class GeneReviewTest(LoginGELUser):
         }
         self.client.post(evaluation_url, gene_data, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
         gene = GenePanel.objects.get(pk=gpes.panel.panel.pk).active_panel.get_gene(gpes.gene.get('gene_symbol'))
+        assert gene.panel.version != gpes.panel.version
         assert gene.is_reviewd_by_user(self.gel_user) is True
 
         delete_evaluation_url = reverse_lazy('panels:delete_evaluation_by_user', kwargs={
@@ -248,8 +270,10 @@ class GeneReviewTest(LoginGELUser):
             'evaluation_pk': gene.evaluation.get(user=self.gel_user).pk
         })
         res = self.client.get(delete_evaluation_url, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        last_gene = GenePanel.objects.get(pk=gpes.panel.panel.pk).active_panel.get_gene(gpes.gene.get('gene_symbol'))
         assert res.json().get('status') == 200
-        assert gene.is_reviewd_by_user(self.gel_user) is False
+        assert last_gene.is_reviewd_by_user(self.gel_user) is False
+        assert gene.panel.version != last_gene.panel.version
 
     def test_delete_comment(self):
         gpes = GenePanelEntrySnapshotFactory()

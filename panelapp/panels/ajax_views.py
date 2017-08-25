@@ -75,6 +75,9 @@ class GeneClearDataAjaxMixin(BaseAjaxGeneMixin):
 
 class ClearPublicationsAjaxView(GELReviewerRequiredMixin, GeneClearDataAjaxMixin, AJAXMixin, View):
     def process(self):
+        self.gene.panel.increment_version()
+        del self.gene
+        del self.panel
         self.gene.publications = []
         self.gene.save()
         del self.gene
@@ -83,6 +86,9 @@ class ClearPublicationsAjaxView(GELReviewerRequiredMixin, GeneClearDataAjaxMixin
 
 class ClearPhoenotypesAjaxView(GELReviewerRequiredMixin, GeneClearDataAjaxMixin, AJAXMixin, View):
     def process(self):
+        self.gene.panel.increment_version()
+        del self.gene
+        del self.panel
         self.gene.phenotypes = []
         self.gene.save()
         del self.gene
@@ -92,6 +98,9 @@ class ClearPhoenotypesAjaxView(GELReviewerRequiredMixin, GeneClearDataAjaxMixin,
 
 class ClearModeOfPathogenicityAjaxView(GELReviewerRequiredMixin, GeneClearDataAjaxMixin, AJAXMixin, View):
     def process(self):
+        self.gene.panel.increment_version()
+        del self.gene
+        del self.panel
         self.gene.mode_of_pathogenicity = ""
         self.gene.save()
         del self.gene
@@ -107,6 +116,7 @@ class ClearSourcesAjaxView(GELReviewerRequiredMixin, GeneClearDataAjaxMixin, AJA
         self.gene.clear_evidences(self.request.user)
         del self.panel
         del self.gene
+        self.gene.panel.update_saved_stats()
         return self.return_data()
 
 
@@ -118,6 +128,7 @@ class ClearSingleSourceAjaxView(GELReviewerRequiredMixin, GeneClearDataAjaxMixin
         self.gene.clear_evidences(self.request.user, evidence=self.kwargs['source'])
         del self.panel
         del self.gene
+        self.gene.panel.update_saved_stats()
         return self.return_data()
 
 
@@ -399,6 +410,9 @@ class UpdateGeneRatingAjaxView(GELReviewerRequiredMixin, UpdateEvaluationsMixin)
 class DeleteGeneEvaluationAjaxView(UpdateEvaluationsMixin):
     def process(self):
         evaluation_pk = self.kwargs['evaluation_pk']
+        self.gene.panel.increment_version()
+        del self.gene
+        del self.panel
         self.gene.delete_evaluation(evaluation_pk)
         return self.return_data()
 
