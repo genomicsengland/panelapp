@@ -39,7 +39,7 @@ class GenePanelEntrySnapshotManager(models.Manager):
 
     def get_gene_panels(self, gene_symbol):
         return super().get_queryset()\
-            .filter(gene__gene_symbol=gene_symbol)\
+            .filter(gene_core__gene_symbol=gene_symbol)\
             .distinct('panel__panel__pk')\
             .prefetch_related('evaluation', 'tags', 'evidence', 'panel', 'panel__level4title', 'panel__panel')\
             .order_by('panel__panel__pk', '-panel__major_version', '-panel__minor_version')

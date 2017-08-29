@@ -276,7 +276,8 @@ class GenePanelSnapshot(TimeStampedModel):
                 number_of_red_evaluations=Count(Case(When(
                     evaluation__rating="RED", then=models.F('evaluation__pk'))
                 ), distinct=True),
-                evaluators=ArrayAgg('evaluation__user__pk')
+                evaluators=ArrayAgg('evaluation__user__pk'),
+                number_of_evaluations=Count('evaluation__pk', distinct=True)
             )\
             .order_by('-saved_gel_status', 'gene_core__gene_symbol')
 
@@ -284,12 +285,16 @@ class GenePanelSnapshot(TimeStampedModel):
         "Get a gene for a specific gene symbol."
 
         return self.get_all_entries.prefetch_related(
+            'evaluation',
             'evaluation__comments',
             'evaluation__user',
             'evaluation__user__reviewer',
             'track',
             'track__user',
             'track__user__reviewer'
+        ).annotate(
+            evaluators=ArrayAgg('evaluation__user__pk'),
+            number_of_evaluations=Count('evaluation__pk', distinct=True)
         ).get(gene__gene_symbol=gene_symbol)
 
     def has_gene(self, gene_symbol):

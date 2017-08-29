@@ -50,13 +50,13 @@
                 {% endif %}
             </div>
             <ul class="list-group" data-module="gene-nav" id="gene-nav">
-              {% for entry in view.panel.get_all_entries %}
+              {% for entry in panel_genes %}
                 <li
                     class="list-group-item {% if gene.gene.gene_symbol == entry.gene.gene_symbol %}list-group-item-active{% endif %}"
                     {% if gene.gene.gene_symbol == entry.gene.gene_symbol %}id="gene-nav-active-item"{% endif %}
                 >
                   <a href="{% url 'panels:evaluation' view.panel.panel.id entry.gene.gene_symbol %}">
-                  {% if entry|reviewed_by:request.user %}
+                  {% if request.user in entry.evaluators %}
                       <i
                           class="fa fa-check-circle {{ entry|gene_list_class }} add-right-margin gel-badge pull-left"
                           data-toggle="tooltip"
@@ -74,8 +74,8 @@
                       class="pull-right text-muted"
                       data-toggle="tooltip"
                       data-placement="left"
-                      title="{{ entry.evaluation.count }} review{{entry.evaluation.count|pluralize}}"
-                  >{{ entry.evaluation.count }}</span>
+                      title="{{ entry.number_of_evaluations }} review{{entry.number_of_evaluations|pluralize}}"
+                  >{{ entry.number_of_evaluations }}</span>
                   </a>
 
                 </li>
@@ -102,7 +102,7 @@
         {% if gene.ready and request.user.reviewer.is_GEL %}
             <span class="banner banner-ready">Ready for major version</span>
         {% endif %}
-        {% if gene|reviewed_by:request.user %}
+        {% if request.user in gene.evaluators %}
             <span class="banner banner-reviewed">
                 <i class="fa fa-check"></i> You reviewed
             </span>
@@ -116,7 +116,7 @@
               <br />
             {% endif %}
             {% if gene.gene.omim_gene|length > 0 %}
-              <a href="http://omim.org/entry/{{ gene.gene.omim_gene.0 }}" target="_blank">OMIM: {{ gene.gene.omim_gene.0 }}</a>, <a href=" http://www.ebi.ac.uk/gene2phenotype/gene2phenotype-webcode/cgi-bin/handler.cgi?panel=ALL&search_term={{ entry.gene.gene_symbol }}" target="_blank">Gene2Phenotype</a><br />
+              <a href="http://omim.org/entry/{{ gene.gene.omim_gene.0 }}" target="_blank">OMIM: {{ gene.gene.omim_gene.0 }}</a>, <a href=" http://www.ebi.ac.uk/gene2phenotype/gene2phenotype-webcode/cgi-bin/handler.cgi?panel=ALL&search_term={{ gene.gene.gene_symbol }}" target="_blank">Gene2Phenotype</a><br />
             {% endif %}
             {% with shared_panels=sharing_panels %}
             {{ gene.gene.gene_symbol }} is in <a href="{% url 'panels:gene_detail' gene.gene.gene_symbol %}">{{ shared_panels|length }} panel{{ shared_panels|pluralize }}</a>
@@ -126,7 +126,7 @@
         <div data-module="tab-switcher" data-default-tab="evaluate">
             <ul class="nav nav-tabs" role="tablist">
                 <li role="presentation" class="active">
-                    <a href="#evaluate" aria-controls="evaluate" role="tab" data-toggle="tab">Reviews ({{ gene.evaluation.count }})</a>
+                    <a href="#evaluate" aria-controls="evaluate" role="tab" data-toggle="tab">Reviews ({{ gene.number_of_evaluations }})</a>
                 </li>
                 <li role="presentation">
                     <a href="#details" aria-controls="details" role="tab" data-toggle="tab">Details</a>

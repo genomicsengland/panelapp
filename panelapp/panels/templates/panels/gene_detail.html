@@ -75,7 +75,7 @@
           </thead>
           <tbody>
             {% for entry in entries %}
-              {% if request.user.reviewer.is_GEL or entry.panel.panel.approved %}
+              {% if request.user.is_authenticated and request.user.reviewer.is_GEL or entry.panel.panel.approved %}
               <tr
                 data-panel="{{ entry.panel.level4title.name }}"
                 data-gene="{{ entry.gene.gene_symbol }}"
@@ -103,7 +103,7 @@
                   </p>
                 </td>
                 <td>
-                  {{ entry.evaluation.count }} review{{entry.evaluation.count|pluralize}}
+                  {{ entry.evaluation|length }} review{{entry.evaluation|length|pluralize}}
                 </td>
                 <td>
                   {% if entry.moi %}
