@@ -1,6 +1,5 @@
 import os
 from django.core import mail
-from django.core.exceptions import ValidationError
 from django.test import Client
 from django.urls import reverse_lazy
 from faker import Factory
@@ -122,7 +121,7 @@ class GenePanelTest(LoginGELUser):
         assert gps.has_gene(gene_symbol) is True
         gps.delete_gene(gene_symbol)
         assert gps.panel.active_panel.has_gene(gene_symbol) is False
-        assert number_of_genes - 1 == gps.panel.active_panel.number_of_genes # 4 is due to create_batch
+        assert number_of_genes - 1 == gps.panel.active_panel.number_of_genes  # 4 is due to create_batch
 
         old_gps = GenePanel.objects.get(pk=gps.panel.pk).genepanelsnapshot_set.last()
         assert old_gps.version != gps.version
@@ -146,12 +145,15 @@ class GenePanelTest(LoginGELUser):
 
         number_of_genes = gps.number_of_genes
 
-        url = reverse_lazy('panels:delete_gene', kwargs={'pk': gps.panel.pk, 'gene_symbol': gene_symbol})
+        url = reverse_lazy('panels:delete_gene', kwargs={
+            'pk': gps.panel.pk,
+            'gene_symbol': gene_symbol
+        })
         res = self.client.get(url, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
 
         new_gps = GenePanel.objects.get(pk=gps.panel.pk).active_panel
         assert new_gps.has_gene(gene_symbol) is False
-        assert number_of_genes - 1 == new_gps.number_of_genes # 4 is due to create_batch
+        assert number_of_genes - 1 == new_gps.number_of_genes  # 4 is due to create_batch
         assert res.json().get('status') == 200
         assert res.json().get('content').get('inner-fragments')
 
@@ -269,8 +271,9 @@ class GenePanelTest(LoginGELUser):
 
         with open(test_panel_file) as f:
             url = reverse_lazy('panels:upload_panels')
-            with self.assertRaises(ValidationError):
-                self.client.post(url, {'panel_list': f})
+            res = self.client.post(url, {'panel_list': f})
+            for message in res.wsgi_request._messages:
+                assert 'ABCC5-AS1' in message.message
 
         assert GenePanelEntrySnapshot.objects.count() == 0
 

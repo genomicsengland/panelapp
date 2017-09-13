@@ -9,8 +9,8 @@
         <a href="{% url 'panels:index' %}">Panels</a>
     </li>
     <li>
-        <a href="{% url 'panels:detail' panel.id  %}">
-            {{ panel.level4title.name }}
+        <a href="{{ view.panel.get_absolute_url }}">
+            {{ view.panel.level4title.name }}
         </a>
     </li>
     <li class="active">
@@ -19,10 +19,10 @@
 </ol>
 
 <h1>
-    {% block title %}Edit gene {{ object.gene.gene_symbol }} in panel {{ panel.level4title.name }}{% endblock %}
+    {% block title %}Edit gene {{ object.gene.gene_symbol }} in panel {{ view.panel.level4title.name }}{% endblock %}
 </h1>
 
-{% if request.user.reviewer.is_GEL %}
+{% if request.user.is_authenticated and request.user.reviewer.is_GEL %}
     <form class="row add-top-margin" method="post">
         {% csrf_token %}
         <div class="col-md-8">
@@ -61,6 +61,7 @@
     </form>
     {{ form.media }}
     {% block modals %}
+        {% include "panels/modals/rating.html" %}
         {% include "panels/modals/mode_of_path.html" %}
         {% include "panels/modals/diagnostic.html" %}
         {% include "panels/modals/mode_of_inheritance.html" %}

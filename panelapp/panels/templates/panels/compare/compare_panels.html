@@ -16,7 +16,7 @@
   </h1>
 
   {% if show_copy_reviews %}
-    <a href="{% url 'panels:copy_reviews' panel_1.panel.id panel_2.panel.id %}">Copy reviews from “{{ panel_1.level4title.name }}” to “{{ panel_2.level4title.name }}”</a>
+    <a href="{% url 'panels:copy_reviews' panel_1.panel_id panel_2.panel_id %}">Copy reviews from “{{ panel_1.level4title.name }}” to “{{ panel_2.level4title.name }}”</a>
   {% endif %}
 
   {% if panel_1 and panel_2 %}
@@ -46,20 +46,20 @@
                 <h4 class="remove-top-margin remove-bottom-margin">
                   <span style="font-size: 16px" class="gel-banner {{ gene.1|gene_list_class }}" title="{{ gene.1|gene_list_name }}">
                     {{ gene.1|gene_list_short_name }}
-                  </span> <a href="{% url 'panels:evaluation' gene.1.panel.panel.id gene.0 %}" class="link-inherit gel-text {{ gene.1|gene_list_class }} js-open-on-submit">{{ gene.0 }}</a>
+                  </span> <a href="{% url 'panels:evaluation' gene.1.panel.panel_id gene.0 %}" class="link-inherit gel-text {{ gene.1|gene_list_class }} js-open-on-submit">{{ gene.0 }}</a>
                 </h4>
                 {{ gene.1.evaluation.count }} review{{gene.1.evaluation.count|pluralize}}
               {% endif %}
             </td>
             <td class="text-center">
               {% if gene.1 and gene.2 %}
-                <a class="btn btn-link btn-xs" href="{% url 'panels:compare_genes' gene.1.panel.panel.id gene.2.panel.panel.id gene.0 %}">Compare</a>
+                <a class="btn btn-link btn-xs" href="{% url 'panels:compare_genes' gene.1.panel.panel_id gene.2.panel.panel_id gene.0 %}">Compare</a>
               {% endif %}
             </td>
             <td>
               {% if gene.2 %}
                 <h4 class="remove-top-margin remove-bottom-margin">
-                  <a href="{% url 'panels:evaluation' gene.2.panel.panel.id gene.0 %}" class="link-inherit gel-text {{ gene.2|gene_list_class }} js-open-on-submit">{{ gene.0 }}</a> <span style="font-size: 12px" class="gel-banner {{ gene.2|gene_list_class }}" title="{{ gene.2|gene_list_name }}">
+                  <a href="{% url 'panels:evaluation' gene.2.panel.panel_id gene.0 %}" class="link-inherit gel-text {{ gene.2|gene_list_class }} js-open-on-submit">{{ gene.0 }}</a> <span style="font-size: 12px" class="gel-banner {{ gene.2|gene_list_class }}" title="{{ gene.2|gene_list_name }}">
                     {{ gene.2|gene_list_short_name }}
                   </span>
                 </h4>

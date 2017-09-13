@@ -1,5 +1,6 @@
 from django import forms
 from panels.models import GenePanelSnapshot
+from panels.tasks import promote_panel
 
 
 class PromotePanelForm(forms.ModelForm):
@@ -17,9 +18,4 @@ class PromotePanelForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
 
     def save(self, *args, commit=True, **kwargs):
-        self.instance.increment_version(
-            major=True,
-            user=self.request.user,
-            comment=self.cleaned_data['version_comment']
-        )
-        return self.instance
+        promote_panel.delay(self.request.user.pk, self.instance.pk, self.cleaned_data['version_comment'])

@@ -33,6 +33,13 @@ class PanelForm(forms.ModelForm):
         self.fields['hpo'] = original_fields.get('hpo')
         self.fields['old_panels'] = original_fields.get('old_panels')
 
+    def clean_level4(self):
+        if GenePanelSnapshot.objects.get_active(True).filter(
+                level4title__name=self.cleaned_data['level4']).exists():
+            raise forms.ValidationError('Panel with this name already exists')
+
+        return self.cleaned_data['level4']
+
     def clean_omim(self):
         return self._clean_array(self.cleaned_data['omim'])
 

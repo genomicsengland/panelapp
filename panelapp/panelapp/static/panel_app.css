@@ -5,6 +5,7 @@
 
 blockquote {
     border-color: #ddd;
+    overflow-wrap: break-word;
 }
 
 pre {
@@ -764,6 +765,10 @@ html[dir="rtl"] .select2-search input {
 
     -webkit-box-shadow: 0 0 5px rgba(0, 0, 0, .3);
             box-shadow: 0 0 5px rgba(0, 0, 0, .3);
+}
+
+.select2-dropdown {
+    z-index: 10001 !important;
 }
 
 .select2-dropdown-open .select2-choice {

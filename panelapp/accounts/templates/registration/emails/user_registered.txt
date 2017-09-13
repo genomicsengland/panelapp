@@ -16,7 +16,7 @@ While your application is being processed you can still browse PanelApp as a pub
 
     Link to other sources related to the gene such as OMIM (disease-related information), ClinVar (variant-disease related information) and transcript information.
 
-To start exploring the PanelApp please click https://bioinfo.extge.co.uk/crowdsourcing/PanelApp/.
+To start exploring the PanelApp please click https://panelapp.extge.co.uk/.
 
 We would like to take this opportunity to thank you for registering to be a reviewer of the gene panels in PanelApp. Please encourage others with expertise to register and contribute to establishing consensus gene panels.
 

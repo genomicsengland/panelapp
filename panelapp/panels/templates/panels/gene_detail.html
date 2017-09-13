@@ -103,7 +103,7 @@
                   </p>
                 </td>
                 <td>
-                  {{ entry.evaluation|length }} review{{entry.evaluation|length|pluralize}}
+                  {{ entry.number_of_evaluated_genes }} review{{entry.number_of_evaluated_genes|pluralize}}
                 </td>
                 <td>
                   {% if entry.moi %}
@@ -132,7 +132,7 @@
                     </ul>
                   {% endif %}
 
-                  {% if entry.tags %}
+                  {% if entry.tags.all %}
                     <h6 class="add-label-margin">Tags</h6>
                     <ul class="list-inline tag-list">
                       {% for tag in entry.tags.all %}

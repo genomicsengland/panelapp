@@ -1,4 +1,5 @@
 from django import forms
+from django.db import transaction
 from panels.models import UploadedGeneList
 from panels.models import UploadedReviewsList
 from panels.models import UploadedPanelList
@@ -8,9 +9,13 @@ from .promotepanel import PromotePanelForm  # noqa
 from .panelgene import PanelGeneForm  # noqa
 from .genereview import GeneReviewForm  # noqa
 from .geneready import GeneReadyForm  # noqa
+from panels.models import ProcessingRunCode
 from panels.exceptions import UserDoesNotExist
 from panels.exceptions import GeneDoesNotExist
 from panels.exceptions import TSVIncorrectFormat
+from panels.exceptions import UsersDoNotExist
+from panels.exceptions import GenesDoNotExist
+from panels.tasks import background_copy_reviews
 
 
 class UploadGenesForm(forms.Form):
@@ -25,17 +30,22 @@ class UploadPanelsForm(forms.Form):
     panel_list = forms.FileField(label='Select a file', required=True)
 
     def process_file(self, **kwargs):
+        message = None
         panel_list = UploadedPanelList.objects.create(panel_list=self.cleaned_data['panel_list'])
         try:
-            panel_list.process_file(kwargs.pop('user'))
+            return panel_list.process_file(kwargs.pop('user'))
         except GeneDoesNotExist as e:
             message = 'Line: {} has a wrong gene, please check it and try again.'.format(e)
-            raise forms.ValidationError(message)
         except UserDoesNotExist as e:
             message = 'Line: {} has a wrong username, please check it and try again.'.format(e)
-            raise forms.ValidationError(message)
+        except UsersDoNotExist as e:
+            message = "Can't find following users: {}, please check it and try again.".format(e)
+        except GenesDoNotExist as e:
+            message = "Can't find following genes: {}, please check it and try again.".format(e)
         except TSVIncorrectFormat as e:
             message = "Line: {} is not properly formatted, please check it and try again.".format(e)
+
+        if message:
             raise forms.ValidationError(message)
 
 
@@ -43,17 +53,21 @@ class UploadReviewsForm(forms.Form):
     review_list = forms.FileField(label='Select a file', required=True)
 
     def process_file(self, **kwargs):
+        message = None
         review_list = UploadedReviewsList.objects.create(reviews=self.cleaned_data['review_list'])
         try:
-            review_list.process_file()
+            return review_list.process_file(kwargs.pop('user'))
         except GeneDoesNotExist as e:
             message = 'Line: {} has a wrong gene, please check it and try again.'.format(e)
-            raise forms.ValidationError(message)
         except UserDoesNotExist as e:
             message = 'Line: {} has a wrong username, please check it and try again.'.format(e)
-            raise forms.ValidationError(message)
+        except UsersDoNotExist as e:
+            message = "Can't find following users: {}, please check it and try again.".format(e)
+        except GenesDoNotExist as e:
+            message = "Can't find following genes: {}, please check it and try again.".format(e)
         except TSVIncorrectFormat as e:
             message = "Line: {} is not properly formatted, please check it and try again.".format(e)
+        if message:
             raise forms.ValidationError(message)
 
 
@@ -80,38 +94,12 @@ class CopyReviewsForm(forms.Form):
     panel_1 = forms.CharField(required=True, widget=forms.widgets.HiddenInput())
     panel_2 = forms.CharField(required=True, widget=forms.widgets.HiddenInput())
 
-    def copy_reviews(self, gene_symbols, panel_1, panel_2):
-        count = 0
-
-        for gene in gene_symbols:
-            count += self.copy_gene_evaluations(gene, panel_1, panel_2)
-
-        return count
-
-    def copy_gene_evaluations(self, gene, panel_1, panel_2):
-        count = 0
-
-        source_entry = panel_1.get_gene(gene)
-        destination_entry = panel_2.get_gene(gene)
-        panel_name = panel_1.level4title.name
-
-        if source_entry and destination_entry:
-            source_evaluations = source_entry.evaluation.all()
-            for ev in source_evaluations:
-                version = ev.version if ev.version else '0'
-                ev.version = "Imported from {} panel version {}".format(panel_name, version)
-
-            count = self.add_evaluation_list(gene, destination_entry, source_evaluations)
-
-        return count
-
-    def add_evaluation_list(self, gene, destination_entry, source_evaluations):
-        destination_users = destination_entry.evaluation.values_list('user', flat=True)
-        filtered_evaluations = [ev for ev in source_evaluations if ev.user.pk not in destination_users]
-
-        for ev in filtered_evaluations:
-            ev.pk = None
-            ev.save()
-            destination_entry.evaluation.add(ev)
-
-        return len(filtered_evaluations)
+    def copy_reviews(self, user, gene_symbols, panel_from, panel_to):
+        if len(panel_to.current_genes) > 200 or len(panel_from.current_genes) > 200:
+            background_copy_reviews.delay(user, gene_symbols, panel_from.pk, panel_to.pk)
+            return ProcessingRunCode.PROCESS_BACKGROUND, 0
+        else:
+            with transaction.atomic():
+                panel_to = panel_to.increment_version()
+                return ProcessingRunCode.PROCESSED, panel_to.copy_gene_reviews_from(gene_symbols, panel_from)
+        return 0

@@ -51,8 +51,6 @@ class GeneReviewForm(forms.ModelForm):
         evaluation_data = self.cleaned_data
         evaluation_data['comment'] = evaluation_data.pop('comments')
         panel = self.gene.panel
-        if self.changed_data != ['comments']:
-            panel = self.gene.panel.increment_version()
-        e = panel.get_gene(self.gene.gene.get('gene_symbol')).update_evaluation(self.request.user, evaluation_data)
+        ev = panel.get_gene(self.gene.gene.get('gene_symbol')).update_evaluation(self.request.user, evaluation_data)
         panel.update_saved_stats()
-        return e
+        return ev

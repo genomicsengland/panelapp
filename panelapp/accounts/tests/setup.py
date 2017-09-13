@@ -20,6 +20,19 @@ class SetupUsers(TransactionTestCase):
         self.external_user = UserFactory(username="external_user")
 
 
+class LoginReviewerUser(SetupUsers):
+    """
+    LoginGELUser sets up session data on the default Client object available via
+    self.client, so in the later tests we don't need to authorise before we make
+    the requests.
+    """
+
+    def setUp(self):
+        super().setUp()
+        login_res = self.client.login(username="verified_user", password="pass")
+        assert login_res is True
+
+
 class LoginGELUser(SetupUsers):
     """
     LoginGELUser sets up session data on the default Client object available via

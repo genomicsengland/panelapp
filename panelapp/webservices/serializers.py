@@ -23,13 +23,13 @@ class EnsembleIdMixin:
 
         ensemblId = None
         if assembly == 'GRch38' and gene.gene.get('ensembl_genes'):
-            ensemblId = gene.gene.get('ensembl_genes').get(assembly, {}).get(version).get('ensembl_id', None)    
+            ensemblId = gene.gene.get('ensembl_genes').get(assembly, {}).get(version).get('ensembl_id', None)
         elif assembly == 'GRch37':
             if gene.gene.get('ensembl_genes'):
                 ensemblId = gene.gene.get('ensembl_genes').get(assembly, {}).get(version).get('ensembl_id', None)
             elif gene.gene.get('other_transcripts') and len(gene.gene.get('other_transcripts')) > 0:
                 ensemblId = gene.gene.get('other_transcripts')[0].get('geneid', None)
-                
+
         if ensemblId is None:
             return []
         return [ensemblId]

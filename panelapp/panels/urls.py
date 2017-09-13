@@ -66,7 +66,7 @@ urlpatterns = [
         DownloadPanelTSVView.as_view(), name="download_panel_tsv"),
     url(r'^(?P<pk>[0-9]+)/download_version/$',
         DownloadPanelVersionTSVView.as_view(), name="download_old_panel_tsv"),
-    url(r'^(?P<pk>[0-9]+)/(?P<gene_symbol>[\w\-]+)/evaluation$', GenePanelSpanshotView.as_view(), name="evaluation"),
+    url(r'^(?P<pk>[0-9]+)/(?P<gene_symbol>[\w\-]+)/$', GenePanelSpanshotView.as_view(), name="evaluation"),
     url(r'^(?P<pk>[0-9]+)/(?P<gene_symbol>[\w\-]+)/edit$', PanelEditGeneView.as_view(), name="edit_gene"),
     url(r'^(?P<pk>[0-9]+)/(?P<gene_symbol>[\w\-]+)/review$', GeneReviewView.as_view(), name="review_gene"),
     url(r'^(?P<pk>[0-9]+)/(?P<gene_symbol>[\w\-]+)/mark_as_ready$',

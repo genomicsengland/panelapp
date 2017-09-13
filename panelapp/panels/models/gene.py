@@ -39,7 +39,7 @@ class Gene(models.Model):
             'hgnc_release': self.hgnc_release,
             'hgnc_id': self.hgnc_id
         }
-    
+
     def clean_import_dates(self, record):
         try:
             self.full_clean()
@@ -52,7 +52,7 @@ class Gene(models.Model):
                     except ValueError:
                         converted_val = datetime.strptime(val, '%d/%m/%y')
                     self.hgnc_date_symbol_changed = converted_val
-            
+
             if 'hgnc_release' in err.error_dict:
                 val = record.get('hgnc_release', None)
                 if val:

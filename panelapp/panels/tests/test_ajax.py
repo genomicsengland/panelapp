@@ -28,22 +28,22 @@ class AjaxGenePanelEntrySnapshotTest(LoginGELUser):
         gps = GenePanel.objects.get(pk=self.gpes.panel.panel.pk).active_panel
         gene = gps.get_gene(self.gpes.gene.get('gene_symbol'))
         assert gps.version != self.gpes.panel.version
-        return gene
+        return res, gene
 
     def test_clear_phenotypes(self):
-        gene = self.helper_clear('clear_gene_phenotypes')
+        res, gene = self.helper_clear('clear_gene_phenotypes')
         assert gene.phenotypes == []
 
     def test_clear_gene_publications(self):
-        gene = self.helper_clear('clear_gene_publications')
+        res, gene = self.helper_clear('clear_gene_publications')
         assert gene.publications == []
 
     def test_clear_gene_mode_of_pathogenicity(self):
-        gene = self.helper_clear('clear_gene_mode_of_pathogenicity')
+        res, gene = self.helper_clear('clear_gene_mode_of_pathogenicity')
         assert gene.mode_of_pathogenicity == ""
 
     def test_clear_sources(self):
-        gene = self.helper_clear('clear_gene_sources')
+        res, gene = self.helper_clear('clear_gene_sources')
         assert gene.evidence.count() == 0
 
         self.assertTrue(gene.track.filter(issue_type=TrackRecord.ISSUE_TYPES.ClearSources).count() > 0)
@@ -52,8 +52,9 @@ class AjaxGenePanelEntrySnapshotTest(LoginGELUser):
         evidence = self.gpes.evidence.all()[0]
         before_count = self.gpes.evidence.count()
         evidence_count = self.gpes.evidence.filter(name=evidence.name).count()
-        gene = self.helper_clear('clear_gene_source', additional_kwargs={'source': evidence.name})
+        res, gene = self.helper_clear('clear_gene_source', additional_kwargs={'source': evidence.name})
         assert gene.evidence.count() == before_count - evidence_count
+        assert res.content.find(str.encode(evidence.name)) == -1
 
 
 class AjaxGenePanelEntryTest(LoginGELUser):
@@ -62,6 +63,7 @@ class AjaxGenePanelEntryTest(LoginGELUser):
     def setUp(self):
         super().setUp()
         self.gpes = GenePanelEntrySnapshotFactory()
+        self.gpes2 = GenePanelEntrySnapshotFactory()
 
     def helper_panel(self, action):
         kwargs = {
@@ -70,11 +72,13 @@ class AjaxGenePanelEntryTest(LoginGELUser):
         url = reverse_lazy('panels:{}'.format(action), kwargs=kwargs)
         res = self.client.get(url, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
         assert res.json().get('status') == 200
+        return res
 
     def test_delete_panel(self):
         pk = self.gpes.panel.panel.pk
-        self.helper_panel('delete_panel')
+        res = self.helper_panel('delete_panel')
         assert GenePanel.objects.filter(pk=pk).count() == 0
+        assert res.content.find(str.encode(self.gpes2.panel.panel.name))
 
     def test_approve_panel(self):
         self.gpes.panel.panel.approved = False

@@ -1,17 +1,19 @@
 from django.db import models
-from django.db.models import Q
 from django.db.models import Sum
-from django.db.models import Count
 from django.db.models import Case
 from django.db.models import When
 from django.db.models import Value
+from django.urls import reverse
 from django.utils.functional import cached_property
 from model_utils.models import TimeStampedModel
 
 
 class GenePanelManager(models.Manager):
     def get_panel(self, pk):
-        return super().get_queryset().get(Q(pk=pk) | Q(old_pk=pk))
+        if pk.isdigit():
+            return super().get_queryset().get(pk=pk)
+        else:
+            return super().get_queryset().get(old_pk=pk)
 
     def get_active_panel(self, pk):
         return self.get_panel(pk).active_panel
@@ -36,6 +38,9 @@ class GenePanel(TimeStampedModel):
     def reject(self):
         self.approved = False
         self.save()
+
+    def get_absolute_url(self):
+        return reverse('panels:detail', args=(self.pk,))
 
     def _prepare_panel_query(self):
         "Returns a queryset for all snapshots ordered by version"

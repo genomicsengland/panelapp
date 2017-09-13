@@ -12,7 +12,7 @@
 <div class="container">
     {% with view_panels=view.panels %}
       {% with panels_count=view_panels|length %}
-        <h1>{{ panels_count }} panel{{ panels_count|pluralize }}</h1>
+        <h1><span id="panels_count">{{ panels_count }}</span> panel{{ panels_count|pluralize }}</h1>
       {% endwith %}
         <button type="button" class="btn btn-default text-right" data-toggle="modal" data-target="#compare-modal">
           Compare two panels

@@ -5,7 +5,7 @@
       {{ ev.user.last_name }}
       <h6>{{ ev.user.get_reviewer_name }}, {{ comment.created|date }}</h6>
       {% if request.user == ev.user and panel and gene %}
-        <a href="{% url "panels:delete_comment_by_user" panel.id gene.gene.gene_symbol comment.pk %}" class="btn btn-default btn-xs" data-ajax="true" data-success="djangoAjaxHandler">Delete comment</a>
+        <a href="{% url "panels:delete_comment_by_user" panel.panel_id gene.gene.gene_symbol comment.pk %}" class="btn btn-default btn-xs" data-ajax="true" data-success="djangoAjaxHandler">Delete comment</a>
       {% endif %}
     </blockquote>
   {% endfor %}

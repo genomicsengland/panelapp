@@ -8,7 +8,6 @@ from accounts.tests.setup import LoginGELUser
 from panels.models.import_tools import update_gene_collection
 from panels.models import Gene
 from panels.models import GenePanelEntrySnapshot
-from panels.utils import CellBaseConnector
 from panels.tests.factories import GeneFactory
 from panels.tests.factories import GenePanelSnapshotFactory
 from panels.tests.factories import GenePanelEntrySnapshotFactory
@@ -51,7 +50,6 @@ class GeneTest(LoginGELUser):
                 self.assertTrue(gene.active)
             else:
                 self.assertFalse(gene.active)
-
 
     def test_gene_from_json(self):
         gene_dict_file = os.path.join(os.path.dirname(__file__), 'gene_dict.json')
@@ -130,8 +128,6 @@ class GeneTest(LoginGELUser):
         self.assertTrue(GenePanelEntrySnapshot.objects.get(
             gene_core__gene_symbol='C').gene.get('ensembl_genes')['updated'])
 
-
-
     def test_get_panels_for_a_gene(self):
         gene = GeneFactory()
 
@@ -155,9 +151,3 @@ class GeneTest(LoginGELUser):
         url = reverse_lazy('panels:gene_detail', kwargs={'slug': gene.gene_symbol})
         res = self.client.get(url)
         assert len(res.context_data['entries']) == 3
-
-    def test_CBC(self):
-        cbc = CellBaseConnector()
-        assert cbc.get_transcripts(["B3GALT6"])
-        assert cbc.get_exons(["B3GALT6"])
-        assert cbc.get_gene(["B3GALT6"])

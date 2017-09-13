@@ -47,14 +47,12 @@ class PanelGeneForm(forms.ModelForm):
     gene_name = forms.CharField()
 
     source = Select2ListMultipleChoiceField(
-        choice_list=Evidence.ALL_SOURCES,
-        widget=Select2Multiple(url="autocomplete-source"),
-        required=False
+        choice_list=Evidence.ALL_SOURCES, required=False,
+        widget=Select2Multiple(url="autocomplete-source")
     )
     tags = forms.ModelMultipleChoiceField(
-        queryset=Tag.objects.all(),
-        widget=ModelSelect2Multiple(url="autocomplete-tags"),
-        required=False
+        queryset=Tag.objects.all(), required=False,
+        widget=ModelSelect2Multiple(url="autocomplete-tags")
     )
 
     publications = SimpleArrayField(
@@ -104,11 +102,17 @@ class PanelGeneForm(forms.ModelForm):
         self.fields['penetrance'] = original_fields.get('penetrance')
         self.fields['publications'] = original_fields.get('publications')
         self.fields['phenotypes'] = original_fields.get('phenotypes')
-        self.fields['tags'] = original_fields.get('tags')
+        if self.request.user.is_authenticated and self.request.user.reviewer.is_GEL():
+            self.fields['tags'] = original_fields.get('tags')
         if not self.instance.pk:
             self.fields['rating'] = original_fields.get('rating')
             self.fields['current_diagnostic'] = original_fields.get('current_diagnostic')
             self.fields['comments'] = original_fields.get('comments')
+
+    def clean_source(self):
+        if len(self.cleaned_data['source']) < 1:
+            raise forms.ValidationError('Please select a source')
+        return self.cleaned_data['source']
 
     def clean_gene(self):
         "Check if gene exists in a panel if we add a new gene or change the gene"
@@ -145,7 +149,7 @@ class PanelGeneForm(forms.ModelForm):
             gene_data['comment'] = gene_data.pop('comments')
 
         if self.initial:
-            initial_gene_symbol = self.initial['gene'].get('gene_symbol')
+            initial_gene_symbol = self.initial['gene_json'].get('gene_symbol')
         else:
             initial_gene_symbol = None
 

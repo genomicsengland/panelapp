@@ -27,7 +27,7 @@ As a reviewer you can now:
 
     Link to other sources related to the gene such as OMIM (disease-related information), ClinVar (variant-disease related information) and transcript information.
 
-To start exploring the PanelApp please go to https://bioinfo.extge.co.uk/crowdsourcing/PanelApp/
+To start exploring the PanelApp please go to https://panelapp.extge.co.uk/
 
 More information about the role of reviewers, guidelines for gene panel review and instructions can be found on the PanelApp homepage.
 

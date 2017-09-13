@@ -1,4 +1,5 @@
 import os
+import time
 import ijson
 try:
     import ujson as json
@@ -48,7 +49,8 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument('dump_path', type=str, help="Full path to the dump location")
-        parser.add_argument('--backups_only', action='store_true', dest='backups_only', default=False, help="Only import panel backups")
+        parser.add_argument('--backups_only', action='store_true', dest='backups_only',
+                            default=False, help="Only import panel backups")
 
     def handle(self, dump_path, backups_only, *args, **options):
         if not os.path.isdir(dump_path):
@@ -64,6 +66,7 @@ class Command(BaseCommand):
         if backups_only is True:
             self.load_users_from_database()
             self.load_genes_from_database()
+            self.load_gene_panels()
             self.import_backup_panels()
         else:
             with transaction.atomic():
@@ -71,8 +74,8 @@ class Command(BaseCommand):
                 self.import_admin_files()
                 self.import_genes()
                 self.import_gene_panels()
-                self.import_activities()
                 self.import_gene_panel_entries()
+                self.import_activities()
                 self.migrate_genes()
 
     def _iterate_file(self, filename, json_path):
@@ -82,16 +85,18 @@ class Command(BaseCommand):
                 yield item
 
     def migrate_genes(self):
+        self.get_create_user('GEL')
         with open(os.path.join(self.files_path, 'new_genes.json'), 'r') as genes_json:
             update_gene_collection(json.load(genes_json))
 
     def load_users_from_database(self):
-        for user in User.objects.all():
-            self.users[user.username] = user
+        self.users = {user.username: user for user in User.objects.all().prefetch_related('reviewer')}
 
     def load_genes_from_database(self):
-        for gene in Gene.objects.all():
-            self.genes[gene.gene_symbol] = gene
+        self.genes = {gene.gene_symbol: gene for gene in Gene.objects.all()}
+
+    def load_gene_panels(self):
+        self.gene_panels = {panel.old_pk: panel for panel in GenePanel.objects.all()}
 
     def import_backup_panels(self):
         total = 0
@@ -103,22 +108,22 @@ class Command(BaseCommand):
             if len(temp_gp_list) == 100:
                 with transaction.atomic():
                     for gp in temp_gp_list:
+                        _gp = self.gene_panels.get(gp['pk'])
+                        if not _gp:
+                            continue
+
+                        start = time.time()
                         total += 1
                         if total % 100 == 0:
                             print('total backup panels created: {}'.format(total))
-
-                        _gp = self.gene_panels.get(gp['pk'])
-                        if not _gp:
-                            try:
-                                _gp = GenePanel.objects.get(old_pk=gp['pk'])
-                            except GenePanel.DoesNotExist:
-                                _gp = self.create_gene_panel(gp)
 
                         gps = self.create_gene_panel_snapshot(gp, _gp)
 
                         for gpe in gp['panellist']:
                             gpe['ready'] = False
                             self.create_gene_panel_entry_snapshot(gpe, gps)
+                        end = time.time()
+                        print('{:0.2f}\t{}\t{}\t{}'.format(end - start, gp['pk'], gps.version, gp['panel_name']))
 
                     temp_gp_list = []
 
@@ -138,7 +143,7 @@ class Command(BaseCommand):
                 gene = Gene.objects.create(
                     gene_symbol=gpe['gene']['gene_symbol'],
                     gene_name=gpe['gene']['gene_name'],
-                    omim_gene=[gpe['gene']['omim_gene'],],
+                    omim_gene=[gpe['gene']['omim_gene'], ],
                     ensembl_genes="{}",
                     active=False
                 )
@@ -267,7 +272,7 @@ class Command(BaseCommand):
                     username=track['user'],
                     first_name=track['user']
                 )
-                
+
                 Reviewer.objects.create(
                     user=self.users[track['user']],
                     user_type="REVIEWER",
@@ -323,33 +328,37 @@ class Command(BaseCommand):
         total = 0
         missed = 0
 
+        activities = []
         for a in self._iterate_file('activities.json', 'activities.item'):
             panel = self.gene_panels.get(a['panel_id'])
             user = self.users.get(a['user'])
             if user and (not a['panel_id'] or a['panel_id'] and panel):
                 total += 1
                 date = timezone.make_aware(convert_date(a['date']), self.tz)
-                if a['gene_symbol'][-1] == '*':
+                if a['gene_symbol'] and a['gene_symbol'][-1] == '*':
                     a['gene_symbol'] = a['gene_symbol'][:-1]
 
-                Activity.objects.create(
+                activities.append(Activity(
                     panel=panel,
                     gene_symbol=a['gene_symbol'],
                     user=user,
                     text=a['text'],
                     created=date,
                     modified=date
-                )
+                ))
             else:
                 missed += 1
+        Activity.objects.bulk_create(activities)
         self.stdout.write('Created {} activities, missed {}'.format(total, missed))
 
-    def create_gene_panel(self, gp):
-        _gp = GenePanel.objects.create(
+    def create_gene_panel(self, gp, save=True):
+        _gp = GenePanel(
             old_pk=gp['pk'],
             name=gp['panel_name'],
             approved=gp['approved']
         )
+        if save:
+            _gp.save()
         return _gp
 
     def create_gene_panel_snapshot(self, gp, _gp):
@@ -376,14 +385,20 @@ class Command(BaseCommand):
 
     def import_gene_panels(self):
         total = 0
+        gene_panels = {}
         for gp in self._iterate_file('gene_panels.json', 'gene_panels.item'):
             total += 1
+            gene_panels[gp['pk']] = {
+                'new_gp': self.create_gene_panel(gp, False),
+                'old_gp': gp
+            }
 
-            _gp = self.create_gene_panel(gp)
-            self.gene_panels[gp['pk']] = _gp
-            _gps = self.create_gene_panel_snapshot(gp, _gp)
+        saved_gene_panels = GenePanel.objects.bulk_create([gp['new_gp'] for gp in gene_panels.values()])
 
-            self.gene_panel_snapshots[gp['pk']] = _gps
+        for _gp in saved_gene_panels:
+            self.gene_panels[_gp.old_pk] = _gp
+            _gps = self.create_gene_panel_snapshot(gene_panels[_gp.old_pk]['old_gp'], _gp)
+            self.gene_panel_snapshots[_gp.old_pk] = _gps
 
         self.stdout.write('Created {} gene panels'.format(total))
 
@@ -395,13 +410,15 @@ class Command(BaseCommand):
 
             total += 1
 
-            g = Gene.objects.create(
+            g = Gene(
                 gene_symbol=gene['gene_symbol'],
                 gene_name=gene['gene_name'],
-                omim_gene=[gene['omim_gene'],],
+                omim_gene=[gene['omim_gene'], ],
                 ensembl_genes="{}"
             )
             self.genes[g.gene_symbol] = g
+
+        Gene.objects.bulk_create(self.genes.values())
 
         self.stdout.write('Created {} genes'.format(total))
 
@@ -420,8 +437,6 @@ class Command(BaseCommand):
             total += 1
 
             s = int(ht['section'])
-            print('-'*80)
-            print(s)
 
             if s == 1:
                 title = "Home"
@@ -450,20 +465,43 @@ class Command(BaseCommand):
             else:
                 title = ht['text'][:10]
                 href = ht['text'][:10]
-            
-            text = ht['text'].replace('/static/uploads/', '/media/')
+
+            text = ht['text'].replace('/static/upload/', '/media/')
             text = text.replace(
-                'https://panelapp.extge.co.uk/crowdsourcing/PanelApp/',
-                'https://panelapp.extge.co.uk'
+                'https://panelapp.extge.co.uk/',
+                '/'
+            ).replace(
+                'https://bioinfo.extge.co.uk/',
+                '/'
+            ).replace(
+                '/crowdsourcing/PanelApp/#!',
+                '/#!'
+            ).replace(
+                '/crowdsourcing/PanelApp/Activity',
+                '/panels/activity/'
+            ).replace(
+                '/crowdsourcing/PanelApp/PanelBrowser',
+                '/panels/'
+            ).replace(
+                '/PanelApp/PanelBrowser',
+                '/panels/'
+            ).replace(
+                '/crowdsourcing/PanelApp/Login',
+                '/accounts/login/'
+            ).replace(
+                '/crowdsourcing/PanelApp/Registration',
+                '/accounts/registration/'
+            ).replace(
+                '/crowdsourcing/PanelApp/Genes',
+                '/panels/genes/'
             )
 
-            if HomeText.objects.filter(href=href).count() == 0:
-                ht = HomeText.objects.create(
-                    section=s,
-                    text=text,
-                    title=title,
-                    href=href
-                )
+            ht = HomeText.objects.create(
+                section=s,
+                text=text,
+                title=title,
+                href=href
+            )
         self.stdout.write('Created {} home texts'.format(total))
 
         total = 0

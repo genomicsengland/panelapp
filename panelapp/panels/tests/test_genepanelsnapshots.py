@@ -2,6 +2,7 @@ from random import randint
 from django.urls import reverse_lazy
 from faker import Factory
 from accounts.tests.setup import LoginGELUser
+from accounts.tests.setup import LoginReviewerUser
 from panels.models import GenePanelEntrySnapshot
 from panels.models import GenePanelSnapshot
 from panels.models import Evidence
@@ -16,7 +17,33 @@ from panels.tests.factories import TagFactory
 fake = Factory.create()
 
 
+class GenePanelSnapshotReviewerTest(LoginReviewerUser):
+    "Verified reviewer tests"
+
+    def test_reviewer_gene_grey(self):
+        "When a reviewer adds a gene it should be marked as grey gene"
+
+        gene = GeneFactory()
+        gps = GenePanelSnapshotFactory()
+        url = reverse_lazy('panels:add_gene', kwargs={'pk': gps.panel.pk})
+        gene_data = {
+            "gene": gene.pk,
+            "source": Evidence.OTHER_SOURCES[0],
+            "phenotypes": "{};{};{}".format(*fake.sentences(nb=3)),
+            "rating": Evaluation.RATINGS.AMBER,
+            "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)][0],
+            "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][randint(1, 2)][0],
+            "penetrance": GenePanelEntrySnapshot.PENETRANCE.Incomplete,
+        }
+        self.client.post(url, gene_data)
+        panel = gps.panel.active_panel
+
+        assert panel.get_gene(gene.gene_symbol).saved_gel_status == 0
+
+
 class GenePanelSnapshotTest(LoginGELUser):
+    "GeL currator tests"
+
     def test_add_gene_to_panel(self):
         gene = GeneFactory()
         gps = GenePanelSnapshotFactory()
@@ -32,8 +59,8 @@ class GenePanelSnapshotTest(LoginGELUser):
             "phenotypes": "{};{};{}".format(*fake.sentences(nb=3)),
             "rating": Evaluation.RATINGS.AMBER,
             "comments": fake.sentence(),
-            "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)],
-            "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][randint(1, 2)],
+            "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)][0],
+            "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][randint(1, 2)][0],
             "penetrance": GenePanelEntrySnapshot.PENETRANCE.Incomplete,
             "current_diagnostic": "True"
         }
@@ -45,6 +72,26 @@ class GenePanelSnapshotTest(LoginGELUser):
 
         assert res.status_code == 302
         assert number_of_genes + 1 == new_current_number
+
+    def test_gel_curator_gene_red(self):
+        "When gene is added by a GeL currator it should be marked as red"
+
+        gene = GeneFactory()
+        gps = GenePanelSnapshotFactory()
+        url = reverse_lazy('panels:add_gene', kwargs={'pk': gps.panel.pk})
+        gene_data = {
+            "gene": gene.pk,
+            "source": Evidence.OTHER_SOURCES[0],
+            "phenotypes": "{};{};{}".format(*fake.sentences(nb=3)),
+            "rating": Evaluation.RATINGS.AMBER,
+            "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)][0],
+            "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][randint(1, 2)][0],
+            "penetrance": GenePanelEntrySnapshot.PENETRANCE.Incomplete,
+        }
+        self.client.post(url, gene_data)
+        panel = gps.panel.active_panel
+
+        assert panel.get_gene(gene.gene_symbol).saved_gel_status == 1
 
     def test_gene_evaluation(self):
         gpes = GenePanelEntrySnapshotFactory()
