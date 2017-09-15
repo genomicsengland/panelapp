@@ -60,6 +60,7 @@ CUSTOM_APPS = [
     'mathfilters',
     'django_ajax',
     'rest_framework',
+    'django_admin_listfilter_dropdown'
 ]
 
 PROJECT_APPS = [
@@ -201,7 +202,6 @@ MARKDOWN_DEUX_STYLES = {
     },
 }
 
-PANEL_APP_EMAIL = None
 CELL_BASE_CONNECTOR_REST = os.getenv(
     "CELL_BASE_CONNECTOR_REST",
     "http://bioinfo.hpc.cam.ac.uk/cellbase/webservices/rest/"

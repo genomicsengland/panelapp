@@ -331,7 +331,10 @@ class GenePanelSpanshotView(DetailView):
     context_object_name = 'gene'
 
     def get_object(self):
-        return self.panel.get_gene(self.kwargs['gene_symbol'], prefetch_extra=True)
+        if self.request.GET.get('pk'):
+            return self.panel.get_gene_by_pk(self.request.GET.get('pk'), prefetch_extra=True)
+        else:
+            return self.panel.get_gene(self.kwargs['gene_symbol'], prefetch_extra=True)
 
     def get_context_data(self, *args, **kwargs):
         ctx = super().get_context_data(*args, **kwargs)

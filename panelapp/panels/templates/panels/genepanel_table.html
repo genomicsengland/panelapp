@@ -82,7 +82,7 @@
 </td>
 <td>
     <h5 class="gene-cell-title">
-        <a href="{{ entry.get_absolute_url }}" class="link-inherit gel-text {{ entry|gene_list_class }} js-open-on-submit">{{ entry.gene.gene_symbol }}</a>
+        <a href="{{ entry.get_absolute_url }}{% if entry.gene.gene_symbol in panel.current_genes_duplicates %}?pk={{ entry.pk }}{% endif %}" class="link-inherit gel-text {{ entry|gene_list_class }} js-open-on-submit">{{ entry.gene.gene_symbol }}</a>
     </h5>
 </td>
 <td>

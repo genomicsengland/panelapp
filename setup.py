@@ -8,7 +8,7 @@ os.chdir(os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir)))
 
 setup(
     name='panelapp',
-    version='2.0.9',
+    version='2.0.10',
     author='Antonio Rueda-Martin,Oleg Gerasimenko',
     author_email='antonio.rueda-martin@genomicsengland.co.uk,oleg.gerasimenko@genomicsengland.co.uk',
     url='https://github.com/genomicsengland/PanelApp2',
@@ -58,6 +58,7 @@ setup(
         'requests==2.18.4',
         'uwsgi==2.0.15',
         'ijson==2.3',
-        'ujson==1.35'
+        'ujson==1.35',
+        'django-admin-list-filter-dropdown==1.0.1'
     ]
 )

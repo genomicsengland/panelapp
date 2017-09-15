@@ -362,10 +362,16 @@ class GenePanelSnapshot(TimeStampedModel):
     def current_genes(self):
         "Select and cache gene names"
 
-        return [
-            gene.get('gene_symbol') for gene in self.cached_entries.values_list('gene', flat=True)
-            if gene.get('gene_symbol')
-        ]
+        return list(self.current_genes_count.keys())
+
+    @cached_property
+    def current_genes_count(self):
+        genes_list = [g.get('gene_symbol') for g in self.cached_entries.values_list('gene', flat=True)]
+        return { gene: genes_list.count(gene) for gene in genes_list if gene }
+
+    @cached_property
+    def current_genes_duplicates(self):
+        return [gene for gene in self.current_genes_count if self.current_genes_count[gene] > 1]
 
     @cached_property
     def get_all_entries(self):
@@ -397,6 +403,20 @@ class GenePanelSnapshot(TimeStampedModel):
                 number_of_evaluations=Count('evaluation__pk', distinct=True)
             )\
             .order_by('-saved_gel_status', 'gene_core__gene_symbol')
+    
+    def get_gene_by_pk(self, gene_pk, prefetch_extra=False):
+        "Get a gene for a specific pk."
+
+        if prefetch_extra:
+            return self.get_all_entries_extra.prefetch_related(
+                'evaluation__comments',
+                'evaluation__user__reviewer',
+                'track',
+                'track__user',
+                'track__user__reviewer'
+            ).get(pk=gene_pk)
+        else:
+            return self.get_all_entries.get(pk=gene_pk)
 
     def get_gene(self, gene_symbol, prefetch_extra=False):
         "Get a gene for a specific gene symbol."
@@ -426,6 +446,10 @@ class GenePanelSnapshot(TimeStampedModel):
             del self.get_all_entries
         if self.get_all_entries_extra:
             del self.get_all_entries_extra
+        if self.current_genes_count:
+            del self.current_genes_count
+        if self.current_genes_duplicates:
+            del self.current_genes_duplicates
 
     def delete_gene(self, gene_symbol, increment=True):
         """Removes gene from a panel, but leaves it in the previous versions of the same panel"""

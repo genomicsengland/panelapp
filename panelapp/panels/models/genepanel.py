@@ -3,6 +3,7 @@ from django.db.models import Sum
 from django.db.models import Case
 from django.db.models import When
 from django.db.models import Value
+from django.contrib.postgres.aggregates import ArrayAgg
 from django.urls import reverse
 from django.utils.functional import cached_property
 from model_utils.models import TimeStampedModel

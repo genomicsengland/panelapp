@@ -18,6 +18,7 @@ django-debug-toolbar==1.8
 django-markdownx==2.0.21
 django-object-actions==0.10.0
 django-mathfilters==0.4.0
+django-admin-list-filter-dropdown==1.0.1
 Werkzeug==0.12.2
 
 celery==4.1.0
