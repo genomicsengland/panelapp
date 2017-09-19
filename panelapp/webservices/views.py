@@ -57,14 +57,14 @@ def get_panel(request, panel_name):
         if queryset.first():
             queryset = [queryset[0].active_panel]
         if not queryset:
-            queryset = GenePanelSnapshot.objects.get_active().filter(old_panels__icontains=panel_name)
+            queryset = GenePanelSnapshot.objects.get_active(deleted=True).filter(old_panels__icontains=panel_name)
             if not queryset:
                 try:
                     try:
                         int(panel_name)
-                        queryset = GenePanelSnapshot.objects.get_active().filter(panel__id=panel_name)
+                        queryset = GenePanelSnapshot.objects.get_active(deleted=True).filter(panel__id=panel_name)
                     except ValueError:
-                        queryset = GenePanelSnapshot.objects.get_active().filter(panel__old_pk=panel_name)
+                        queryset = GenePanelSnapshot.objects.get_active(deleted=True).filter(panel__old_pk=panel_name)
                     if not queryset:
                         return Response({"Query Error: " + panel_name + " not found."})
                 except DatabaseError:
@@ -101,7 +101,7 @@ def get_panel(request, panel_name):
             gene_list = queryset[0].get_all_entries
 
     else:
-        queryset = GenePanelSnapshot.objects.get_active().filter(panel__approved=True)
+        queryset = GenePanelSnapshot.objects.get_active(deleted=True).filter(panel__approved=True)
 
         queryset_name = queryset.filter(panel__name__icontains=panel_name)
         if not queryset_name:
@@ -141,7 +141,7 @@ def list_panels(request):
     if "Name" in request.GET:
         filters["panel__name__icontains"] = request.GET["Name"]
 
-    queryset = GenePanelSnapshot.objects.get_active_anotated().filter(**filters)
+    queryset = GenePanelSnapshot.objects.get_active_anotated(deleted=True).filter(**filters)
     serializer = ListPanelSerializer(instance=queryset,)
     return Response(serializer.data)
 
@@ -178,13 +178,13 @@ def search_by_gene(request, gene):
         panel_names = None
 
     if panel_names:
-        all_panels = GenePanelSnapshot.objects.get_active().filter(panel__name__in=panel_names, panel__approved=True)
+        all_panels = GenePanelSnapshot.objects.get_active(deleted=True).filter(panel__name__in=panel_names, panel__approved=True)
     else:
-        all_panels = GenePanelSnapshot.objects.get_active().filter(panel__approved=True)
+        all_panels = GenePanelSnapshot.objects.get_active(deleted=True).filter(panel__approved=True)
 
     panels_ids_dict = {panel.panel.pk: (panel.panel.pk, panel) for panel in all_panels}
     filters.update({'panel__panel__pk__in': list(panels_ids_dict.keys())})
-    active_genes = GenePanelEntrySnapshot.objects.get_active()
+    active_genes = GenePanelEntrySnapshot.objects.get_active(deleted=True)
     genes = active_genes.filter(**filters)
 
     if genes_qs:

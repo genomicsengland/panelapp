@@ -43,7 +43,9 @@ class Command(BaseCommand):
         self.files_path = None
         self.genes = {}
         self.gene_panels = {}
+        self.deleted_panels = {}
         self.gene_panel_snapshots = {}
+        self.gene_panel_snapshots_loaded = {}
         self.users = {}
         self.tz = timezone.get_current_timezone()
 
@@ -67,6 +69,7 @@ class Command(BaseCommand):
             self.load_users_from_database()
             self.load_genes_from_database()
             self.load_gene_panels()
+            self.load_gene_panels_snapshots_versions()
             self.import_backup_panels()
         else:
             with transaction.atomic():
@@ -97,12 +100,29 @@ class Command(BaseCommand):
 
     def load_gene_panels(self):
         self.gene_panels = {panel.old_pk: panel for panel in GenePanel.objects.all()}
+    
+    def load_gene_panels_snapshots_versions(self):
+        self.gene_panel_snapshots_loaded = {
+            "{}__{}".format(p.panel.name, p.version): True
+            for p in GenePanelSnapshot.objects.all().prefetch_related('panel')
+        }
 
     def import_backup_panels(self):
         total = 0
         temp_gp_list = []
 
         for temp_gp in self._iterate_file('gene_panel_backups.json', 'gene_backups.item'):
+            gps_version_key = "{}__{}".format(
+                temp_gp['panel_name'],
+                "{}.{}".format(temp_gp['major_version'], temp_gp['minor_version'])
+            )
+
+            gps_loaded = self.gene_panel_snapshots_loaded.get(gps_version_key)
+            if gps_loaded is True:
+                continue
+            
+            self.gene_panel_snapshots_loaded[gps_version_key] = True
+
             temp_gp_list.append(temp_gp)
 
             if len(temp_gp_list) == 100:
@@ -110,7 +130,10 @@ class Command(BaseCommand):
                     for gp in temp_gp_list:
                         _gp = self.gene_panels.get(gp['pk'])
                         if not _gp:
-                            continue
+                            _gp = self.deleted_panels.get(gp['pk'])
+                            if not _gp:
+                                _gp = self.create_gene_panel(gp, deleted=True)
+                                self.deleted_panels[gp['pk']] = _gp
 
                         start = time.time()
                         total += 1
@@ -351,11 +374,12 @@ class Command(BaseCommand):
         Activity.objects.bulk_create(activities)
         self.stdout.write('Created {} activities, missed {}'.format(total, missed))
 
-    def create_gene_panel(self, gp, save=True):
+    def create_gene_panel(self, gp, save=True, **kwargs):
         _gp = GenePanel(
             old_pk=gp['pk'],
             name=gp['panel_name'],
-            approved=gp['approved']
+            approved=gp['approved'],
+            **kwargs
         )
         if save:
             _gp.save()

@@ -24,15 +24,19 @@ from .comment import Comment
 
 
 class GenePanelSnapshotManager(models.Manager):
-    def get_latest_ids(self):
+    def get_latest_ids(self, deleted=False):
         "Get latest versions for GenePanelsSnapshots"
 
-        return super().get_queryset()\
+        qs = super().get_queryset()
+        if not deleted:
+            qs = qs.exclude(panel__deleted=True)
+
+        return qs\
             .distinct('panel__pk')\
             .values('pk')\
             .order_by('panel__pk', '-major_version', '-minor_version')
 
-    def get_active(self, all=False):
+    def get_active(self, all=False, deleted=False):
         "Get all active panels"
 
         qs = super().get_queryset()
@@ -40,14 +44,14 @@ class GenePanelSnapshotManager(models.Manager):
         if not all:
             qs = qs.filter(panel__approved=True)
 
-        return qs.filter(pk__in=Subquery(self.get_latest_ids()))\
+        return qs.filter(pk__in=Subquery(self.get_latest_ids(deleted)))\
             .prefetch_related('panel', 'level4title')\
             .order_by('panel__name', '-major_version', '-minor_version')
 
-    def get_active_anotated(self, all=False):
+    def get_active_anotated(self, all=False, deleted=False):
         "This method adds additional values to the queryset, such as number_of_genes, etc and returns active panels"
 
-        return self.get_active(all)
+        return self.get_active(all, deleted)
 
     def get_gene_panels(self, gene_symbol):
         "Get all panels for a specific gene"

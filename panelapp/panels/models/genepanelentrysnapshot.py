@@ -23,20 +23,28 @@ from panels.templatetags.panel_helpers import GeneDataType
 class GenePanelEntrySnapshotManager(models.Manager):
     """Objects manager for GenePanelEntrySnapshot."""
 
-    def get_latest_ids(self):
+    def get_latest_ids(self, deleted=False):
         """Get GenePanelSnapshot ids"""
 
-        return super().get_queryset()\
-            .distinct('panel__panel__pk')\
+        qs = super().get_queryset()
+        if not deleted:
+            qs = qs.exclude(panel__panel__deleted=True)
+
+        return qs.distinct('panel__panel__pk')\
             .values_list('panel__pk', flat=True)\
             .order_by('panel__panel__pk', '-panel__major_version', '-panel__minor_version')
 
-    def get_active(self):
+    def get_active(self, deleted=False, gene_symbol=None, pks=None):
         """Get active Gene Entry Snapshots"""
 
-        return super().get_queryset()\
-            .filter(panel__pk__in=Subquery(self.get_latest_ids()))\
-            .annotate(
+        if pks:
+            qs = super().get_queryset().filter(panel__pk__in=pks)
+        else:
+            qs = super().get_queryset().filter(panel__pk__in=Subquery(self.get_latest_ids(deleted)))
+        if gene_symbol:
+            qs = qs.filter(gene_core__gene_symbol=gene_symbol)
+
+        return qs.annotate(
                 number_of_reviewers=Count('evaluation__user', distinct=True),
                 number_of_evaluated_genes=Count('evaluation'),
                 number_of_genes=Count('pk'),
@@ -44,10 +52,10 @@ class GenePanelEntrySnapshotManager(models.Manager):
             .prefetch_related('evaluation', 'tags', 'evidence', 'panel', 'panel__level4title', 'panel__panel')\
             .order_by('panel__pk', '-panel__major_version', '-panel__minor_version')
 
-    def get_gene_panels(self, gene_symbol):
+    def get_gene_panels(self, gene_symbol, deleted=False, pks=None):
         """Get panels for the specified gene"""
 
-        return self.get_active().filter(gene_core__gene_symbol=gene_symbol)
+        return self.get_active(deleted=deleted, gene_symbol=gene_symbol, pks=pks)
 
 
 class GenePanelEntrySnapshot(TimeStampedModel):

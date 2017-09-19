@@ -25,6 +25,7 @@ class GenePanel(TimeStampedModel):
     name = models.CharField(max_length=255, db_index=True)
     approved = models.BooleanField(default=False, db_index=True)
     promoted = models.BooleanField(default=False)
+    deleted = models.BooleanField(default=False, db_index=True)
 
     objects = GenePanelManager()
 

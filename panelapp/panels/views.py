@@ -193,13 +193,18 @@ class GeneDetailView(DetailView):
         ctx['tag_filter'] = tag_filter
         ctx['gene_symbol'] = self.kwargs['slug']
 
-        entries = GenePanelEntrySnapshot.objects.get_gene_panels(self.kwargs['slug'])
+        admin_user = self.request.user.is_authenticated and self.request.user.reviewer.is_GEL()
+        gps = GenePanelSnapshot.objects.get_active(admin_user).filter(
+            genepanelentrysnapshot__gene_core__gene_symbol=self.kwargs['slug']
+        ).values_list('pk', flat=True)
+
+        entries = GenePanelEntrySnapshot.objects.get_gene_panels(self.kwargs['slug'], pks=gps)
         if not self.request.user.is_authenticated or not self.request.user.reviewer.is_GEL():
             entries = entries.filter(panel__panel__approved=True)
 
         if tag_filter:
             entries = entries.filter(tag__name=tag_filter)
-
+        
         ctx['entries'] = entries
         return ctx
 
@@ -914,6 +919,12 @@ class ActivityListView(ListView):
     paginate_by = 200
 
     def get_queryset(self, *args, **kwargs):
-        qs = super().get_queryset(*args, **kwargs)
+        qs = super().get_queryset(*args, **kwargs).exclude(
+            panel__deleted=True
+        )
+
+        if not self.request.user.is_authenticated:
+            qs = qs.exclude(panel__approved=False)
+
         qs = qs.prefetch_related('user', 'panel', 'user__reviewer')
         return qs
