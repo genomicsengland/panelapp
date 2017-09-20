@@ -220,10 +220,16 @@ class GeneListView(ListView):
         else:
             panel_ids = GenePanelSnapshot.objects.get_latest_ids().filter(panel__approved=True).values('pk')
 
-        genes = GenePanelEntrySnapshot.objects.filter(
+        qs = GenePanelEntrySnapshot.objects.filter(
             gene_core__active=True,
             panel__in=panel_ids
-        ).order_by().distinct('gene_core__gene_symbol').values_list('gene_core__gene_symbol', flat=True)
+        )
+
+        tag_filter = self.request.GET.get('tag')
+        if tag_filter:
+            qs = qs.filter(tags__name=tag_filter)
+
+        genes = qs.order_by().distinct('gene_core__gene_symbol').values_list('gene_core__gene_symbol', flat=True)
 
         return genes
 

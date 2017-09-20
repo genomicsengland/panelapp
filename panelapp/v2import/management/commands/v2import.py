@@ -100,32 +100,45 @@ class Command(BaseCommand):
 
     def load_gene_panels(self):
         self.gene_panels = {panel.old_pk: panel for panel in GenePanel.objects.all()}
-    
+
     def load_gene_panels_snapshots_versions(self):
-        self.gene_panel_snapshots_loaded = {
-            "{}__{}".format(p.panel.name, p.version): True
-            for p in GenePanelSnapshot.objects.all().prefetch_related('panel')
-        }
+        snapshots = GenePanelSnapshot.objects.all().prefetch_related('panel')
+        for gps in snapshots:
+            loaded = self.gene_panel_snapshots_loaded.get(gps.panel.old_pk)
+            if not loaded:
+                self.gene_panel_snapshots_loaded[gps.panel.old_pk] = set()
+            self.gene_panel_snapshots_loaded[gps.panel.old_pk].add(gps.version)
 
     def import_backup_panels(self):
         total = 0
+        added = 0
         temp_gp_list = []
 
         for temp_gp in self._iterate_file('gene_panel_backups.json', 'gene_backups.item'):
-            gps_version_key = "{}__{}".format(
-                temp_gp['panel_name'],
-                "{}.{}".format(temp_gp['major_version'], temp_gp['minor_version'])
-            )
+            total = total + 1
 
-            gps_loaded = self.gene_panel_snapshots_loaded.get(gps_version_key)
-            if gps_loaded is True:
+            gps_version_key = "{}.{}".format(temp_gp['major_version'], temp_gp['minor_version'])
+
+            if self.gene_panel_snapshots_loaded.get(temp_gp['pk'], None) is None:
+                self.gene_panel_snapshots_loaded[temp_gp['pk']] = set()
+
+            if gps_version_key in self.gene_panel_snapshots_loaded[temp_gp['pk']]:
+                print("Skipping {} Version {}".format(
+                    temp_gp['panel_name'],
+                    gps_version_key
+                ))
                 continue
-            
-            self.gene_panel_snapshots_loaded[gps_version_key] = True
+            else:
+                print("Adding {} Version {}".format(
+                    temp_gp['panel_name'],
+                    gps_version_key
+                ))
+
+            self.gene_panel_snapshots_loaded[temp_gp['pk']].add(gps_version_key)
 
             temp_gp_list.append(temp_gp)
 
-            if len(temp_gp_list) == 100:
+            if len(temp_gp_list) >= 25:
                 with transaction.atomic():
                     for gp in temp_gp_list:
                         _gp = self.gene_panels.get(gp['pk'])
@@ -136,9 +149,9 @@ class Command(BaseCommand):
                                 self.deleted_panels[gp['pk']] = _gp
 
                         start = time.time()
-                        total += 1
-                        if total % 100 == 0:
-                            print('total backup panels created: {}'.format(total))
+                        added += 1
+                        if added % 100 == 0:
+                            print('total backup panels created: {} out of {}'.format(added, total))
 
                         gps = self.create_gene_panel_snapshot(gp, _gp)
 
@@ -150,7 +163,7 @@ class Command(BaseCommand):
 
                     temp_gp_list = []
 
-        self.stdout.write('Created {} backup panels'.format(total))
+        self.stdout.write('Created {} backup panels, total panels: {}'.format(added, total))
 
     def create_gene_panel_entry_snapshot(self, gpe, panel):
         if gpe['gene']['gene_symbol'][-1] == '*':

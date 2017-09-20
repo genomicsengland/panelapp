@@ -474,6 +474,11 @@ class GenePanelEntrySnapshot(TimeStampedModel):
                     comment=evaluation_data.get('comment')
                 )
                 evaluation.comments.add(comment)
+            
+            rating = evaluation_data.get('rating')
+            if rating and evaluation.rating != rating:
+                changed = True
+                evaluation.rating = rating
 
             mop = evaluation_data.get('mode_of_pathogenicity')
             if mop and evaluation.mode_of_pathogenicity != mop:
