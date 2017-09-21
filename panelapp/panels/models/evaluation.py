@@ -16,6 +16,7 @@ class Evaluation(TimeStampedModel):
         indexes = [
             models.Index(fields=['user_id']),
         ]
+        ordering = ['-created',]
 
     RATINGS = Choices(
         ("GREEN", "Green List (high evidence)"),

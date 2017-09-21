@@ -138,6 +138,120 @@ class GenePanelSnapshotTest(LoginGELUser):
         assert gpes.panel.panel.active_panel.version != gpes.panel.version
         new_current_number = gpes.panel.panel.active_panel.number_of_genes
         assert number_of_genes == new_current_number
+    
+    def test_remove_sources(self):
+        """Remove sources via edit gene detail section"""
+
+        gpes = GenePanelEntrySnapshotFactory(
+            penetrance=GenePanelEntrySnapshot.PENETRANCE.Incomplete
+        )
+        url = reverse_lazy('panels:edit_gene', kwargs={
+            'pk': gpes.panel.panel.pk,
+            'gene_symbol': gpes.gene.get('gene_symbol')
+        })
+
+        gene_data = {
+            "gene": gpes.gene_core.pk,
+            "gene_name": "Gene name",
+            "source": set([ev.name for ev in gpes.evidence.all()[1:]]),
+            "tags": [tag.name for tag in gpes.tags.all()],
+            "publications": ";".join([publication for publication in gpes.publications]),
+            "phenotypes": ";".join([phenotype for phenotype in gpes.phenotypes]),
+            "moi": gpes.moi,
+            "mode_of_pathogenicity": gpes.mode_of_pathogenicity,
+            "penetrance": GenePanelEntrySnapshot.PENETRANCE.Complete,
+        }
+        res = self.client.post(url, gene_data)
+        assert res.status_code == 302
+        gene = GenePanel.objects.get(pk=gpes.panel.panel.pk).active_panel.get_gene(gpes.gene_core.gene_symbol)
+        assert gene.penetrance != gpes.penetrance
+    
+    def test_add_tag_via_edit_details(self):
+        """Set tags via edit gene detail section"""
+
+        gpes = GenePanelEntrySnapshotFactory(
+            penetrance=GenePanelEntrySnapshot.PENETRANCE.Incomplete
+        )
+        url = reverse_lazy('panels:edit_gene', kwargs={
+            'pk': gpes.panel.panel.pk,
+            'gene_symbol': gpes.gene.get('gene_symbol')
+        })
+
+        tag = TagFactory(name='some tag')
+
+        gene_data = {
+            "gene": gpes.gene_core.pk,
+            "gene_name": "Gene name",
+            "source": set([ev.name for ev in gpes.evidence.all()]),
+            "tags": [tag.pk for tag in gpes.tags.all()] + [tag.pk,],
+            "publications": ";".join([publication for publication in gpes.publications]),
+            "phenotypes": ";".join([phenotype for phenotype in gpes.phenotypes]),
+            "moi": gpes.moi,
+            "mode_of_pathogenicity": gpes.mode_of_pathogenicity,
+            "penetrance": GenePanelEntrySnapshot.PENETRANCE.Complete,
+        }
+        res = self.client.post(url, gene_data)
+        assert res.status_code == 302
+        gene = GenePanel.objects.get(pk=gpes.panel.panel.pk).active_panel.get_gene(gpes.gene_core.gene_symbol)
+        assert sorted(list(gene.tags.all())) != sorted(list(gpes.tags.all()))
+    
+    def test_remove_tag_via_edit_details(self):
+        """Remove tags via edit gene detail section"""
+
+        gpes = GenePanelEntrySnapshotFactory(
+            penetrance=GenePanelEntrySnapshot.PENETRANCE.Incomplete
+        )
+
+        tag = TagFactory(name='some tag')
+        gpes.tags.add(tag)
+        
+        url = reverse_lazy('panels:edit_gene', kwargs={
+            'pk': gpes.panel.panel.pk,
+            'gene_symbol': gpes.gene.get('gene_symbol')
+        })
+
+        gene_data = {
+            "gene": gpes.gene_core.pk,
+            "gene_name": "Gene name",
+            "source": set([ev.name for ev in gpes.evidence.all()]),
+            "tags": [],
+            "publications": ";".join([publication for publication in gpes.publications]),
+            "phenotypes": ";".join([phenotype for phenotype in gpes.phenotypes]),
+            "moi": gpes.moi,
+            "mode_of_pathogenicity": gpes.mode_of_pathogenicity,
+            "penetrance": GenePanelEntrySnapshot.PENETRANCE.Complete,
+        }
+        res = self.client.post(url, gene_data)
+        assert res.status_code == 302
+        gene = GenePanel.objects.get(pk=gpes.panel.panel.pk).active_panel.get_gene(gpes.gene_core.gene_symbol)
+        assert list(gene.tags.all()) == []
+    
+    def test_change_penetrance(self):
+        """Test if a curator can change Gene penetrance"""
+
+        gpes = GenePanelEntrySnapshotFactory(
+            penetrance=GenePanelEntrySnapshot.PENETRANCE.Incomplete
+        )
+        url = reverse_lazy('panels:edit_gene', kwargs={
+            'pk': gpes.panel.panel.pk,
+            'gene_symbol': gpes.gene.get('gene_symbol')
+        })
+
+        gene_data = {
+            "gene": gpes.gene_core.pk,
+            "gene_name": "Gene name",
+            "source": set([ev.name for ev in gpes.evidence.all()]),
+            "tags": [tag.name for tag in gpes.tags.all()],
+            "publications": ";".join([publication for publication in gpes.publications]),
+            "phenotypes": ";".join([phenotype for phenotype in gpes.phenotypes]),
+            "moi": gpes.moi,
+            "mode_of_pathogenicity": gpes.mode_of_pathogenicity,
+            "penetrance": GenePanelEntrySnapshot.PENETRANCE.Complete,
+        }
+        res = self.client.post(url, gene_data)
+        assert res.status_code == 302
+        gene = GenePanel.objects.get(pk=gpes.panel.panel.pk).active_panel.get_gene(gpes.gene_core.gene_symbol)
+        assert gene.penetrance != gpes.penetrance
 
     def test_mitochondrial_gene(self):
         gene = GeneFactory(gene_symbol="MT-LORUM")

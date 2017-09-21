@@ -23,12 +23,12 @@ class EnsembleIdMixin:
 
         ensemblId = None
         if assembly == 'GRch38' and gene.gene.get('ensembl_genes'):
-            ensemblId = gene.gene.get('ensembl_genes').get(assembly, {}).get(version).get('ensembl_id', None)
+            ensemblId = gene.gene.get('ensembl_genes', {}).get(assembly, {}).get(version, {}).get('ensembl_id', None)
         elif assembly == 'GRch37':
             if gene.gene.get('ensembl_genes'):
-                ensemblId = gene.gene.get('ensembl_genes').get(assembly, {}).get(version).get('ensembl_id', None)
+                ensemblId = gene.gene.get('ensembl_genes', {}).get(assembly, {}).get(version, {}).get('ensembl_id', None)
             elif gene.gene.get('other_transcripts') and len(gene.gene.get('other_transcripts')) > 0:
-                ensemblId = gene.gene.get('other_transcripts')[0].get('geneid', None)
+                ensemblId = gene.gene.get('other_transcripts', [{}])[0].get('geneid', None)
 
         if ensemblId is None:
             return []
@@ -130,7 +130,7 @@ class ListPanelSerializer(serializers.BaseSerializer):
                 "DiseaseGroup": panel.level4title.level2title,
                 "CurrentVersion": panel.version,
                 "Number_of_Genes": panel.number_of_genes,
-                "Panel_Id": panel.panel.old_pk if panel.panel.old_pk else panel.panel.pk,
+                "Panel_Id": panel.panel.old_pk if panel.panel.old_pk else str(panel.panel.pk),
                 "Relevant_disorders": panel.old_panels
             })
         return result

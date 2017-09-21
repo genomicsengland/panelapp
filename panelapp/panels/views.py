@@ -751,8 +751,10 @@ class DownloadAllGenes(GELReviewerRequiredMixin, View):
     def gene_iterator(self):
         yield (
             "Symbol",
-            "Panel",
+            "Panel Id",
+            "Panel Name",
             "Panel Version",
+            "Approved",
             "List",
             "Sources",
             "Mode of inheritance",
@@ -785,18 +787,20 @@ class DownloadAllGenes(GELReviewerRequiredMixin, View):
                 row = [
                     entry.gene.get('gene_symbol'),
                     entry.panel.panel.pk,
+                    entry.panel.panel.name,
                     entry.panel.version,
+                    str(entry.panel.panel.approved).upper(),
                     colour,
                     ';'.join([evidence.name for evidence in entry.evidence.all()]),
                     entry.moi,
                     entry.mode_of_pathogenicity,
                     ';'.join([tag.name for tag in entry.tags.all()]),
-                    entry.gene.get('GRch37', {}).get('ensemble_id', '-'),
-                    entry.gene.get('GRch38', {}).get('ensemble_id', '-'),
+                    entry.gene.get('ensembl_genes', {}).get('GRch37', {}).get('82', {}).get('ensembl_id', '-'),
+                    entry.gene.get('ensembl_genes', {}).get('GRch38', {}).get('89', {}).get('ensembl_id', '-'),
                     entry.gene.get('biotype', '-'),
                     phenotypes,
-                    entry.gene.get('GRch37', {}).get('location', '-'),
-                    entry.gene.get('GRch38', {}).get('location', '-'),
+                    entry.gene.get('ensembl_genes', {}).get('GRch37', {}).get('82', {}).get('location', '-'),
+                    entry.gene.get('ensembl_genes', {}).get('GRch38', {}).get('89', {}).get('location', '-'),
                 ]
                 yield row
 
@@ -807,7 +811,7 @@ class DownloadAllGenes(GELReviewerRequiredMixin, View):
         response = StreamingHttpResponse((writer.writerow(row) for row in self.gene_iterator()),
                                          content_type='text/tab-separated-values')
         attachment = 'attachment; filename=All_genes_{}.tsv'.format(
-            datetime.now().strftime('%Y%m%d%H%M'))
+            datetime.now().strftime('%Y%m%d-%H%M'))
         response['Content-Disposition'] = attachment
         return response
 
@@ -863,66 +867,15 @@ class DownloadAllPanels(GELReviewerRequiredMixin, View):
         response = StreamingHttpResponse((writer.writerow(row) for row in self.panel_iterator(request)),
                                          content_type='text/tab-separated-values')
         attachment = 'attachment; filename=All_panels_{}.tsv'.format(
-            datetime.now().strftime('%Y%m%d%H%M'))
+            datetime.now().strftime('%Y%m%d-%H%M'))
         response['Content-Disposition'] = attachment
-        return response
-
-    def get_old(self, request, *args, **kwargs):
-        response = HttpResponse(content_type='text/tab-separated-values')
-        attachment = 'attachment; filename=All_panels_{}.tsv'.format(datetime.now().strftime('%Y%M%D%H%i'))
-        response['Content-Disposition'] = attachment
-        writer = csv.writer(response, delimiter='\t')
-
-        writer.writerow((
-            "Level 4 title",
-            "Level 3 title",
-            "Level 2 title",
-            "URL",
-            "Current Version",
-            "# rated genes/total genes",
-            "#reviewers",
-            "Reviewer name and affiliation (;)",
-            "Reviewer emails (;)",
-            "Approved",
-            "Relevant disorders"
-        ))
-
-        panels = GenePanelSnapshot.objects\
-            .get_active_anotated(True)\
-            .prefetch_related(
-                'genepanelentrysnapshot_set',
-                'genepanelentrysnapshot_set__evaluation',
-                'genepanelentrysnapshot_set__evaluation__user',
-                'genepanelentrysnapshot_set__evaluation__user__reviewer',
-            )\
-            .all()
-
-        for panel in panels:
-            rate = "{} of {} genes reviewed".format(panel.number_of_evaluated_genes, panel.number_of_genes)
-            reviewers = panel.contributors
-
-            row = [
-                panel.level4title.name,
-                panel.level4title.level3title,
-                panel.level4title.level2title,
-                request.build_absolute_uri(reverse('panels:detail', args=(panel.panel.id,))),
-                panel.version,
-                rate,
-                len(reviewers),
-                ";".join(["{} {} ({})".format(user[0], user[1], user[3]) for user in reviewers]),  # aff
-                ";".join([user[2] for user in reviewers if user[2]]),  # email
-                panel.panel.approved,
-                ";".join(panel.old_panels)
-            ]
-            writer.writerow(row)
-
         return response
 
 
 class ActivityListView(ListView):
     model = Activity
     context_object_name = 'activities'
-    paginate_by = 200
+    paginate_by = 3000
 
     def get_queryset(self, *args, **kwargs):
         qs = super().get_queryset(*args, **kwargs).exclude(

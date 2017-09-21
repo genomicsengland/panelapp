@@ -7,6 +7,7 @@ from django.db.models import Case
 from django.db.models import When
 from django.db.models import Subquery
 from django.urls import reverse
+from django.utils import timezone
 from django.contrib.postgres.fields import ArrayField
 from django.contrib.postgres.aggregates import ArrayAgg
 from django.utils.functional import cached_property
@@ -297,16 +298,24 @@ class GenePanelSnapshot(TimeStampedModel):
                 self.genepanelentrysnapshot_set.model.comments.through(**ev) for ev in comments
             ])
 
+            if self.panel.active_panel:
+                del self.panel.active_panel
+
             if major:
                 email_panel_promoted.delay(self.panel.pk)
 
                 activity = "promoted panel to version {}".format(self.version)
                 self.add_activity(user, '', activity)
 
-                self.version_comment = comment
+                self.version_comment = "{} {} promoted panel to {}\n{}\n\n{}".format(
+                    timezone.now().strftime('%Y-%m-%d %H:%M'),
+                    user.get_reviewer_name(),
+                    self.version,
+                    comment,
+                    self.version_comment if self.version_comment else ''
+                )
+                self.save()
 
-            if self.panel.active_panel:
-                del self.panel.active_panel
             return self.panel.active_panel
 
     def update_saved_stats(self):
@@ -611,28 +620,51 @@ class GenePanelSnapshot(TimeStampedModel):
 
             logging.debug("Updating evidences_names for gene:{} in panel:{}".format(gene_symbol, self))
             if gene_data.get('sources'):
-                for source in gene_data.get('sources'):
-                    cleaned_source = source.strip()
-                    if cleaned_source not in evidences_names:
-                        logging.debug("Adding new evidence:{} for gene:{} panel:{}".format(
-                            cleaned_source, gene_symbol, self
-                        ))
-                        evidence = Evidence.objects.create(
-                            name=cleaned_source,
-                            rating=5,
-                            reviewer=user.reviewer
-                        )
-                        gene.evidence.add(evidence)
+                add_evidences = [
+                    source.strip() for source in gene_data.get('sources')
+                    if source not in evidences_names
+                ]
+                delete_evidences = [
+                    source for source in evidences_names
+                    if source in Evidence.ALL_SOURCES and not source in gene_data.get('sources')
+                ]
 
-                        description = "{} was added to {} panel. Source: {}".format(
-                            gene_symbol,
-                            self.panel.name,
-                            cleaned_source
-                        )
-                        tracks.append((
-                            TrackRecord.ISSUE_TYPES.NewSource,
-                            description
-                        ))
+                for source in delete_evidences:
+                    ev = gene.evidence.filter(name=source).first()
+                    gene.evidence.remove(ev)
+                    logging.debug("Removing evidence:{} for gene:{} panel:{}".format(
+                        source, gene_symbol, self
+                    ))
+                    description = "Source {} was removed from {}. Panel: {}".format(
+                        source,
+                        gene_symbol,
+                        self.panel.name
+                    )
+                    tracks.append((
+                        TrackRecord.ISSUE_TYPES.RemovedSource,
+                        description
+                    ))
+
+                for source in add_evidences:
+                    logging.debug("Adding new evidence:{} for gene:{} panel:{}".format(
+                        source, gene_symbol, self
+                    ))
+                    evidence = Evidence.objects.create(
+                        name=source,
+                        rating=5,
+                        reviewer=user.reviewer
+                    )
+                    gene.evidence.add(evidence)
+
+                    description = "{} was added to {}. Panel: {}".format(
+                        source,
+                        gene_symbol,
+                        self.panel.name,
+                    )
+                    tracks.append((
+                        TrackRecord.ISSUE_TYPES.NewSource,
+                        description
+                    ))
 
             moi = gene_data.get('moi')
             if moi and gene.moi != moi:
@@ -675,10 +707,66 @@ class GenePanelSnapshot(TimeStampedModel):
 
             phenotypes = gene_data.get('phenotypes')
             if phenotypes:
-                diff = set(phenotypes).difference(gene.phenotypes)
                 logging.debug("Updating phenotypes for gene:{} in panel:{}".format(gene_symbol, self))
-                for p in diff:
-                    gene.phenotypes.append(p)
+                gene.phenotypes = phenotypes
+
+            penetrance = gene_data.get('penetrance')
+            if penetrance and gene.penetrance != penetrance:
+                gene.penetrance = penetrance
+                logging.debug("Updating penetrance for gene:{} in panel:{}".format(gene_symbol, self))
+                description = "Penetrance for gene {} was set to {}".format(
+                    gene_symbol,
+                    penetrance
+                )
+                tracks.append((
+                    TrackRecord.ISSUE_TYPES.SetPenetrance,
+                    description
+                ))
+
+            current_tags = [tag.pk for tag in gene.tags.all()]
+            tags = gene_data.get('tags')
+            if tags or gene.tags.all():
+                new_tags = [tag.pk for tag in tags]
+                add_tags = [
+                    tag for tag in tags
+                    if tag.pk not in current_tags
+                ]
+                delete_tags = [
+                    tag for tag in current_tags
+                    if tag not in new_tags
+                ]
+
+                for tag in delete_tags:
+                    tag = gene.tags.get(pk=tag)
+                    gene.tags.remove(tag)
+                    logging.debug("Removing tag:{} for gene:{} panel:{}".format(
+                        tag.name, gene_symbol, self
+                    ))
+                    description = "{} was removed from {}. Panel: {}".format(
+                        tag,
+                        gene_symbol,
+                        self.panel.name,
+                    )
+                    tracks.append((
+                        TrackRecord.ISSUE_TYPES.RemovedTag,
+                        description
+                    ))
+
+                for tag in add_tags:
+                    logging.debug("Adding new tag:{} for gene:{} panel:{}".format(
+                        tag, gene_symbol, self
+                    ))
+                    gene.tags.add(tag)
+
+                    description = "{} was added to {}. Panel: {}".format(
+                        tag,
+                        gene_symbol,
+                        self.panel.name,
+                    )
+                    tracks.append((
+                        TrackRecord.ISSUE_TYPES.AddedTag,
+                        description
+                    ))
 
             if tracks:
                 logging.debug("Adding tracks for gene:{} in panel:{}".format(gene_symbol, self))

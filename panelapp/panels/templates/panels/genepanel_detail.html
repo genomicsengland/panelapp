@@ -28,9 +28,10 @@
           {% if panel.level4title.level2title %}
               Level 2: {{ panel.level4title.level2title }}<br />
           {% endif %}
-          {% if panel.old_panels %}
+          {% if panel.old_panels and panel.old_panels.0 %}
               <br/>Relevant disorders: {{ panel.old_panels|join:", " }}
           {% endif %}
+          <br />Panel code: {% if panel.panel.old_pk %}{{ panel.panel.old_pk }}{% else %}{{ panel.panel.pk }}{% endif %}
       </p>
   </div>
 
@@ -74,7 +75,7 @@
      <h2>Major version comments</h2>
       <ul class="list-group remove-bottom-margin">
           <li class="list-group-item">
-              <p class="remove-bottom-margin">{{ panel.version_comment }}</p>
+              <p class="remove-bottom-margin">{{ panel.version_comment|linebreaksbr }}</p>
           </li>
       </ul>
   {% endif %}

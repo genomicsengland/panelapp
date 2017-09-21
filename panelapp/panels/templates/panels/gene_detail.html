@@ -81,7 +81,7 @@
                 data-gene="{{ entry.gene.gene_symbol }}"
                 data-list-index="{{ entry.saved_gel_status }}"
                 data-moi="{{ entry.moi }}"
-                data-reviews="{{ entry.evaluation|length }}"
+                data-reviews="{{ entry.number_of_evaluated_genes }}"
               >
                 <td>
                   <h4 class="remove-top-margin" title="Level 4 title">
@@ -100,6 +100,13 @@
                       <br />Level 2: {{ entry.panel.level4title.level2title }}
                     {% endif %}
                     <br /><span class="text-muted">Version {{ entry.panel.major_version }}.{{ entry.panel.minor_version }}</span>
+                    {% if request.user.is_authenticated and request.user.reviewer.is_GEL %}
+                      {% if entry.panel.panel.approved %}
+                        <br /><span class="text-muted">Panel approved</span>
+                      {% else %}
+                      <br /><span class="text-muted">Panel not approved</span>
+                      {% endif %}
+                    {% endif %}
                   </p>
                 </td>
                 <td>

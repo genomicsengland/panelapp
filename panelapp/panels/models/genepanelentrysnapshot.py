@@ -577,3 +577,13 @@ class GenePanelEntrySnapshot(TimeStampedModel):
             "moi": self.moi,
             "penetrance": self.penetrance
         }
+    
+    def get_review_comments(self):
+        """Get review comments in a chronological order.
+        
+        Used for list of review comments
+        
+        Returns QuerySet
+        """
+
+        return Comment.objects.filter(evaluation__pk__in=self.evaluation.values_list('pk', flat=True))
