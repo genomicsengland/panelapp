@@ -569,7 +569,7 @@ class GenePanelEntrySnapshot(TimeStampedModel):
             "gene": self.gene_core,
             "gene_json": self.gene,
             "gene_name": self.gene.get('gene_name'),
-            "source": [e.name for e in self.evidence.all()],
+            "source": [e.name for e in self.evidence.all() if e.is_GEL],
             "tags": self.tags.all(),
             "publications": self.publications,
             "phenotypes": self.phenotypes,

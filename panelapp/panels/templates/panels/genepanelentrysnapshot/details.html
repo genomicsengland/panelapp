@@ -18,7 +18,9 @@
             <dd>
                 <ul>
                     {% for ev in gene.evidence.all %}
-                        <li>{{ ev.name }}</li>
+                        {% if ev.is_GEL %}
+                            <li>{{ ev.name }}</li>
+                        {% endif %}
                     {% endfor %}
                 </ul>
                 {% if request.user.is_authenticated and request.user.reviewer.is_GEL %}
