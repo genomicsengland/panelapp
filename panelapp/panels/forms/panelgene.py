@@ -169,10 +169,12 @@ class PanelGeneForm(forms.ModelForm):
             self.panel = GenePanel.objects.get(pk=self.panel.panel.pk).active_panel
             return self.panel.get_gene(new_gene_symbol)
         else:
+            increment_version = self.request.user.is_authenticated and self.request.user.reviewer.is_GEL()
             gene = self.panel.add_gene(
                 self.request.user,
                 new_gene_symbol,
-                gene_data
+                gene_data,
+                increment_version
             )
             self.panel = GenePanel.objects.get(pk=self.panel.panel.pk).active_panel
             self.panel.update_saved_stats()

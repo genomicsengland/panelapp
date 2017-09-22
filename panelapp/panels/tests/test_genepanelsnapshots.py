@@ -40,6 +40,26 @@ class GenePanelSnapshotReviewerTest(LoginReviewerUser):
 
         assert panel.get_gene(gene.gene_symbol).saved_gel_status == 0
 
+    def test_add_gene_to_panel(self):
+        """When a reviewer adds a gene it shouldn't increment the version of a panel"""
+
+        gene = GeneFactory()
+        gps = GenePanelSnapshotFactory()
+        url = reverse_lazy('panels:add_gene', kwargs={'pk': gps.panel.pk})
+        gene_data = {
+            "gene": gene.pk,
+            "source": Evidence.OTHER_SOURCES[0],
+            "phenotypes": "{};{};{}".format(*fake.sentences(nb=3)),
+            "rating": Evaluation.RATINGS.AMBER,
+            "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)][0],
+            "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][randint(1, 2)][0],
+            "penetrance": GenePanelEntrySnapshot.PENETRANCE.Incomplete,
+        }
+        self.client.post(url, gene_data)
+        panel = gps.panel.active_panel
+
+        assert panel.version == gps.version
+
 
 class GenePanelSnapshotTest(LoginGELUser):
     "GeL currator tests"
