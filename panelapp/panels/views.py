@@ -78,6 +78,8 @@ class PanelsIndexView(ListView):
 
 
 class CreatePanelView(GELReviewerRequiredMixin, CreateView):
+    """Create a new panel"""
+
     template_name = "panels/genepanel_create.html"
     form_class = PanelForm
 
@@ -92,6 +94,8 @@ class CreatePanelView(GELReviewerRequiredMixin, CreateView):
 
 
 class UpdatePanelView(GELReviewerRequiredMixin, PanelMixin, UpdateView):
+    """Update panel information"""
+
     template_name = "panels/genepanel_create.html"
     form_class = PanelForm
 

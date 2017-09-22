@@ -1,3 +1,5 @@
+"""User forms"""
+
 from collections import OrderedDict
 
 from django import forms
@@ -11,6 +13,8 @@ from .tasks import reviewer_confirmation_requset_email
 
 
 class RegistrationForm(UserCreationForm):
+    """Registration form, create user and a linked reviewer"""
+
     confirm_email = forms.EmailField()
     affiliation = forms.CharField()
     role = forms.ChoiceField(choices=[('', 'Please select a role')] + Reviewer.ROLES)
@@ -18,6 +22,8 @@ class RegistrationForm(UserCreationForm):
     group = forms.ChoiceField(choices=[('', 'Please select a group')] + Reviewer.GROUPS)
 
     class Meta:
+        """Select fields"""
+
         model = User
         fields = ('username', 'first_name', 'last_name', 'email')
 
@@ -40,15 +46,22 @@ class RegistrationForm(UserCreationForm):
         self.fields['group'] = original_fields.get('group')
 
     def clean_confirm_email(self):
+        """Check emails match"""
+
         email1 = self.cleaned_data.get('email')
         email2 = self.cleaned_data.get('confirm_email')
 
         if (not email1 or not email2) or email1 and email2 and email1 != email2:
             raise forms.ValidationError("Email confirmation doesn't match")
+        
+        if User.objects.filter(email=email1):
+            raise forms.ValidationError("This email is already registered, please use reset password functionality")
 
         return email1
 
     def save(self, *args, **kwargs):
+        """Save user and create a reviewer"""
+
         super().save(*args, **kwargs)
 
         reviewer = Reviewer()
@@ -64,6 +77,8 @@ class RegistrationForm(UserCreationForm):
 
 
 class ChangePasswordForm(forms.Form):
+    """Change user's password"""
+
     current_password = forms.CharField(
         label="Current password",
         strip=False,
@@ -87,23 +102,29 @@ class ChangePasswordForm(forms.Form):
         del kwargs['user']
         super().__init__(*args, **kwargs)
 
-    def clean_password(self):
+    def clean_current_password(self):
+        """Check if current password match"""
+
         current_password = self.cleaned_data['current_password']
         if not self.user.check_password(current_password):
             raise forms.ValidationError("Please enter correct password")
         return current_password
 
     def clean_password2(self):
+        """Make sure passwords match"""
+
         password1 = self.cleaned_data.get("password1")
         password2 = self.cleaned_data.get("password2")
         if password1 and password2 and password1 != password2:
             raise forms.ValidationError(
-                self.error_messages['password_mismatch'],
+                "Passwords don't match",
                 code='password_mismatch',
             )
         password_validation.validate_password(self.cleaned_data.get('password2'), self.user)
         return password2
 
     def update_user_password(self, commit=True):
+        """Update password"""
+
         self.user.set_password(self.cleaned_data["password1"])
         self.user.save()

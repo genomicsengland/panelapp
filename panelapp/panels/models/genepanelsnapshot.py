@@ -722,6 +722,19 @@ class GenePanelSnapshot(TimeStampedModel):
                     TrackRecord.ISSUE_TYPES.SetPenetrance,
                     description
                 ))
+            
+            publications = gene_data.get('publications')
+            if publications and gene.publications != publications:
+                gene.publications = publications
+                logging.debug("Updating publications for gene:{} in panel:{}".format(gene_symbol, self))
+                description = "Publications for gene {} was set to {}".format(
+                    gene_symbol,
+                    publications
+                )
+                tracks.append((
+                    TrackRecord.ISSUE_TYPES.SetPublications,
+                    description
+                ))
 
             current_tags = [tag.pk for tag in gene.tags.all()]
             tags = gene_data.get('tags')

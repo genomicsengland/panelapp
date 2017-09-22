@@ -124,13 +124,15 @@
       <h6 class="add-label-margin remove-top-margin">Sources</h6>
       <ul>
         {% for ev in entry.evidence.all %}
-          <li>
-            {{ ev.name }}
+          {% if ev.is_GEL %}
+            <li>
+                {{ ev.name }}
 
-            {% if request.user.is_authenticated and request.user.reviewer.is_GEL %}
-              <a type="url" href="{% url 'panels:clear_gene_source' panel.panel_id entry.gene.gene_symbol ev.name %}" class="hidden delete_source_{{ entry.gene.gene_symbol }}" data-ajax="true"> <i class="fa fa-times-circle-o"></i></a>
-            {% endif %}
-          </li>
+                {% if request.user.is_authenticated and request.user.reviewer.is_GEL %}
+                <a type="url" href="{% url 'panels:clear_gene_source' panel.panel_id entry.gene.gene_symbol ev.name %}" class="hidden delete_source_{{ entry.gene.gene_symbol }}" data-ajax="true"> <i class="fa fa-times-circle-o"></i></a>
+                {% endif %}
+            </li>
+          {% endif %}
         {% endfor %}
       </ul>
     {% endif %}

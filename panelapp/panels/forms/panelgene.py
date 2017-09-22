@@ -41,7 +41,10 @@ class PanelGeneForm(forms.ModelForm):
     gene = forms.ModelChoiceField(
         label="Gene symbol",
         queryset=Gene.objects.filter(active=True),
-        widget=ModelSelect2(url="autocomplete-gene")
+        widget=ModelSelect2(
+            url="autocomplete-gene",
+            attrs={'data-minimum-input-length': 3}
+        )
     )
 
     gene_name = forms.CharField()
