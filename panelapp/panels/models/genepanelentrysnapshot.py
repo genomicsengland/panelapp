@@ -173,20 +173,26 @@ class GenePanelEntrySnapshot(TimeStampedModel):
     def clear_evidences(self, user, evidence=None):
         "Remove sources from this gene. If `evidence` argument provided, check only that source"
 
+        description = None
+
         if evidence:
             evidences = self.evidence.filter(name=evidence)
             if len(evidences) > 0:
-                evidences.delete()
+                for evidence in evidences:
+                    if evidence.is_GEL:
+                        self.evidence.remove(evidence)
 
-                description = "{} Source: {} was removed from gene: {}".format(
-                    self.gene.get('gene_symbol'),
-                    evidence,
-                    self.gene.get('gene_symbol')
-                )
+                        description = "{} Source: {} was removed from gene: {}".format(
+                            self.gene.get('gene_symbol'),
+                            evidence,
+                            self.gene.get('gene_symbol')
+                        )
             else:
                 return False
         else:
-            self.evidence.all().delete()
+            for evidence in self.evidence.all():
+                if evidence.is_GEL:
+                    self.evidence.remove(evidence)
 
             description = "{} All sources for gene: {} were removed".format(
                 self.gene.get('gene_symbol'),
@@ -194,14 +200,16 @@ class GenePanelEntrySnapshot(TimeStampedModel):
             )
 
         evidence_status = self.evidence_status(update=True)
-        track_sources = TrackRecord.objects.create(
-            gel_status=evidence_status,
-            curator_status=0,
-            user=user,
-            issue_type=TrackRecord.ISSUE_TYPES.ClearSources,
-            issue_description=description
-        )
-        self.track.add(track_sources)
+
+        if description:
+            track_sources = TrackRecord.objects.create(
+                gel_status=evidence_status,
+                curator_status=0,
+                user=user,
+                issue_type=TrackRecord.ISSUE_TYPES.ClearSources,
+                issue_description=description
+            )
+            self.track.add(track_sources)
 
         return True
 

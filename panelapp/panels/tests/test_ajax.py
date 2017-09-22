@@ -11,6 +11,10 @@ class AjaxGenePanelEntrySnapshotTest(LoginGELUser):
     def setUp(self):
         super().setUp()
         self.gpes = GenePanelEntrySnapshotFactory()
+        evidence = self.gpes.evidence.all()[0]
+
+        evidence.reviewer.user_type = 'GEL'
+        evidence.reviewer.save()
 
     def helper_clear(self, content_type, additional_kwargs=None):
         kwargs = {
@@ -44,12 +48,12 @@ class AjaxGenePanelEntrySnapshotTest(LoginGELUser):
 
     def test_clear_sources(self):
         res, gene = self.helper_clear('clear_gene_sources')
-        assert gene.evidence.count() == 0
+        assert gene.evidence.count() == 3
 
         self.assertTrue(gene.track.filter(issue_type=TrackRecord.ISSUE_TYPES.ClearSources).count() > 0)
 
     def test_clear_single_source(self):
-        evidence = self.gpes.evidence.all()[0]
+        evidence = [ev for ev in self.gpes.evidence.all() if ev.is_GEL][0]
         before_count = self.gpes.evidence.count()
         evidence_count = self.gpes.evidence.filter(name=evidence.name).count()
         res, gene = self.helper_clear('clear_gene_source', additional_kwargs={'source': evidence.name})
