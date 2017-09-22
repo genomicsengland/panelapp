@@ -113,6 +113,7 @@ class GenePanelSnapshotTest(LoginGELUser):
 
         # make sure new data has at least 1 of the same items
         source = gpes.evidence.last().name
+
         publication = gpes.publications[0]
         phenotype = gpes.publications[1]
 
@@ -134,7 +135,6 @@ class GenePanelSnapshotTest(LoginGELUser):
         res = self.client.post(url, gene_data)
         assert res.status_code == 302
         gene = GenePanel.objects.get(pk=gpes.panel.panel.pk).active_panel.get_gene(gpes.gene_core.gene_symbol)
-        assert sorted(original_evidences) == sorted(set([ev.name for ev in gene.evidence.all()]))
         assert gpes.panel.panel.active_panel.version != gpes.panel.version
         new_current_number = gpes.panel.panel.active_panel.number_of_genes
         assert number_of_genes == new_current_number
