@@ -81,7 +81,8 @@ class GenePanel(TimeStampedModel):
     def active_panel(self):
         "Return the panel with biggest version"
 
-        return self._prepare_panel_query().first()
+        return self.genepanelsnapshot_set\
+            .order_by('-major_version', '-minor_version', '-created').first()
 
     def get_panel_version(self, version):
         "Get a specific version. Version argument should be a string"
