@@ -146,6 +146,9 @@ class GenePanelEntrySnapshot(TimeStampedModel):
             if evidence.is_GEL:
                 has_gel_reviews = True
                 if evidence.name in evidence.EXPERT_REVIEWS:
+                    if update:
+                        self.saved_gel_status = evidence.EXPERT_REVIEWS.get(evidence.name)
+                        self.save()
                     return evidence.EXPERT_REVIEWS.get(evidence.name)
                 if evidence.name in evidence.HIGH_CONFIDENCE_SOURCES and evidence.rating > 3:
                     gel_status += 1

@@ -144,9 +144,9 @@ class ImportToolMixin(GELReviewerRequiredMixin, AdminContextMixin, FormView):
         try:
             res = form.process_file(user=self.request.user)
             if res is ProcessingRunCode.PROCESS_BACKGROUND:
-                messages.success(self.request, "Import started in the background."
+                messages.error(self.request, "Import started in the background."
                                                " You will get an email once it has"
-                                               "completed.")
+                                               " completed.")
             else:
                 messages.success(self.request, "Import successful")
         except ValidationError as errors:
@@ -708,7 +708,7 @@ class CopyReviewsView(GELReviewerRequiredMixin, FormView):
         if process_type == ProcessingRunCode.PROCESSED:
             messages.success(self.request, "{} review{} copied".format(total_count, pluralize(total_count)))
         else:
-            messages.info(self.request, "Panels have too many genes, reviews will be copied in the background.")
+            messages.error(self.request, "Panels have too many genes, reviews will be copied in the background.")
 
         return redirect(reverse_lazy('panels:compare', args=(ctx['panel_1'].panel.pk, ctx['panel_2'].panel.pk)))
 

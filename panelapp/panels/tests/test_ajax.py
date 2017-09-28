@@ -3,6 +3,7 @@ from accounts.tests.setup import LoginGELUser
 from panels.tests.factories import GenePanelEntrySnapshotFactory
 from panels.models import GenePanel
 from panels.models import TrackRecord
+from panels.models import Evidence
 
 
 class AjaxGenePanelEntrySnapshotTest(LoginGELUser):
@@ -53,13 +54,56 @@ class AjaxGenePanelEntrySnapshotTest(LoginGELUser):
         self.assertTrue(gene.track.filter(issue_type=TrackRecord.ISSUE_TYPES.ClearSources).count() > 0)
 
     def test_clear_single_source(self):
-        evidence = [ev for ev in self.gpes.evidence.all() if ev.is_GEL][0]
-        before_count = self.gpes.evidence.count()
-        evidence_count = self.gpes.evidence.filter(name=evidence.name).count()
-        res, gene = self.helper_clear('clear_gene_source', additional_kwargs={'source': evidence.name})
-        assert gene.evidence.count() == before_count - evidence_count
-        assert res.content.find(str.encode(evidence.name)) == -1
+        # clear all evidences
+        self.gpes.evidence.all().delete()
+        ev = Evidence.objects.create(
+            name='UKGTN',
+            reviewer=self.gel_user.reviewer,
+            rating=3,
+            comment="Test"
+        )
+        self.gpes.evidence.add(ev)
+        ev = Evidence.objects.create(
+            name='Expert Review Green',
+            reviewer=self.gel_user.reviewer,
+            rating=3,
+            comment="Test"
+        )
+        self.gpes.evidence.add(ev)
 
+        before_count = self.gpes.evidence.count()
+        evidence_count = self.gpes.evidence.filter(name='UKGTN').count()
+        res, gene = self.helper_clear('clear_gene_source', additional_kwargs={'source': 'UKGTN'})
+        assert gene.evidence.count() == before_count - evidence_count
+        assert res.content.find(str.encode('UKGTN')) == -1
+
+    def test_clear_single_source_expert_review(self):
+        """When clearing the source if Expert Reviews is there is still should be the same"""
+
+        self.gpes.evidence.all().delete()
+        ev = Evidence.objects.create(
+            name='UKGTN',
+            reviewer=self.gel_user.reviewer,
+            rating=3,
+            comment="Test"
+        )
+        self.gpes.evidence.add(ev)
+        ev = Evidence.objects.create(
+            name='Expert Review Green',
+            reviewer=self.gel_user.reviewer,
+            rating=3,
+            comment="Test"
+        )
+        self.gpes.evidence.add(ev)
+
+        evidence = [ev for ev in self.gpes.evidence.all() if ev.is_GEL and not ev.name.startswith('Expert Review')][0]
+        before_count = self.gpes.evidence.count()
+        evidence_count = self.gpes.evidence.filter(name='UKGTN').count()
+        res, gene = self.helper_clear('clear_gene_source', additional_kwargs={'source': 'UKGTN'})
+        assert gene.evidence.count() == before_count - evidence_count
+        assert res.content.find(str.encode('UKGTN')) == -1
+
+        self.assertEqual(gene.status, Evidence.EXPERT_REVIEWS['Expert Review Green'])
 
 class AjaxGenePanelEntryTest(LoginGELUser):
     gpes = None

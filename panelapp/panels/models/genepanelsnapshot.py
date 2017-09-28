@@ -374,7 +374,6 @@ class GenePanelSnapshot(TimeStampedModel):
     @cached_property
     def current_genes(self):
         "Select and cache gene names"
-
         return list(self.current_genes_count.keys())
 
     @cached_property
@@ -404,7 +403,14 @@ class GenePanelSnapshot(TimeStampedModel):
         "Get all genes and annotated info, speeds up loading time"
 
         return self.cached_entries\
-            .prefetch_related('evidence', 'evaluation', 'evaluation__user',  'evaluation__user__reviewer', 'tags')\
+            .prefetch_related(
+                'evidence',
+                'evidence__reviewer',
+                'evaluation',
+                'evaluation__user',
+                'evaluation__user__reviewer',
+                'tags'
+            )\
             .annotate(
                 number_of_green_evaluations=Count(Case(When(
                     evaluation__rating="GREEN", then=models.F('evaluation__pk'))
@@ -448,21 +454,23 @@ class GenePanelSnapshot(TimeStampedModel):
     def has_gene(self, gene_symbol):
         "Check if the panel has a gene with the provided gene symbol"
 
-        return gene_symbol in self.current_genes
+        return gene_symbol in [
+            symbol.get('gene_symbol') for symbol in self.genepanelentrysnapshot_set.values_list('gene', flat=True)
+        ]
 
     def clear_cache(self):
         if self.cached_entries:
-            del self.cached_entries
-        if self.current_genes:
-            del self.current_genes
-        if self.get_all_entries:
-            del self.get_all_entries
-        if self.get_all_entries_extra:
-            del self.get_all_entries_extra
+            del self.__dict__['cached_entries']
         if self.current_genes_count:
-            del self.current_genes_count
+            del self.__dict__['current_genes_count']
         if self.current_genes_duplicates:
-            del self.current_genes_duplicates
+            del self.__dict__['current_genes_duplicates']
+        if self.current_genes:
+            del self.__dict__['current_genes']
+        if self.get_all_entries:
+            del self.__dict__['get_all_entries']
+        if self.get_all_entries_extra:
+            del self.__dict__['get_all_entries_extra']
 
     def delete_gene(self, gene_symbol, increment=True):
         """Removes gene from a panel, but leaves it in the previous versions of the same panel"""
@@ -576,11 +584,12 @@ class GenePanelSnapshot(TimeStampedModel):
             if gene_data.get('comment'):
                 evaluation.comments.add(comment)
             gene.evaluation.add(evaluation)
+        self.clear_cache()
         gene.evidence_status(update=True)
         self.update_saved_stats()
         return gene
 
-    def update_gene(self, user, gene_symbol, gene_data):
+    def update_gene(self, user, gene_symbol, gene_data, append_only=False):
         """Updates a gene if it exists in this panel
 
         Args:
@@ -626,24 +635,25 @@ class GenePanelSnapshot(TimeStampedModel):
                 ]
                 delete_evidences = [
                     source for source in evidences_names
-                    if source in Evidence.ALL_SOURCES and not source in gene_data.get('sources')
+                    if source not in Evidence.EXPERT_REVIEWS and not source in gene_data.get('sources')
                 ]
 
-                for source in delete_evidences:
-                    ev = gene.evidence.filter(name=source).first()
-                    gene.evidence.remove(ev)
-                    logging.debug("Removing evidence:{} for gene:{} panel:{}".format(
-                        source, gene_symbol, self
-                    ))
-                    description = "Source {} was removed from {}. Panel: {}".format(
-                        source,
-                        gene_symbol,
-                        self.panel.name
-                    )
-                    tracks.append((
-                        TrackRecord.ISSUE_TYPES.RemovedSource,
-                        description
-                    ))
+                if not append_only:
+                    for source in delete_evidences:
+                        ev = gene.evidence.filter(name=source).first()
+                        gene.evidence.remove(ev)
+                        logging.debug("Removing evidence:{} for gene:{} panel:{}".format(
+                            source, gene_symbol, self
+                        ))
+                        description = "Source {} was removed from {}. Panel: {}".format(
+                            source,
+                            gene_symbol,
+                            self.panel.name
+                        )
+                        tracks.append((
+                            TrackRecord.ISSUE_TYPES.RemovedSource,
+                            description
+                        ))
 
                 for source in add_evidences:
                     logging.debug("Adding new evidence:{} for gene:{} panel:{}".format(
@@ -738,7 +748,10 @@ class GenePanelSnapshot(TimeStampedModel):
 
             current_tags = [tag.pk for tag in gene.tags.all()]
             tags = gene_data.get('tags')
-            if tags or gene.tags.all():
+            if tags or current_tags:
+                if not tags:
+                    tags = []
+
                 new_tags = [tag.pk for tag in tags]
                 add_tags = [
                     tag for tag in tags
@@ -749,21 +762,22 @@ class GenePanelSnapshot(TimeStampedModel):
                     if tag not in new_tags
                 ]
 
-                for tag in delete_tags:
-                    tag = gene.tags.get(pk=tag)
-                    gene.tags.remove(tag)
-                    logging.debug("Removing tag:{} for gene:{} panel:{}".format(
-                        tag.name, gene_symbol, self
-                    ))
-                    description = "{} was removed from {}. Panel: {}".format(
-                        tag,
-                        gene_symbol,
-                        self.panel.name,
-                    )
-                    tracks.append((
-                        TrackRecord.ISSUE_TYPES.RemovedTag,
-                        description
-                    ))
+                if not append_only:
+                    for tag in delete_tags:
+                        tag = gene.tags.get(pk=tag)
+                        gene.tags.remove(tag)
+                        logging.debug("Removing tag:{} for gene:{} panel:{}".format(
+                            tag.name, gene_symbol, self
+                        ))
+                        description = "{} was removed from {}. Panel: {}".format(
+                            tag,
+                            gene_symbol,
+                            self.panel.name,
+                        )
+                        tracks.append((
+                            TrackRecord.ISSUE_TYPES.RemovedTag,
+                            description
+                        ))
 
                 for tag in add_tags:
                     logging.debug("Adding new tag:{} for gene:{} panel:{}".format(
@@ -891,12 +905,14 @@ class GenePanelSnapshot(TimeStampedModel):
                 )
                 new_gpes.track.add(track_gene)
                 self.delete_gene(old_gene_symbol, increment=False)
-            elif gene.gene.get('gene_name') != gene_name:
+            elif gene_name and gene.gene.get('gene_name') != gene_name:
                 logging.debug("Updating gene_name for gene:{} in panel:{}".format(gene_symbol, self))
                 gene.gene['gene_name'] = gene_name
                 gene.save()
             else:
                 gene.save()
+            self.clear_cache()
+            self.update_saved_stats()
             return gene
         else:
             return False

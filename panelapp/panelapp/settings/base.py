@@ -104,6 +104,8 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'panelapp.wsgi.application'
 
+FILE_UPLOAD_DIRECTORY_PERMISSIONS = 755
+
 
 # Database
 # https://docs.djangoproject.com/en/1.11/ref/settings/#databases

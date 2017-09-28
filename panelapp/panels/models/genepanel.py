@@ -79,9 +79,25 @@ class GenePanel(TimeStampedModel):
 
     @cached_property
     def active_panel(self):
-        "Return the panel with biggest version"
+        "Return the panel with the largest version"
 
         return self.genepanelsnapshot_set\
+            .order_by('-major_version', '-minor_version', '-created').first()
+
+    @property
+    def active_panel_extra(self):
+        "Return the panel with the largest version and related info"
+
+        return self.genepanelsnapshot_set\
+            .prefetch_related(
+                'panel',
+                'level4title',
+                'genepanelentrysnapshot_set',
+                'genepanelentrysnapshot_set__tags',
+                'genepanelentrysnapshot_set__evidence',
+                'genepanelentrysnapshot_set__gene_core',
+                'genepanelentrysnapshot_set__evaluation__comments'
+            )\
             .order_by('-major_version', '-minor_version', '-created').first()
 
     def get_panel_version(self, version):

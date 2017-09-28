@@ -85,13 +85,13 @@ class ChangePasswordForm(forms.Form):
         widget=forms.PasswordInput,
     )
     password1 = forms.CharField(
-        label="Password",
+        label="New Password",
         strip=False,
         widget=forms.PasswordInput,
         help_text=password_validation.password_validators_help_text_html(),
     )
     password2 = forms.CharField(
-        label="Password confirmation",
+        label="New Password Confirmation",
         widget=forms.PasswordInput,
         strip=False,
         help_text="Enter the same password as before, for verification.",

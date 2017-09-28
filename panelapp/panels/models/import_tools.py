@@ -98,7 +98,8 @@ def update_gene_collection(results):
 
         for record in to_update_gene_symbol:
             active = True
-            if not record[0].get('ensembl_genes', {}):
+            ensembl_genes = record[0].get('ensembl_genes', {})
+            if not ensembl_genes:
                 active = False
 
             # some dates are in the wrong format: %d-%m-%y, Django expects %Y-%m-%-d
@@ -114,9 +115,21 @@ def update_gene_collection(results):
             except Gene.DoesNotExist:
                 new_gene = Gene()
 
+            # check if record has ensembl genes data if it doesn't and gene has
+            # it - keep it as it is and mark gene as active
+            if new_gene.pk:
+                if not new_gene.ensembl_genes:
+                    new_gene.active = active
+                    new_gene.ensembl_genes = ensembl_genes
+                else:
+                    if not ensembl_genes:
+                        new_gene.active = True
+            else:
+                new_gene.active = active
+                new_gene.ensembl_genes = ensembl_genes
+
             new_gene.gene_symbol = record[0]['gene_symbol']
             new_gene.gene_name = record[0].get('gene_name', None)
-            new_gene.ensembl_genes = record[0].get('ensembl_genes', {})
             new_gene.omim_gene = record[0].get('omim_gene', [])
             new_gene.alias = record[0].get('alias', [])
             new_gene.biotype = record[0].get('biotype', 'unknown')
@@ -125,7 +138,6 @@ def update_gene_collection(results):
             new_gene.hgnc_date_symbol_changed = record[0].get('hgnc_date_symbol_changed', None)
             new_gene.hgnc_release = record[0].get('hgnc_release', None)
             new_gene.hgnc_id = record[0].get('hgnc_id', None)
-            new_gene.active = active
 
             new_gene.clean_import_dates(record[0])
             new_gene.save()
@@ -233,7 +245,7 @@ class UploadedPanelList(TimeStampedModel):
                     )
                     fresh_panel = True
 
-                active_panel = panel.active_panel
+                active_panel = panel.active_panel_extra
                 if not fresh_panel and increment_version:
                     active_panel = active_panel.increment_version()
 
@@ -247,14 +259,14 @@ class UploadedPanelList(TimeStampedModel):
                 'omim': omim
             }
 
-            if fresh_panel or not active_panel.has_gene(gene_symbol):
+            if not active_panel.has_gene(gene_symbol):
                 try:
                     Gene.objects.get(gene_symbol=gene_symbol, active=True)
                 except Gene.DoesNotExist:
                     raise GeneDoesNotExist("{}, Gene: {}".format(key + 2, gene_symbol))
                 active_panel.add_gene(user, gene_symbol, gene_data, False)
             else:
-                active_panel.update_gene(user, gene_symbol, gene_data)
+                active_panel.update_gene(user, gene_symbol, gene_data, append_only=True)
             return active_panel
         else:
             raise TSVIncorrectFormat(str(key + 2))

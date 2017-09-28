@@ -95,11 +95,11 @@ class CopyReviewsForm(forms.Form):
     panel_2 = forms.CharField(required=True, widget=forms.widgets.HiddenInput())
 
     def copy_reviews(self, user, gene_symbols, panel_from, panel_to):
-        if len(panel_to.current_genes) > 200 or len(panel_from.current_genes) > 200:
+        if len(panel_to.current_genes) > 1000 or len(panel_from.current_genes) > 1000:
             background_copy_reviews.delay(user, gene_symbols, panel_from.pk, panel_to.pk)
             return ProcessingRunCode.PROCESS_BACKGROUND, 0
         else:
             with transaction.atomic():
                 panel_to = panel_to.increment_version()
                 return ProcessingRunCode.PROCESSED, panel_to.copy_gene_reviews_from(gene_symbols, panel_from)
-        return 0
+        return 0, 0

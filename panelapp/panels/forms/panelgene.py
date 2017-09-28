@@ -43,7 +43,7 @@ class PanelGeneForm(forms.ModelForm):
         queryset=Gene.objects.filter(active=True),
         widget=ModelSelect2(
             url="autocomplete-gene",
-            attrs={'data-minimum-input-length': 3}
+            attrs={'data-minimum-input-length': 1}
         )
     )
 
@@ -102,6 +102,7 @@ class PanelGeneForm(forms.ModelForm):
         self.fields['source'] = original_fields.get('source')
         self.fields['mode_of_pathogenicity'] = original_fields.get('mode_of_pathogenicity')
         self.fields['moi'] = original_fields.get('moi')
+        self.fields['moi'].required = False
         self.fields['penetrance'] = original_fields.get('penetrance')
         self.fields['publications'] = original_fields.get('publications')
         self.fields['phenotypes'] = original_fields.get('phenotypes')
@@ -116,6 +117,11 @@ class PanelGeneForm(forms.ModelForm):
         if len(self.cleaned_data['source']) < 1:
             raise forms.ValidationError('Please select a source')
         return self.cleaned_data['source']
+
+    def clean_moi(self):
+        if not self.cleaned_data['moi']:
+            raise forms.ValidationError('Please select a mode of inheritance')
+        return self.cleaned_data['moi']
 
     def clean_gene(self):
         "Check if gene exists in a panel if we add a new gene or change the gene"
