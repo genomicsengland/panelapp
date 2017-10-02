@@ -299,10 +299,15 @@ class GenePanelEntrySnapshot(TimeStampedModel):
         self.save()
 
     def update_moi(self, moi, user, moi_comment=None):
+        old_moi = self.moi
         self.moi = moi
         self.save()
 
-        description = "Mode of inheritance for {} was changed to {}".format(self.gene.get('gene_symbol'), moi)
+        description = "Mode of inheritance for {} was changed from {} to {}".format(
+            self.gene.get('gene_symbol'),
+            old_moi,
+            moi
+        )
         track = TrackRecord.objects.create(
             gel_status=self.status,
             curator_status=0,

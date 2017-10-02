@@ -10,6 +10,7 @@ from panels.exceptions import GeneDoesNotExist
 from panels.exceptions import GenesDoNotExist
 from panels.exceptions import UserDoesNotExist
 from panels.exceptions import TSVIncorrectFormat
+from panels.exceptions import IncorrectGeneRating
 
 
 @shared_task
@@ -86,6 +87,8 @@ def import_reviews(user_pk, review_pk):
         message = 'Line: {} has a wrong username, please check it and try again.'.format(line)
     except TSVIncorrectFormat as line:
         message = "Line: {} is not properly formatted, please check it and try again.".format(line)
+    except IncorrectGeneRating as e:
+        message = e
     except GenesDoNotExist as genes_error:
         message = "Following lines have genes which do not exist in the"\
             "database, please check it and try again:\n\n{}".format(genes_error)

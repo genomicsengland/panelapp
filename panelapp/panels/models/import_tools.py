@@ -15,11 +15,13 @@ from panels.exceptions import TSVIncorrectFormat
 from panels.exceptions import GeneDoesNotExist
 from panels.exceptions import UsersDoNotExist
 from panels.exceptions import GenesDoNotExist
+from panels.exceptions import IncorrectGeneRating
 from .gene import Gene
 from .genepanel import GenePanel
 from .genepanelsnapshot import GenePanelSnapshot
 from .Level4Title import Level4Title
 from .codes import ProcessingRunCode
+from .evaluation import Evaluation
 
 
 logger = logging.getLogger(__name__)
@@ -350,6 +352,19 @@ class UploadedReviewsList(TimeStampedModel):
 
         mop = aline[17]
         rate = aline[18]
+
+        panelapp_ratings = {
+            'Green List (high evidence)': 'GREEN',
+            'Red List (low evidence)': 'RED',
+            'I don\'t know': 'AMBER'
+        }
+
+        if rate not in panelapp_ratings.values() and rate not in panelapp_ratings.keys():
+            raise IncorrectGeneRating("Line: {} has incorrect Gene rating: {}".format(key + 2, rate))
+
+        if rate not in panelapp_ratings.values():
+            rate = panelapp_ratings[rate]
+
         current_diagnostic = aline[19]
         if current_diagnostic == "Yes":
             current_diagnostic = True

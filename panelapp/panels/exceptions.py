@@ -20,3 +20,7 @@ class TSVIncorrectFormat(ImportException):
 
 class GeneDoesNotExist(ImportException):
     pass
+
+
+class IncorrectGeneRating(ImportException):
+    pass

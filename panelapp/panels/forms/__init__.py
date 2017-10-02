@@ -15,6 +15,7 @@ from panels.exceptions import GeneDoesNotExist
 from panels.exceptions import TSVIncorrectFormat
 from panels.exceptions import UsersDoNotExist
 from panels.exceptions import GenesDoNotExist
+from panels.exceptions import IncorrectGeneRating
 from panels.tasks import background_copy_reviews
 
 
@@ -67,6 +68,8 @@ class UploadReviewsForm(forms.Form):
             message = "Can't find following genes: {}, please check it and try again.".format(e)
         except TSVIncorrectFormat as e:
             message = "Line: {} is not properly formatted, please check it and try again.".format(e)
+        except IncorrectGeneRating as e:
+            message = e
         if message:
             raise forms.ValidationError(message)
 
