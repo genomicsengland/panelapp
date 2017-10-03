@@ -229,34 +229,6 @@ class GeneObjectMixin:
         return self.panel.get_gene(self.kwargs['gene_symbol'], prefetch_extra=True)
 
 
-class UpdateGeneTagsAjaxView(GELReviewerRequiredMixin, GeneObjectMixin, BaseAjaxGeneMixin, AJAXMixin, View):
-    template_name = "panels/genepanelentrysnapshot/review/part_tags.html"
-
-    def process(self):
-        form = UpdateGeneTagsForm(instance=self.gene, data=self.request.POST)
-        if form.is_valid():
-            form.save()
-            del self.panel
-            del self.gene
-            return self.return_data()
-        else:
-            return {'status': 400, 'reason': form.errors}
-
-    def return_data(self):
-        ctx = {
-            'panel': self.panel,
-            'gene': self.gene,
-            'edit_gene_tags_form': UpdateGeneTagsForm(instance=self.gene),
-            "updated": datetime.datetime.now().strftime('%H:%M:%S')
-        }
-        tags = render(self.request, self.template_name, ctx)
-        return {
-            'inner-fragments': {
-                '#part-tags': tags,
-            }
-        }
-
-
 class UpdateEvaluationsMixin(VerifiedReviewerRequiredMixin, GeneObjectMixin, BaseAjaxGeneMixin, AJAXMixin, View):
     def get_context_data(self):
         if self.panel:
@@ -328,6 +300,33 @@ class UpdateEvaluationsMixin(VerifiedReviewerRequiredMixin, GeneObjectMixin, Bas
                 '#gene_header': header
             }
         }
+
+
+class UpdateGeneTagsAjaxView(GELReviewerRequiredMixin, UpdateEvaluationsMixin):
+    template_name = "panels/genepanelentrysnapshot/review/part_tags.html"
+
+    def process(self):
+        form = UpdateGeneTagsForm(instance=self.gene, data=self.request.POST)
+        if form.is_valid():
+            form.save()
+            del self.panel
+            del self.gene
+            return self.return_data()
+        else:
+            return {'status': 400, 'reason': form.errors}
+
+    def return_data(self):
+        data = super().return_data()
+
+        ctx = {
+            'panel': self.panel,
+            'gene': self.gene,
+            'edit_gene_tags_form': UpdateGeneTagsForm(instance=self.gene),
+            "updated": datetime.datetime.now().strftime('%H:%M:%S')
+        }
+        tags = render(self.request, self.template_name, ctx)
+        data['inner-fragments']['#part-tags'] = tags
+        return data
 
 
 class UpdateGeneMOPAjaxView(GELReviewerRequiredMixin, UpdateEvaluationsMixin):
