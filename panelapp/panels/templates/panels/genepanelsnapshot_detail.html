@@ -36,10 +36,17 @@
         <hr />
         <p class="lead">
             {{ gene.gene.gene_name }}<br />
-            {% if gene.gene.ensembl_genes|length > 0 and gene.gene.ensembl_genes|get_ensembleId %}
-              EnsemblGeneIds:
-              <a href="http://Dec2016.archive.ensembl.org/Homo_sapiens/Gene/Summary?db=core;g={{ gene.gene.ensembl_genes|get_ensembleId }}" target="_blank">{{ gene.gene.ensembl_genes|get_ensembleId }}</a>
-              <br />
+            {% if gene.gene.ensembl_genes %}
+                {% if gene.gene.ensembl_genes.GRch38.90  %}
+                    EnsemblGeneIds (GRch38):
+                    <a href="http://www.ensembl.org/Homo_sapiens/Gene/Summary?db=core;g={{ gene.gene.ensembl_genes.GRch38.90.ensembl_id }}" target="_blank">{{ gene.gene.ensembl_genes.GRch37.90.ensembl_id }}</a>
+                    <br />
+                {% endif %}
+                {% if gene.gene.ensembl_genes.GRch37.82 %}
+                    EnsemblGeneIds (GRch37):
+                    <a href="http://Dec2016.archive.ensembl.org/Homo_sapiens/Gene/Summary?db=core;g={{ gene.gene.ensembl_genes.GRch37.82.ensembl_id }}" target="_blank">{{ gene.gene.ensembl_genes.GRch37.82.ensembl_id }}</a>
+                    <br />
+                {% endif %}
             {% endif %}
             {% if gene.gene.omim_gene|length > 0 %}
               <a href="http://omim.org/entry/{{ gene.gene.omim_gene.0 }}" target="_blank">OMIM: {{ gene.gene.omim_gene.0 }}</a>, <a href=" http://www.ebi.ac.uk/gene2phenotype/gene2phenotype-webcode/cgi-bin/handler.cgi?panel=ALL&search_term={{ gene.gene.gene_symbol }}" target="_blank">Gene2Phenotype</a><br />

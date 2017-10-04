@@ -29,6 +29,7 @@ DEBUG = False
 
 ALLOWED_HOSTS = [host for host in os.getenv('ALLOWED_HOSTS', '').split(';')]
 
+PANEL_APP_BASE_URL = os.getenv('PANEL_APP_BASE_URL', 'https://panelapp.extge.co.uk')
 EMAIL_HOST = os.getenv("EMAIL_HOST", None)
 EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", None)
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', None)

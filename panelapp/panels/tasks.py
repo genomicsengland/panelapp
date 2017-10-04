@@ -120,7 +120,8 @@ def email_panel_promoted(panel_pk):
                 {
                     'first_name': contributor[0],
                     'panel_name': active_panel.panel,
-                    'panel_id': panel_pk
+                    'panel_id': panel_pk,
+                    'settings': settings
                 }
             )
 
