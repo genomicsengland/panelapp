@@ -29,7 +29,7 @@
         class="list-group-item {% if gene.gene.gene_symbol == entry.gene.gene_symbol %}list-group-item-active{% endif %}"
         {% if gene.gene.gene_symbol == entry.gene.gene_symbol %}id="gene-nav-active-item"{% endif %}
     >
-      <a href="{{ entry.get_absolute_url }}">
+      <a href="{{ entry.get_absolute_url }}{% if entry.gene.gene_symbol in panel.current_genes_duplicates %}?pk={{ entry.pk }}{% endif %}">
       {% if request.user.pk in entry.evaluators %}
           <i
               class="fa fa-check-circle {{ entry|gene_list_class }} add-right-margin gel-badge pull-left"
