@@ -14,7 +14,7 @@ class EnsembleIdMixin:
         if 'assembly' in query_prams:
             if query_prams['assembly'].lower() == 'grch38':
                 assembly = 'GRch38'
-                version = '89'
+                version = '90'
             elif query_prams['assembly'].lower() == 'grch37':
                 assembly = 'GRch37'
                 version = '82'

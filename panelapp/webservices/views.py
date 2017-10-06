@@ -4,6 +4,8 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework import permissions
 from .utils import convert_moi
+from .utils import convert_mop
+from .utils import convert_evidences
 from .utils import convert_gel_status
 
 from panels.models import GenePanel
@@ -20,7 +22,8 @@ def filter_gene_list(gene_list, moi=None, mop=None, penetrance=None, conf_level=
         filters = True
         if gene.moi is not None and (moi is not None and convert_moi(gene.moi) not in moi):
             filters = False
-        if gene.mode_of_pathogenicity is not None and (mop is not None and gene.mode_of_pathogenicity not in mop):
+
+        if gene.mode_of_pathogenicity is not None and (mop is not None and convert_mop(gene.mode_of_pathogenicity) not in mop):
             filters = False
         if gene.penetrance is not None and (penetrance is not None and gene.penetrance not in penetrance):
             filters = False
@@ -40,10 +43,10 @@ def get_panel(request, panel_name):
     gene_list = None
     filters = {}
 
-    if "modesOfInheritance" in request.GET:
-        filters["moi"] = request.GET["ModesOfInheritance"].split(",")
+    if 'ModeOfInheritance' in request.GET:
+        filters["moi"] = request.GET["ModeOfInheritance"].split(',')
     if "ModeOfPathogenicity" in request.GET:
-        filters["mode_of_pathogenicity"] = request.GET["ModesOfPathogenicity"].split(",")
+        filters["mop"] = request.GET["ModeOfPathogenicity"].split(',')
     if "Penetrance" in request.GET:
         filters["penetrance"] = request.GET["Penetrance"].split(",")
     if "LevelOfConfidence" in request.GET:
@@ -163,15 +166,15 @@ def search_by_gene(request, gene):
                 genes_qs = genes_qs | Q(gene__gene_symbol=g)
 
     if "ModeOfInheritance" in request.GET:
-        filters["moi__in"] = request.GET["ModeOfInheritance"].split(",")
+        filters["moi__in"] = [convert_moi(x, True) for x in request.GET["ModeOfInheritance"].split(",") if convert_moi(x, True)]
     if "ModeOfPathogenicity" in request.GET:
-        filters["mode_of_pathogenicity__in"] = request.GET["ModeOfPathogenicity"].split(",")
+        filters["mode_of_pathogenicity__in"] = [convert_mop(x, True) for x in request.GET["ModeOfPathogenicity"].split(",") if convert_mop(x, True)]
     if "Penetrance" in request.GET:
         filters["penetrance__in"] = request.GET["Penetrance"].split(",")
     if "LevelOfConfidence" in request.GET:
         post_filters["conf_level"] = request.GET["LevelOfConfidence"].split(",")
     if "Evidences" in request.GET:
-        filters["evidence__name__in"] = request.GET["Evidences"].split(",")
+        filters["evidence__name__in"] = [convert_evidences(x, True) for x in request.GET["Evidences"].split(",") if convert_evidences(x, True)]
     if "panel_name" in request.GET:
         panel_names = request.GET["panel_name"].split(",")
     else:
