@@ -119,6 +119,7 @@ Parameters:
 - https://panelapp.genomicsengland.co.uk/WebServices/get_panel/Anophthalmia/?Penetrance=Complete
 - https://panelapp.genomicsengland.co.uk/WebServices/get_panel/Anophthalmia/?LevelOfConfidence=HighEvidence,ModerateEvidence
 - https://panelapp.genomicsengland.co.uk/WebServices/get_panel/Anophthalmia/?version=1.7
+- https://panelapp.genomicsengland.co.uk/WebServices/get_panel/553f97abbb5a1616e5ed45f9/?version=1.7
 
 
 # Search by Gene
