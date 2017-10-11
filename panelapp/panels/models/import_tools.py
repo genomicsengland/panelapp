@@ -181,10 +181,9 @@ def update_gene_collection(results):
 
 def get_duplicated_genes_in_panels():
     duplicated_genes = []
-
     items = GenePanelSnapshot.objects.get_active_anotated(True)
     for item in items:
-        dups = set([x for x in item.current_genes if item.current_genes.count(x) > 1])
+        dups = item.current_genes_duplicates
         if dups:
             duplicated_genes.append((item.pk, item.panel.name, dups))
     return duplicated_genes
