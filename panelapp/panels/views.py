@@ -529,7 +529,7 @@ class DownloadPanelTSVMixin(PanelMixin, DetailView):
 
         response = HttpResponse(content_type='text/tab-separated-values')
         panel_name = remove_non_ascii(panel_name, replacemenet='_')
-        response['Content-Disposition'] = 'attachment; filename=' + panel_name + '.tsv'
+        response['Content-Disposition'] = 'attachment; filename="' + panel_name + '.tsv"'
         writer = csv.writer(response, delimiter='\t')
 
         writer.writerow((
