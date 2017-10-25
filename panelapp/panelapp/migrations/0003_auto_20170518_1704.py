@@ -5,16 +5,7 @@ from __future__ import unicode_literals
 from django.db import migrations
 
 def add_initial_values(apps, schema_editor):
-    HomeText = apps.get_model("panelapp", "HomeText")
-    if HomeText.objects.count() == 0:
-        HomeText.objects.create(section=1, title="Home", href="Introduction", text="")
-        HomeText.objects.create(section=2, title="Gene Panel Guidelines and Principles", href="Principles", text="")
-        HomeText.objects.create(section=3, title="The Role of Expert Reviewers", href="Reviewers", text="")
-        HomeText.objects.create(section=4, title="News", href="Guidelines", text="")
-        HomeText.objects.create(section=5, title="PanelApp Instructions", href="Instructions", text="")
-        HomeText.objects.create(section=6, title="How to...", href="HowTo", text="")
-        HomeText.objects.create(section=7, title="FAQs", href="FAQs", text="")
-        HomeText.objects.create(section=8, title="Contact, Sources and Glossary", href="Information", text="")
+    pass
 
 
 def remove_initial_values(apps, schema_editor):

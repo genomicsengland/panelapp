@@ -75,13 +75,13 @@
           </thead>
           <tbody>
             {% for entry in entries %}
-              {% if request.user.reviewer.is_GEL or entry.panel.panel.approved %}
+              {% if request.user.is_authenticated and request.user.reviewer.is_GEL or entry.panel.panel.approved %}
               <tr
                 data-panel="{{ entry.panel.level4title.name }}"
                 data-gene="{{ entry.gene.gene_symbol }}"
                 data-list-index="{{ entry.saved_gel_status }}"
                 data-moi="{{ entry.moi }}"
-                data-reviews="{{ entry.evaluation|length }}"
+                data-reviews="{{ entry.number_of_evaluated_genes }}"
               >
                 <td>
                   <h4 class="remove-top-margin" title="Level 4 title">
@@ -100,10 +100,17 @@
                       <br />Level 2: {{ entry.panel.level4title.level2title }}
                     {% endif %}
                     <br /><span class="text-muted">Version {{ entry.panel.major_version }}.{{ entry.panel.minor_version }}</span>
+                    {% if request.user.is_authenticated and request.user.reviewer.is_GEL %}
+                      {% if entry.panel.panel.approved %}
+                        <br /><span class="text-muted">Panel approved</span>
+                      {% else %}
+                      <br /><span class="text-muted">Panel not approved</span>
+                      {% endif %}
+                    {% endif %}
                   </p>
                 </td>
                 <td>
-                  {{ entry.evaluation.count }} review{{entry.evaluation.count|pluralize}}
+                  {{ entry.number_of_evaluated_genes }} review{{entry.number_of_evaluated_genes|pluralize}}
                 </td>
                 <td>
                   {% if entry.moi %}
@@ -132,7 +139,7 @@
                     </ul>
                   {% endif %}
 
-                  {% if entry.tags %}
+                  {% if entry.tags.all %}
                     <h6 class="add-label-margin">Tags</h6>
                     <ul class="list-inline tag-list">
                       {% for tag in entry.tags.all %}

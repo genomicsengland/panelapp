@@ -46,17 +46,19 @@
               </td>
           </tr>
       </thead>
-      <tbody>
-      {% for entry in view.panels %}
+      <tbody id="panel_records">
+      {% for entry in view_panels %}
           {% if entry.panel.approved or request.user.is_authenticated and request.user.reviewer.is_GEL %}
           <tr
               data-reviewers = "{{ entry.number_of_reviewers }}"
               data-panel = "{{ entry.panel.name }}"
               data-evaluated = "{% if entry.number_of_genes %}{% widthratio entry.number_of_evaluated_genes entry.number_of_genes 100 %}{% else %}0{% endif %}"
+              data-pk="{{ entry.pk }}"
+              data-version="{{ entry.major_version }}.{{ entry.minor_version }}"
           >
               <td>
                   <h4 class="remove-top-margin" title="Level 4 title">
-                      <a href="{% url 'panels:detail' entry.panel.id %}" class="js-open-on-submit">
+                      <a href="{{ entry.get_absolute_url }}" class="js-open-on-submit">
                           {{ entry.panel.name }}
                       </a>
                   </h4>

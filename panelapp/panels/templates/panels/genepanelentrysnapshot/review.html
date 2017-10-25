@@ -115,7 +115,7 @@
 
 {% if gene.ready %}
   <h3 class="add-top-margin">Mark {{ gene.gene.gene_symbol }} as not ready</h3>
-  <form action="{% url 'panels:mark_gene_as_not_ready' panel.panel.id  gene.gene.gene_symbol %}#!review" method="post" class="add-top-margin well form">
+  <form action="{% url 'panels:mark_gene_as_not_ready' panel.panel_id  gene.gene.gene_symbol %}#!review" method="post" class="add-top-margin well form">
     {% csrf_token %}
     <input type="submit" class="btn btn-default" value="Mark as not ready">
   </form>
@@ -130,7 +130,7 @@
     </ul>
   </div>
   <div class="well">
-    <form action="{% url 'panels:mark_gene_as_ready' panel.panel.id  gene.gene.gene_symbol %}#!review" method="post" class="form">
+    <form action="{% url 'panels:mark_gene_as_ready' panel.panel_id  gene.gene.gene_symbol %}#!review" method="post" class="form">
       {% csrf_token %}
       <fieldset>
         {% for field in gene_ready_form %}

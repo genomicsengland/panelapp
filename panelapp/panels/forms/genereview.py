@@ -50,4 +50,7 @@ class GeneReviewForm(forms.ModelForm):
     def save(self, *args, **kwargs):
         evaluation_data = self.cleaned_data
         evaluation_data['comment'] = evaluation_data.pop('comments')
-        return self.gene.update_evaluation(self.request.user, evaluation_data)
+        panel = self.gene.panel
+        ev = panel.get_gene(self.gene.gene.get('gene_symbol')).update_evaluation(self.request.user, evaluation_data)
+        panel.update_saved_stats()
+        return ev

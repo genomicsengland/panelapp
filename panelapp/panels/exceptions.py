@@ -1,10 +1,26 @@
-class UserDoesNotExist(Exception):
+class ImportException(Exception):
     pass
 
 
-class TSVIncorrectFormat(Exception):
+class UsersDoNotExist(ImportException):
     pass
 
 
-class GeneDoesNotExist(Exception):
+class GenesDoNotExist(ImportException):
+    pass
+
+
+class UserDoesNotExist(ImportException):
+    pass
+
+
+class TSVIncorrectFormat(ImportException):
+    pass
+
+
+class GeneDoesNotExist(ImportException):
+    pass
+
+
+class IncorrectGeneRating(ImportException):
     pass

@@ -1,27 +1,31 @@
 from django.db import models
-from django.db.models import Q
 from django.db.models import Sum
-from django.db.models import Count
 from django.db.models import Case
 from django.db.models import When
 from django.db.models import Value
+from django.contrib.postgres.aggregates import ArrayAgg
+from django.urls import reverse
 from django.utils.functional import cached_property
 from model_utils.models import TimeStampedModel
 
 
 class GenePanelManager(models.Manager):
     def get_panel(self, pk):
-        return super().get_queryset().get(Q(pk=pk) | Q(old_pk=pk))
+        if pk.isdigit():
+            return super().get_queryset().get(pk=pk)
+        else:
+            return super().get_queryset().get(old_pk=pk)
 
     def get_active_panel(self, pk):
         return self.get_panel(pk).active_panel
 
 
 class GenePanel(TimeStampedModel):
-    old_pk = models.CharField(max_length=24, null=True, blank=True)  # Mongo ObjectID hex string
-    name = models.CharField(max_length=255)
-    approved = models.BooleanField(default=False)
+    old_pk = models.CharField(max_length=24, null=True, blank=True, db_index=True)  # Mongo ObjectID hex string
+    name = models.CharField(max_length=255, db_index=True)
+    approved = models.BooleanField(default=False, db_index=True)
     promoted = models.BooleanField(default=False)
+    deleted = models.BooleanField(default=False, db_index=True)
 
     objects = GenePanelManager()
 
@@ -37,6 +41,9 @@ class GenePanel(TimeStampedModel):
         self.approved = False
         self.save()
 
+    def get_absolute_url(self):
+        return reverse('panels:detail', args=(self.pk,))
+
     def _prepare_panel_query(self):
         "Returns a queryset for all snapshots ordered by version"
 
@@ -47,9 +54,6 @@ class GenePanel(TimeStampedModel):
                 'genepanelentrysnapshot_set__evaluation__user',
                 'genepanelentrysnapshot_set__evaluation__user__reviewer'
             ).annotate(
-                number_of_reviewers=Count('genepanelentrysnapshot__evaluation__user', distinct=True),
-                number_of_evaluated_genes=Count('genepanelentrysnapshot__evaluation'),
-                number_of_genes=Count('genepanelentrysnapshot'),
                 number_of_green_genes=Sum(Case(When(
                     genepanelentrysnapshot__saved_gel_status__gt=3, then=Value(1)),
                     default=Value(0),
@@ -75,9 +79,26 @@ class GenePanel(TimeStampedModel):
 
     @cached_property
     def active_panel(self):
-        "Return the panel with biggest version"
+        "Return the panel with the largest version"
 
-        return self._prepare_panel_query().first()
+        return self.genepanelsnapshot_set\
+            .order_by('-major_version', '-minor_version', '-created').first()
+
+    @property
+    def active_panel_extra(self):
+        "Return the panel with the largest version and related info"
+
+        return self.genepanelsnapshot_set\
+            .prefetch_related(
+                'panel',
+                'level4title',
+                'genepanelentrysnapshot_set',
+                'genepanelentrysnapshot_set__tags',
+                'genepanelentrysnapshot_set__evidence',
+                'genepanelentrysnapshot_set__gene_core',
+                'genepanelentrysnapshot_set__evaluation__comments'
+            )\
+            .order_by('-major_version', '-minor_version', '-created').first()
 
     def get_panel_version(self, version):
         "Get a specific version. Version argument should be a string"

@@ -29,10 +29,12 @@ DEBUG = False
 
 ALLOWED_HOSTS = [host for host in os.getenv('ALLOWED_HOSTS', '').split(';')]
 
-EMAIL_HOST = 'localhost'
-EMAIL_PORT = 25
-EMAIL_HOST_USER = 'vagrant'
-EMAIL_HOST_PASSWORD = '1'
+PANEL_APP_BASE_URL = os.getenv('PANEL_APP_BASE_URL', 'https://panelapp.extge.co.uk')
+EMAIL_HOST = os.getenv("EMAIL_HOST", None)
+EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", None)
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', None)
+EMAIL_PORT = os.getenv('EMAIL_PORT', 587)
+EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', True)
 DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'PanelApp <panelapp@genomicsengland.co.uk>')
 PANEL_APP_EMAIL = os.getenv('PANEL_APP_EMAIL', "panelapp@genomicsengland.co.uk")
 
@@ -59,6 +61,7 @@ CUSTOM_APPS = [
     'mathfilters',
     'django_ajax',
     'rest_framework',
+    'django_admin_listfilter_dropdown'
 ]
 
 PROJECT_APPS = [
@@ -101,6 +104,8 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'panelapp.wsgi.application'
+
+FILE_UPLOAD_DIRECTORY_PERMISSIONS = 755
 
 
 # Database
@@ -200,7 +205,6 @@ MARKDOWN_DEUX_STYLES = {
     },
 }
 
-PANEL_APP_EMAIL = None
 CELL_BASE_CONNECTOR_REST = os.getenv(
     "CELL_BASE_CONNECTOR_REST",
     "http://bioinfo.hpc.cam.ac.uk/cellbase/webservices/rest/"

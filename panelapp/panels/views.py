@@ -1,7 +1,6 @@
 import csv
 from datetime import datetime
 from django.contrib import messages
-from django.db.models import Q
 from django.views.generic import TemplateView
 from django.views.generic.base import View
 from django.views.generic import FormView
@@ -9,12 +8,14 @@ from django.views.generic import ListView
 from django.views.generic import UpdateView
 from django.views.generic import DetailView
 from django.views.generic import CreateView
+from django.core.exceptions import ValidationError
 from django.shortcuts import redirect
 from django.urls import reverse
 from django.urls import reverse_lazy
 from django.utils.functional import cached_property
 from django.template.defaultfilters import pluralize
 from django.http import HttpResponse
+from django.http import StreamingHttpResponse
 
 from panelapp.mixins import GELReviewerRequiredMixin
 from panelapp.mixins import VerifiedReviewerRequiredMixin
@@ -41,6 +42,7 @@ from .models import Activity
 from .models import GenePanel
 from .models import GenePanelSnapshot
 from .models import GenePanelEntrySnapshot
+from .models import ProcessingRunCode
 from .mixins import PanelMixin
 from .mixins import ActAndRedirectMixin
 from .utils import remove_non_ascii
@@ -68,7 +70,7 @@ class PanelsIndexView(ListView):
 
     @cached_property
     def compare_panels_form(self):
-        return ComparePanelsForm(panels=self.panels)
+        return ComparePanelsForm()
 
     def get_context_data(self, *args, **kwargs):
         ctx = super().get_context_data(*args, **kwargs)
@@ -76,6 +78,8 @@ class PanelsIndexView(ListView):
 
 
 class CreatePanelView(GELReviewerRequiredMixin, CreateView):
+    """Create a new panel"""
+
     template_name = "panels/genepanel_create.html"
     form_class = PanelForm
 
@@ -90,6 +94,8 @@ class CreatePanelView(GELReviewerRequiredMixin, CreateView):
 
 
 class UpdatePanelView(GELReviewerRequiredMixin, PanelMixin, UpdateView):
+    """Update panel information"""
+
     template_name = "panels/genepanel_create.html"
     form_class = PanelForm
 
@@ -135,8 +141,17 @@ class ImportToolMixin(GELReviewerRequiredMixin, AdminContextMixin, FormView):
 
     def form_valid(self, form):
         ret = super().form_valid(form)
-        form.process_file(user=self.request.user)
-        messages.success(self.request, "Import successful")
+        try:
+            res = form.process_file(user=self.request.user)
+            if res is ProcessingRunCode.PROCESS_BACKGROUND:
+                messages.error(self.request, "Import started in the background."
+                                               " You will get an email once it has"
+                                               " completed.")
+            else:
+                messages.success(self.request, "Import successful")
+        except ValidationError as errors:
+            for error in errors:
+                messages.error(self.request, error)
         return ret
 
 
@@ -162,24 +177,38 @@ class AdminUploadReviewsView(ImportToolMixin, AdminContextMixin):
 
 
 class GeneDetailView(DetailView):
+    """List panels current gene belongs to
+
+    URL: /panels/genes/:gene_symbol
+
+    Also lists # of reviews, MOI, sources, tags, and phenotypes for the gene
+    in that panel"""
+
     model = Gene
     slug_field = 'gene_symbol'
     slug_field_kwarg = 'gene_symbol'
     context_object_name = 'gene'
 
     def get_context_data(self, *args, **kwargs):
+        """Context data for Gene Detail page"""
+
         ctx = super().get_context_data(*args, **kwargs)
         tag_filter = self.request.GET.get('tag_filter', None)
         ctx['tag_filter'] = tag_filter
         ctx['gene_symbol'] = self.kwargs['slug']
 
-        entries = GenePanelEntrySnapshot.objects.get_gene_panels(self.kwargs['slug'])
+        admin_user = self.request.user.is_authenticated and self.request.user.reviewer.is_GEL()
+        gps = GenePanelSnapshot.objects.get_active(admin_user).filter(
+            genepanelentrysnapshot__gene_core__gene_symbol=self.kwargs['slug']
+        ).values_list('pk', flat=True)
+
+        entries = GenePanelEntrySnapshot.objects.get_gene_panels(self.kwargs['slug'], pks=gps)
         if not self.request.user.is_authenticated or not self.request.user.reviewer.is_GEL():
             entries = entries.filter(panel__panel__approved=True)
 
         if tag_filter:
             entries = entries.filter(tag__name=tag_filter)
-
+        
         ctx['entries'] = entries
         return ctx
 
@@ -187,21 +216,30 @@ class GeneDetailView(DetailView):
 class GeneListView(ListView):
     model = Gene
     context_object_name = "genes"
+    template_name = "panels/gene_list.html"
 
     def get_queryset(self, *args, **kwargs):
-        qs = super().get_queryset(*args, **kwargs)
-        if self.request.user.is_authenticated and self.request.user.reviewer.is_GEL:
-            qs = qs.filter(
-                Q(genepanelentrysnapshot__panel__panel__approved=True)
-                | Q(genepanelentrysnapshot__panel__panel__approved=False)
-            )
+        if self.request.user.is_authenticated and self.request.user.reviewer.is_GEL():
+            panel_ids = GenePanelSnapshot.objects.get_latest_ids().values('pk')
         else:
-            qs = qs.filter(genepanelentrysnapshot__panel__panel__approved=True)
-        return qs.distinct('gene_symbol')
+            panel_ids = GenePanelSnapshot.objects.get_latest_ids().filter(panel__approved=True).values('pk')
+
+        qs = GenePanelEntrySnapshot.objects.filter(
+            gene_core__active=True,
+            panel__in=panel_ids
+        )
+
+        tag_filter = self.request.GET.get('tag')
+        if tag_filter:
+            qs = qs.filter(tags__name=tag_filter)
+
+        genes = qs.order_by().distinct('gene_core__gene_symbol').values_list('gene_core__gene_symbol', flat=True)
+
+        return genes
 
     def get_context_data(self, *args, **kwargs):
         ctx = super().get_context_data(*args, **kwargs)
-        ctx['tags'] = Tag.objects.all()
+        ctx['tags'] = Tag.objects.all().order_by('name')
         ctx['tag_filter'] = self.request.GET.get('tag')
         return ctx
 
@@ -219,11 +257,11 @@ class PromotePanelView(GELReviewerRequiredMixin, GenePanelView, UpdateView):
     def form_valid(self, form):
         ret = super().form_valid(form)
         self.instance = form.instance.panel
-        messages.success(self.request, "Successfully upgraded Panel {}".format(self.get_object().name))
+        messages.success(self.request, "Panel {} will be promoted in a few moments.".format(self.get_object().name))
         return ret
 
     def get_success_url(self):
-        return reverse_lazy('panels:detail', args=(self.kwargs['pk'],))
+        return self.get_object().get_absolute_url()
 
 
 class PanelAddGeneView(VerifiedReviewerRequiredMixin, CreateView):
@@ -270,7 +308,7 @@ class PanelEditGeneView(GELReviewerRequiredMixin, UpdateView):
     gene_symbol = None
 
     def get_object(self):
-        return self.panel.get_gene(self.kwargs['gene_symbol'])
+        return self.panel.get_gene(self.kwargs['gene_symbol'], prefetch_extra=True)
 
     @cached_property
     def panel(self):
@@ -308,7 +346,10 @@ class GenePanelSpanshotView(DetailView):
     context_object_name = 'gene'
 
     def get_object(self):
-        return self.panel.get_gene(self.kwargs['gene_symbol'])
+        if self.request.GET.get('pk'):
+            return self.panel.get_gene_by_pk(self.request.GET.get('pk'), prefetch_extra=True)
+        else:
+            return self.panel.get_gene(self.kwargs['gene_symbol'], prefetch_extra=True)
 
     def get_context_data(self, *args, **kwargs):
         ctx = super().get_context_data(*args, **kwargs)
@@ -321,10 +362,19 @@ class GenePanelSpanshotView(DetailView):
             'Publications',
             'Phenotypes'
         ]
+
+        form_initial = {}
+        if self.request.user.is_authenticated:
+            user_review = self.object.review_by_user(self.request.user)
+            if user_review:
+                form_initial = user_review.dict_tr()
+                form_initial['comments'] = None
+
         ctx['form'] = GeneReviewForm(
             panel=self.panel,
             request=self.request,
-            gene=self.object
+            gene=self.object,
+            initial=form_initial
         )
         ctx['form_edit'] = PanelGeneForm(
             instance=self.object,
@@ -346,7 +396,7 @@ class GenePanelSpanshotView(DetailView):
         ctx['edit_gene_publications_form'] = UpdateGenePublicationsForm(instance=self.object)
         ctx['edit_gene_rating_form'] = UpdateGeneRatingForm(instance=self.object)
 
-        ctx['panel_genes'] = list(self.panel.get_all_entries)
+        ctx['panel_genes'] = list(self.panel.get_all_entries_extra)
         cgi = ctx['panel_genes'].index(self.object)
         ctx['next_gene'] = None if cgi == len(ctx['panel_genes']) - 1 else ctx['panel_genes'][cgi + 1]
         ctx['prev_gene'] = None if cgi == 0 else ctx['panel_genes'][cgi - 1]
@@ -373,7 +423,7 @@ class GeneReviewView(VerifiedReviewerRequiredMixin, UpdateView):
     form_class = GeneReviewForm
 
     def get_object(self):
-        return self.panel.get_gene(self.kwargs['gene_symbol'])
+        return self.panel.get_gene(self.kwargs['gene_symbol'], prefetch_extra=True)
 
     @cached_property
     def panel(self):
@@ -384,7 +434,14 @@ class GeneReviewView(VerifiedReviewerRequiredMixin, UpdateView):
         kwargs['panel'] = self.panel
         kwargs['request'] = self.request
         kwargs['gene'] = self.object
-        kwargs['initial'] = {}
+
+        if not kwargs['initial']:
+            kwargs['initial'] = {}
+            if self.request.user.is_authenticated:
+                user_review = self.object.review_by_user(self.request.user)
+                if user_review:
+                    kwargs['initial'] = user_review.dict_tr()
+                    kwargs['initial']['comments'] = None
         kwargs['instance'] = None
         return kwargs
 
@@ -411,7 +468,7 @@ class MarkGeneReadyView(GELReviewerRequiredMixin, UpdateView):
     form_class = GeneReadyForm
 
     def get_object(self):
-        return self.panel.get_gene(self.kwargs['gene_symbol'])
+        return self.panel.get_gene(self.kwargs['gene_symbol'], prefetch_extra=True)
 
     @cached_property
     def panel(self):
@@ -438,7 +495,7 @@ class MarkGeneReadyView(GELReviewerRequiredMixin, UpdateView):
 
 class MarkGeneNotReadyView(GELReviewerRequiredMixin, UpdateView):
     def get_object(self):
-        return self.panel.get_gene(self.kwargs['gene_symbol'])
+        return self.panel.get_gene(self.kwargs['gene_symbol'], prefetch_extra=True)
 
     @cached_property
     def panel(self):
@@ -472,34 +529,54 @@ class DownloadPanelTSVMixin(PanelMixin, DetailView):
 
         response = HttpResponse(content_type='text/tab-separated-values')
         panel_name = remove_non_ascii(panel_name, replacemenet='_')
-        response['Content-Disposition'] = 'attachment; filename=' + panel_name + '.tsv'
+        response['Content-Disposition'] = 'attachment; filename="' + panel_name + '.tsv"'
         writer = csv.writer(response, delimiter='\t')
 
         writer.writerow((
-            "Gene_Symbol", "Sources(; separated)", "Level4", "Level3", "Level2", "Model_Of_Inheritance",
+            "Gene_Symbol",
+            "Sources(; separated)",
+            "Level4",
+            "Level3",
+            "Level2",
+            "Model_Of_Inheritance",
             "Phenotypes",
-            "Omim", "Orphanet", "HPO", "Publications", "Description", "Flagged", "GEL_Status",
-            "UserRatings_Green_amber_red", "version", "ready", "Mode of pathogenicity"))
+            "Omim",
+            "Orphanet",
+            "HPO",
+            "Publications",
+            "Description",
+            "Flagged",
+            "GEL_Status",
+            "UserRatings_Green_amber_red",
+            "version",
+            "ready",
+            "Mode of pathogenicity"))
 
         categories = self.get_categories()
-        for gpentry in self.object.get_all_entries:
+        for gpentry in self.object.get_all_entries_extra:
             if not gpentry.flagged and str(gpentry.status) in categories:
                 amber_perc, green_perc, red_prec = gpentry.aggregate_ratings()
 
                 evidence = ";".join([evidence.name for evidence in gpentry.evidence.all()])
-                export_gpentry = (gpentry.gene.get('gene_symbol'), evidence,
-                                  panel_name, self.object.level4title.level3title,
-                                  self.object.level4title.level2title,
-                                  "", gpentry.moi,
-                                  ";".join(map(remove_non_ascii, gpentry.phenotypes)),
-                                  ";".join(map(remove_non_ascii, self.object.level4title.omim)),
-                                  ";".join(map(remove_non_ascii, self.object.level4title.orphanet)),
-                                  ";".join(map(remove_non_ascii, self.object.level4title.hpo)),
-                                  ";".join(map(remove_non_ascii, gpentry.publications)),
-                                  "", str(gpentry.flagged), str(gpentry.saved_gel_status),
-                                  ";".join(map(str, [green_perc, amber_perc, red_prec])),
-                                  str(version),
-                                  gpentry.ready, gpentry.mode_of_pathogenicity)
+                export_gpentry = (
+                    gpentry.gene.get('gene_symbol'),
+                    evidence,
+                    panel_name,
+                    self.object.level4title.level3title,
+                    self.object.level4title.level2title,
+                    gpentry.moi,
+                    ";".join(map(remove_non_ascii, gpentry.phenotypes)),
+                    ";".join(map(remove_non_ascii, self.object.level4title.omim)),
+                    ";".join(map(remove_non_ascii, self.object.level4title.orphanet)),
+                    ";".join(map(remove_non_ascii, self.object.level4title.hpo)),
+                    ";".join(map(remove_non_ascii, gpentry.publications)),
+                    "",
+                    str(gpentry.flagged),
+                    str(gpentry.saved_gel_status),
+                    ";".join(map(str, [green_perc, amber_perc, red_prec])),
+                    str(version),
+                    gpentry.ready,
+                    gpentry.mode_of_pathogenicity)
                 writer.writerow(export_gpentry)
 
         return response
@@ -551,17 +628,20 @@ class ComparePanelsView(FormView):
         ctx = super().get_context_data()
 
         if self.kwargs.get('panel_1_id') and self.kwargs.get('panel_2_id'):
-            ctx['panel_1'] = panel_1 = GenePanel.objects.get_panel(pk=self.kwargs['panel_1_id']).active_panel
-            ctx['panel_2'] = panel_2 = GenePanel.objects.get_panel(pk=self.kwargs['panel_2_id']).active_panel
+            ctx['panel_1'] = panel_1 = GenePanel.objects.get_panel(
+                pk=self.kwargs['panel_1_id']).active_panel
+            ctx['panel_2'] = panel_2 = GenePanel.objects.get_panel(
+                pk=self.kwargs['panel_2_id']).active_panel
 
-            panel_1_items = {e.gene.get('gene_symbol'): e for e in panel_1.get_all_entries}
-            panel_2_items = {e.gene.get('gene_symbol'): e for e in panel_2.get_all_entries}
+            panel_1_items = {e.gene.get('gene_symbol'): e for e in panel_1.get_all_entries_extra}
+            panel_2_items = {e.gene.get('gene_symbol'): e for e in panel_2.get_all_entries_extra}
 
             all = list(set(panel_1_items.keys()) | set(panel_2_items.keys()))
             all.sort()
 
             intersection = list(set(panel_1_items.keys() & set(panel_2_items.keys())))
-            ctx['show_copy_reviews'] = self.request.user.reviewer.is_GEL() and len(intersection) > 0
+            ctx['show_copy_reviews'] = self.request.user.is_authenticated\
+                and self.request.user.reviewer.is_GEL() and len(intersection) > 0
 
             comparison = [
                 [
@@ -602,10 +682,12 @@ class CompareGeneView(FormView):
         gene_symbol = self.kwargs['gene_symbol']
         ctx['gene_symbol'] = gene_symbol
 
-        ctx['panel_1'] = panel_1 = GenePanel.objects.get_panel(pk=self.kwargs['panel_1_id']).active_panel
-        ctx['panel_2'] = panel_2 = GenePanel.objects.get_panel(pk=self.kwargs['panel_2_id']).active_panel
-        ctx['panel_1_entry'] = panel_1.get_gene(gene_symbol)
-        ctx['panel_2_entry'] = panel_2.get_gene(gene_symbol)
+        ctx['panel_1'] = panel_1 = GenePanel.objects.get_panel(
+            pk=self.kwargs['panel_1_id']).active_panel
+        ctx['panel_2'] = panel_2 = GenePanel.objects.get_panel(
+            pk=self.kwargs['panel_2_id']).active_panel
+        ctx['panel_1_entry'] = panel_1.get_gene(gene_symbol, prefetch_extra=True)
+        ctx['panel_2_entry'] = panel_2.get_gene(gene_symbol, prefetch_extra=True)
 
         return ctx
 
@@ -616,16 +698,27 @@ class CopyReviewsView(GELReviewerRequiredMixin, FormView):
 
     def form_valid(self, form):
         ctx = self.get_context_data()
-        total_count = form.copy_reviews(ctx['intersection'], ctx['panel_1'], ctx['panel_2'])
+        process_type, total_count = form.copy_reviews(
+            self.request.user.pk,
+            ctx['intersection'],
+            ctx['panel_1'],
+            ctx['panel_2']
+        )
 
-        messages.success(self.request, "{} review{} copied".format(total_count, pluralize(total_count)))
+        if process_type == ProcessingRunCode.PROCESSED:
+            messages.success(self.request, "{} review{} copied".format(total_count, pluralize(total_count)))
+        else:
+            messages.error(self.request, "Panels have too many genes, reviews will be copied in the background.")
+
         return redirect(reverse_lazy('panels:compare', args=(ctx['panel_1'].panel.pk, ctx['panel_2'].panel.pk)))
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         kwargs['initial'] = {
-            'panel_1': GenePanel.objects.get_panel(pk=self.kwargs['panel_1_id']).active_panel.pk,
-            'panel_2': GenePanel.objects.get_panel(pk=self.kwargs['panel_2_id']).active_panel.pk
+            'panel_1': GenePanel.objects.get_panel(
+                pk=self.kwargs['panel_1_id']).active_panel.pk,
+            'panel_2': GenePanel.objects.get_panel(
+                pk=self.kwargs['panel_2_id']).active_panel.pk
         }
         return kwargs
 
@@ -635,11 +728,13 @@ class CopyReviewsView(GELReviewerRequiredMixin, FormView):
     def get_context_data(self, *args, **kwargs):
         ctx = super().get_context_data(*args, **kwargs)
 
-        ctx['panel_1'] = panel_1 = GenePanel.objects.get_panel(pk=self.kwargs['panel_1_id']).active_panel
-        ctx['panel_2'] = panel_2 = GenePanel.objects.get_panel(pk=self.kwargs['panel_2_id']).active_panel
+        ctx['panel_1'] = panel_1 = GenePanel.objects.get_panel(
+            pk=self.kwargs['panel_1_id']).active_panel
+        ctx['panel_2'] = panel_2 = GenePanel.objects.get_panel(
+            pk=self.kwargs['panel_2_id']).active_panel
 
-        panel_1_items = {e.gene.get('gene_symbol'): e for e in panel_1.get_all_entries}
-        panel_2_items = {e.gene.get('gene_symbol'): e for e in panel_2.get_all_entries}
+        panel_1_items = {e.gene.get('gene_symbol'): e for e in panel_1.get_all_entries_extra}
+        panel_2_items = {e.gene.get('gene_symbol'): e for e in panel_2.get_all_entries_extra}
 
         intersection = list(set(panel_1_items.keys() & set(panel_2_items.keys())))
         intersection.sort()
@@ -651,16 +746,19 @@ class CopyReviewsView(GELReviewerRequiredMixin, FormView):
         return ctx
 
 
+class EchoWriter(object):
+    def write(self, value):
+        return value
+
+
 class DownloadAllGenes(GELReviewerRequiredMixin, View):
-    def get(self, request, *args, **kwargs):
-        response = HttpResponse(content_type='text/tab-separated-values')
-        attachment = 'attachment; filename=All_genes_{}.tsv'.format(datetime.now().strftime('%Y%M%D%H%i'))
-        response['Content-Disposition'] = attachment
-        writer = csv.writer(response, delimiter='\t')
-        writer.writerow((
+    def gene_iterator(self):
+        yield (
             "Symbol",
-            "Panel",
+            "Panel Id",
+            "Panel Name",
             "Panel Version",
+            "Approved",
             "List",
             "Sources",
             "Mode of inheritance",
@@ -672,58 +770,59 @@ class DownloadAllGenes(GELReviewerRequiredMixin, View):
             "Phenotypes",
             "GeneLocation((GRch37)",
             "GeneLocation((GRch38)"
+        )
 
-        ))
-        entries = GenePanelEntrySnapshot.objects\
-            .get_active()\
-            .prefetch_related('tags', 'evidence', 'panel__panel')\
-            .all()
+        for gps in GenePanelSnapshot.objects.get_active(True):
+            for entry in gps.get_all_entries_extra:
+                if entry.flagged:
+                    colour = "grey"
+                elif entry.status < 2:
+                    colour = "red"
+                elif entry.status == 2:
+                    colour = "amber"
+                else:
+                    colour = "green"
 
-        for entry in entries:
+                if isinstance(entry.phenotypes, list):
+                    phenotypes = ';'.join(entry.phenotypes)
+                else:
+                    phenotypes = '-'
 
-            if entry.flagged:
-                colour = "grey"
-            elif entry.status < 2:
-                colour = "red"
-            elif entry.status == 2:
-                colour = "amber"
-            else:
-                colour = "green"
+                row = [
+                    entry.gene.get('gene_symbol'),
+                    entry.panel.panel.pk,
+                    entry.panel.panel.name,
+                    entry.panel.version,
+                    str(entry.panel.panel.approved).upper(),
+                    colour,
+                    ';'.join([evidence.name for evidence in entry.evidence.all()]),
+                    entry.moi,
+                    entry.mode_of_pathogenicity,
+                    ';'.join([tag.name for tag in entry.tags.all()]),
+                    entry.gene.get('ensembl_genes', {}).get('GRch37', {}).get('82', {}).get('ensembl_id', '-'),
+                    entry.gene.get('ensembl_genes', {}).get('GRch38', {}).get('89', {}).get('ensembl_id', '-'),
+                    entry.gene.get('biotype', '-'),
+                    phenotypes,
+                    entry.gene.get('ensembl_genes', {}).get('GRch37', {}).get('82', {}).get('location', '-'),
+                    entry.gene.get('ensembl_genes', {}).get('GRch38', {}).get('89', {}).get('location', '-'),
+                ]
+                yield row
 
-            if isinstance(entry.phenotypes, list):
-                phenotypes = ';'.join(entry.phenotypes)
-            else:
-                phenotypes = '-'
+    def get(self, request, *args, **kwargs):
+        pseudo_buffer = EchoWriter()
+        writer = csv.writer(pseudo_buffer, delimiter='\t')
 
-            row = [
-                entry.gene.get('gene_symbol'),
-                entry.panel.panel.pk,
-                entry.panel.version,
-                colour,
-                ';'.join([evidence.name for evidence in entry.evidence.all()]),
-                entry.moi,
-                entry.mode_of_pathogenicity,
-                ';'.join([tag.name for tag in entry.tags.all()]),
-                entry.gene.get('GRch37', {}).get('ensemble_id', '-'),
-                entry.gene.get('GRch38', {}).get('ensemble_id', '-'),
-                entry.gene.get('biotype', '-'),
-                phenotypes,
-                entry.gene.get('GRch37', {}).get('location', '-'),
-                entry.gene.get('GRch38', {}).get('location', '-'),
-            ]
-            writer.writerow(row)
-
+        response = StreamingHttpResponse((writer.writerow(row) for row in self.gene_iterator()),
+                                         content_type='text/tab-separated-values')
+        attachment = 'attachment; filename=All_genes_{}.tsv'.format(
+            datetime.now().strftime('%Y%m%d-%H%M'))
+        response['Content-Disposition'] = attachment
         return response
 
 
 class DownloadAllPanels(GELReviewerRequiredMixin, View):
-    def get(self, request, *args, **kwargs):
-        response = HttpResponse(content_type='text/tab-separated-values')
-        attachment = 'attachment; filename=All_panels_{}.tsv'.format(datetime.now().strftime('%Y%M%D%H%i'))
-        response['Content-Disposition'] = attachment
-        writer = csv.writer(response, delimiter='\t')
-
-        writer.writerow((
+    def panel_iterator(self, request):
+        yield (
             "Level 4 title",
             "Level 3 title",
             "Level 2 title",
@@ -735,10 +834,10 @@ class DownloadAllPanels(GELReviewerRequiredMixin, View):
             "Reviewer emails (;)",
             "Approved",
             "Relevant disorders"
-        ))
+        )
 
         panels = GenePanelSnapshot.objects\
-            .get_active_anotated()\
+            .get_active_anotated(True)\
             .prefetch_related(
                 'genepanelentrysnapshot_set',
                 'genepanelentrysnapshot_set__evaluation',
@@ -751,7 +850,7 @@ class DownloadAllPanels(GELReviewerRequiredMixin, View):
             rate = "{} of {} genes reviewed".format(panel.number_of_evaluated_genes, panel.number_of_genes)
             reviewers = panel.contributors
 
-            row = [
+            yield (
                 panel.level4title.name,
                 panel.level4title.level3title,
                 panel.level4title.level2title,
@@ -763,18 +862,32 @@ class DownloadAllPanels(GELReviewerRequiredMixin, View):
                 ";".join([user[2] for user in reviewers if user[2]]),  # email
                 panel.panel.approved,
                 ";".join(panel.old_panels)
-            ]
-            writer.writerow(row)
+            )
 
+    def get(self, request, *args, **kwargs):
+        pseudo_buffer = EchoWriter()
+        writer = csv.writer(pseudo_buffer, delimiter='\t')
+
+        response = StreamingHttpResponse((writer.writerow(row) for row in self.panel_iterator(request)),
+                                         content_type='text/tab-separated-values')
+        attachment = 'attachment; filename=All_panels_{}.tsv'.format(
+            datetime.now().strftime('%Y%m%d-%H%M'))
+        response['Content-Disposition'] = attachment
         return response
 
 
 class ActivityListView(ListView):
     model = Activity
     context_object_name = 'activities'
-    paginate_by = 200
+    paginate_by = 3000
 
     def get_queryset(self, *args, **kwargs):
-        qs = super().get_queryset(*args, **kwargs)
+        qs = super().get_queryset(*args, **kwargs).exclude(
+            panel__deleted=True
+        )
+
+        if not self.request.user.is_authenticated:
+            qs = qs.exclude(panel__approved=False)
+
         qs = qs.prefetch_related('user', 'panel', 'user__reviewer')
         return qs

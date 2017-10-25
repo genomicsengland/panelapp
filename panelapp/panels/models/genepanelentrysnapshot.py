@@ -1,6 +1,7 @@
 from django.db import models
 from django.db.models import Count
 from django.db.models import Subquery
+from django.urls import reverse
 
 from django.core.serializers.json import DjangoJSONEncoder
 from django.contrib.postgres.fields import JSONField
@@ -20,16 +21,30 @@ from panels.templatetags.panel_helpers import GeneDataType
 
 
 class GenePanelEntrySnapshotManager(models.Manager):
-    def get_latest_ids(self):
-        return super().get_queryset()\
-            .distinct('panel__panel__pk')\
+    """Objects manager for GenePanelEntrySnapshot."""
+
+    def get_latest_ids(self, deleted=False):
+        """Get GenePanelSnapshot ids"""
+
+        qs = super().get_queryset()
+        if not deleted:
+            qs = qs.exclude(panel__panel__deleted=True)
+
+        return qs.distinct('panel__panel__pk')\
             .values_list('panel__pk', flat=True)\
             .order_by('panel__panel__pk', '-panel__major_version', '-panel__minor_version')
 
-    def get_active(self):
-        return super().get_queryset()\
-            .filter(panel__pk__in=Subquery(self.get_latest_ids()))\
-            .annotate(
+    def get_active(self, deleted=False, gene_symbol=None, pks=None):
+        """Get active Gene Entry Snapshots"""
+
+        if pks:
+            qs = super().get_queryset().filter(panel__pk__in=pks)
+        else:
+            qs = super().get_queryset().filter(panel__pk__in=Subquery(self.get_latest_ids(deleted)))
+        if gene_symbol:
+            qs = qs.filter(gene_core__gene_symbol=gene_symbol)
+
+        return qs.annotate(
                 number_of_reviewers=Count('evaluation__user', distinct=True),
                 number_of_evaluated_genes=Count('evaluation'),
                 number_of_genes=Count('pk'),
@@ -37,12 +52,10 @@ class GenePanelEntrySnapshotManager(models.Manager):
             .prefetch_related('evaluation', 'tags', 'evidence', 'panel', 'panel__level4title', 'panel__panel')\
             .order_by('panel__pk', '-panel__major_version', '-panel__minor_version')
 
-    def get_gene_panels(self, gene_symbol):
-        return super().get_queryset()\
-            .filter(gene__gene_symbol=gene_symbol)\
-            .distinct('panel__panel__pk')\
-            .prefetch_related('evaluation', 'tags', 'evidence', 'panel', 'panel__level4title', 'panel__panel')\
-            .order_by('panel__panel__pk', '-panel__major_version', '-panel__minor_version')
+    def get_gene_panels(self, gene_symbol, deleted=False, pks=None):
+        """Get panels for the specified gene"""
+
+        return self.get_active(deleted=deleted, gene_symbol=gene_symbol, pks=pks)
 
 
 class GenePanelEntrySnapshot(TimeStampedModel):
@@ -61,13 +74,17 @@ class GenePanelEntrySnapshot(TimeStampedModel):
 
     class Meta:
         get_latest_by = "created"
-        ordering = ['-saved_gel_status', '-created', ]
+        ordering = ['-saved_gel_status', ]
+        indexes = [
+            models.Index(fields=['panel_id']),
+            models.Index(fields=['gene_core_id'])
+        ]
 
     panel = models.ForeignKey(GenePanelSnapshot)
     gene = JSONField(encoder=DjangoJSONEncoder)  # copy data from Gene.dict_tr
     gene_core = models.ForeignKey(Gene)  # reference to the original Gene
     evidence = models.ManyToManyField(Evidence)
-    evaluation = models.ManyToManyField(Evaluation)
+    evaluation = models.ManyToManyField(Evaluation, db_index=True)
     moi = models.CharField("Mode of inheritance", choices=Evaluation.MODES_OF_INHERITANCE, max_length=255)
     penetrance = models.CharField(choices=PENETRANCE, max_length=255, blank=True, null=True)
     track = models.ManyToManyField(TrackRecord)
@@ -83,12 +100,17 @@ class GenePanelEntrySnapshot(TimeStampedModel):
         null=True,
         blank=True
     )
-    saved_gel_status = models.IntegerField(null=True)
+    saved_gel_status = models.IntegerField(null=True, db_index=True)
 
     objects = GenePanelEntrySnapshotManager()
 
     def __str__(self):
         return "Panel: {} Gene: {}".format(self.panel.panel.name, self.gene.get('gene_symbol'))
+
+    def get_absolute_url(self):
+        """Returns absolute url for this gene in a panel"""
+
+        return reverse('panels:evaluation', args=(self.panel.panel.pk, self.gene.get('gene_symbol')))
 
     @property
     def status(self):
@@ -119,12 +141,20 @@ class GenePanelEntrySnapshot(TimeStampedModel):
             return 0
 
         gel_status = 0
+        has_gel_reviews = False
         for evidence in self.evidence.all():
             if evidence.is_GEL:
+                has_gel_reviews = True
                 if evidence.name in evidence.EXPERT_REVIEWS:
+                    if update:
+                        self.saved_gel_status = evidence.EXPERT_REVIEWS.get(evidence.name)
+                        self.save()
                     return evidence.EXPERT_REVIEWS.get(evidence.name)
                 if evidence.name in evidence.HIGH_CONFIDENCE_SOURCES and evidence.rating > 3:
                     gel_status += 1
+
+        if has_gel_reviews and gel_status == 0:
+            gel_status = 1
 
         if update:
             self.saved_gel_status = gel_status
@@ -135,25 +165,37 @@ class GenePanelEntrySnapshot(TimeStampedModel):
     def is_reviewd_by_user(self, user):
         "Check if the gene was reviewed by the specific user"
 
-        return True if self.evaluation.filter(user=user).count() > 0 else False
+        return True if self.review_by_user(user) else False
+
+    def review_by_user(self, user):
+        """Check if user evaluated this gene, returns either the evaluation
+        or None"""
+
+        return self.evaluation.filter(user=user).first()
 
     def clear_evidences(self, user, evidence=None):
         "Remove sources from this gene. If `evidence` argument provided, check only that source"
 
+        description = None
+
         if evidence:
             evidences = self.evidence.filter(name=evidence)
             if len(evidences) > 0:
-                evidences.delete()
+                for evidence in evidences:
+                    if evidence.is_GEL:
+                        self.evidence.remove(evidence)
 
-                description = "{} Source: {} was removed from gene: {}".format(
-                    self.gene.get('gene_symbol'),
-                    evidence,
-                    self.gene.get('gene_symbol')
-                )
+                        description = "{} Source: {} was removed from gene: {}".format(
+                            self.gene.get('gene_symbol'),
+                            evidence,
+                            self.gene.get('gene_symbol')
+                        )
             else:
                 return False
         else:
-            self.evidence.all().delete()
+            for evidence in self.evidence.all():
+                if evidence.is_GEL:
+                    self.evidence.remove(evidence)
 
             description = "{} All sources for gene: {} were removed".format(
                 self.gene.get('gene_symbol'),
@@ -161,14 +203,16 @@ class GenePanelEntrySnapshot(TimeStampedModel):
             )
 
         evidence_status = self.evidence_status(update=True)
-        track_sources = TrackRecord.objects.create(
-            gel_status=evidence_status,
-            curator_status=0,
-            user=user,
-            issue_type=TrackRecord.ISSUE_TYPES.ClearSources,
-            issue_description=description
-        )
-        self.track.add(track_sources)
+
+        if description:
+            track_sources = TrackRecord.objects.create(
+                gel_status=evidence_status,
+                curator_status=0,
+                user=user,
+                issue_type=TrackRecord.ISSUE_TYPES.ClearSources,
+                issue_description=description
+            )
+            self.track.add(track_sources)
 
         return True
 
@@ -241,11 +285,10 @@ class GenePanelEntrySnapshot(TimeStampedModel):
             return
 
         if ready_comment:
-            comment = Comment.objects.create(
-                user=user,
-                comment="Comment when marking as ready: {}".format(ready_comment)
+            self.add_review_comment(
+                user,
+                "Comment when marking as ready: {}".format(ready_comment)
             )
-            self.comments.add(comment)
 
         self.panel.add_activity(
             user,
@@ -256,10 +299,15 @@ class GenePanelEntrySnapshot(TimeStampedModel):
         self.save()
 
     def update_moi(self, moi, user, moi_comment=None):
+        old_moi = self.moi
         self.moi = moi
         self.save()
 
-        description = "Mode of inheritance for {} was changed to {}".format(self.gene.get('gene_symbol'), moi)
+        description = "Mode of inheritance for {} was changed from {} to {}".format(
+            self.gene.get('gene_symbol'),
+            old_moi,
+            moi
+        )
         track = TrackRecord.objects.create(
             gel_status=self.status,
             curator_status=0,
@@ -270,11 +318,10 @@ class GenePanelEntrySnapshot(TimeStampedModel):
         self.track.add(track)
 
         if moi_comment:
-            comment = Comment.objects.create(
-                user=user,
-                comment="Comment on mode of inheritance: {}".format(moi_comment)
+            self.add_review_comment(
+                user,
+                "Comment on mode of inheritance: {}".format(moi_comment)
             )
-            self.comments.add(comment)
 
     def update_pathogenicity(self, mop, user, mop_comment=None):
         self = self.panel.get_gene(self.gene.get('gene_symbol'))
@@ -292,11 +339,10 @@ class GenePanelEntrySnapshot(TimeStampedModel):
         self.track.add(track)
 
         if mop_comment:
-            comment = Comment.objects.create(
-                user=user,
-                comment="Comment on mode of pathogenicity: {}".format(mop_comment)
+            self.add_review_comment(
+                user,
+                "Comment on mode of pathogenicity: {}".format(mop_comment)
             )
-            self.comments.add(comment)
 
     def update_phenotypes(self, phenotypes, user, phenotypes_comment=None):
         self = self.panel.get_gene(self.gene.get('gene_symbol'))
@@ -314,11 +360,10 @@ class GenePanelEntrySnapshot(TimeStampedModel):
         self.track.add(track)
 
         if phenotypes_comment:
-            comment = Comment.objects.create(
-                user=user,
-                comment="Comment on phenotypes: {}".format(phenotypes_comment)
+            self.add_review_comment(
+                user,
+                "Comment on phenotypes: {}".format(phenotypes_comment)
             )
-            self.comments.add(comment)
 
     def update_publications(self, publications, user, publications_comment=None):
         self = self.panel.get_gene(self.gene.get('gene_symbol'))
@@ -337,11 +382,25 @@ class GenePanelEntrySnapshot(TimeStampedModel):
         self.track.add(track)
 
         if publications_comment:
-            comment = Comment.objects.create(
-                user=user,
-                comment="Comment on publications: {}".format(publications_comment)
+            self.add_review_comment(
+                user,
+                "Comment on publications: {}".format(publications_comment)
             )
-            self.comments.add(comment)
+
+    def add_review_comment(self, user, comment):
+        comment = Comment.objects.create(
+            user=user,
+            comment=comment
+        )
+
+        evaluation = self.review_by_user(user)
+        if not evaluation:
+            evaluation = Evaluation.objects.create(
+                user=user,
+                version=self.panel.version
+            )
+            self.evaluation.add(evaluation)
+        evaluation.comments.add(comment)
 
     def update_rating(self, rating, user, rating_comment=None):
         gene = self.gene.get('gene_symbol')
@@ -352,11 +411,10 @@ class GenePanelEntrySnapshot(TimeStampedModel):
             return
 
         if rating_comment:
-            comment = Comment.objects.create(
-                user=user,
-                comment="Comment on list classification: {}".format(rating_comment)
+            self.add_review_comment(
+                user,
+                "Comment on list classification: {}".format(rating_comment)
             )
-            self.comments.add(comment)
 
         human_status = get_gene_list_data(self, GeneDataType.LONG.value)
         self.panel.add_activity(user, gene, "classified {} as {}".format(gene, human_status))
@@ -432,6 +490,11 @@ class GenePanelEntrySnapshot(TimeStampedModel):
                     comment=evaluation_data.get('comment')
                 )
                 evaluation.comments.add(comment)
+            
+            rating = evaluation_data.get('rating')
+            if rating and evaluation.rating != rating:
+                changed = True
+                evaluation.rating = rating
 
             mop = evaluation_data.get('mode_of_pathogenicity')
             if mop and evaluation.mode_of_pathogenicity != mop:
@@ -463,9 +526,12 @@ class GenePanelEntrySnapshot(TimeStampedModel):
             if changed:
                 activity_text = "commented on {}".format(self.gene.get('gene_symbol'))
                 self.panel.add_activity(user, self.gene.get('gene_symbol'), activity_text)
-            elif comment:
+            elif evaluation_data.get('comment'):
                 activity_text = "edited their review of {}".format(self.gene.get('gene_symbol'))
                 self.panel.add_activity(user, self.gene.get('gene_symbol'), activity_text)
+
+            evaluation.save()
+            return evaluation
 
         except Evaluation.DoesNotExist:
             evaluation = Evaluation.objects.create(
@@ -516,9 +582,10 @@ class GenePanelEntrySnapshot(TimeStampedModel):
         """
 
         return {
-            "gene": self.gene,
+            "gene": self.gene_core,
+            "gene_json": self.gene,
             "gene_name": self.gene.get('gene_name'),
-            "source": [e.name for e in self.evidence.all()],
+            "source": [e.name for e in self.evidence.all() if e.is_GEL],
             "tags": self.tags.all(),
             "publications": self.publications,
             "phenotypes": self.phenotypes,
@@ -526,3 +593,13 @@ class GenePanelEntrySnapshot(TimeStampedModel):
             "moi": self.moi,
             "penetrance": self.penetrance
         }
+    
+    def get_review_comments(self):
+        """Get review comments in a chronological order.
+        
+        Used for list of review comments
+        
+        Returns QuerySet
+        """
+
+        return Comment.objects.filter(evaluation__pk__in=self.evaluation.values_list('pk', flat=True))

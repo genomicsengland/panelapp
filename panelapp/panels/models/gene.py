@@ -5,7 +5,7 @@ from django.contrib.postgres.fields import JSONField, ArrayField
 
 
 class Gene(models.Model):
-    gene_symbol = models.CharField(max_length=255, primary_key=True)
+    gene_symbol = models.CharField(max_length=255, primary_key=True, db_index=True)
     gene_name = models.CharField(max_length=255, null=True)
     ensembl_genes = JSONField()
     omim_gene = ArrayField(models.CharField(max_length=255), null=True)
@@ -16,7 +16,7 @@ class Gene(models.Model):
     hgnc_date_symbol_changed = models.DateField(null=True)
     hgnc_release = models.DateField(null=True)
     hgnc_id = models.CharField(max_length=255, null=True)
-    active = models.BooleanField(default=True)
+    active = models.BooleanField(default=True, db_index=True)
 
     def __str__(self):
         return "{symbol} (HGNC:  {hgnc_symbol}), {gene_name}".format(
@@ -39,7 +39,7 @@ class Gene(models.Model):
             'hgnc_release': self.hgnc_release,
             'hgnc_id': self.hgnc_id
         }
-    
+
     def clean_import_dates(self, record):
         try:
             self.full_clean()
@@ -52,7 +52,7 @@ class Gene(models.Model):
                     except ValueError:
                         converted_val = datetime.strptime(val, '%d/%m/%y')
                     self.hgnc_date_symbol_changed = converted_val
-            
+
             if 'hgnc_release' in err.error_dict:
                 val = record.get('hgnc_release', None)
                 if val:

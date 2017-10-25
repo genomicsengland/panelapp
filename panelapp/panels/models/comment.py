@@ -8,6 +8,9 @@ class Comment(TimeStampedModel):
     comment = models.TextField()
     flagged = models.BooleanField(default=False)
 
+    class Meta:
+        ordering = ['-created',]
+
     def dict_tr(self):
         return {
             "date": self.created,

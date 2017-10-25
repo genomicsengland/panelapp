@@ -11,6 +11,7 @@ class TrackRecord(TimeStampedModel):
     ISSUE_TYPES = Choices(
         ("Created", "Created"),
         ("NewSource", "Added New Source"),
+        ("RemovedSource", "Removed Source"),
         ("ChangedGeneName", "Changed Gene Name"),
         ("SetPhenotypes", "Set Phenotypes"),
         ("SetModelofInheritance", "Set Model of Inheritance"),
@@ -18,11 +19,13 @@ class TrackRecord(TimeStampedModel):
         ("SetModeofPathogenicity", "Set mode of pathogenicity"),
         ("GeneClassifiedbyGenomicsEnglandCurator", "Gene classified by Genomics England curator"),
         ("SetModeofInheritance", "Set mode of inheritance"),
-        ("SetPhenotypes", "Set phenotypes"),
+        ("SetPenetrance", "Set penetrance"),
         ("SetPublications", "Set publications"),
         ("ApprovedGene", "Approved Gene"),
         ("GelStatusUpdate", "GelStatusUpdate"),
         ("UploadGeneInformation", "Upload gene information"),
+        ("RemovedTag", "Removed Tag"),
+        ("AddedTag", "Added Tag"),
     )
 
     class Meta:

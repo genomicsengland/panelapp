@@ -75,6 +75,9 @@ class GeneClearDataAjaxMixin(BaseAjaxGeneMixin):
 
 class ClearPublicationsAjaxView(GELReviewerRequiredMixin, GeneClearDataAjaxMixin, AJAXMixin, View):
     def process(self):
+        self.gene.panel.increment_version()
+        del self.gene
+        del self.panel
         self.gene.publications = []
         self.gene.save()
         del self.gene
@@ -83,6 +86,9 @@ class ClearPublicationsAjaxView(GELReviewerRequiredMixin, GeneClearDataAjaxMixin
 
 class ClearPhoenotypesAjaxView(GELReviewerRequiredMixin, GeneClearDataAjaxMixin, AJAXMixin, View):
     def process(self):
+        self.gene.panel.increment_version()
+        del self.gene
+        del self.panel
         self.gene.phenotypes = []
         self.gene.save()
         del self.gene
@@ -92,6 +98,9 @@ class ClearPhoenotypesAjaxView(GELReviewerRequiredMixin, GeneClearDataAjaxMixin,
 
 class ClearModeOfPathogenicityAjaxView(GELReviewerRequiredMixin, GeneClearDataAjaxMixin, AJAXMixin, View):
     def process(self):
+        self.gene.panel.increment_version()
+        del self.gene
+        del self.panel
         self.gene.mode_of_pathogenicity = ""
         self.gene.save()
         del self.gene
@@ -107,10 +116,13 @@ class ClearSourcesAjaxView(GELReviewerRequiredMixin, GeneClearDataAjaxMixin, AJA
         self.gene.clear_evidences(self.request.user)
         del self.panel
         del self.gene
+        self.gene.panel.update_saved_stats()
         return self.return_data()
 
 
 class ClearSingleSourceAjaxView(GELReviewerRequiredMixin, GeneClearDataAjaxMixin, AJAXMixin, View):
+    template_name = "panels/genepanel_table.html"
+
     def process(self):
         self.gene.panel.increment_version()
         del self.gene
@@ -118,20 +130,38 @@ class ClearSingleSourceAjaxView(GELReviewerRequiredMixin, GeneClearDataAjaxMixin
         self.gene.clear_evidences(self.request.user, evidence=self.kwargs['source'])
         del self.panel
         del self.gene
+        self.gene.panel.update_saved_stats()
         return self.return_data()
+
+    def return_data(self):
+        ctx = {
+            'panel': self.panel
+        }
+        table = render(self.request, self.template_name, ctx)
+        return {
+            'inner-fragments': {
+                '#table': table
+            }
+        }
 
 
 class PanelAjaxMixin(BaseAjaxGeneMixin):
     template_name = "panels/genepanel_list_table.html"
 
     def return_data(self):
+        if self.request.user.is_authenticated and self.request.user.reviewer.is_GEL():
+            panels = GenePanelSnapshot.objects.get_active(True)
+        else:
+            panels = GenePanelSnapshot.objects.get_active()
         ctx = {
-            'panels': GenePanelSnapshot.objects.get_active()
+            'panels': panels,
+            'view_panels': panels,
         }
         table = render(self.request, self.template_name, ctx)
         return {
             'inner-fragments': {
-                '#table': table
+                '#table': table,
+                '#panels_count': len(panels)
             }
         }
 
@@ -159,6 +189,7 @@ class DeleteGeneAjaxView(GELReviewerRequiredMixin, BaseAjaxGeneMixin, AJAXMixin,
 
     def process(self):
         self.panel.delete_gene(self.kwargs['gene_symbol'], True)
+        del self.panel
         return self.return_data()
 
     def return_data(self):
@@ -195,37 +226,16 @@ class ApproveGeneAjaxView(GELReviewerRequiredMixin, BaseAjaxGeneMixin, AJAXMixin
 class GeneObjectMixin:
     @cached_property
     def gene(self):
-        return self.panel.get_gene(self.kwargs['gene_symbol'])
-
-
-class UpdateGeneTagsAjaxView(GELReviewerRequiredMixin, GeneObjectMixin, BaseAjaxGeneMixin, AJAXMixin, View):
-    template_name = "panels/genepanelentrysnapshot/review/part_tags.html"
-
-    def process(self):
-        form = UpdateGeneTagsForm(instance=self.gene, data=self.request.POST)
-        if form.is_valid():
-            form.save()
-            return self.return_data()
-        else:
-            return {'status': 400, 'reason': form.errors}
-
-    def return_data(self):
-        ctx = {
-            'panel': self.panel,
-            'gene': self.gene,
-            'edit_gene_tags_form': UpdateGeneTagsForm(instance=self.gene),
-            "updated": datetime.datetime.now().strftime('%H:%M:%S')
-        }
-        tags = render(self.request, self.template_name, ctx)
-        return {
-            'inner-fragments': {
-                '#part-tags': tags,
-            }
-        }
+        return self.panel.get_gene(self.kwargs['gene_symbol'], prefetch_extra=True)
 
 
 class UpdateEvaluationsMixin(VerifiedReviewerRequiredMixin, GeneObjectMixin, BaseAjaxGeneMixin, AJAXMixin, View):
     def get_context_data(self):
+        if self.panel:
+            del self.panel
+        if self.gene:
+            del self.gene
+
         ctx = {
             'panel': self.panel,
             'gene': self.gene,
@@ -256,29 +266,67 @@ class UpdateEvaluationsMixin(VerifiedReviewerRequiredMixin, GeneObjectMixin, Bas
             gene=self.gene
         )
 
+        ctx['panel_genes'] = list(self.panel.get_all_entries_extra)
+        cgi = ctx['panel_genes'].index(self.gene)
+        ctx['next_gene'] = None if cgi == len(ctx['panel_genes']) - 1 else ctx['panel_genes'][cgi + 1]
+        ctx['prev_gene'] = None if cgi == 0 else ctx['panel_genes'][cgi - 1]
+
         ctx['edit_gene_tags_form'] = UpdateGeneTagsForm(instance=self.gene)
         ctx['edit_gene_mop_form'] = UpdateGeneMOPForm(instance=self.gene)
         ctx['edit_gene_moi_form'] = UpdateGeneMOIForm(instance=self.gene)
         ctx['edit_gene_phenotypes_form'] = UpdateGenePhenotypesForm(instance=self.gene)
         ctx['edit_gene_publications_form'] = UpdateGenePublicationsForm(instance=self.gene)
         ctx['edit_gene_rating_form'] = UpdateGeneRatingForm(instance=self.gene)
-        ctx['panel_genes'] = list(self.panel.get_all_entries)
 
         return ctx
 
     def return_data(self):
         ctx = self.get_context_data()
-        evaluations = render(self.request, 'panels/genepanelentrysnapshot/gene_evaluation.html', ctx)
+
+        evaluations = render(self.request, 'panels/genepanelentrysnapshot/evaluate.html', ctx)
         reviews = render(self.request, 'panels/genepanelentrysnapshot/review/review_evaluations.html', ctx)
         details = render(self.request, 'panels/genepanelentrysnapshot/details.html', ctx)
+        genes_list = render(self.request, 'panels/genepanelentrysnapshot/evaluation_genes_list.html', ctx)
+        history = render(self.request, 'panels/genepanelentrysnapshot/history.html', ctx)
+        header = render(self.request, 'panels/genepanelentrysnapshot/header.html', ctx)
 
         return {
             'inner-fragments': {
-                '#evaluations': evaluations,
+                '#evaluate': evaluations,
                 '#review-evaluations': reviews,
-                '#details': details
+                '#details': details,
+                '#genes_list': genes_list,
+                '#history': history,
+                '#gene_header': header
             }
         }
+
+
+class UpdateGeneTagsAjaxView(GELReviewerRequiredMixin, UpdateEvaluationsMixin):
+    template_name = "panels/genepanelentrysnapshot/review/part_tags.html"
+
+    def process(self):
+        form = UpdateGeneTagsForm(instance=self.gene, data=self.request.POST)
+        if form.is_valid():
+            form.save()
+            del self.panel
+            del self.gene
+            return self.return_data()
+        else:
+            return {'status': 400, 'reason': form.errors}
+
+    def return_data(self):
+        data = super().return_data()
+
+        ctx = {
+            'panel': self.panel,
+            'gene': self.gene,
+            'edit_gene_tags_form': UpdateGeneTagsForm(instance=self.gene),
+            "updated": datetime.datetime.now().strftime('%H:%M:%S')
+        }
+        tags = render(self.request, self.template_name, ctx)
+        data['inner-fragments']['#part-tags'] = tags
+        return data
 
 
 class UpdateGeneMOPAjaxView(GELReviewerRequiredMixin, UpdateEvaluationsMixin):
@@ -400,6 +448,8 @@ class DeleteGeneEvaluationAjaxView(UpdateEvaluationsMixin):
     def process(self):
         evaluation_pk = self.kwargs['evaluation_pk']
         self.gene.delete_evaluation(evaluation_pk)
+        del self.gene
+        del self.panel
         return self.return_data()
 
 
@@ -407,6 +457,8 @@ class DeleteGeneCommentAjaxView(UpdateEvaluationsMixin):
     def process(self):
         comment_pk = self.kwargs['comment_pk']
         self.gene.delete_comment(comment_pk)
+        del self.gene
+        del self.panel
         return self.return_data()
 
 

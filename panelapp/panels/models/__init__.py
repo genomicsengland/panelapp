@@ -29,6 +29,7 @@ embedded version for the previous versions in the list. Since we are moving
 to the Postgres it makes sense to keep the gene panel entry backup as a JSON.
 """
 
+from .codes import ProcessingRunCode  # noqa
 from .tag import Tag  # noqa
 from .gene import Gene  # noqa
 from .activity import Activity  # noqa

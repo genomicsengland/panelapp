@@ -1,9 +1,9 @@
 -r general.txt
 
 ipython==6.1.0
-pytest==3.1.3
+pytest==3.2.1
 pytest-django==3.1.2
 coverage==4.4.1
 flake8==3.4.1
 faker==0.7.18
-factory_boy==2.9.0
+factory_boy==2.9.2

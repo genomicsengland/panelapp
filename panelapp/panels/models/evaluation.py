@@ -12,6 +12,12 @@ class Evaluation(TimeStampedModel):
     TODO @migrate ratings from old format into the new one?
     """
 
+    class Meta:
+        indexes = [
+            models.Index(fields=['user_id']),
+        ]
+        ordering = ['-created',]
+
     RATINGS = Choices(
         ("GREEN", "Green List (high evidence)"),
         ("RED", "Red List (low evidence)"),

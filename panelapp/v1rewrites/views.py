@@ -4,7 +4,7 @@ from panels.models import GenePanel
 
 
 class V1RedirectMixin(RedirectView):
-    url = "/"
+    url = "/?v2"
 
     def dispatch(self, request, *args, **kwargs):
         self.check()

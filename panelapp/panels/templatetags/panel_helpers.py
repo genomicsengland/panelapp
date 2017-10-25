@@ -50,7 +50,10 @@ def get_review_rating_data(review, list_type):
 
 @register.filter
 def evaluation_rating_name(review):
-    return Evaluation.RATINGS[review.rating]
+    try:
+        return Evaluation.RATINGS[review.rating]
+    except KeyError:
+        return review
 
 
 @register.filter

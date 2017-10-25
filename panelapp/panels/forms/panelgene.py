@@ -41,20 +41,21 @@ class PanelGeneForm(forms.ModelForm):
     gene = forms.ModelChoiceField(
         label="Gene symbol",
         queryset=Gene.objects.filter(active=True),
-        widget=ModelSelect2(url="autocomplete-gene")
+        widget=ModelSelect2(
+            url="autocomplete-gene",
+            attrs={'data-minimum-input-length': 1}
+        )
     )
 
     gene_name = forms.CharField()
 
     source = Select2ListMultipleChoiceField(
-        choice_list=Evidence.ALL_SOURCES,
-        widget=Select2Multiple(url="autocomplete-source"),
-        required=False
+        choice_list=Evidence.ALL_SOURCES, required=False,
+        widget=Select2Multiple(url="autocomplete-source")
     )
     tags = forms.ModelMultipleChoiceField(
-        queryset=Tag.objects.all(),
-        widget=ModelSelect2Multiple(url="autocomplete-tags"),
-        required=False
+        queryset=Tag.objects.all(), required=False,
+        widget=ModelSelect2Multiple(url="autocomplete-tags")
     )
 
     publications = SimpleArrayField(
@@ -101,14 +102,26 @@ class PanelGeneForm(forms.ModelForm):
         self.fields['source'] = original_fields.get('source')
         self.fields['mode_of_pathogenicity'] = original_fields.get('mode_of_pathogenicity')
         self.fields['moi'] = original_fields.get('moi')
+        self.fields['moi'].required = False
         self.fields['penetrance'] = original_fields.get('penetrance')
         self.fields['publications'] = original_fields.get('publications')
         self.fields['phenotypes'] = original_fields.get('phenotypes')
-        self.fields['tags'] = original_fields.get('tags')
+        if self.request.user.is_authenticated and self.request.user.reviewer.is_GEL():
+            self.fields['tags'] = original_fields.get('tags')
         if not self.instance.pk:
             self.fields['rating'] = original_fields.get('rating')
             self.fields['current_diagnostic'] = original_fields.get('current_diagnostic')
             self.fields['comments'] = original_fields.get('comments')
+
+    def clean_source(self):
+        if len(self.cleaned_data['source']) < 1:
+            raise forms.ValidationError('Please select a source')
+        return self.cleaned_data['source']
+
+    def clean_moi(self):
+        if not self.cleaned_data['moi']:
+            raise forms.ValidationError('Please select a mode of inheritance')
+        return self.cleaned_data['moi']
 
     def clean_gene(self):
         "Check if gene exists in a panel if we add a new gene or change the gene"
@@ -145,14 +158,14 @@ class PanelGeneForm(forms.ModelForm):
             gene_data['comment'] = gene_data.pop('comments')
 
         if self.initial:
-            initial_gene_symbol = self.initial['gene'].get('gene_symbol')
+            initial_gene_symbol = self.initial['gene_json'].get('gene_symbol')
         else:
             initial_gene_symbol = None
 
         new_gene_symbol = gene_data.get('gene').gene_symbol
 
         if self.initial and self.panel.has_gene(initial_gene_symbol):
-            self.panel.increment_version()
+            self.panel = self.panel.increment_version()
             self.panel = GenePanel.objects.get(pk=self.panel.panel.pk).active_panel
             self.panel.update_gene(
                 self.request.user,
@@ -162,8 +175,13 @@ class PanelGeneForm(forms.ModelForm):
             self.panel = GenePanel.objects.get(pk=self.panel.panel.pk).active_panel
             return self.panel.get_gene(new_gene_symbol)
         else:
-            return self.panel.add_gene(
+            increment_version = self.request.user.is_authenticated and self.request.user.reviewer.is_GEL()
+            gene = self.panel.add_gene(
                 self.request.user,
                 new_gene_symbol,
-                gene_data
+                gene_data,
+                increment_version
             )
+            self.panel = GenePanel.objects.get(pk=self.panel.panel.pk).active_panel
+            self.panel.update_saved_stats()
+            return gene

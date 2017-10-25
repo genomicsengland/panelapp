@@ -5,7 +5,7 @@
     <h4 class="normal remove-top-margin add-label-margin">
       {{ user.first_name }} {{ user.last_name }} ({{ user.reviewer.affiliation }})
     </h4>
-    {% if request.user.reviewer.is_GEL %}
+    {% if request.user.is_authenticated and request.user.reviewer.is_GEL %}
       <a href="mailto:{{ user.email }}" class="link-muted">{{ user.email }}</a>
     {% endif %}
   </div>
@@ -19,10 +19,10 @@
   {% for comment in ev.comments.all %}
     <blockquote class="add-top-margin" id="comment_{{ comment.pk }}">
       {{ comment.comment }}
-      <h6>{{ comment.created|date }}</h6>
+      <h6>{{ comment.created|date:'DATETIME_FORMAT' }}</h6>
       {% if request.user == user and panel and gene %}
-        <a href="{% url "panels:edit_comment_by_user" view.panel.panel.id gene.gene.gene_symbol comment.pk %}" class="btn btn-default btn-xs" data-ajax="true" data-success="djangoAjaxHandler">Edit your comment</a>
-        <a href="{% url "panels:delete_comment_by_user" view.panel.panel.id gene.gene.gene_symbol comment.pk %}" class="btn btn-default btn-xs" data-ajax="true" data-success="djangoAjaxHandler">Delete comment</a>
+        <a href="{% url "panels:edit_comment_by_user" panel.panel_id gene.gene.gene_symbol comment.pk %}" class="btn btn-default btn-xs" data-ajax="true" data-success="djangoAjaxHandler">Edit your comment</a>
+        <a href="{% url "panels:delete_comment_by_user" panel.panel_id gene.gene.gene_symbol comment.pk %}" class="btn btn-default btn-xs" data-ajax="true" data-success="djangoAjaxHandler">Delete comment</a>
       {% endif %}
     </blockquote>
   {% endfor %}
@@ -67,7 +67,7 @@
 
 {% if ev.version %}
 <div class="panel-footer">
-  {{ ev.created|date }}<br>
+  {{ ev.created|date:'DATETIME_FORMAT' }}<br>
   <strong>Panel version: </strong>{{ ev.version }}
 </div>
 {% endif %}

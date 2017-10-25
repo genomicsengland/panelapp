@@ -1,0 +1,67 @@
+{% load panel_helpers %}
+
+<div class="panel-heading">Genes in panel</div>
+<div class="btn-group btn-group-justified" role="group" data-module="gene-nav">
+    {% if prev_gene %}
+        <a href="{{ prev_gene.get_absolute_url }}"
+           class="gene-nav-prev btn btn-default" title="{{ prev_gene.gene.gene_symbol }}">
+            <i class="fa fa-arrow-up add-right-margin"></i>Prev
+        </a>
+    {% else %}
+        <span class="gene-nav-prev btn btn-default disabled">
+            <i class="fa fa-arrow-up add-right-margin"></i>Prev
+        </span>
+    {% endif %}
+    {% if next_gene %}
+        <a href="{{ next_gene.get_absolute_url }}"
+           class="gene-nav-next btn btn-default" title="{{ next_gene.gene.gene_symbol }}">
+            Next<i class="fa fa-arrow-down add-left-margin"></i>
+        </a>
+    {% else %}
+        <span class="gene-nav-next btn btn-default disabled">
+            Next<i class="fa fa-arrow-down add-left-margin"></i>
+        </span>
+    {% endif %}
+</div>
+<ul class="list-group" data-module="gene-nav" id="gene-nav">
+  {% for entry in panel_genes %}
+    <li
+        class="list-group-item {% if gene.gene.gene_symbol == entry.gene.gene_symbol %}list-group-item-active{% endif %}"
+        {% if gene.gene.gene_symbol == entry.gene.gene_symbol %}id="gene-nav-active-item"{% endif %}
+    >
+      <a href="{{ entry.get_absolute_url }}{% if entry.gene.gene_symbol in panel.current_genes_duplicates %}?pk={{ entry.pk }}{% endif %}">
+      {% if request.user.pk in entry.evaluators %}
+          <i
+              class="fa fa-check-circle {{ entry|gene_list_class }} add-right-margin gel-badge pull-left"
+              data-toggle="tooltip"
+              title="You have reviewed"
+          ></i>
+      {% else %}
+          <i
+              class="fa fa-circle gel-badge add-right-margin pull-left {{ entry|gene_list_class }}"
+              data-toggle="tooltip"
+              title="{{ entry|gene_list_name }}"
+          ></i>
+      {% endif %}
+      {{ entry.gene.gene_symbol }}
+      <span
+          class="pull-right text-muted"
+          data-toggle="tooltip"
+          data-placement="left"
+          title="{{ entry.number_of_evaluations }} review{{entry.number_of_evaluations|pluralize}}"
+      >{{ entry.number_of_evaluations }}</span>
+      </a>
+
+    </li>
+  {% endfor %}
+
+</ul>
+{% if request.user.is_authenticated and request.user.reviewer.is_verified %}
+    <ul class="list-group">
+        <li class="list-group-item" style="border-top: none">
+            <a href="{% url 'panels:add_gene' panel.panel_id %}">
+                <i class="fa fa-plus add-right-margin"></i>Add a gene
+            </a>
+        </li>
+    </ul>
+{% endif %}

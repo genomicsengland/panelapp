@@ -34,6 +34,7 @@ class UpdateGeneMOPForm(forms.ModelForm):
         self.instance = GenePanel.objects.get(pk=self.instance.panel.panel.pk)\
             .active_panel.get_gene(self.instance.gene['gene_symbol'])
         self.instance.update_pathogenicity(mop, user, comment)
+        self.instance.panel.update_saved_stats()
 
 
 class UpdateGeneMOIForm(forms.ModelForm):
@@ -51,6 +52,7 @@ class UpdateGeneMOIForm(forms.ModelForm):
         self.instance = GenePanel.objects.get(pk=self.instance.panel.panel.pk)\
             .active_panel.get_gene(self.instance.gene['gene_symbol'])
         self.instance.update_moi(moi, user, comment)
+        self.instance.panel.update_saved_stats()
 
 
 class UpdateGenePhenotypesForm(forms.ModelForm):
@@ -73,6 +75,7 @@ class UpdateGenePhenotypesForm(forms.ModelForm):
         self.instance = GenePanel.objects.get(pk=self.instance.panel.panel.pk)\
             .active_panel.get_gene(self.instance.gene['gene_symbol'])
         self.instance.update_phenotypes(phenotypes, user, comment)
+        self.instance.panel.update_saved_stats()
 
 
 class UpdateGenePublicationsForm(forms.ModelForm):
@@ -96,6 +99,7 @@ class UpdateGenePublicationsForm(forms.ModelForm):
         self.instance = GenePanel.objects.get(pk=self.instance.panel.panel.pk)\
             .active_panel.get_gene(self.instance.gene['gene_symbol'])
         self.instance.update_publications(publications, user, comment)
+        self.instance.panel.update_saved_stats()
 
 
 class UpdateGeneRatingForm(forms.ModelForm):
@@ -121,6 +125,7 @@ class UpdateGeneRatingForm(forms.ModelForm):
         self.instance = GenePanel.objects.get(pk=self.instance.panel.panel.pk)\
             .active_panel.get_gene(self.instance.gene['gene_symbol'])
         self.instance.update_rating(status, user, self.cleaned_data['comment'])
+        self.instance.panel.update_saved_stats()
 
 
 class EditCommentForm(forms.Form):

@@ -6,20 +6,34 @@
 {% block header %}
 <script type="text/javascript" src="{% static 'django_ajax/js/jquery.ajax.min.js' %}"></script>
 <script type="text/javascript" src="{% static 'django_ajax/js/jquery.ajax-plugin.min.js' %}"></script>
-
 {% endblock %}
 
 {% block body %}
 <div class="container">
-    {% with panels_count=view.panels.count %}
-      <h1>{{ panels_count }} panel{{ panels_count|pluralize }}</h1>
-    {% endwith %}
-      <button type="button" class="btn btn-default text-right" data-toggle="modal" data-target="#compare-modal">
-        Compare two panels
-      </button>
-      <div id="table">
-        {% include "panels/genepanel_list_table.html" %}
-      </div>
-      {% include 'panels/compare/compare_panels_form.html' with form=view.compare_panels_form %}
+    {% with view_panels=view.panels %}
+      {% with panels_count=view_panels|length %}
+        <h1><span id="panels_count">{{ panels_count }}</span> panel{{ panels_count|pluralize }}</h1>
+      {% endwith %}
+        <button type="button" class="btn btn-default text-right" data-toggle="modal" data-target="#compare-modal">
+          Compare two panels
+        </button>
+        <div id="table">
+          {% include "panels/genepanel_list_table.html" with view_panels=view_panels %}
+        </div>
+        {% include 'panels/compare/compare_panels_form.html' with form=view.compare_panels_form %}
+      {% endwith %}
 </div>
+{% endblock %}
+
+{% block js %}
+<script type="text/javascript">
+  $(document).ready(function() {
+    var panels = '';
+    $('#panel_records tr').each(function(index, panel) {
+      panels += '<option value="' + panel.getAttribute('data-pk') + '">' + panel.getAttribute('data-panel') + ' v' + panel.getAttribute('data-version') + '</option>';
+    });
+    $('#compare-modal #id_panel_1').append(panels);
+    $('#compare-modal #id_panel_2').append(panels);
+  });
+</script>
 {% endblock %}

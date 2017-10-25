@@ -5,7 +5,7 @@
 <div class="panel panel-default panel-details">
     <div class="panel-body">
         <dl class="dl-separated">
-            {% if request.user.reviewer.is_GEL %}
+            {% if request.user.is_authenticated and request.user.reviewer.is_GEL %}
                 <dt>GEL status</dt>
                 <dd>{{ gene.status }}</dd>
             {% endif %}
@@ -18,11 +18,13 @@
             <dd>
                 <ul>
                     {% for ev in gene.evidence.all %}
-                        <li>{{ ev.name }}</li>
+                        {% if ev.is_GEL %}
+                            <li>{{ ev.name }}</li>
+                        {% endif %}
                     {% endfor %}
                 </ul>
-                {% if request.user.reviewer.is_GEL %}
-                    <a class="link-muted" href="{% url 'panels:clear_gene_sources' panel.panel.id gene.gene.gene_symbol %}" data-ajax="true" data-success="djangoAjaxHandler">Clear Sources</a>
+                {% if request.user.is_authenticated and request.user.reviewer.is_GEL %}
+                    <a class="link-muted" href="{% url 'panels:clear_gene_sources' panel.panel_id gene.gene.gene_symbol %}" data-ajax="true" data-success="djangoAjaxHandler">Clear Sources</a>
                 {% endif %}
             </dd>
             {% endif %}
@@ -36,8 +38,8 @@
                             {% endif %}
                         {% endfor %}
                     </ul>
-                    {% if request.user.reviewer.is_GEL %}
-                        <a href="{% url 'panels:clear_gene_phenotypes' panel.panel.id gene.gene.gene_symbol %}" class="link-muted" data-ajax="true" data-success="djangoAjaxHandler">
+                    {% if request.user.is_authenticated and request.user.reviewer.is_GEL %}
+                        <a href="{% url 'panels:clear_gene_phenotypes' panel.panel_id gene.gene.gene_symbol %}" class="link-muted" data-ajax="true" data-success="djangoAjaxHandler">
                             Clear phenotypes
                         </a>
                     {% endif %}
@@ -70,8 +72,8 @@
                 {% endfor %}
                 </ul>
 
-                {% if request.user.reviewer.is_GEL %}
-                    <a href="{% url 'panels:clear_gene_publications' panel.panel.id gene.gene.gene_symbol %}" class="link-muted" data-ajax="true" data-success="djangoAjaxHandler">
+                {% if request.user.is_authenticated and request.user.reviewer.is_GEL %}
+                    <a href="{% url 'panels:clear_gene_publications' panel.panel_id gene.gene.gene_symbol %}" class="link-muted" data-ajax="true" data-success="djangoAjaxHandler">
                         Clear publications
                     </a>
                 {% endif %}
@@ -80,8 +82,8 @@
             {% if gene.mode_of_pathogenicity %}
             <dt>Mode of Pathogenicity</dt>
             <dd>{{ gene.mode_of_pathogenicity }}</dd>
-                {% if request.user.reviewer.is_GEL %}
-                    <a href="{% url 'panels:clear_gene_mode_of_pathogenicity' panel.panel.id gene.gene.gene_symbol %}" class="link-muted" data-ajax="true" data-success="djangoAjaxHandler">
+                {% if request.user.is_authenticated and request.user.reviewer.is_GEL %}
+                    <a href="{% url 'panels:clear_gene_mode_of_pathogenicity' panel.panel_id gene.gene.gene_symbol %}" class="link-muted" data-ajax="true" data-success="djangoAjaxHandler">
                         Clear Mode of Pathogenicity
                     </a>
                 {% endif %}
@@ -90,7 +92,7 @@
             <dd>
                 <ul>
                     {% for sharing_panel in sharing_panels %}
-                        <li><a href="{% url 'panels:detail' sharing_panel.panel.pk  %}">
+                        <li><a href="{% url 'panels:detail' sharing_panel.panel_id  %}">
                             {{ sharing_panel.panel.name }}
                         </a></li>
                     {% endfor %}
@@ -98,16 +100,16 @@
             </dd>
         </dl>
     </div>
-  {% if request.user.reviewer.is_GEL %}
+  {% if request.user.is_authenticated and request.user.reviewer.is_GEL %}
   <div class="panel-footer">
-    <a href="{% url 'panels:edit_gene' panel.panel.id gene.gene.gene_symbol %}" class="btn btn-info" data-module="showhide" data-show=".edit-gene-form" data-hide=".panel.panel-details">
+    <a href="{% url 'panels:edit_gene' panel.panel_id gene.gene.gene_symbol %}" class="btn btn-info" data-module="showhide" data-show=".edit-gene-form" data-hide=".panel.panel-details">
       <i class="fa fa-edit"></i> Edit gene
     </a>
   </div>
   {% endif %}
 </div>
-{% if request.user.reviewer.is_GEL %}
-<form class="edit-gene-form form row hidden" action="{% url 'panels:edit_gene' panel.panel.id  gene.gene.gene_symbol %}#!details" method="post">
+{% if request.user.is_authenticated and request.user.reviewer.is_GEL %}
+<form class="edit-gene-form form row hidden" action="{% url 'panels:edit_gene' panel.panel_id  gene.gene.gene_symbol %}#!details" method="post">
   {% csrf_token %}
   <div class="col-md-12">
     <div class="well">
@@ -132,7 +134,7 @@
             {% bootstrap_field field show_label=False %}
           </div>
         {% endfor %}
-        <a href="{% url 'panels:evaluation' panel.panel.id gene.gene.gene_symbol %}" class="btn btn-default">Cancel</a>
+        <a href="{{ gene.get_absolute_url }}" class="btn btn-default">Cancel</a>
         <button type="submit" class="btn btn-primary">Save</button>
       </fieldset>
   </div>

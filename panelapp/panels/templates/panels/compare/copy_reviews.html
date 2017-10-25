@@ -5,7 +5,7 @@
 {% block content %}
     <ol class="breadcrumb">
         <li><a href="{% url 'panels:index' %}">Panels</a></li>
-        <li><a href="{% url 'panels:compare' panel_1.panel.id panel_2.panel.id %}">“{{ panel_1.level4title.name }}” &amp; “{{ panel_2.level4title.name }}”</a></li>
+        <li><a href="{% url 'panels:compare' panel_1.panel_id panel_2.panel_id %}">“{{ panel_1.level4title.name }}” &amp; “{{ panel_2.level4title.name }}”</a></li>
         <li class="active">Copy reviews</li>
     </ol>
 
@@ -23,13 +23,13 @@
                     <th>Gene</th>
                     <th style="width: 43%">
                         Reviews to be copied<br />
-                        <a href="{% url 'panels:detail' panel_1.panel.id %}">
+                        <a href="{% url 'panels:detail' panel_1.panel_id %}">
                             {{ panel_1.level4title.name }}
                         </a>
                     </th>
                     <th style="width: 43%">
                         Existing reviews<br />
-                        <a href="{% url 'panels:detail' panel_2.id %}">
+                        <a href="{% url 'panels:detail' panel_2.panel_id %}">
                             {{ panel_2.level4title.name }}
                         </a>
                     </th>
@@ -42,13 +42,13 @@
                             <h3 class="remove-top-margin remove-bottom-margin">
                                 {{ entry.0 }}
                             </h3>
-                            <a href="{% url 'panels:compare_genes' panel_1.panel.id panel_2.panel.id entry.0 %}" class="normal">Compare</a>
+                            <a href="{% url 'panels:compare_genes' panel_1.panel_id panel_2.panel_id entry.0 %}" class="normal">Compare</a>
                         </th>
                         <td>
                             {% if entry.1.evaluation.all %}
                             <ul class="remove-bottom-margin">
                                 {% for ev in entry.1.evaluation.all %}
-                                    <li>{{ ev.user.get_full_name }}</li>
+                                    <li>{{ ev.user.get_reviewer_name }}</li>
                                 {% endfor %}
                             </ul>
                             {% endif %}
@@ -57,7 +57,7 @@
                             {% if entry.2.evaluation.all %}
                             <ul class="remove-bottom-margin">
                                 {% for ev in entry.2.evaluation.all %}
-                                    <li>{{ ev.user.get_full_name }}</li>
+                                    <li>{{ ev.user.get_reviewer_name }}</li>
                                 {% endfor %}
                             </ul>
                             {% endif %}
@@ -68,7 +68,7 @@
             <tfoot>
                 <tr class="table-header">
                     <td colspan="3" class="text-center">
-                        <form class="add-top-margin add-bottom-margin" action="{% url 'panels:copy_reviews' panel_1.panel.id panel_2.panel.id %}" method="post">
+                        <form class="add-top-margin add-bottom-margin" action="{% url 'panels:copy_reviews' panel_1.panel_id panel_2.panel_id %}" method="post">
                             {% csrf_token %}
                             {% for field in form %}
                                 {{ field }}

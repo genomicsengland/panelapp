@@ -5,16 +5,8 @@ from .utils import make_null
 from .utils import convert_moi
 from .utils import convert_gel_status
 
-class NotAcceptedValue(APIException):
-    status_code = 404
-    default_detail = 'Unaccepted value for one of the fields.'
-    default_code = 'bad_request'
 
-class PanelSerializer(serializers.BaseSerializer):
-    def __init__(self, list_of_genes, **kwargs):
-        super(PanelSerializer, self).__init__(**kwargs)
-        self.list_of_genes = list_of_genes
-
+class EnsembleIdMixin:
     def get_ensemblId(self, gene):
         query_prams = self.context['request'].query_params
         assembly = 'GRch37'
@@ -22,17 +14,37 @@ class PanelSerializer(serializers.BaseSerializer):
         if 'assembly' in query_prams:
             if query_prams['assembly'].lower() == 'grch38':
                 assembly = 'GRch38'
-                version = '89'
+                version = '90'
             elif query_prams['assembly'].lower() == 'grch37':
                 assembly = 'GRch37'
                 version = '82'
             else:
                 raise NotAcceptedValue(detail='Unaccepted value for assembly, please use: GRch37 or GRch38')
 
-        ensemblId = gene.gene.get('ensembl_genes').get(assembly, {}).get(version)
+        ensemblId = None
+        if assembly == 'GRch38' and gene.gene.get('ensembl_genes'):
+            ensemblId = gene.gene.get('ensembl_genes', {}).get(assembly, {}).get(version, {}).get('ensembl_id', None)
+        elif assembly == 'GRch37':
+            if gene.gene.get('ensembl_genes'):
+                ensemblId = gene.gene.get('ensembl_genes', {}).get(assembly, {}).get(version, {}).get('ensembl_id', None)
+            elif gene.gene.get('other_transcripts') and len(gene.gene.get('other_transcripts')) > 0:
+                ensemblId = gene.gene.get('other_transcripts', [{}])[0].get('geneid', None)
+
         if ensemblId is None:
             return []
         return [ensemblId]
+
+
+class NotAcceptedValue(APIException):
+    status_code = 404
+    default_detail = 'Unaccepted value for one of the fields.'
+    default_code = 'bad_request'
+
+
+class PanelSerializer(EnsembleIdMixin, serializers.BaseSerializer):
+    def __init__(self, list_of_genes, **kwargs):
+        super(PanelSerializer, self).__init__(**kwargs)
+        self.list_of_genes = list_of_genes
 
     def to_representation(self, panel):
         result = {
@@ -49,7 +61,7 @@ class PanelSerializer(serializers.BaseSerializer):
             ensemblId = self.get_ensemblId(gene)
             result["result"]["Genes"].append({
                 "GeneSymbol": gene.gene.get('gene_symbol'),
-                "EnsembleGeneIds": make_null(ensemblId),
+                "EnsembleGeneIds": ensemblId,
                 "ModeOfInheritance": make_null(convert_moi(gene.moi)),
                 "Penetrance": make_null(gene.penetrance),
                 "Publications": make_null(gene.publications),
@@ -70,33 +82,13 @@ class PanelSerializer(serializers.BaseSerializer):
         pass
 
 
-class GenesSerializer(serializers.BaseSerializer):
+class GenesSerializer(EnsembleIdMixin, serializers.BaseSerializer):
     def __init__(self, list_of_genes, **kwargs):
         super().__init__(**kwargs)
         self.list_of_genes = list_of_genes
 
     def update(self, instance, validated_data):
         pass
-
-    def get_ensemblId(self, gene):
-        query_prams = self.context['request'].query_params
-
-        assembly = 'GRch37'
-        version = '82'
-        if 'assembly' in query_prams:
-            if query_prams['assembly'].lower() == 'grch38':
-                assembly = 'GRch38'
-                version = '89'
-            elif query_prams['assembly'].lower() == 'grch37':
-                assembly = 'GRch37'
-                version = '82'
-            else:
-                raise NotAcceptedValue(detail='Unaccepted value for assembly, please use: GRch37 or GRch38')
-
-        ensemblId = gene.gene.get('ensembl_genes').get(assembly, {}).get(version)
-        if ensemblId is None:
-            return []
-        return [ensemblId]
 
     def to_representation(self, panels):
         result = []
@@ -105,7 +97,7 @@ class GenesSerializer(serializers.BaseSerializer):
             ensemblId = self.get_ensemblId(gene)
             result.append({
                 "GeneSymbol": gene.gene.get('gene_symbol'),
-                "EnsembleGeneIds": make_null(ensemblId),
+                "EnsembleGeneIds": ensemblId,
                 "ModeOfInheritance": make_null(convert_moi(gene.moi)),
                 "Penetrance": make_null(gene.penetrance),
                 "Publications": make_null(gene.publications),
@@ -138,7 +130,7 @@ class ListPanelSerializer(serializers.BaseSerializer):
                 "DiseaseGroup": panel.level4title.level2title,
                 "CurrentVersion": panel.version,
                 "Number_of_Genes": panel.number_of_genes,
-                "Panel_Id": panel.panel.old_pk if panel.panel.old_pk else panel.panel.pk,
+                "Panel_Id": panel.panel.old_pk if panel.panel.old_pk else str(panel.panel.pk),
                 "Relevant_disorders": panel.old_panels
             })
         return result

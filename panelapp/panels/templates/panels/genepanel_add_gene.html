@@ -9,7 +9,7 @@
         <a href="{% url 'panels:index' %}">Panels</a>
     </li>
     <li>
-        <a href="{% url 'panels:detail' panel.id  %}">
+        <a href="{{ panel.get_absolute_url }}">
             {{ panel.level4title.name }}
         </a>
     </li>
@@ -22,7 +22,7 @@
     {% block title %}Add gene to panel{% endblock %}
 </h1>
 
-{% if request.user.reviewer.is_verified %}
+{% if request.user.is_authenticated and request.user.reviewer.is_verified %}
     <form class="row add-top-margin" method="post">
         {% csrf_token %}
         <div class="col-md-8">
@@ -38,6 +38,8 @@
 
                             {% if field.name == "mode_of_pathogenicity" %}
                                 {{ field.label_tag }} <a data-toggle="modal" data-target="#model_of_path" ><i class="fa fa-question-circle"></i></a>
+                            {% elif field.name == "rating" %}
+                                {{ field.label_tag }} <a data-toggle="modal" data-target="#rating_help" ><i class="fa fa-question-circle"></i></a>
                             {% elif field.name == "moi" %}
                                 {{ field.label_tag }} <a data-toggle="modal" data-target="#moi" ><i class="fa fa-question-circle"></i></a>
                             {% elif field.name == "rating" %}
@@ -61,6 +63,7 @@
     </form>
     {{ form.media }}
     {% block modals %}
+        {% include "panels/modals/rating.html" %}
         {% include "panels/modals/mode_of_path.html" %}
         {% include "panels/modals/diagnostic.html" %}
         {% include "panels/modals/mode_of_inheritance.html" %}

@@ -9,6 +9,7 @@ in the admin panel.
 """
 
 from django.db import models
+import markdown
 from markdownx.models import MarkdownxField
 from panelapp.utils.storage import OverwriteStorage
 
@@ -24,6 +25,11 @@ class HomeText(models.Model):
 
     def __str__(self):
         return self.title
+
+    @property
+    def render_markdown(self):
+        md = markdown.Markdown()
+        return md.convert(self.text)
 
 
 class Image(models.Model):
