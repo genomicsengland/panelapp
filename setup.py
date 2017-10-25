@@ -8,7 +8,7 @@ os.chdir(os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir)))
 
 setup(
     name='panelapp',
-    version='2.0.19',
+    version='2.0.20',
     author='Antonio Rueda-Martin,Oleg Gerasimenko',
     author_email='antonio.rueda-martin@genomicsengland.co.uk,oleg.gerasimenko@genomicsengland.co.uk',
     url='https://github.com/genomicsengland/PanelApp2',
@@ -36,7 +36,7 @@ setup(
         'factory_boy==2.9.2',
     ],
     install_requires=[
-        'django==1.11.4',
+        'django==1.11.6',
         'simplejson==3.8.2',
         'psycopg2==2.7.3',
         'dj-database-url==0.4.2',
