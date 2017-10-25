@@ -43,7 +43,7 @@ def convert_mop(mop, back=False):
                 full_term = ft
                 break
         if not full_term:
-            return moi
+            return mop
         return full_term
 
     if mop in short_terms:
@@ -72,7 +72,7 @@ def convert_evidences(evidence, back=False):
                 full_term = ft
                 break
         if not full_term:
-            return moi
+            return evidence
         return full_term
 
     if evidence in short_terms:
