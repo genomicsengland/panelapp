@@ -12,26 +12,39 @@ https://docs.djangoproject.com/en/1.11/ref/settings/
 
 import os
 import dj_database_url
+from django.contrib.messages import constants as message_constants
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.11/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = '-0-&v=+ghegh&l51=rdmvz_5hlf1t-^e&#5d8f07iome#ljg=a'
+SECRET_KEY = os.getenv('SECRET_KEY', '-0-&v=+ghegh&l51=rdmvz_5hlf1t-^e&#5d8f07iome#ljg=a')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [host for host in os.getenv('ALLOWED_HOSTS', '').split(';')]
+
+PANEL_APP_BASE_URL = os.getenv('PANEL_APP_BASE_URL', 'https://panelapp.extge.co.uk')
+EMAIL_HOST = os.getenv("EMAIL_HOST", None)
+EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", None)
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', None)
+EMAIL_PORT = os.getenv('EMAIL_PORT', 587)
+EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', True)
+DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'PanelApp <panelapp@genomicsengland.co.uk>')
+PANEL_APP_EMAIL = os.getenv('PANEL_APP_EMAIL', "panelapp@genomicsengland.co.uk")
 
 
 # Application definition
 
 DJANGO_APPS = [
+    'django.contrib.sites',
+    'dal',
+    'dal_select2',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -41,11 +54,23 @@ DJANGO_APPS = [
 ]
 
 CUSTOM_APPS = [
-    'django_extensions',
+    'markdownx',
+    'markdown_deux',
+    'bootstrap3',
+    'django_object_actions',
+    'mathfilters',
+    'django_ajax',
+    'rest_framework',
+    'django_admin_listfilter_dropdown'
 ]
 
 PROJECT_APPS = [
+    'panelapp',
     'accounts',
+    'panels',
+    'webservices',
+    'v2import',
+    'v1rewrites',
 ]
 
 INSTALLED_APPS = DJANGO_APPS + CUSTOM_APPS + PROJECT_APPS
@@ -80,6 +105,8 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'panelapp.wsgi.application'
 
+FILE_UPLOAD_DIRECTORY_PERMISSIONS = 755
+
 
 # Database
 # https://docs.djangoproject.com/en/1.11/ref/settings/#databases
@@ -91,6 +118,25 @@ DATABASES = {
 
 # Auth
 AUTH_USER_MODEL = 'accounts.User'
+LOGIN_REDIRECT_URL = 'home'
+
+# Logging
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': os.getenv('DJANGO_LOG_LEVEL', 'INFO'),
+        },
+    },
+}
 
 
 # Password validation
@@ -126,3 +172,41 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/1.11/howto/static-files/
 
 STATIC_URL = '/static/'
+STATIC_ROOT = os.getenv(
+    'STATIC_ROOT',
+    os.path.join(BASE_DIR, '_staticfiles')
+)
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.getenv(
+    'MEDIA_ROOT',
+    os.path.join(BASE_DIR, '_mediafiles')
+)
+
+# Random
+MESSAGE_TAGS = {
+    message_constants.DEBUG: 'debug',
+    message_constants.INFO: 'info',
+    message_constants.SUCCESS: 'success',
+    message_constants.WARNING: 'warning',
+    message_constants.ERROR: 'danger'
+}
+
+SITE_ID = 1
+
+# 3rd party apps setup
+
+MARKDOWN_DEUX_STYLES = {
+    "default": {
+        "extras": {
+            "wiki-tables": True
+        },
+        "safe_mode": "escape",
+    },
+}
+
+CELL_BASE_CONNECTOR_REST = os.getenv(
+    "CELL_BASE_CONNECTOR_REST",
+    "http://bioinfo.hpc.cam.ac.uk/cellbase/webservices/rest/"
+)
+HEALTH_CHECK_TOKEN = os.getenv('HEALTH_CHECK_TOKEN', None)

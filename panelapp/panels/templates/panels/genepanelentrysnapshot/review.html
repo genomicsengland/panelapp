@@ -1,0 +1,151 @@
+{% load bootstrap3 %}
+{% load panel_helpers %}
+<h3 class="remove-bottom-margin">Review feedback</h3>
+<p class="lead">{{ gene.evaluation.all|length }} review{{ gene.evaluation.all|pluralize }}</p>
+
+<div id="review-evaluations">
+  {% include "panels/genepanelentrysnapshot/review/review_evaluations.html" %}
+</div>
+
+<div id="part-tags">
+  {% include "panels/genepanelentrysnapshot/review/part_tags.html" %}
+</div>
+
+{% for part in feedback_review_parts %}
+  <h4 class="add-bottom-margin">{{ part }}</h4>
+  <div class="review-table">
+    <table class="table table-bordered">
+      <thead>
+        <tr class="table-header">
+          <th>Reviewer</th>
+          <th>Suggestion</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for ev in gene.evaluation.all %}
+            {% if part == "Rating" and ev.rating %}
+              <tr>
+                <td>{{ ev.user.get_reviewer_name }}</td>
+                <td>
+                  {% if ev.rating %}
+                    <span class="
+                            gel-banner {{ ev|evaluation_rating_class }}
+                                       {% if ev.current_diagnostic  %}add-label-margin{% endif %}
+                        ">{{ ev|evaluation_rating_name }}</span>
+                  {% endif %}
+                  {% if ev.current_diagnostic  %}
+                    <div><i class="fa fa-check-circle"></i> Current diagnostic</div>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endif %}
+
+            {% if part == "Mode of inheritance" and ev.moi %}
+              <tr>
+                <td>{{ ev.user.get_reviewer_name }}</td>
+                <td>
+                  {{ ev.moi }}
+                </td>
+              </tr>
+            {% endif %}
+
+            {% if part == "Mode of pathogenicity" and ev.mode_of_pathogenicity %}
+              <tr>
+                <td>{{ ev.user.get_reviewer_name }}</td>
+                <td>
+                  {{ ev.mode_of_pathogenicity }}
+                </td>
+              </tr>
+            {% endif %}
+
+            {% if part == "Publications" and ev.publications %}
+              <tr>
+                <td>{{ ev.user.get_reviewer_name }}</td>
+                <td>
+                  {{ ev.publications|join:"; " }}
+                </td>
+              </tr>
+            {% endif %}
+
+            {% if part == "Phenotypes" and ev.phenotypes %}
+              <tr>
+                <td>{{ ev.user.get_reviewer_name }}</td>
+                <td>
+                  {{ ev.phenotypes|join:"; " }}
+                </td>
+              </tr>
+            {% endif %}
+        {% endfor %}
+        <tr class="warning">
+          <td style="width: 40%">Current</td>
+          <td style="width: 60%" data-module="toggle">
+            <div data-module="ajax-form">
+              {% if part == "Rating" %}
+                <div id="part-rating">
+                  {% include "panels/genepanelentrysnapshot/review/part_rating.html" %}
+                </div>
+              {% endif %}
+              {% if part == "Mode of inheritance" %}
+                <div id="part-moi">
+                  {% include "panels/genepanelentrysnapshot/review/part_moi.html" %}
+                </div>
+              {% endif %}
+              {% if part == "Mode of pathogenicity" %}
+                <div id="part-mop">
+                  {% include "panels/genepanelentrysnapshot/review/part_mop.html" %}
+                </div>
+              {% endif %}
+              {% if part == "Publications" %}
+                <div id="part-publications">
+                  {% include "panels/genepanelentrysnapshot/review/part_publications.html" %}
+                </div>
+              {% endif %}
+              {% if part == "Phenotypes" %}
+                <div id="part-phenotypes">
+                  {% include "panels/genepanelentrysnapshot/review/part_phenotypes.html" %}
+                </div>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+{% endfor %}
+
+{% if gene.ready %}
+  <h3 class="add-top-margin">Mark {{ gene.gene.gene_symbol }} as not ready</h3>
+  <form action="{% url 'panels:mark_gene_as_not_ready' panel.panel_id  gene.gene.gene_symbol %}#!review" method="post" class="add-top-margin well form">
+    {% csrf_token %}
+    <input type="submit" class="btn btn-default" value="Mark as not ready">
+  </form>
+{% else %}
+  <h3 class="add-top-margin">Mark {{ gene.gene.gene_symbol }} as ready</h3>
+  <div class="add-bottom-margin">
+    A gene can be marked as ready for the next major version of the panel if it has:
+    <ul>
+      <li>sufficient expert reviews from a variety of sources</li>
+      <li>been assessed against expert reviews</li>
+      <li>been updated based on valid feedback or curated evidence</li>
+    </ul>
+  </div>
+  <div class="well">
+    <form action="{% url 'panels:mark_gene_as_ready' panel.panel_id  gene.gene.gene_symbol %}#!review" method="post" class="form">
+      {% csrf_token %}
+      <fieldset>
+        {% for field in gene_ready_form %}
+          <div class="form-group">
+            {% if field.errors %}
+              {% for error in field.errors %}
+                <span class="label label-danger">{{ error|escape }}</span>
+              {% endfor %}
+            {% endif %}
+            {{ field.label_tag }}
+            {% bootstrap_field field show_label=False %}
+          </div>
+        {% endfor %}
+        <input type="submit" class="btn btn-info" value="Mark as ready">
+      </fieldset>
+    </form>
+  </div>
+{% endif %}

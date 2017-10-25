@@ -1,0 +1,24 @@
+{% load bootstrap3 %}
+{% if request.user.is_authenticated and request.user.reviewer.is_verified %}
+{% include "panels/genepanelentrysnapshot/evaluation_form.html" %}
+{% endif %}
+
+<div id="evaluations">
+  <h3>{{ gene.evaluation.all|length }} review{{gene.evaluation.all|pluralize}}</h3>
+
+  {% for ev in gene.evaluation.all %}
+    <div class="panel panel-default {% if request.user == ev.user %}panel-highlight{% endif %}">
+      {% if request.user == ev.user %}
+      <div class="panel-heading" id="your-review">
+        {% if request.user == ev.user %}
+          <a href="{% url "panels:delete_evaluation_by_user" panel.panel_id gene.gene.gene_symbol ev.pk %}" class="pull-right btn btn-default btn-xs" data-ajax="true" data-success="djangoAjaxHandler">Delete</a>
+        {% endif %}
+        <div class="panel-title">
+          Your review
+        </div>
+      </div>
+      {% endif %}
+      {% include "panels/genepanelentrysnapshot/gene_evaluation.html" with ev=ev %}
+    </div>
+  {% endfor %}
+</div>

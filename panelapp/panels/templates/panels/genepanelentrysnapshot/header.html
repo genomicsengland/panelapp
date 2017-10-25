@@ -1,0 +1,14 @@
+{% load panel_helpers %}
+<h1 class="remove-top-margin">
+    <p class="text-muted normal add-label-margin" style="font-size: 18px">{{ panel.panel.name }}</p>
+    {{ gene.gene.gene_symbol }}
+</h1>
+<span id="gene-banner-heading"><span class="gel-banner {{ gene|gene_list_class }}">{{ gene|gene_list_name }}</span></span>
+{% if gene.ready and request.user.is_authenticated and request.user.reviewer.is_GEL %}
+    <span class="banner banner-ready">Ready for major version</span>
+{% endif %}
+{% if request.user.pk in gene.evaluators %}
+    <span class="banner banner-reviewed">
+        <i class="fa fa-check"></i> You reviewed
+    </span>
+{% endif %}

@@ -1,0 +1,44 @@
+{% load staticfiles %}
+<!DOCTYPE html>
+<html class="no-js">
+  <head lang="en">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <script>(function(d){d.className=d.className.replace(/^no-js\b/,'js');}(document.documentElement));</script>
+    <link rel="stylesheet" href="{% static "bootstrap.min.css" %}" >
+    <link rel="stylesheet" href="{% static "font-awesome-4.3.0/css/font-awesome.min.css" %}">
+    <link rel="stylesheet" href="{% static "panel_app.css" %}" >
+    <script src="{% static "jquery-1.10.2.min.js" %}"></script>
+    {% block header %}{% endblock %}
+    <title>{% block title %}PanelApp{% endblock %}</title>
+  </head>
+<body>
+<div class="navbar navbar-default">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="{% url 'home' %}">PanelApp</a>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  {% if messages %}
+    {% for message in messages %}
+      <div class="add-bottom-margin alert alert-{% if message.tags %}{{ message.tags }}{% else %}info{% endif %}">{{ message }}</div>
+    {% endfor %}
+  {% endif %}
+  {% block content %}{% endblock %}
+</div>
+
+{% block body %}{% endblock %}
+{% block modals %}{% endblock %}
+{% block js %}{% endblock %}
+</body>
+</html>

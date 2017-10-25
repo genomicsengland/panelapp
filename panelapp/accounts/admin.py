@@ -1,10 +1,12 @@
 from django import forms
 from django.contrib import admin
 from django.contrib.auth.models import Group
+from django_object_actions import DjangoObjectActions
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.forms import ReadOnlyPasswordHashField
 
 from .models import User
+from .models import Reviewer
 
 
 class UserCreationForm(forms.ModelForm):
@@ -18,7 +20,6 @@ class UserCreationForm(forms.ModelForm):
         fields = ('username', 'email', 'first_name', 'last_name')
 
     def clean_password2(self):
-        # Check that the two password entries match
         password1 = self.cleaned_data.get("password1")
         password2 = self.cleaned_data.get("password2")
         if password1 and password2 and password1 != password2:
@@ -26,7 +27,6 @@ class UserCreationForm(forms.ModelForm):
         return password2
 
     def save(self, commit=True):
-        # Save the provided password in hashed format
         user = super(UserCreationForm, self).save(commit=False)
         user.set_password(self.cleaned_data["password1"])
         if commit:
@@ -49,33 +49,74 @@ class UserChangeForm(forms.ModelForm):
         return self.initial["password"]
 
 
-class UserAdmin(BaseUserAdmin):
-    # The forms to add and change user instances
+class ReviewerInline(admin.StackedInline):
+    model = Reviewer
+
+
+class UserAdmin(DjangoObjectActions, BaseUserAdmin):
     form = UserChangeForm
     add_form = UserCreationForm
 
-    # The fields to be used in displaying the User model.
-    # These override the definitions on the base UserAdmin
-    # that reference specific fields on auth.User.
-    list_display = ('username', 'email', 'first_name', 'last_name', 'is_staff')
-    list_filter = ('is_staff',)
+    list_display = ('username', 'email', 'first_name', 'last_name', 'is_reviewer', 'is_staff')
+    list_filter = ('reviewer__user_type', 'is_staff',)
     fieldsets = (
         (None, {'fields': ('email', 'password')}),
         ('Personal info', {'fields': ('first_name', 'last_name',)}),
-        ('Permissions', {'fields': ('is_staff',)}),
+        ('Permissions', {'fields': ('is_staff', 'is_superuser', 'is_active',)}),
     )
-    # add_fieldsets is not a standard ModelAdmin attribute. UserAdmin
-    # overrides get_fieldsets to use this attribute when creating a user.
     add_fieldsets = (
         (None, {
             'classes': ('wide',),
-            'fields': ('username', 'email', 'first_name', 'last_name', 'password1', 'password2')}
-        ),
+            'fields': ('username', 'email', 'first_name', 'last_name', 'password1', 'password2')
+        }),
     )
     search_fields = ('email',)
     ordering = ('email',)
     filter_horizontal = ()
 
+    inlines = [
+        ReviewerInline,
+    ]
 
+    def is_reviewer(self, obj):
+        try:
+            return obj.reviewer.is_REVIEWER()
+        except Reviewer.DoesNotExist:
+            return False
+    is_reviewer.boolean = True
+
+    def confirm_reviewer(self, request, obj):
+        try:
+            obj.promote_to_reviewer()
+        except Reviewer.DoesNotExist:
+            pass
+    confirm_reviewer.label = "Confirm reviewer"
+    confirm_reviewer.short_description = "Confirm reviewer"
+
+    def get_change_actions(self, request, object_id, form_url):
+        actions = super().get_change_actions(request, object_id, form_url)
+
+        try:
+            obj = self.model.objects.get(pk=object_id)
+            if obj.reviewer.is_REVIEWER():
+                return []
+        except Reviewer.DoesNotExist:
+            return []
+
+        return actions
+
+    change_actions = ['confirm_reviewer', ]
+
+
+class ReviewerAdmin(admin.ModelAdmin):
+    model = Reviewer
+    list_display = ('reviewer_full_name', 'user_type')
+    list_filter = ('user_type', )
+
+    def reviewer_full_name(self, obj):
+        return "{} {}".format(obj.user.first_name, obj.user.last_name)
+
+
+admin.site.register(Reviewer, ReviewerAdmin)
 admin.site.register(User, UserAdmin)
 admin.site.unregister(Group)

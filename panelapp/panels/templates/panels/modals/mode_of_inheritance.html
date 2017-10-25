@@ -1,0 +1,58 @@
+{% extends "modals/modal_template.html" %}
+{% block id %}moi{% endblock %}
+{% block title %}Mode of inheritance{% endblock %}
+
+{% block text %}
+<p>Standardised terms were used to represent the gene-disease mode of inheritance, and were mapped to commonly used terms from the different sources. Below each of the terms is described, along with the equivalent commonly-used terms.</p>
+
+<ul>
+    <li>
+        <h5 class="remove-bottom-margin">MONOALLELIC, autosomal or pseudoautosomal, not imprinted</h5>
+        <p>A variant on one allele of this gene can cause the disease, and imprinting has not been implicated.</p>
+    </li>
+    <li>
+        <h5 class="remove-bottom-margin">MONOALLELIC, autosomal or pseudoautosomal, maternally imprinted (paternal allele expressed)</h5>
+        <p>A variant on the paternally-inherited allele of this gene can cause the disease, if the alternate allele is imprinted (function muted).</p>
+    </li>
+    <li>
+        <h5 class="remove-bottom-margin">MONOALLELIC, autosomal or pseudoautosomal, paternally imprinted (maternal allele expressed)</h5>
+        <p>A variant on the maternally-inherited allele of this gene can cause the disease, if the alternate allele is imprinted (function muted).</p>
+    </li>
+    <li>
+        <h5 class="remove-bottom-margin">MONOALLELIC, autosomal or pseudoautosomal, imprinted status unknown</h5>
+        <p>A variant on one allele of this gene can cause the disease. This is the default used for autosomal dominant mode of inheritance where no knowledge of the imprinting status of the gene required to cause the disease is known. Mapped to the following commonly used terms from different sources: autosomal dominant, dominant, AD, DOMINANT.</p>
+    </li>
+    <li>
+        <h5 class="remove-bottom-margin">BIALLELIC, autosomal or pseudoautosomal</h5>
+        <p>A variant on both alleles of this gene is required to cause the disease. Mapped to the following commonly used terms from different sources: autosomal recessive, recessive, AR, RECESSIVE.</p>
+    </li>
+    <li>
+        <h5 class="remove-bottom-margin">BOTH monoallelic and biallelic, autosomal or pseudoautosomal</h5>
+        <p>The disease can be caused by a variant on one or both alleles of this gene. Mapped to the following commonly used terms from different sources: autosomal recessive or autosomal dominant, recessive or dominant, AR/AD, AD/AR, DOMINANT/RECESSIVE, RECESSIVE/DOMINANT.</p>
+    </li>
+    <li>
+        <h5 class="remove-bottom-margin">BOTH monoallelic and biallelic, autosomal or pseudoautosomal (but BIALLELIC mutations cause a more SEVERE disease form), autosomal or pseudoautosomal</h5>
+        <p>A variant on one allele of this gene can cause the disease, however a variant on both alleles of this gene can result in a more severe form of the disease/phenotype.</p>
+    </li>
+    <li>
+        <h5 class="remove-bottom-margin">X-LINKED: hemizygous mutation in males, biallelic mutations in females</h5>
+        <p>A variant in this gene can cause the disease in males as they have one X-chromosome allele, whereas a variant on both X-chromosome alleles is required to cause the disease in females. Mapped to the following commonly used term from different sources: X-linked recessive.</p>
+    </li>
+    <li>
+        <h5 class="remove-bottom-margin">X linked: hemizygous mutation in males, monoallelic mutations in females may cause disease (may be less severe, later onset than males)</h5>
+        <p>A variant in this gene can cause the disease in males as they have one X-chromosome allele. A variant on one allele of this gene may also cause the disease in females, though the disease/phenotype may be less severe and may have a later-onset than is seen in males. X-linked inactivation and mosaicism in different tissues complicate whether a female presents with the disease, and can change over their lifetime. This term is the default setting used for X-linked genes, where it is not known definitately whether females require a variant on each allele of this gene in order to be affected. Mapped to the following commonly used terms from different sources: X-linked dominant, x-linked, X-LINKED, X-linked.</p>
+    </li>
+    <li>
+        <h5 class="remove-bottom-margin">MITOCHONDRIAL</h5>
+        <p>The gene is in the mitochondrial genome and variants within this can cause this disease, maternally inherited. Mapped to the following commonly used term from different sources: Mitochondrial.</p>
+    </li>
+    <li>
+        <h5 class="remove-bottom-margin">Unknown</h5>
+        <p>Mapped to the following commonly used terms from different sources: Unknown, NA, information not provided.</p>
+    </li>
+    <li>
+        <h5 class="remove-bottom-margin">Other - please specify in evaluation comments</h5>
+        <p>For example, if the mode of inheritance is digenic, please indicate this in the comments and which other gene is involved.</p>
+    </li>
+</ul>
+{% endblock %}

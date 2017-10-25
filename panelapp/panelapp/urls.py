@@ -13,11 +13,37 @@ Including another URLconf
     1. Import the include() function: from django.conf.urls import url, include
     2. Add a URL to urlpatterns:  url(r'^blog/', include('blog.urls'))
 """
+from django.conf import settings
 from django.conf.urls import url
 from django.conf.urls import include
 from django.contrib import admin
+from .views import Homepage
+from .views import HealthCheckView
+from .autocomplete import GeneAutocomplete
+from .autocomplete import SourceAutocomplete
+from .autocomplete import TagsAutocomplete
+
 
 urlpatterns = [
-    url(r'^accounts/', include('accounts.urls')),
-    url(r'^admin/', admin.site.urls),
+    url(r'^$', Homepage.as_view(), name="home"),
+    url(r'^accounts/', include('accounts.urls', namespace="accounts")),
+    url(r'^panels/', include('panels.urls', namespace="panels")),
+    url(r'^crowdsourcing/', include('v1rewrites.urls', namespace="v1rewrites")),
+    url(r'^WebServices/', include('webservices.urls', namespace="webservices")),
+    url(r'^markdownx/', include('markdownx.urls')),
+    url(r'^GeL-admin/', admin.site.urls),
+    url(r'^autocomplete/gene/$', GeneAutocomplete.as_view(), name="autocomplete-gene"),
+    url(r'^autocomplete/source/$', SourceAutocomplete.as_view(), name="autocomplete-source"),
+    url(r'^autocomplete/tags/$', TagsAutocomplete.as_view(), name="autocomplete-tags"),
+    url(r'^health/$', HealthCheckView.as_view(), name="health_check")
 ]
+
+if settings.DEBUG:
+    import debug_toolbar
+    urlpatterns = [
+        url(r'^__debug__/', include(debug_toolbar.urls)),
+    ] + urlpatterns
+
+    from django.conf.urls.static import static
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

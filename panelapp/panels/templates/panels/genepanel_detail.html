@@ -1,0 +1,135 @@
+{% extends "default.html" %}
+{% load staticfiles %}
+{% load bootstrap3 %}
+{% block header %}
+<script src="{% static 'django_ajax/js/jquery.ajax.min.js' %}"></script>
+<script src="{% static 'django_ajax/js/jquery.ajax-plugin.min.js' %}"></script>
+{% endblock %}
+
+{% block body %}
+<div class="container">
+  <ol class="breadcrumb">
+      <li>
+          <a href="{% url 'panels:index' %}">Panels</a>
+      </li>
+      <li class="active">
+          {{ panel.level4title.name }}
+      </li>
+  </ol>
+
+  <div id="banner">
+      <h1>
+          {% block title %}{{ panel.level4title.name }} (Version {{ panel.major_version}}.{{ panel.minor_version}}){% endblock %}
+      </h1>
+      <p class="lead">
+          {% if panel.level4title.level3title %}
+              Level 3: {{ panel.level4title.level3title }}<br />
+          {% endif %}
+          {% if panel.level4title.level2title %}
+              Level 2: {{ panel.level4title.level2title }}<br />
+          {% endif %}
+          {% if panel.old_panels and panel.old_panels.0 %}
+              <br/>Relevant disorders: {{ panel.old_panels|join:", " }}
+          {% endif %}
+          <br />Panel code: {% if panel.panel.old_pk %}{{ panel.panel.old_pk }}{% else %}{{ panel.panel.pk }}{% endif %}
+      </p>
+  </div>
+
+  <div class="row">
+      <div class="col-md-8" id="panel_info">
+          {% include "panels/genepanel_info.html" %}
+      </div>
+      <div class="col-md-4">
+          {% if panel.contributors %}
+              <h3 class="remove-top-margin add-bottom-margin">{{ contributors|length }} reviewer{{contributors|pluralize}}</h3>
+              <ul class="list-group remove-bottom-margin">
+              {% for contributor in contributors %}
+                  <li class="list-group-item">
+                      <p class="bold">{{ contributor.get_full_name }} ({{contributor.reviewer.affiliation}})</p>
+                      <p class="text-muted">
+                          Group: {{ contributor.reviewer.group }}<br />
+                          Workplace: {{ contributor.reviewer.workplace }}
+                          {% if request.user.is_authenticated and request.user.reviewer.is_GEL %}
+                              <br /><a href="mailto:{{ contributor.email }}" class="link-muted word-break">{{ contributor.email }}</a>
+                          {% endif %}
+                      </p>
+                  </li>
+              {% endfor %}
+              </ul>
+          {% endif %}
+      </div>
+  </div>
+
+  <h2 class="add-label-margin">{{ panel.get_all_entries_extra|length }} gene{{ panel.get_all_entries_extra|length|pluralize}}</h2>
+  <h3 class="text-muted normal remove-top-margin add-bottom-margin">{{ panel.stats.number_of_evaluated_genes }} reviewed{% if request.user.is_authenticated and request.user.reviewer.is_GEL %}, {{ panel.stats.number_of_ready_genes }} ready{% endif %}, {{ panel.stats.number_of_green_genes }} green</h3>
+
+  <div data-module="sortable-table" data-default-key="gene">
+      <div class="table-responsive" data-module="filterable-table">
+          <table class="table table-bordered table-hover" id="table">
+            {% include "panels/genepanel_table.html" %}
+          </table>
+      </div>
+  </div>
+
+  {% if panel.version_comment and panel.major_version %}
+     <h2>Major version comments</h2>
+      <ul class="list-group remove-bottom-margin">
+          <li class="list-group-item">
+              <p class="remove-bottom-margin">{{ panel.version_comment|linebreaksbr }}</p>
+          </li>
+      </ul>
+  {% endif %}
+
+  {% if request.user.is_authenticated and request.user.reviewer.is_GEL %}
+      <h3 class="add-top-margin">Promote to version {{ panel.major_version|add:"1" }}</h3>
+      <div class="well">
+          <p>Promoting a panel will:</p>
+          <ul>
+              <li>email all reviewers, thanking them for their contribution</li>
+              <li>reset the "ready" flag on all genes</li>
+              <li>increase the major version of the panel</li>
+          </ul>
+          <form action="{% url 'panels:promote' panel.panel.id %}" method="post" class="form add-top-margin">
+              {% csrf_token %}
+              <fieldset>
+                  {% for field in promote_panel_form %}
+                      <div class="form-group">
+                          {% if field.errors %}
+                              {% for error in field.errors %}
+                                  <span class="label label-danger">{{ error|escape }}</span>
+                              {% endfor %}
+                          {% endif %}
+                          {% bootstrap_field field %}
+                      </div>
+                  {% endfor %}
+                  <input type="submit" class="btn btn-info" value="Increase Version">
+              </fieldset>
+          </form>
+      </div>
+  {% endif %}
+
+  <h2>Downloads</h2>
+  <div class="well">
+    <h3 class="remove-top-margin">Download lists</h3>
+    <ul>
+      <li><a href="{% url 'panels:download_panel_tsv' panel.panel.id '01234' %}">Whole panel</a></li>
+      <li><a href="{% url 'panels:download_panel_tsv' panel.panel.id '34' %}">Green list (high evidence)</a></li>
+      <li><a href="{% url 'panels:download_panel_tsv' panel.panel.id '234' %}">Green and Amber Genes</a></li>
+      <li><a href="{% url 'panels:download_panel_tsv' panel.panel.id '2' %}">Amber Genes</a></li>
+      <li><a href="{% url 'panels:download_panel_tsv' panel.panel.id '01' %}">Red list (low evidence)</a></li>
+    </ul>
+    <h3>Download Version</h3>
+    <form class="form-inline" action="{% url 'panels:download_old_panel_tsv' panel.panel.id %}" method="post">
+      {% csrf_token %}
+      <div class="form-group">
+        <div class="form-group">
+          <div class="inline-group">
+            <input type="text" value="" placeholder="Panel version, for example 0.1", name="panel_version" class="input form-control">
+            <button type="submit" class="btn btn-primary">Download</button>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

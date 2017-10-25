@@ -1,0 +1,30 @@
+{
+   "hgnc_id": "HGNC:16518",
+   "biotype": "protein_coding",
+   "ensembl_genes": {
+    "GRch38": {
+      "89": {
+        "ensemble_id": "ENSG00000187223",
+        "location": "1:152663396-152664659"
+      }
+      },
+      "GRch37": {
+        "82": {
+          "ensemble_id": "ENSG00000187223",
+          "location": "1:152663396-152664659"
+        }
+        }
+      },
+      "alias_name": [],
+      "omim_gene": [
+        "612612"
+      ],
+   "alias": [
+    "LEP12"
+   ],
+   "gene_symbol": "LCE2D",
+   "hgnc_date_symbol_changed": "2004-10-15",
+   "hgnc_symbol": "LCE2D",
+   "hgnc_release": "21/07/17",
+   "gene_name": "late cornified envelope 2D"
+}

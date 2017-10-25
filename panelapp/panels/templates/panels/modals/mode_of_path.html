@@ -1,0 +1,21 @@
+{% extends "modals/modal_template.html" %}
+{% block id %}model_of_path{% endblock %}
+{% block title %}Mode of pathogenicity{% endblock %}
+{% block text %}
+<h4>Exceptions to loss of function</h4>
+<p>It’s assumed that loss-of-function variants in this gene can cause the disease/phenotype unless an exception to this rule is known. We would like to collect information regarding exceptions. An example exception is the PCSK9 gene, where loss-of-function variants are not relevant for a hypercholesterolemia phenotype as they are associated with increased LDL-cholesterol uptake via LDLR (PMID: <a href="http://www.ncbi.nlm.nih.gov/pubmed/25911073">25911073</a>).</p>
+<p>If a curated set of known-pathogenic variants is available for this gene-phenotype, please contact us at <a href="mailto:panelapp@genomicsengland.co.uk">panelapp@genomicsengland.co.uk</a></p>
+
+<h4>Terms</h4>
+<p>We classify <strong>loss-of-function variants</strong> as those with the following Sequence Ontology (SO) terms: </p>
+<ul>
+    <li>transcript_ablation</li>
+    <li>splice_acceptor_variant</li>
+    <li>splice_donor_variant</li>
+    <li>stop_gained</li>
+    <li>frameshift_variant</li>
+    <li>stop_lost</li>
+    <li>initiator_codon_variant/start_lost</li>
+</ul>
+<p>Term descriptions can be found on the PanelApp homepage and <a href="http://www.ensembl.org/info/genome/variation/predicted_data.html#consequences">Ensembl</a>.</p>
+{% endblock %}
