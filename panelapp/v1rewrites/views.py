@@ -9,6 +9,9 @@ class V1RedirectMixin(RedirectView):
     def dispatch(self, request, *args, **kwargs):
         self.check()
 
+        if request.GET:
+            self.url = "{}?{}".format(self.url, request.GET.urlencode())
+
         return super().dispatch(request, *args, **kwargs)
 
 
