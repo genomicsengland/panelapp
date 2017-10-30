@@ -1,4 +1,5 @@
 from django.test import TestCase
+from panels.tests.factories import GenePanelEntrySnapshotFactory
 
 
 class RedirectsTests(TestCase):
@@ -32,4 +33,10 @@ class RedirectsTests(TestCase):
 
     def test_webservices(self):
         res = self.client.get('/crowdsourcing/WebServices/list_panels')
+        self.assertEqual(res.status_code, 301)
+
+    def test_specific_versions(self):
+        gpes = GenePanelEntrySnapshotFactory()
+        res = self.client.get('/crowdsourcing/WebServices/get_panel/{}?version=0.0'.format(gpes.panel.id))
+        self.assertIn('version=0.0', res.url)
         self.assertEqual(res.status_code, 301)
