@@ -50,7 +50,7 @@ class PanelSerializer(EnsembleIdMixin, serializers.BaseSerializer):
         result = {
             "result": {
                 "Genes": [],
-                "SpecificDiseaseName": panel.level4title.name,
+                "SpecificDiseaseName": panel.panel.name,
                 "version": panel.version,
                 "DiseaseGroup": panel.level4title.level2title,
                 "DiseaseSubGroup": panel.level4title.level3title
