@@ -17,3 +17,8 @@ CELERY_TASK_PUBLISH_RETRY_POLICY = {'max_retries': 3}
 BROKER_TRANSPORT_OPTIONS = {'socket_timeout': 5}
 CELERY_EAGER_PROPAGATES_EXCEPTIONS = True
 CELERY_BROKER = 'pyamqp://localhost:5672/'
+
+MEDIA_ROOT = os.getenv(
+    'MEDIA_ROOT',
+    os.path.join(BASE_DIR, '_test_mediafiles')
+)

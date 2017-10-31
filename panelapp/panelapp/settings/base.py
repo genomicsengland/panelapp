@@ -70,7 +70,7 @@ PROJECT_APPS = [
     'panels',
     'webservices',
     'v2import',
-    'v1rewrites',
+    'backups',
 ]
 
 INSTALLED_APPS = DJANGO_APPS + CUSTOM_APPS + PROJECT_APPS

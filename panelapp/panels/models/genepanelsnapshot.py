@@ -14,6 +14,7 @@ from django.utils.functional import cached_property
 from model_utils.models import TimeStampedModel
 
 from panels.tasks import email_panel_promoted
+from panels.utils import remove_non_ascii
 from .activity import Activity
 from .genepanel import GenePanel
 from .Level4Title import Level4Title
@@ -22,6 +23,7 @@ from .evidence import Evidence
 from .evaluation import Evaluation
 from .gene import Gene
 from .comment import Comment
+from backups.models import PanelBackup
 
 
 class GenePanelSnapshotManager(models.Manager):
@@ -315,6 +317,9 @@ class GenePanelSnapshot(TimeStampedModel):
                     self.version_comment if self.version_comment else ''
                 )
                 self.save()
+            
+            backup = PanelBackup()
+            backup.import_panel(self)
 
             return self.panel.active_panel
 
@@ -1037,3 +1042,62 @@ class GenePanelSnapshot(TimeStampedModel):
             gene_symbol=gene_symbol,
             text=text
         )
+
+    def tsv_file_header(self):
+        return (
+            "Gene_Symbol",
+            "Sources(; separated)",
+            "Level4",
+            "Level3",
+            "Level2",
+            "Model_Of_Inheritance",
+            "Phenotypes",
+            "Omim",
+            "Orphanet",
+            "HPO",
+            "Publications",
+            "Description",
+            "Flagged",
+            "GEL_Status",
+            "UserRatings_Green_amber_red",
+            "version",
+            "ready",
+            "Mode of pathogenicity"
+        )
+
+    def tsv_file_export(self):
+        panel_name = self.panel.name
+        level3title = self.level4title.level3title
+        level2title = self.level4title.level2title
+        omim = ";".join(map(remove_non_ascii, self.level4title.omim))
+        orphanet = ";".join(map(remove_non_ascii, self.level4title.orphanet))
+        hpo = ";".join(map(remove_non_ascii, self.level4title.hpo))
+        version = str(self.version)
+
+        for gpentry in self.get_all_entries_extra:
+            if gpentry.flagged:
+                continue
+
+            amber_perc, green_perc, red_prec = gpentry.aggregate_ratings()
+
+            evidence = ";".join([evidence.name for evidence in gpentry.evidence.all()])
+            yield (
+                gpentry.gene.get('gene_symbol'),
+                evidence,
+                panel_name,
+                level3title,
+                level2title,
+                gpentry.moi,
+                ";".join(map(remove_non_ascii, gpentry.phenotypes)),
+                omim,
+                orphanet,
+                hpo,
+                ";".join(map(remove_non_ascii, gpentry.publications)),
+                "",
+                str(gpentry.flagged),
+                str(gpentry.saved_gel_status),
+                ";".join(map(str, [green_perc, amber_perc, red_prec])),
+                version,
+                gpentry.ready,
+                gpentry.mode_of_pathogenicity
+            )

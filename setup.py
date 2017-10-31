@@ -59,6 +59,7 @@ setup(
         'uwsgi==2.0.15',
         'ijson==2.3',
         'ujson==1.35',
-        'django-admin-list-filter-dropdown==1.0.1'
+        'django-admin-list-filter-dropdown==1.0.1',
+        'python-slugify==1.2.4'
     ]
 )

@@ -529,60 +529,17 @@ class DownloadPanelTSVMixin(PanelMixin, DetailView):
         self.object = self.get_object()
 
         panel_name = self.object.panel.name
-        version = self.object.version
-
         response = HttpResponse(content_type='text/tab-separated-values')
         panel_name = remove_non_ascii(panel_name, replacemenet='_')
         response['Content-Disposition'] = 'attachment; filename="' + panel_name + '.tsv"'
         writer = csv.writer(response, delimiter='\t')
 
-        writer.writerow((
-            "Gene_Symbol",
-            "Sources(; separated)",
-            "Level4",
-            "Level3",
-            "Level2",
-            "Model_Of_Inheritance",
-            "Phenotypes",
-            "Omim",
-            "Orphanet",
-            "HPO",
-            "Publications",
-            "Description",
-            "Flagged",
-            "GEL_Status",
-            "UserRatings_Green_amber_red",
-            "version",
-            "ready",
-            "Mode of pathogenicity"))
+        writer.writerow(self.object.tsv_file_header())
 
         categories = self.get_categories()
-        for gpentry in self.object.get_all_entries_extra:
-            if not gpentry.flagged and str(gpentry.status) in categories:
-                amber_perc, green_perc, red_prec = gpentry.aggregate_ratings()
-
-                evidence = ";".join([evidence.name for evidence in gpentry.evidence.all()])
-                export_gpentry = (
-                    gpentry.gene.get('gene_symbol'),
-                    evidence,
-                    panel_name,
-                    self.object.level4title.level3title,
-                    self.object.level4title.level2title,
-                    gpentry.moi,
-                    ";".join(map(remove_non_ascii, gpentry.phenotypes)),
-                    ";".join(map(remove_non_ascii, self.object.level4title.omim)),
-                    ";".join(map(remove_non_ascii, self.object.level4title.orphanet)),
-                    ";".join(map(remove_non_ascii, self.object.level4title.hpo)),
-                    ";".join(map(remove_non_ascii, gpentry.publications)),
-                    "",
-                    str(gpentry.flagged),
-                    str(gpentry.saved_gel_status),
-                    ";".join(map(str, [green_perc, amber_perc, red_prec])),
-                    str(version),
-                    gpentry.ready,
-                    gpentry.mode_of_pathogenicity)
-                writer.writerow(export_gpentry)
-
+        for gpentry in self.object.tsv_file_export():
+            if gpentry[13] in categories:
+                writer.writerow(gpentry)
         return response
 
 
