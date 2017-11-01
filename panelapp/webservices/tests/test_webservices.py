@@ -4,6 +4,7 @@ from panels.tests.factories import GenePanelSnapshotFactory
 from panels.tests.factories import GenePanelEntrySnapshotFactory
 from webservices.utils import make_null
 from webservices.utils import convert_moi
+from webservices.utils import convert_mop
 from webservices.utils import convert_gel_status
 
 
@@ -53,7 +54,7 @@ class TestWebservices(TransactionTestCase):
         # Test deleted panels
         url = reverse_lazy('webservices:list_panels')
         r = self.client.get("{}?Retired=True".format(url))
-        self.assertEqual(len(r.json()['result']), 2)  # one for gpes via factory, second for gps
+        self.assertEqual(len(r.json()['result']), 1)
         self.assertEqual(r.status_code, 200)
 
         # Test for unapproved panels
@@ -61,7 +62,7 @@ class TestWebservices(TransactionTestCase):
         self.gps.panel.save()
         url = reverse_lazy('webservices:list_panels')
         r = self.client.get("{}?Retired=True".format(url))
-        self.assertEqual(len(r.json()['result']), 2)  # one for gpes via factory, second for gps
+        self.assertEqual(len(r.json()['result']), 1)
         self.assertEqual(r.status_code, 200)
 
     def panel_json(self, version='0.0'):
@@ -132,33 +133,62 @@ class TestWebservices(TransactionTestCase):
         self.assertEqual(r.status_code, 200)
 
     def test_search_by_gene(self):
+        url = reverse_lazy('webservices:search_genes', args=('somerandom',))
+        r = self.client.get(url)
+        self.assertEqual(r.json()['meta']['numOfResults'], 0)
+        self.assertEqual(r.status_code, 200)
+
         url = reverse_lazy('webservices:search_genes', args=(self.gpes.gene_core.gene_symbol,))
         r = self.client.get(url)
         self.assertEqual(r.json()['meta']['numOfResults'], 1)
         self.assertEqual(r.status_code, 200)
 
-        r = self.client.get("{}?ModeOfInheritance={}".format(url, self.gpes.moi))
+        r = self.client.get("{}?ModeOfInheritance={}".format(url, convert_moi(self.gpes.moi)))
+        self.assertEqual(r.json()['meta']['numOfResults'], 1)
+        self.assertEqual(r.status_code, 200)
+    
+        r = self.client.get("{}?ModeOfInheritance={}".format(url, 'wrong'))
+        self.assertEqual(r.json()['meta']['numOfResults'], 0)
+        self.assertEqual(r.status_code, 200)
+
+        r = self.client.get("{}?ModeOfPathogenicity={}".format(url, convert_mop(self.gpes.mode_of_pathogenicity)))
         self.assertEqual(r.json()['meta']['numOfResults'], 1)
         self.assertEqual(r.status_code, 200)
 
-        r = self.client.get("{}?ModeOfPathogenicity={}".format(url, self.gpes.mode_of_pathogenicity))
-        self.assertEqual(r.json()['meta']['numOfResults'], 1)
+        r = self.client.get("{}?ModeOfPathogenicity={}".format(url, 'wrong value'))
+        self.assertEqual(r.json()['meta']['numOfResults'], 0)
         self.assertEqual(r.status_code, 200)
 
         r = self.client.get("{}?LevelOfConfidence={}".format(url, convert_gel_status(self.gpes.saved_gel_status)))
         self.assertEqual(r.json()['meta']['numOfResults'], 1)
         self.assertEqual(r.status_code, 200)
 
+        r = self.client.get("{}?LevelOfConfidence={}".format(url, 'wrong'))
+        self.assertEqual(r.json()['meta']['numOfResults'], 0)
+        self.assertEqual(r.status_code, 200)
+
         r = self.client.get("{}?Penetrance={}".format(url, self.gpes.penetrance))
         self.assertEqual(r.json()['meta']['numOfResults'], 1)
+        self.assertEqual(r.status_code, 200)
+
+        r = self.client.get("{}?Penetrance={}".format(url, 'wrong'))
+        self.assertEqual(r.json()['meta']['numOfResults'], 0)
         self.assertEqual(r.status_code, 200)
 
         r = self.client.get("{}?Evidences={}".format(url, self.gpes.evidence.first().name))
         self.assertEqual(r.json()['meta']['numOfResults'], 1)
         self.assertEqual(r.status_code, 200)
 
+        r = self.client.get("{}?Evidences={}".format(url, 'wrong'))
+        self.assertEqual(r.json()['meta']['numOfResults'], 0)
+        self.assertEqual(r.status_code, 200)
+
         r = self.client.get("{}?panel_name={}".format(url, self.gps.panel.name))
         self.assertEqual(r.json()['meta']['numOfResults'], 1)
+        self.assertEqual(r.status_code, 200)
+
+        r = self.client.get("{}?panel_name={}".format(url, 'wrong'))
+        self.assertEqual(r.json()['meta']['numOfResults'], 0)
         self.assertEqual(r.status_code, 200)
 
         multi_genes_arg = "{},{}".format(self.genes[0].gene_core.gene_symbol, self.genes[1].gene_core.gene_symbol)

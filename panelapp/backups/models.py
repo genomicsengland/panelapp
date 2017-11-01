@@ -27,6 +27,16 @@ class PanelBackup(TimeStampedModel):
     stored in `__gel_internal` attribute of each gene.
     """
 
+    class Meta:
+        ordering = ['-major_version', '-minor_version']
+        indexes = [
+            models.Index(fields=['name']),
+            models.Index(fields=['old_pk']),
+            models.Index(fields=['original_pk']),
+            models.Index(fields=['major_version']),
+            models.Index(fields=['minor_version']),
+        ]
+
     name = models.CharField(max_length=256)  # title - charfield
     old_panels = ArrayField(models.CharField(max_length=255), blank=True, null=True)
     old_pk = models.CharField(max_length=32, null=True)  # pa1 ids

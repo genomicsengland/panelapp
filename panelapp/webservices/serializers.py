@@ -1,3 +1,4 @@
+import copy
 from rest_framework import serializers
 from rest_framework.exceptions import APIException
 
@@ -23,13 +24,13 @@ class EnsembleIdMixin:
                 raise NotAcceptedValue(detail='Unaccepted value for assembly, please use: GRch37 or GRch38')
 
         ensemblId = None
-        if assembly == 'GRch38' and gene.gene.get('ensembl_genes'):
-            ensemblId = gene.gene.get('ensembl_genes', {}).get(assembly, {}).get(version, {}).get('ensembl_id', None)
+        if assembly == 'GRch38' and gene.get('ensembl_genes'):
+            ensemblId = gene.get('ensembl_genes', {}).get(assembly, {}).get(version, {}).get('ensembl_id', None)
         elif assembly == 'GRch37':
-            if gene.gene.get('ensembl_genes'):
-                ensemblId = gene.gene.get('ensembl_genes', {}).get(assembly, {}).get(version, {}).get('ensembl_id', None)
-            elif gene.gene.get('other_transcripts') and len(gene.gene.get('other_transcripts')) > 0:
-                ensemblId = gene.gene.get('other_transcripts', [{}])[0].get('geneid', None)
+            if gene.get('ensembl_genes'):
+                ensemblId = gene.get('ensembl_genes', {}).get(assembly, {}).get(version, {}).get('ensembl_id', None)
+            elif gene.get('other_transcripts') and len(gene.get('other_transcripts')) > 0:
+                ensemblId = gene.get('other_transcripts', [{}])[0].get('geneid', None)
 
         if ensemblId is None:
             return []
@@ -42,10 +43,31 @@ class NotAcceptedValue(APIException):
     default_code = 'bad_request'
 
 
-class PanelSerializer(EnsembleIdMixin, serializers.BaseSerializer):
-    def __init__(self, list_of_genes, **kwargs):
-        super(PanelSerializer, self).__init__(**kwargs)
-        self.list_of_genes = list_of_genes
+class GenesPostFilterMixin:
+    def filter_gene_list(self, gene_list, moi=None, mop=None, penetrance=None, conf_level=None, evidence=None):
+        final_list = []
+        for gene in gene_list:
+            filters = True
+            if gene.moi is not None and (moi is not None and convert_moi(gene.moi) not in moi):
+                filters = False
+
+            if gene.mode_of_pathogenicity is not None and (mop is not None and convert_mop(gene.mode_of_pathogenicity) not in mop):
+                filters = False
+            if gene.penetrance is not None and (penetrance is not None and gene.penetrance not in penetrance):
+                filters = False
+            if conf_level is not None and convert_gel_status(gene.saved_gel_status) not in conf_level:
+                filters = False
+            if evidence is not None and not set([ev.name for ev in gene.evidence.all]).intersection(set(evidence)):
+                filters = False
+            if filters:
+                final_list.append(gene)
+        return final_list
+
+
+class PanelSerializer(EnsembleIdMixin, GenesPostFilterMixin, serializers.BaseSerializer):
+    def __init__(self, list_of_genes, post_filters, **kwargs):
+        super().__init__(**kwargs)
+        self.list_of_genes = self.filter_gene_list(list_of_genes, **post_filters)
 
     def to_representation(self, panel):
         result = {
@@ -59,7 +81,7 @@ class PanelSerializer(EnsembleIdMixin, serializers.BaseSerializer):
         }
 
         for gene in self.list_of_genes:
-            ensemblId = self.get_ensemblId(gene)
+            ensemblId = self.get_ensemblId(gene.gene)
             result["result"]["Genes"].append({
                 "GeneSymbol": gene.gene.get('gene_symbol'),
                 "EnsembleGeneIds": ensemblId,
@@ -83,10 +105,10 @@ class PanelSerializer(EnsembleIdMixin, serializers.BaseSerializer):
         pass
 
 
-class GenesSerializer(EnsembleIdMixin, serializers.BaseSerializer):
-    def __init__(self, list_of_genes, **kwargs):
+class GenesSerializer(EnsembleIdMixin, GenesPostFilterMixin, serializers.BaseSerializer):
+    def __init__(self, list_of_genes, post_filters, **kwargs):
         super().__init__(**kwargs)
-        self.list_of_genes = list_of_genes
+        self.list_of_genes = self.filter_gene_list(list_of_genes, **post_filters)
 
     def update(self, instance, validated_data):
         pass
@@ -95,7 +117,7 @@ class GenesSerializer(EnsembleIdMixin, serializers.BaseSerializer):
         result = []
         for gene in self.list_of_genes:
             panel = panels[gene.panel.panel.pk][1]
-            ensemblId = self.get_ensemblId(gene)
+            ensemblId = self.get_ensemblId(gene.gene)
             result.append({
                 "GeneSymbol": gene.gene.get('gene_symbol'),
                 "EnsembleGeneIds": ensemblId,
@@ -134,6 +156,61 @@ class ListPanelSerializer(serializers.BaseSerializer):
                 "Panel_Id": panel.panel.old_pk if panel.panel.old_pk else str(panel.panel.pk),
                 "Relevant_disorders": filter(filter_empty, panel.old_panels)
             })
+        return result
+
+    def update(self, instance, validated_data):
+        pass
+
+    def create(self, validated_data):
+        pass
+
+    def to_internal_value(self, data):
+        pass
+
+
+class PanelBackupSerializer(EnsembleIdMixin, serializers.BaseSerializer):
+    def __init__(self, list_of_genes, post_filters, **kwargs):
+        super().__init__(**kwargs)
+        self.list_of_genes = self.filter_gene_list(list_of_genes, **post_filters)
+
+    def filter_gene_list(self, gene_list, moi=None, mop=None, penetrance=None, conf_level=None, evidence=None):
+        final_list = []
+        for gene in gene_list:
+            filters = True
+            ModeOfInheritance = gene.get('ModeOfInheritance')
+            if ModeOfInheritance and moi and ModeOfInheritance not in moi:
+                filters = False
+
+            ModeOfPathogenicity = gene.get('ModeOfPathogenicity')
+            if ModeOfPathogenicity and mop and ModeOfPathogenicity not in mop:
+                filters = False
+
+            Penetrance = gene.get('Penetrance')
+            if Penetrance and penetrance and Penetrance not in penetrance:
+                filters = False
+
+            LevelOfConfidence = gene.get('LevelOfConfidence')
+            if LevelOfConfidence and conf_level and LevelOfConfidence not in conf_level:
+                filters = False
+
+            Evidences = gene.get('Evidences')
+            if Evidences and evidence and not set(Evidences).intersection(set(evidence)):
+                filters = False
+
+            if filters:
+                final_list.append(gene)
+        return final_list
+
+    def to_representation(self, panel):
+        result = panel.genes_content
+        del result['result']['__gel__internal']
+        result['result']['Genes'] = []
+
+        for gene in self.list_of_genes:
+            ensemblId = self.get_ensemblId(gene['__gel_internal']['gene_data'])
+            del gene['__gel_internal']
+            gene['EnsembleGeneIds'] = ensemblId
+            result['result']['Genes'].append(gene)
         return result
 
     def update(self, instance, validated_data):
