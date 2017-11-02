@@ -7,6 +7,7 @@ from django.contrib.postgres.aggregates import ArrayAgg
 from django.urls import reverse
 from django.utils.functional import cached_property
 from model_utils.models import TimeStampedModel
+from backups.models import PanelBackup
 
 
 class GenePanelManager(models.Manager):
@@ -108,3 +109,13 @@ class GenePanel(TimeStampedModel):
             major_version=int(major_version),
             minor_version=int(minor_version)
         ).first()
+
+    def get_backup(self, version):
+        "Get a panel backup. Version argument should be a string"
+
+        major_version, minor_version = version.split('.')
+        return PanelBackup.objects.get(
+            original_pk=self.pk,
+            major_version=major_version,
+            minor_version=minor_version
+        )

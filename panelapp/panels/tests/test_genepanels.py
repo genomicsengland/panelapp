@@ -291,7 +291,8 @@ class GenePanelTest(LoginGELUser):
         }
 
         res = self.client.post(reverse_lazy('panels:download_old_panel_tsv', args=(gps.panel.pk,)), data)
-        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.status_code, 302)
+        self.assertEqual(gps.panel.get_backup(data['panel_version']).tsvbackup_set.first().tsv.url, res.url)
 
     def test_download_old_panel_wrong_version(self):
         gene, gps, gps2 = self.prepare_compare()

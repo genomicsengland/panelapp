@@ -27,7 +27,7 @@ DEBUG_TOOLBAR_PANELS = [
     'debug_toolbar.panels.signals.SignalsPanel',
     'debug_toolbar.panels.logging.LoggingPanel',
     'debug_toolbar.panels.redirects.RedirectsPanel',
-    'pympler.panels.MemoryPanel',
+    #'pympler.panels.MemoryPanel',
 ]
 
 INTERNAL_IPS = [

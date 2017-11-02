@@ -10,6 +10,7 @@ from django.views.generic import UpdateView
 from django.views.generic import DetailView
 from django.views.generic import CreateView
 from django.core.exceptions import ValidationError
+from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import redirect
 from django.urls import reverse
 from django.urls import reverse_lazy
@@ -561,13 +562,22 @@ class DownloadPanelVersionTSVView(DownloadPanelTSVMixin):
             return GenePanel.objects.get_active_panel(pk=self.kwargs['pk'])
 
     def post(self, *args, **kwargs):
-        self.object = self.get_object()
-        if not self.object:
-            msg = "Can't find panel with the version {}".format(self.request.POST.get('panel_version'))
-            messages.error(self.request, msg)
-            return redirect(reverse_lazy('panels:detail', kwargs={'pk': self.kwargs['pk']}))
-        else:
-            return self.process()
+        # Check if we have a backup with this panel id and panel version, if
+        # we have it - use that, otherwise revert back to generating on the 
+        # fly.
+
+        try:
+            panel_version = self.request.POST.get('panel_version')
+            pb = GenePanel.objects.get_panel(pk=self.kwargs['pk']).get_backup(panel_version)
+            return redirect(pb.tsvbackup_set.first().tsv.url)
+        except ObjectDoesNotExist:
+            self.object = self.get_object()
+            if not self.object:
+                msg = "Can't find panel with the version {}".format(self.request.POST.get('panel_version'))
+                messages.error(self.request, msg)
+                return redirect(reverse_lazy('panels:detail', kwargs={'pk': self.kwargs['pk']}))
+            else:
+                return self.process()
 
 
 class ComparePanelsView(FormView):
