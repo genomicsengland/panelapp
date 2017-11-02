@@ -17,7 +17,25 @@ class TestWebservices(TransactionTestCase):
 
     def test_list_panels_name(self):
         url = reverse_lazy('webservices:list_panels')
-        r = self.client.get("{}?Name={}".format(url, self.gps.panel.name))
+
+        url = reverse_lazy('webservices:list_panels')
+        r = self.client.get(url)
+        self.assertEqual(len(r.json()['result']), 1)
+        self.assertEqual(r.status_code, 200)
+
+    def test_retired_panels(self):
+        url = reverse_lazy('webservices:list_panels')
+
+        self.gps.panel.deleted = True
+        self.gps.panel.save()
+
+        r = self.client.get(url)
+        self.assertEqual(len(r.json()['result']), 0)
+        self.assertEqual(r.status_code, 200)
+
+        url = reverse_lazy('webservices:list_panels')
+        r = self.client.get("{}?Retired=True".format(url))
+        self.assertEqual(len(r.json()['result']), 1)
         self.assertEqual(r.status_code, 200)
 
     def test_get_panel_name(self):
