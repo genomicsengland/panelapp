@@ -86,10 +86,12 @@ class GeneTest(LoginGELUser):
         gps = GenePanelSnapshotFactory()
         GenePanelEntrySnapshotFactory.create_batch(2, panel=gps)  # random genes
         GenePanelEntrySnapshotFactory.create(gene_core=gene_to_update, panel=gps)
+        gps.create_backup()
 
         gps = GenePanelSnapshotFactory()
         GenePanelEntrySnapshotFactory.create_batch(2, panel=gps)  # random genes
         GenePanelEntrySnapshotFactory.create(gene_core=gene_to_update_symbol, panel=gps)
+        gps.create_backup()
 
         to_insert = [
             Gene(gene_symbol='A', ensembl_genes={'inserted': True}).dict_tr(),
@@ -114,14 +116,18 @@ class GeneTest(LoginGELUser):
             'delete': to_delete,
             'update_symbol': to_update_symbol
         }
+
+        backup = gps.get_backup(0, 0)
+        updated_gene = backup.get_gene(gene_to_update_symbol.gene_symbol)
+
         update_gene_collection(migration)
-        self.assertTrue(GenePanelEntrySnapshot.objects.get_active().get(
-            gene_core__gene_symbol=gene_to_update.gene_symbol).gene.get('ensembl_genes')['updated'])
+
         updated_not_updated = [gpes.gene['ensembl_genes'] for gpes in GenePanelEntrySnapshot.objects.filter(
             gene_core__gene_symbol=gene_to_update.gene_symbol)]
-        self.assertNotEqual(updated_not_updated[0], updated_not_updated[1])
-        self.assertFalse(GenePanelEntrySnapshot.objects.get(
-            gene_core__gene_symbol=gene_to_update_symbol.gene_symbol).gene_core.active)
+        self.assertNotEqual(updated_not_updated[0], updated_gene['__gel_internal']['gene_data']['ensembl_genes'])
+
+        self.assertTrue(GenePanelEntrySnapshot.objects.get_active().get(
+            gene_core__gene_symbol=gene_to_update.gene_symbol).gene.get('ensembl_genes')['updated'])
         self.assertFalse(Gene.objects.get(gene_symbol=gene_to_update_symbol.gene_symbol).active)
         self.assertFalse(Gene.objects.get(gene_symbol=gene_to_delete.gene_symbol).active)
         self.assertTrue(Gene.objects.get(gene_symbol='A').active)

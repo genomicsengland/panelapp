@@ -44,7 +44,7 @@ def get_panel(request, panel_name):
             major_version, minor_version = request.GET["version"].split('.')
             version_filter = Q(major_version=major_version) & Q(minor_version=minor_version)
         except ValueError:
-            return Response({"Query Error: Incorrect version {}".format(request.GET['version'])}, status_code=400)
+            return Response({"Query Error: Incorrect version {}".format(request.GET['version'])}, status=400)
 
     try:
         name_filter = Q(original_pk=int(panel_name))
@@ -93,9 +93,9 @@ def get_panel(request, panel_name):
                         except ValueError:
                             queryset = GenePanelSnapshot.objects.get_active(all=True, deleted=True).filter(panel__old_pk=panel_name)
                         if not queryset:
-                            return Response({"Query Error: " + panel_name + " not found."}, status_code=404)
+                            return Response({"Query Error: " + panel_name + " not found."}, status=404)
                     except DatabaseError:
-                        return Response({"Query Error: " + panel_name + " not found."}, status_code=404)
+                        return Response({"Query Error: " + panel_name + " not found."}, status=404)
 
             if major_version != queryset[0].major_version or minor_version != queryset[0].minor_version:
                 queryset = GenePanelSnapshot.objects.filter(
@@ -116,7 +116,7 @@ def get_panel(request, panel_name):
                         return Response({"Query Error: " + panel_name + " not found."})
 
                 if not queryset:
-                    return Response({"Query Error: The version requested for panel:" + panel_name + " was not found."}, status_code=404)
+                    return Response({"Query Error: The version requested for panel:" + panel_name + " was not found."}, status=404)
 
                 gene_list = queryset[0].get_all_entries
                 queryset = [queryset[0]]
@@ -137,11 +137,11 @@ def get_panel(request, panel_name):
                             queryset_pk = queryset.filter(panel__old_pk=panel_name)
 
                         if not queryset_pk:
-                            return Response({"Query Error: " + panel_name + " not found."}, status_code=404)
+                            return Response({"Query Error: " + panel_name + " not found."}, status=404)
                         else:
                             queryset = queryset_pk
                     except (DatabaseError, ValueError) as e:
-                        return Response({"Query Error: " + panel_name + " not found."}, status_code=404)
+                        return Response({"Query Error: " + panel_name + " not found."}, status=404)
                 else:
                     queryset = queryset_old_names
             else:

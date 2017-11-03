@@ -14,6 +14,7 @@ class TestWebservices(TransactionTestCase):
         self.gps = GenePanelSnapshotFactory(panel__approved=True)
         self.gpes = GenePanelEntrySnapshotFactory(panel=self.gps, penetrance="unknown")
         self.genes = GenePanelEntrySnapshotFactory.create_batch(4, panel=self.gps)
+        self.gps.create_backup()
 
     def test_list_panels(self):
         r = self.client.get(reverse_lazy('webservices:list_panels'))

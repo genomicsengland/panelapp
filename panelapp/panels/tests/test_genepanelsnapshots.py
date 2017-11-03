@@ -129,6 +129,7 @@ class GenePanelSnapshotTest(LoginGELUser):
             'pk': gpes.panel.panel.pk,
             'gene_symbol': gpes.gene.get('gene_symbol')
         })
+        gpes.panel.update_saved_stats()
 
         number_of_genes = gpes.panel.number_of_genes
 
@@ -193,6 +194,7 @@ class GenePanelSnapshotTest(LoginGELUser):
         gpes = GenePanelEntrySnapshotFactory(
             penetrance=GenePanelEntrySnapshot.PENETRANCE.Incomplete
         )
+        tags = [tag.pk for tag in gpes.tags.all()]
         url = reverse_lazy('panels:edit_gene', kwargs={
             'pk': gpes.panel.panel.pk,
             'gene_symbol': gpes.gene.get('gene_symbol')
@@ -204,7 +206,7 @@ class GenePanelSnapshotTest(LoginGELUser):
             "gene": gpes.gene_core.pk,
             "gene_name": "Gene name",
             "source": set([ev.name for ev in gpes.evidence.all()]),
-            "tags": [tag.pk for tag in gpes.tags.all()] + [tag.pk,],
+            "tags": tags + [tag.pk,],
             "publications": ";".join([publication for publication in gpes.publications]),
             "phenotypes": ";".join([phenotype for phenotype in gpes.phenotypes]),
             "moi": gpes.moi,
@@ -214,7 +216,7 @@ class GenePanelSnapshotTest(LoginGELUser):
         res = self.client.post(url, gene_data)
         assert res.status_code == 302
         gene = GenePanel.objects.get(pk=gpes.panel.panel.pk).active_panel.get_gene(gpes.gene_core.gene_symbol)
-        assert sorted(list(gene.tags.all())) != sorted(list(gpes.tags.all()))
+        assert sorted([t.pk for t in gene.tags.all()]) != sorted(tags)
 
     def test_remove_tag_via_edit_details(self):
         """Remove tags via edit gene detail section"""
@@ -413,6 +415,7 @@ class GenePanelSnapshotTest(LoginGELUser):
             'pk': gpes.panel.panel.pk,
             'gene_symbol': gpes.gene.get('gene_symbol')
         })
+        gpes.panel.create_backup()
 
         old_gene_symbol = gpes.gene.get('gene_symbol')
 
@@ -438,10 +441,10 @@ class GenePanelSnapshotTest(LoginGELUser):
         assert res.status_code == 302
 
         new_gps = GenePanel.objects.get(pk=gpes.panel.panel.pk).active_panel
-        old_gps = GenePanelSnapshot.objects.get(pk=gpes.panel.pk)
 
         # check panel has no previous gene
         assert new_gps.has_gene(old_gene_symbol) is False
 
-        # test previous panel contains old gene
-        assert old_gps.has_gene(old_gene_symbol) is True
+        # test the backup has the gene
+        backup = new_gps.get_backup(0, 0)
+        self.assertTrue(backup.has_gene(old_gene_symbol))

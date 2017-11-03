@@ -173,6 +173,7 @@ class PanelGeneForm(forms.ModelForm):
                 gene_data
             )
             self.panel = GenePanel.objects.get(pk=self.panel.panel.pk).active_panel
+            self.panel.create_backup()
             return self.panel.get_gene(new_gene_symbol)
         else:
             increment_version = self.request.user.is_authenticated and self.request.user.reviewer.is_GEL()
@@ -183,5 +184,6 @@ class PanelGeneForm(forms.ModelForm):
                 increment_version
             )
             self.panel = GenePanel.objects.get(pk=self.panel.panel.pk).active_panel
+            self.panel.create_backup()
             self.panel.update_saved_stats()
             return gene

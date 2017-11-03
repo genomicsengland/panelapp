@@ -172,9 +172,7 @@ class GenePanelSnapshot(TimeStampedModel):
         """
 
         with transaction.atomic():
-            current_genes = deepcopy(self.get_all_entries)
-
-            self.pk = None
+            current_genes = self.get_all_entries
 
             if major:
                 self.major_version += 1
@@ -182,126 +180,34 @@ class GenePanelSnapshot(TimeStampedModel):
             else:
                 self.minor_version += 1
 
-            self.save()
-
-            evidences = []
-            evaluations = []
-            tracks = []
-            tags = []
-            comments = []
-
-            genes = {}
-
             for gene in current_genes:
                 if ignore_gene and ignore_gene == gene.gene.get('gene_symbol'):
+                    gene.delete()
                     continue
-
-                old_gene = deepcopy(gene)
-                gene.pk = None
-                gene.panel = self
 
                 if major:
                     gene.ready = False
+
+                    if user and comment:
+                        issue_type = "Panel promoted to version {}".format(self.version)
+                        issue_description = comment
+
+                        track_promoted = TrackRecord.objects.create(
+                            curator_status=user.reviewer.is_GEL(),
+                            issue_description=issue_description,
+                            gel_status=gene.status,
+                            issue_type=issue_type,
+                            user=user
+                        )
+                        gene.track.add(track_promoted)
                     gene.save()
-
-                genes[gene.gene.get('gene_symbol')] = {
-                    'gene': gene,
-                    'old_gene': old_gene,
-                    'evidences': [
-                        {
-                            'evidence_id': ev,
-                            'genepanelentrysnapshot_id': gene.pk
-                        } for ev in set(gene.evidences) if ev is not None
-                    ],
-                    'evaluations': [
-                        {
-                            'evaluation_id': ev,
-                            'genepanelentrysnapshot_id': gene.pk
-                        } for ev in set(gene.evaluations) if ev is not None
-                    ],
-                    'tracks': [
-                        {
-                            'trackrecord_id': ev,
-                            'genepanelentrysnapshot_id': gene.pk
-                        } for ev in set(gene.tracks) if ev is not None
-                    ],
-                    'tags': [
-                        {
-                            'tag_id': ev,
-                            'genepanelentrysnapshot_id': gene.pk
-                        } for ev in set(gene.gene_tags) if ev is not None
-                    ],
-                    'comments': [
-                        {
-                            'comment_id': ev,
-                            'genepanelentrysnapshot_id': gene.pk
-                        } for ev in set(gene.comment_pks) if ev is not None
-                    ]
-                }
-
-                if major and user and comment:
-                    issue_type = "Panel promoted to version {}".format(self.version)
-                    issue_description = comment
-
-                    track_promoted = TrackRecord.objects.create(
-                        curator_status=user.reviewer.is_GEL(),
-                        issue_description=issue_description,
-                        gel_status=gene.status,
-                        issue_type=issue_type,
-                        user=user
-                    )
-                    gene.track.add(track_promoted)
-
-            # add in bulk
-            if not major:
-                bulk_genes = [genes[gene]['gene'] for gene in genes]
-                new_genes = self.genepanelentrysnapshot_set.model.objects.bulk_create(bulk_genes)
-            else:
-                new_genes = self.genepanelentrysnapshot_set.all()
-
-            self.clear_cache()
-
-            for gene in new_genes:
-                gene_data = genes[gene.gene.get('gene_symbol')]
-
-                for i, _ in enumerate(gene_data['evidences']):
-                    gene_data['evidences'][i]['genepanelentrysnapshot_id'] = gene_data['gene'].pk
-                evidences.extend(gene_data['evidences'])
-
-                for i, _ in enumerate(gene_data['evaluations']):
-                    gene_data['evaluations'][i]['genepanelentrysnapshot_id'] = gene_data['gene'].pk
-                evaluations.extend(gene_data['evaluations'])
-
-                for i, _ in enumerate(gene_data['tracks']):
-                    gene_data['tracks'][i]['genepanelentrysnapshot_id'] = gene_data['gene'].pk
-                tracks.extend(gene_data['tracks'])
-
-                for i, _ in enumerate(gene_data['tags']):
-                    gene_data['tags'][i]['genepanelentrysnapshot_id'] = gene_data['gene'].pk
-                tags.extend(gene_data['tags'])
-
-                for i, _ in enumerate(gene_data['comments']):
-                    gene_data['comments'][i]['genepanelentrysnapshot_id'] = gene_data['gene'].pk
-                comments.extend(gene_data['comments'])
-
-            self.genepanelentrysnapshot_set.model.evidence.through.objects.bulk_create([
-                self.genepanelentrysnapshot_set.model.evidence.through(**ev) for ev in evidences
-            ])
-            self.genepanelentrysnapshot_set.model.evaluation.through.objects.bulk_create([
-                self.genepanelentrysnapshot_set.model.evaluation.through(**ev) for ev in evaluations
-            ])
-            self.genepanelentrysnapshot_set.model.track.through.objects.bulk_create([
-                self.genepanelentrysnapshot_set.model.track.through(**ev) for ev in tracks
-            ])
-            self.genepanelentrysnapshot_set.model.tags.through.objects.bulk_create([
-                self.genepanelentrysnapshot_set.model.tags.through(**ev) for ev in tags
-            ])
-            self.genepanelentrysnapshot_set.model.comments.through.objects.bulk_create([
-                self.genepanelentrysnapshot_set.model.comments.through(**ev) for ev in comments
-            ])
 
             if self.panel.active_panel:
                 del self.panel.active_panel
+
+            self.clear_cache()
+            self.update_saved_stats()
+            self.save()
 
             if major:
                 email_panel_promoted.delay(self.panel.pk)
@@ -316,10 +222,8 @@ class GenePanelSnapshot(TimeStampedModel):
                     comment,
                     self.version_comment if self.version_comment else ''
                 )
-                self.save()
-            
-            backup = PanelBackup()
-            backup.import_panel(self)
+
+            self.create_backup()
 
             return self.panel.active_panel
 
@@ -390,6 +294,15 @@ class GenePanelSnapshot(TimeStampedModel):
     @cached_property
     def current_genes_duplicates(self):
         return [gene for gene in self.current_genes_count if self.current_genes_count[gene] > 1]
+
+    def get_all_entries_uncached(self):
+        return self.genepanelentrysnapshot_set.all().annotate(
+            evidences=ArrayAgg('evidence__pk', distinct=True),
+            evaluations=ArrayAgg('evaluation__pk', distinct=True),
+            gene_tags=ArrayAgg('tags__pk', distinct=True),
+            tracks=ArrayAgg('track__pk', distinct=True),
+            comment_pks=ArrayAgg('comments__pk', distinct=True)
+        )
 
     @cached_property
     def get_all_entries(self):
@@ -486,8 +399,8 @@ class GenePanelSnapshot(TimeStampedModel):
                 self = self.increment_version(ignore_gene=gene_symbol)
             else:
                 self.get_all_entries.get(gene__gene_symbol=gene_symbol).delete()
-                self.clear_cache()
 
+            self.clear_cache()
             self.update_saved_stats()
             return True
         else:
@@ -596,6 +509,7 @@ class GenePanelSnapshot(TimeStampedModel):
 
         gene.evidence_status(update=True)
         self.update_saved_stats()
+        self.create_backup()
         return gene
 
     def update_gene(self, user, gene_symbol, gene_data, append_only=False):
@@ -922,6 +836,7 @@ class GenePanelSnapshot(TimeStampedModel):
                 gene.save()
             else:
                 gene.save()
+            self.create_backup()
             self.clear_cache()
             self.update_saved_stats()
             return gene
@@ -1101,3 +1016,34 @@ class GenePanelSnapshot(TimeStampedModel):
                 gpentry.ready,
                 gpentry.mode_of_pathogenicity
             )
+
+    def save(self, *args, **kwargs):
+        """Create the initial backup"""
+        create_backup = not bool(self.pk)
+        super().save(*args, **kwargs)
+
+        if create_backup:
+            self.create_backup()
+
+    def create_backup(self):
+        self.update_saved_stats()
+        try:
+            backup = PanelBackup.objects.get(
+                original_pk=self.pk,
+                major_version=self.major_version,
+                minor_version=self.minor_version
+            )
+        except PanelBackup.DoesNotExist:
+            backup = PanelBackup()
+
+        backup.import_panel(self)
+
+    def get_backup(self, major_version, minor_version):
+        try:
+            return PanelBackup.objects.get(
+                original_pk=self.pk,
+                major_version=major_version,
+                minor_version=minor_version
+            )
+        except PanelBackup.DoesNotExist:
+            return None

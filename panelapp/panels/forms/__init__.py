@@ -104,5 +104,7 @@ class CopyReviewsForm(forms.Form):
         else:
             with transaction.atomic():
                 panel_to = panel_to.increment_version()
-                return ProcessingRunCode.PROCESSED, panel_to.copy_gene_reviews_from(gene_symbols, panel_from)
+                res = panel_to.copy_gene_reviews_from(gene_symbols, panel_from)
+                panel_to.create_backup()
+                return ProcessingRunCode.PROCESSED, res
         return 0, 0

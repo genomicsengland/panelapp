@@ -164,6 +164,7 @@ def background_copy_reviews(user_pk, gene_symbols, panel_from_pk, panel_to_pk):
         with transaction.atomic():
             panel_to = panel_to.increment_version()
             total_count = panel_to.copy_gene_reviews_from(gene_symbols, panel_from)
+            panel_to.create_backup()
         subject = "Success copying the reviews"
         message = "{} review{} copied".format(total_count, pluralize(total_count))
     except Exception as e:

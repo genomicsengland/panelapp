@@ -35,6 +35,7 @@ class UpdateGeneMOPForm(forms.ModelForm):
             .active_panel.get_gene(self.instance.gene['gene_symbol'])
         self.instance.update_pathogenicity(mop, user, comment)
         self.instance.panel.update_saved_stats()
+        self.instance.panel.create_backup()
 
 
 class UpdateGeneMOIForm(forms.ModelForm):
@@ -53,6 +54,7 @@ class UpdateGeneMOIForm(forms.ModelForm):
             .active_panel.get_gene(self.instance.gene['gene_symbol'])
         self.instance.update_moi(moi, user, comment)
         self.instance.panel.update_saved_stats()
+        self.instance.panel.create_backup()
 
 
 class UpdateGenePhenotypesForm(forms.ModelForm):
@@ -76,6 +78,7 @@ class UpdateGenePhenotypesForm(forms.ModelForm):
             .active_panel.get_gene(self.instance.gene['gene_symbol'])
         self.instance.update_phenotypes(phenotypes, user, comment)
         self.instance.panel.update_saved_stats()
+        self.instance.panel.create_backup()
 
 
 class UpdateGenePublicationsForm(forms.ModelForm):
@@ -100,6 +103,7 @@ class UpdateGenePublicationsForm(forms.ModelForm):
             .active_panel.get_gene(self.instance.gene['gene_symbol'])
         self.instance.update_publications(publications, user, comment)
         self.instance.panel.update_saved_stats()
+        self.instance.panel.create_backup()
 
 
 class UpdateGeneRatingForm(forms.ModelForm):
@@ -126,6 +130,7 @@ class UpdateGeneRatingForm(forms.ModelForm):
             .active_panel.get_gene(self.instance.gene['gene_symbol'])
         self.instance.update_rating(status, user, self.cleaned_data['comment'])
         self.instance.panel.update_saved_stats()
+        self.instance.panel.create_backup()
 
 
 class EditCommentForm(forms.Form):

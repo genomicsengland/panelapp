@@ -171,6 +171,9 @@ def update_gene_collection(results):
             except Gene.DoesNotExist:
                 logger.debug("Didn't delete {} gene - doesn't exist".format(record))
 
+        for p in GenePanelSnapshot.objects.get_active(all=True):
+            p.create_backup()
+
         duplicated_genes = get_duplicated_genes_in_panels()
         if duplicated_genes:
             logger.info('duplicated genes:')
@@ -320,6 +323,7 @@ class UploadedPanelList(TimeStampedModel):
                     raise TSVIncorrectFormat(', '.join(errors['invalid_lines']))
 
                 active_panel.update_saved_stats()
+                active_panel.create_backup()
                 self.imported = True
                 self.save()
                 return ProcessingRunCode.PROCESSED
@@ -454,5 +458,7 @@ class UploadedReviewsList(TimeStampedModel):
                     raise TSVIncorrectFormat(', '.join(errors['invalid_lines']))
 
                 self.imported = True
+                panel.active_panel.update_saved_stats()
+                panel.active_panel.create_backup()
                 self.save()
                 return ProcessingRunCode.PROCESSED

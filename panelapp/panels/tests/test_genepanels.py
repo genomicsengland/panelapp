@@ -5,11 +5,13 @@ from django.urls import reverse_lazy
 from faker import Factory
 from accounts.tests.setup import LoginGELUser
 from panels.models import GenePanel
+from panels.models import GenePanelSnapshot
 from panels.models import GenePanelEntrySnapshot
 from panels.tasks import email_panel_promoted
 from panels.tests.factories import GeneFactory
 from panels.tests.factories import GenePanelSnapshotFactory
 from panels.tests.factories import GenePanelEntrySnapshotFactory
+from backups.models import PanelBackup
 
 
 fake = Factory.create()
@@ -114,18 +116,26 @@ class GenePanelTest(LoginGELUser):
     def test_delete_gene(self):
         gps = GenePanelSnapshotFactory()
         genes = GenePanelEntrySnapshotFactory.create_batch(5, panel=gps)
+        gps.create_backup()
+        gps.update_saved_stats()
+
         gene_symbol = genes[2].gene['gene_symbol']
 
+        gps = GenePanelSnapshot.objects.get(pk=gps.pk)
         number_of_genes = gps.number_of_genes
 
         assert gps.has_gene(gene_symbol) is True
+        major_version = gps.major_version
+        minor_version = gps.minor_version
+
         gps.delete_gene(gene_symbol)
         assert gps.panel.active_panel.has_gene(gene_symbol) is False
         assert number_of_genes - 1 == gps.panel.active_panel.number_of_genes  # 4 is due to create_batch
 
-        old_gps = GenePanel.objects.get(pk=gps.panel.pk).genepanelsnapshot_set.last()
-        assert old_gps.version != gps.version
-        assert old_gps.has_gene(gene_symbol) is True
+        backup = PanelBackup.objects.get(original_pk=gps.panel.pk, major_version=major_version, minor_version=minor_version)
+        assert backup.minor_version != gps.minor_version
+        backup_genes = backup.genes_content['result']['Genes']
+        assert any([g['GeneSymbol'] == gene_symbol for g in backup_genes])
 
         new_gps = GenePanel.objects.get(pk=gps.panel.pk).active_panel
         assert new_gps.has_gene(gene_symbol) is False
@@ -142,6 +152,10 @@ class GenePanelTest(LoginGELUser):
         gps = GenePanelSnapshotFactory()
         genes = GenePanelEntrySnapshotFactory.create_batch(5, panel=gps)
         gene_symbol = genes[2].gene['gene_symbol']
+        gps.create_backup()
+        gps.update_saved_stats()
+
+        gps = GenePanelSnapshot.objects.get(pk=gps.pk)
 
         number_of_genes = gps.number_of_genes
 

@@ -28,7 +28,7 @@ class PanelBackup(TimeStampedModel):
     """
 
     class Meta:
-        ordering = ['-major_version', '-minor_version']
+        ordering = ['-major_version', '-minor_version', '-created']
         indexes = [
             models.Index(fields=['name']),
             models.Index(fields=['old_pk']),
@@ -51,7 +51,8 @@ class PanelBackup(TimeStampedModel):
         """Import GenePanelSnapshot
 
         Once something has been changed in GenePanelSnapshot it should create a
-        new version. This should be called from `increment_version` method.
+        new version. This should be called after `increment_version` method was
+        called otherwise it will override the existing version.
 
         But it can be generated in the background via Celery task.
         """
@@ -80,7 +81,7 @@ class PanelBackup(TimeStampedModel):
             }
         }
 
-        for gene in gps.get_all_entries:
+        for gene in gps.get_all_entries_uncached():
             result['result']['Genes'].append({
                 "GeneSymbol": gene.gene.get('gene_symbol'),
                 "ModeOfInheritance": make_null(convert_moi(gene.moi)),
@@ -104,7 +105,10 @@ class PanelBackup(TimeStampedModel):
         self.create_tsv_file(gps)
 
     def create_tsv_file(self, gps):
-        backup = TSVBackup()
+        backup = self.tsvbackup_set.first()
+        if not backup:
+            backup = TSVBackup()
+
         backup.panel_backup = self
 
         output = StringIO()
@@ -115,6 +119,18 @@ class PanelBackup(TimeStampedModel):
             writer.writerow(gpentry)
 
         backup.tsv.save(slugify(self.name), File(output))
+
+    def get_gene(self, gene_symbol):
+        for gene in self.genes_content.get('result', {}).get('Genes', []):
+            if gene['GeneSymbol'] == gene_symbol:
+                return gene
+
+    def has_gene(self, gene_symbol):
+        return any([
+            gene_symbol == g['GeneSymbol']
+            for g
+            in self.genes_content.get('result', {}).get('Genes', [])
+        ])
 
 
 def panel_version_path(instance, filename):
@@ -131,6 +147,9 @@ def panel_version_path(instance, filename):
 class TSVBackup(TimeStampedModel):
     """Saved TSV exports which are available to download via the frontend
     """
+
+    class Meta:
+        ordering = ['-created', ]
 
     panel_backup = models.ForeignKey(PanelBackup)
     tsv = models.FileField(upload_to=panel_version_path)
