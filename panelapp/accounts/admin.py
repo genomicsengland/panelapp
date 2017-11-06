@@ -41,9 +41,9 @@ class UserChangeForm(forms.ModelForm):
     """
     password = ReadOnlyPasswordHashField(
         label="Password",
-        help_text= "Raw passwords are not stored, so there is no way to see this "
-                   "user's password, but you can change the password using "
-                   "<a href=\"{}\">this form</a>."
+        help_text="Raw passwords are not stored, so there is no way to see this "
+                  "user's password, but you can change the password using "
+                  "<a href=\"{}\">this form</a>."
     )
 
     class Meta:

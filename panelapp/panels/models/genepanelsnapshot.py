@@ -737,99 +737,22 @@ class GenePanelSnapshot(TimeStampedModel):
                 logging.debug("Gene:{} in panel:{} has changed to gene:{}".format(
                     gene_symbol, self, new_gene.gene_symbol
                 ))
+
                 old_gene_symbol = gene.gene_core.gene_symbol
 
-                evidences = gene.evidence.all()
-                for evidence in evidences:
-                    evidence.pk = None
-
-                evaluations = gene.evaluation.all()
-                for evaluation in evaluations:
-                    evaluation.create_comments = []
-                    for comment in evaluation.comments.all():
-                        comment.pk = None
-                        evaluation.create_comments.append(comment)
-                    evaluation.pk = None
-
-                tracks = gene.track.all()
-                for track in tracks:
-                    track.pk = None
-
-                tags = gene.tags.all()
-
-                comments = gene.comments.all()
-                for comment in comments:
-                    comment.pk = None
-
-                new_gpes = gene
-                new_gpes.gene_core = new_gene
-                new_gpes.gene = new_gene.dict_tr()
-                new_gpes.pk = None
-                new_gpes.panel = self
-                new_gpes.save()
-
-                Evidence.objects.bulk_create(evidences)
-                new_gpes.evidence.through.objects.bulk_create([
-                    new_gpes.evidence.through(**{
-                        'evidence_id': ev.pk,
-                        'genepanelentrysnapshot_id': new_gpes.pk
-                    }) for ev in evidences
-                ])
-
-                Evaluation.objects.bulk_create(evaluations)
-                new_gpes.evaluation.through.objects.bulk_create([
-                    new_gpes.evaluation.through(**{
-                        'evaluation_id': ev.pk,
-                        'genepanelentrysnapshot_id': new_gpes.pk
-                    }) for ev in evaluations
-                ])
-
-                for evaluation in evaluations:
-                    Comment.objects.bulk_create(evaluation.create_comments)
-
-                evaluation_comments = []
-                for evaluation in evaluations:
-                    for comment in evaluation.create_comments:
-                        evaluation_comments.append(Evaluation.comments.through(**{
-                            'comment_id': comment.pk,
-                            'evaluation_id': evaluation.pk
-                        }))
-
-                Evaluation.comments.through.objects.bulk_create(evaluation_comments)
-
-                TrackRecord.objects.bulk_create(tracks)
-                new_gpes.track.through.objects.bulk_create([
-                    new_gpes.track.through(**{
-                        'trackrecord_id': track.pk,
-                        'genepanelentrysnapshot_id': new_gpes.pk
-                    }) for track in tracks
-                ])
-
-                new_gpes.tags.through.objects.bulk_create([
-                    new_gpes.tags.through(**{
-                        'tag_id': tag.pk,
-                        'genepanelentrysnapshot_id': new_gpes.pk
-                    }) for tag in tags
-                ])
-
-                Comment.objects.bulk_create(comments)
-                new_gpes.comments.through.objects.bulk_create([
-                    new_gpes.comments.through(**{
-                        'comment_id': comment.pk,
-                        'genepanelentrysnapshot_id': new_gpes.pk
-                    }) for comment in comments
-                ])
+                gene.gene_core = new_gene
+                gene.gene = new_gene.dict_tr()
+                gene.save()
 
                 description = "{} was changed to {}".format(old_gene_symbol, new_gene.gene_symbol)
                 track_gene = TrackRecord.objects.create(
-                    gel_status=new_gpes.status,
+                    gel_status=gene.status,
                     curator_status=0,
                     user=user,
                     issue_type=TrackRecord.ISSUE_TYPES.ChangedGeneName,
                     issue_description=description
                 )
-                new_gpes.track.add(track_gene)
-                self.delete_gene(old_gene_symbol, increment=False)
+                gene.track.add(track_gene)
             elif gene_name and gene.gene.get('gene_name') != gene_name:
                 logging.debug("Updating gene_name for gene:{} in panel:{}".format(gene_symbol, self))
                 gene.gene['gene_name'] = gene_name
