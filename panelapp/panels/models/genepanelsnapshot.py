@@ -861,15 +861,17 @@ class GenePanelSnapshot(TimeStampedModel):
                     }) for ev in evaluations
                 ])
 
-                Comment.objects.bulk_create([
-                    comment for evaluation in evaluations for comment in evaluation.create_comments
-                ])
+                for evaluation in evaluations:
+                    Comment.objects.bulk_create(evaluation.create_comments)
+
                 evaluation_comments = []
-                for comment in [comment for evaluation in evaluations for comment in evaluation.create_comments]:
-                    evaluation_comments.append(Evaluation.comments.through(**{
-                        'comment_id': comment.pk,
-                        'evaluation_id': evaluation.pk
-                    }))
+                for evaluation in evaluations:
+                    for comment in evaluation.create_comments:
+                        evaluation_comments.append(Evaluation.comments.through(**{
+                            'comment_id': comment.pk,
+                            'evaluation_id': evaluation.pk
+                        }))
+                
                 Evaluation.comments.through.objects.bulk_create(evaluation_comments)
 
                 TrackRecord.objects.bulk_create(tracks)

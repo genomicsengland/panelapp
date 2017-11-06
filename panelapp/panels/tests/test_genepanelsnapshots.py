@@ -12,6 +12,7 @@ from panels.tests.factories import GeneFactory
 from panels.tests.factories import GenePanelSnapshotFactory
 from panels.tests.factories import GenePanelEntrySnapshotFactory
 from panels.tests.factories import TagFactory
+from panels.tests.factories import CommentFactory
 
 
 fake = Factory.create()
@@ -379,6 +380,32 @@ class GenePanelSnapshotTest(LoginGELUser):
         new_ap = GenePanel.objects.get(pk=gpes.panel.panel.pk).active_panel
         assert new_ap.has_gene(old_gene_symbol) is False
         assert new_ap.has_gene(new_gene.gene_symbol) is True
+
+    def test_update_gene_preserves_comments_order(self):
+        gpes = GenePanelEntrySnapshotFactory()
+        comments = list(CommentFactory.create_batch(4, user=self.verified_user))
+
+        for ev in gpes.evaluation.all():
+            ev.comments.add(comments.pop())
+
+        max_comments_num = max([e.comments.count() for e in gpes.evaluation.all()])
+        self.assertEqual(1, max_comments_num)
+
+        old_gene_symbol = gpes.gene.get('gene_symbol')
+        new_gene = GeneFactory()
+        ap = GenePanel.objects.get(pk=gpes.panel.panel.pk).active_panel
+
+        new_data = {
+            "gene": new_gene,
+            "gene_name": "Other name"
+        }
+        ap.update_gene(self.verified_user, old_gene_symbol, new_data)
+
+        new_ap = GenePanel.objects.get(pk=gpes.panel.panel.pk).active_panel
+        gpes = new_ap.get_gene(new_gene.gene_symbol)
+
+        max_comments_num_after_update = max([e.comments.count() for e in gpes.evaluation.all()])
+        self.assertEqual(1, max_comments_num_after_update)
 
     def test_edit_gene_name_ajax(self):
         gpes = GenePanelEntrySnapshotFactory()
