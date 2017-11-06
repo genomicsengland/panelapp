@@ -10,6 +10,7 @@ from .views import RedirectGenePanelView
 urlpatterns = [
     url(r'^$', RedirectView.as_view(url="/", permanent=True)),
     url(r'^PanelApp/$', RedirectView.as_view(url="/", permanent=True)),
+    url(r'^PanelApp/Login$', RedirectView.as_view(url="/", permanent=True)),
     url(r'^PanelApp/Genes$', RedirectView.as_view(url="/panels/genes/", permanent=True)),
     url(r'^PanelApp/Genes/(?P<gene_symbol>.*)$', RedirectGeneView.as_view(permanent=True)),
     url(r'^PanelApp/PanelBrowser$', RedirectView.as_view(url=reverse_lazy("panels:index"), permanent=True)),

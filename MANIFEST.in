@@ -1,5 +1,5 @@
 recursive-include deploy *.txt
 recursive-include panelapp/accounts/templates *.html *.txt
 recursive-include panelapp/panelapp/templates *.html *.txt
-recursive-include panelapp/panels/templates *.html
+recursive-include panelapp/panels/templates *.html *.txt
 recursive-include panelapp/panelapp/static *.css *.js *.gif *.png *.svg *.jpg *.ttf *.woff *.woff2
