@@ -54,8 +54,12 @@ def get_panel(request, panel_name):
 
     if "version" in request.GET:
         version = request.GET["version"]
-        major_version = int(version.split(".")[0])
-        minor_version = int(version.split(".")[1])
+        try:
+            major_version = int(version.split(".")[0])
+            minor_version = int(version.split(".")[1])
+        except IndexError:
+            return Response({"Query Error: The incorrect version requested"}, status=400)
+
         queryset = GenePanel.objects.filter(name=panel_name)
         if queryset.first():
             queryset = [queryset[0].active_panel]
