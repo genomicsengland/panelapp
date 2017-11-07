@@ -39,3 +39,13 @@ class Image(models.Model):
 
     def __str__(self):
         return self.alt
+
+
+class File(models.Model):
+    """File storage for any file which should be available online"""
+
+    file = models.FileField(upload_to='files', storage=OverwriteStorage(), max_length=512)
+    title = models.CharField("File title", max_length=128)
+
+    def __str__(self):
+        return self.title
