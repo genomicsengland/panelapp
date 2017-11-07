@@ -110,3 +110,8 @@ def pubmed_link(publication):
             part = SafeString('<a href="http://www.ncbi.nlm.nih.gov/pubmed/' + part + '">' + part + '</a>')
             parts[i] = part
     return parts
+
+
+@register.filter
+def remove_special(seq):
+    return re.sub('\W+', '', seq)
