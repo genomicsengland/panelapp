@@ -54,6 +54,14 @@ class TestWebservices(TransactionTestCase):
         r = self.client.get("{}?version=0.1".format(url))
         self.assertEqual(r.status_code, 200)
 
+        self.gps.panel.approved = False
+        self.gps.panel.save()
+
+        url = reverse_lazy('webservices:get_panel', args=(self.gpes.panel.panel.pk,))
+        r = self.client.get("{}?version=0.1".format(url))
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue('Query Error' not in r.content)
+
     def test_get_search_gene(self):
         url = reverse_lazy('webservices:search_genes', args=(self.gpes.gene_core.gene_symbol,))
         r = self.client.get(url)
