@@ -33,6 +33,15 @@ class TestWebservices(TransactionTestCase):
         self.assertEqual(len(r.json()['result']), 0)
         self.assertEqual(r.status_code, 200)
 
+        # Test deleted panels
+        url = reverse_lazy('webservices:list_panels')
+        r = self.client.get("{}?Retired=True".format(url))
+        self.assertEqual(len(r.json()['result']), 2)  # one for gpes via factory, second for gps
+        self.assertEqual(r.status_code, 200)
+
+        # Test for unapproved panels
+        self.gps.panel.approved = False
+        self.gps.panel.save()
         url = reverse_lazy('webservices:list_panels')
         r = self.client.get("{}?Retired=True".format(url))
         self.assertEqual(len(r.json()['result']), 2)  # one for gpes via factory, second for gps

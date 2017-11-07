@@ -22,7 +22,7 @@ class TrackRecord(TimeStampedModel):
         ("SetPenetrance", "Set penetrance"),
         ("SetPublications", "Set publications"),
         ("ApprovedGene", "Approved Gene"),
-        ("GelStatusUpdate", "GelStatusUpdate"),
+        ("GelStatusUpdate", "Gel Status Update"),
         ("UploadGeneInformation", "Upload gene information"),
         ("RemovedTag", "Removed Tag"),
         ("AddedTag", "Added Tag"),
