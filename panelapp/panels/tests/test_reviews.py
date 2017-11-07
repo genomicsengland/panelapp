@@ -74,6 +74,16 @@ class EvaluationTest(LoginGELUser):
         assert v01gene.evaluation.get(user=self.gel_user).comments.count() == 2
         assert current_version == gpes.panel.panel.active_panel.version
 
+    def test_user_reviews(self):
+        gps = GenePanelSnapshotFactory()
+        gpes = GenePanelEntrySnapshotFactory.create_batch(10, panel=gps)
+        for g in gpes:
+            for evaluation in g.evaluation.all():
+                evaluation.user = self.verified_user
+                evaluation.save()
+
+        self.assertEqual(self.verified_user.get_recent_evaluations().count(), 35)
+
     def test_form_should_be_prefilled(self):
         gpes = GenePanelEntrySnapshotFactory()
         gpes.evaluation.all().delete()

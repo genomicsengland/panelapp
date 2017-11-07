@@ -1,22 +1,21 @@
 {% load panel_helpers %}
 
 {% if user.is_authenticated and user.reviewer %}
-  {% for evaluation in user.get_evaluations %}
-    <div class="panel panel-default">
-      {% if request.user == evaluation.user %}
-      <div class="panel-heading">
-        <div class="panel-title">
-          {% with gene=evaluation.genepanelentrysnapshot_set.first %}
-            {% with panel=gene.panel.panel %}
-            <a href="{{ panel.get_absolute_url }}" class="link-inherit">{{ panel.name }}</a>,
-            <a href="{{ gene.get_absolute_url }}" class="link-inherit">{{ gene.gene.gene_symbol }}</a>
-            {% endwith %}
-          {% endwith %}
-        </div>
-      </div>
-      {% endif %}
-
-      {% include "panels/genepanelentrysnapshot/gene_evaluation.html" with ev=evaluation %}
-    </div>
+  {% for evaluation in user.get_recent_evaluations %}
+    {% if request.user == evaluation.user %}
+      {% with gene=evaluation.genepanelentrysnapshot_set.first %}
+        {% with panel=gene.panel %}
+          <div class="panel panel-default">
+            <div class="panel-heading">
+              <div class="panel-title">
+                  <a href="{{ panel.panel.get_absolute_url }}" class="link-inherit">{{ panel.panel.name }}</a>,
+                  <a href="{{ gene.get_absolute_url }}" class="link-inherit">{{ gene.gene.gene_symbol }}</a>
+                </div>
+              </div>
+            {% include "panels/genepanelentrysnapshot/gene_evaluation.html" with ev=evaluation panel=panel %}
+          </div>
+        {% endwith %}
+      {% endwith %}
+    {% endif %}
   {% endfor %}
 {% endif %}
