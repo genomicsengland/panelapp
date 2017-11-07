@@ -585,6 +585,9 @@ class GenePanelSnapshot(TimeStampedModel):
                 evaluation.comments.add(comment)
             gene.evaluation.add(evaluation)
         self.clear_cache()
+
+        self.add_activity(user, gene_symbol, "Added gene to panel")
+
         gene.evidence_status(update=True)
         self.update_saved_stats()
         return gene
@@ -732,7 +735,7 @@ class GenePanelSnapshot(TimeStampedModel):
                     TrackRecord.ISSUE_TYPES.SetPenetrance,
                     description
                 ))
-            
+
             publications = gene_data.get('publications')
             if publications and gene.publications != publications:
                 gene.publications = publications
@@ -871,7 +874,7 @@ class GenePanelSnapshot(TimeStampedModel):
                             'comment_id': comment.pk,
                             'evaluation_id': evaluation.pk
                         }))
-                
+
                 Evaluation.comments.through.objects.bulk_create(evaluation_comments)
 
                 TrackRecord.objects.bulk_create(tracks)

@@ -1,6 +1,7 @@
 import csv
 from datetime import datetime
 from django.contrib import messages
+from django.http import Http404
 from django.views.generic import TemplateView
 from django.views.generic.base import View
 from django.views.generic import FormView
@@ -346,10 +347,13 @@ class GenePanelSpanshotView(DetailView):
     context_object_name = 'gene'
 
     def get_object(self):
-        if self.request.GET.get('pk'):
-            return self.panel.get_gene_by_pk(self.request.GET.get('pk'), prefetch_extra=True)
-        else:
-            return self.panel.get_gene(self.kwargs['gene_symbol'], prefetch_extra=True)
+        try:
+            if self.request.GET.get('pk'):
+                return self.panel.get_gene_by_pk(self.request.GET.get('pk'), prefetch_extra=True)
+            else:
+                return self.panel.get_gene(self.kwargs['gene_symbol'], prefetch_extra=True)
+        except GenePanelEntrySnapshot.DoesNotExist:
+            raise Http404
 
     def get_context_data(self, *args, **kwargs):
         ctx = super().get_context_data(*args, **kwargs)
