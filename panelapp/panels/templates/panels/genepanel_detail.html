@@ -31,7 +31,7 @@
           {% if panel.old_panels and panel.old_panels.0 %}
               <br/>Relevant disorders: {{ panel.old_panels|join:", " }}
           {% endif %}
-          <br />Panel code: {% if panel.panel.old_pk %}{{ panel.panel.old_pk }}{% else %}{{ panel.panel.pk }}{% endif %}
+          <br />Previous code: {% if panel.panel.old_pk %}{{ panel.panel.old_pk }}{% else %}{{ panel.panel.pk }}{% endif %}
       </p>
   </div>
 

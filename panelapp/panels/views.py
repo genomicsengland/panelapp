@@ -804,11 +804,11 @@ class DownloadAllGenes(GELReviewerRequiredMixin, View):
                     entry.mode_of_pathogenicity,
                     ';'.join([tag.name for tag in entry.tags.all()]),
                     entry.gene.get('ensembl_genes', {}).get('GRch37', {}).get('82', {}).get('ensembl_id', '-'),
-                    entry.gene.get('ensembl_genes', {}).get('GRch38', {}).get('89', {}).get('ensembl_id', '-'),
+                    entry.gene.get('ensembl_genes', {}).get('GRch38', {}).get('90', {}).get('ensembl_id', '-'),
                     entry.gene.get('biotype', '-'),
                     phenotypes,
                     entry.gene.get('ensembl_genes', {}).get('GRch37', {}).get('82', {}).get('location', '-'),
-                    entry.gene.get('ensembl_genes', {}).get('GRch38', {}).get('89', {}).get('location', '-'),
+                    entry.gene.get('ensembl_genes', {}).get('GRch38', {}).get('90', {}).get('location', '-'),
                 ]
                 yield row
 
