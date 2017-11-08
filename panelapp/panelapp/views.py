@@ -1,10 +1,11 @@
+import logging
 from django.conf import settings
 from django.core.exceptions import PermissionDenied
 from django.views.generic import View
 from django.views.generic import ListView
 from django.http import JsonResponse
-from panels.utils import CellBaseConnector
 from .models import HomeText
+from .tasks import ping
 
 
 class Homepage(ListView):
@@ -16,22 +17,26 @@ class HealthCheckView(View):
         if not request.GET.get('health_token') or request.GET.get('health_token') != settings.HEALTH_CHECK_TOKEN:
             raise PermissionDenied
 
+        status = 200
         out = {
             'database': None,
-            'cellbase': None
+            'rabbitmq': None
         }
 
         try:
             HomeText.objects.first()
             out['database'] = "OK"
-        except:
+        except Exception as e:
+            logging.error(e)
             out['database'] = "Error"
+            status = 500
 
         try:
-            cb = CellBaseConnector()
-            cb.get_coding_transcripts_by_length(["BTK"])
-            out['cellbase'] = "OK"
+            ping.delay()
+            out['rabbitmq'] = "OK"
         except Exception as e:
-            out['cellbase'] = "Error"
+            logging.error(e)
+            out['rabbitmq'] = "Error"
+            status = 500
 
-        return JsonResponse(out)
+        return JsonResponse(out, status=status)

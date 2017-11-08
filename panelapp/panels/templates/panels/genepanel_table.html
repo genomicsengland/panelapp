@@ -71,9 +71,25 @@
     <span class="rm">{{ entry|gene_list_name }}</span>
     {% if request.user.is_authenticated and request.user.reviewer.is_GEL %}
       <div class="add-top-margin">
-        <a href="#lock_{{ entry.gene.gene_symbol }}" class="hidden lock_{{ entry.gene.gene_symbol }}" data-module="showhide" data-show="a.btn.unlock_{{ entry.gene.gene_symbol }}" data-hide="a.lock_{{ entry.gene.gene_symbol }}, a.btn.delete_gene_{{ entry.gene.gene_symbol }}, a.btn.delete_source_{{ entry.gene.gene_symbol }}"> <i class="fa fa-lock fa-lg"></i></a>
-        <a href="#unlock_{{ entry.gene.gene_symbol }}" class="unlock_{{ entry.gene.gene_symbol }}" data-module="showhide" data-show="a.btn.lock_{{ entry.gene.gene_symbol }}, a.delete_gene_{{ entry.gene.gene_symbol }}, a.delete_source_{{ entry.gene.gene_symbol }}" data-hide="a.btn.unlock_{{ entry.gene.gene_symbol }}" onClick="alert('{{ 'Gene '|add:entry.gene.gene_symbol|add:' is now unlocked, and you can delete it.' }}')"> <i class="fa fa-unlock fa-lg"></i></a>
-        <a href="{% url 'panels:delete_gene' panel.panel_id entry.gene.gene_symbol %}" class="hidden delete_gene_{{ entry.gene.gene_symbol }}" data-ajax="true" data-success="djangoAjaxHandler"> <i class="fa fa-trash fa-lg"></i></a>
+        <a
+            href="#lock_{{ entry.gene.gene_symbol|remove_special }}"
+            class="hidden lock_{{ entry.gene.gene_symbol|remove_special }}"
+            data-module="showhide"
+            data-show="a.btn.unlock_{{ entry.gene.gene_symbol|remove_special }}"
+            data-hide="a.lock_{{ entry.gene.gene_symbol|remove_special }}, a.btn.delete_gene_{{ entry.gene.gene_symbol|remove_special }}, a.btn.delete_source_{{ entry.gene.gene_symbol|remove_special }}"
+        >
+                <i class="fa fa-lock fa-lg"></i>
+        </a>
+        <a
+            href="#unlock_{{ entry.gene.gene_symbol|remove_special }}"
+            class="unlock_{{ entry.gene.gene_symbol|remove_special }}"
+            data-module="showhide"
+            data-show="a.btn.lock_{{ entry.gene.gene_symbol|remove_special }}, a.delete_gene_{{ entry.gene.gene_symbol|remove_special }}, a.delete_source_{{ entry.gene.gene_symbol|remove_special }}"
+            data-hide="a.btn.unlock_{{ entry.gene.gene_symbol|remove_special }}" onClick="alert('{{ 'Gene '|add:entry.gene.gene_symbol|add:' is now unlocked, and you can delete it.' }}')"
+        >
+            <i class="fa fa-unlock fa-lg"></i>
+        </a>
+        <a href="{% url 'panels:delete_gene' panel.panel_id entry.gene.gene_symbol %}" class="hidden delete_gene_{{ entry.gene.gene_symbol|remove_special }}" data-ajax="true" data-success="djangoAjaxHandler"> <i class="fa fa-trash fa-lg"></i></a>
         {% if entry.flagged %}
         <a href="{% url 'panels:approve_gene' panel.panel_id entry.gene.gene_symbol %}" data-ajax="true" data-success="djangoAjaxHandler"> <i class="fa fa-plus fa-lg"></i></a>
         {% endif %}

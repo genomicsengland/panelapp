@@ -1,3 +1,4 @@
+import logging
 from django.core.mail import send_mail
 from django.core.mail import send_mass_mail
 from django.conf import settings
@@ -15,3 +16,9 @@ def send_email(email, subject, text, html=None):
 @app.task
 def send_mass_email(messages):
     send_mass_mail(messages, fail_silently=False)
+
+
+@app.task
+def ping():
+    logging.info('Pong')
+    return
