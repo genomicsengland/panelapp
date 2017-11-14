@@ -795,7 +795,7 @@ class DownloadAllGenes(GELReviewerRequiredMixin, View):
                 row = [
                     entry.gene.get('gene_symbol'),
                     entry.panel.panel.pk,
-                    entry.panel.panel.name,
+                    entry.panel.level4title.name,
                     entry.panel.version,
                     str(entry.panel.panel.approved).upper(),
                     colour,
