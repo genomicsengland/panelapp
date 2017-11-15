@@ -163,6 +163,32 @@ class Command(BaseCommand):
 
                     temp_gp_list = []
 
+        # import the remaining panels if any
+        if len(temp_gp_list) > 0:
+            with transaction.atomic():
+                for gp in temp_gp_list:
+                    _gp = self.gene_panels.get(gp['pk'])
+                    if not _gp:
+                        _gp = self.deleted_panels.get(gp['pk'])
+                        if not _gp:
+                            _gp = self.create_gene_panel(gp, deleted=True)
+                            self.deleted_panels[gp['pk']] = _gp
+
+                    start = time.time()
+                    added += 1
+                    if added % 100 == 0:
+                        print('total backup panels created: {} out of {}'.format(added, total))
+
+                    gps = self.create_gene_panel_snapshot(gp, _gp)
+
+                    for gpe in gp['panellist']:
+                        gpe['ready'] = False
+                        self.create_gene_panel_entry_snapshot(gpe, gps)
+                    end = time.time()
+                    print('{:0.2f}\t{}\t{}\t{}'.format(end - start, gp['pk'], gps.version, gp['panel_name']))
+
+                temp_gp_list = []
+
         self.stdout.write('Created {} backup panels, total panels: {}'.format(added, total))
 
     def create_gene_panel_entry_snapshot(self, gpe, panel):
