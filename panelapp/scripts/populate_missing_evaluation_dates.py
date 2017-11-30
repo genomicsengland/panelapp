@@ -22,7 +22,6 @@ import os
 import sys
 import csv
 import django
-from beeprint import pp
 
 sys.path.append(os.path.abspath(os.path.curdir))
 django.setup()
