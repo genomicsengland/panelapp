@@ -206,6 +206,7 @@ class UploadedGeneList(TimeStampedModel):
 class UploadedPanelList(TimeStampedModel):
     imported = models.BooleanField(default=False)
     panel_list = models.FileField(upload_to='panels', max_length=255)
+    import_log = models.TextField(default='')
 
     def process_line(self, key, aline, user, active_panel=None, increment_version=False):
         gene_symbol = re.sub("[^0-9a-zA-Z~#_@-]", '', aline[0])
@@ -260,7 +261,7 @@ class UploadedPanelList(TimeStampedModel):
                 'omim': omim
             }
 
-            if not active_panel.has_gene(gene_symbol):
+            if gene_symbol not in active_panel.current_genes:
                 try:
                     Gene.objects.get(gene_symbol=gene_symbol, active=True)
                 except Gene.DoesNotExist:
@@ -288,7 +289,11 @@ class UploadedPanelList(TimeStampedModel):
                 active_panel = None
                 lines = [line for line in reader]
 
-                if not background and len(lines) > 200:  # panel is too big, process in the background
+                # check the number of genes in a panel
+                gp = GenePanel.objects.filter(name=lines[0][2].strip(" ")).first()
+                number_of_genes = gp.active_panel.number_of_genes if gp else 0
+
+                if not background and (len(lines) > 200 or number_of_genes > 200):  # panel is too big, process in the background
                     import_panel.delay(user.pk, self.pk)
                     return ProcessingRunCode.PROCESS_BACKGROUND
 
@@ -325,6 +330,7 @@ class UploadedReviewsList(TimeStampedModel):
 
     imported = models.BooleanField(default=False)
     reviews = models.FileField(upload_to='reviews', max_length=255)
+    import_log = models.TextField(default='')
 
     panels = {}
     database_users = {}
