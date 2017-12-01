@@ -853,6 +853,11 @@ class DownloadAllPanels(GELReviewerRequiredMixin, View):
         for panel in panels:
             rate = "{} of {} genes reviewed".format(panel.number_of_evaluated_genes, panel.number_of_genes)
             reviewers = panel.contributors
+            contributors = [
+                "{} {} ({})".format(user[0], user[1], user[3]) if user[0] else user[4]
+                for user in reviewers
+                if user[4]
+            ]
 
             yield (
                 panel.level4title.name,
@@ -862,7 +867,7 @@ class DownloadAllPanels(GELReviewerRequiredMixin, View):
                 panel.version,
                 rate,
                 len(reviewers),
-                ";".join(["{} {} ({})".format(user[0], user[1], user[3]) for user in reviewers]),  # aff
+                ";".join(contributors),  # aff
                 ";".join([user[2] for user in reviewers if user[2]]),  # email
                 panel.panel.approved,
                 ";".join(panel.old_panels)

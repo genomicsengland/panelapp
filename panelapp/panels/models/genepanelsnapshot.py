@@ -347,7 +347,8 @@ class GenePanelSnapshot(TimeStampedModel):
                 'evaluation__user__first_name',
                 'evaluation__user__last_name',
                 'evaluation__user__email',
-                'evaluation__user__reviewer__affiliation'
+                'evaluation__user__reviewer__affiliation',
+                'evaluation__user__username'
             ).order_by('evaluation__user')
 
     def mark_genes_not_ready(self):
