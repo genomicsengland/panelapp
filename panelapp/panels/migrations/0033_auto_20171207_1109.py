@@ -26,7 +26,7 @@ def separate_statuses(apps, schema_editor):
             gp.deleted = True
         if gp.status == 'promoted':
             gp.promoted = True
-        if gp.status == 'approved':
+        if gp.status == 'public' or gp.status == 'promoted':
             gp.approved = True
 
         gp.save()
