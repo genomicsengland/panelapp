@@ -3,6 +3,7 @@ from rest_framework.exceptions import APIException
 
 from .utils import make_null
 from .utils import convert_moi
+from .utils import filter_empty
 from .utils import convert_gel_status
 
 
@@ -131,7 +132,7 @@ class ListPanelSerializer(serializers.BaseSerializer):
                 "CurrentVersion": panel.version,
                 "Number_of_Genes": panel.number_of_genes,
                 "Panel_Id": panel.panel.old_pk if panel.panel.old_pk else str(panel.panel.pk),
-                "Relevant_disorders": panel.old_panels
+                "Relevant_disorders": filter(filter_empty, panel.old_panels)
             })
         return result
 
