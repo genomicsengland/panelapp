@@ -25,18 +25,20 @@ Alternatively we can use a [django-bitfield](https://pypi.org/project/django-bit
 
 # Changes required for the either solution
 
-0. Tests - change tests so they fail before we start the work
-1. Change `GenePanel` model
-2. Change admin panel so GeL curators and other admin users can change the status
-3. Change the frontend, so some statuses (i.e. approved / not approved) can be updated from the list of panels
-4. Change list of panels so we can filter correctly
-5. Change list of panels in webservices
-6. Change get panel in webservices
-7. Change get panel in frontend to use correct statuses
-8. Make sure it's possible to change status from admin panel
-9. Add status to JSON responses (both list and get)
-10. Add status to the page if it's not published, or if user is GeL curator
-11. Add these filters to the `GenePanelManager` and `GenePanelSnapshotManager`
-12. Add the status to TSV downalod file (panel)
-13. Make sure we don't add activity for non-active panels (?)
-14. Migrate the data to use the new field
+0. [/] Tests - change tests so they fail before we start the work
+1. [x] Change `GenePanel` model
+2. [x] Change admin panel so GeL curators and other admin users can change the status
+3. [x] Change the frontend, so some statuses (i.e. approved / not approved) can be updated from the list of panels
+4. [x] Change list of panels so we can filter correctly
+5. [x] Change list of panels in webservices
+6. [x] Change get panel in webservices
+7. [x] Change get panel in frontend to use correct statuses
+8. [x] Duplicate. Make sure it's possible to change status from admin panel
+9. [x] Add status to JSON responses (both list and get)
+10. [ ] Add status to the page if it's not published, or if user is GeL curator
+11. [x] Add these filters to the `GenePanelManager` and `GenePanelSnapshotManager`
+12. [x] Add the status to TSV downalod file (panel)
+13. [x] Make sure we don't add activity for non-active panels (?)
+14. [x] Migrate the data to use the new field
+15. [x] Change all the queries to use new status field
+16. [x] Change admin views

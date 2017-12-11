@@ -56,11 +56,14 @@ class PanelsIndexView(ListView):
     objects = []
 
     def get_queryset(self, *args, **kwargs):
-        if self.request.GET.get('gene'):
-            self.objects = GenePanelSnapshot.objects.get_gene_panels(self.request.GET.get('gene'))
+        if self.request.user.is_authenticated and self.request.user.reviewer.is_GEL():
+            if self.request.GET.get('gene'):
+                self.objects = GenePanelSnapshot.objects.get_gene_panels(self.request.GET.get('gene'), all=True, internal=True)
+            else:
+                self.objects = GenePanelSnapshot.objects.get_active_anotated(all=True, internal=True)
         else:
-            if self.request.user.is_authenticated and self.request.user.reviewer.is_GEL():
-                self.objects = GenePanelSnapshot.objects.get_active_anotated(all=True)
+            if self.request.GET.get('gene'):
+                self.objects = GenePanelSnapshot.objects.get_gene_panels(self.request.GET.get('gene'))
             else:
                 self.objects = GenePanelSnapshot.objects.get_active_anotated()
         return self.panels
@@ -113,7 +116,10 @@ class GenePanelView(DetailView):
     def get_context_data(self, *args, **kwargs):
         ctx = super().get_context_data(*args, **kwargs)
         ctx['panel'] = self.object.active_panel
-        ctx['edit'] = PanelForm(initial=ctx['panel'].get_form_initial())
+        ctx['edit'] = PanelForm(
+            initial=ctx['panel'].get_form_initial(),
+            instance=ctx['panel']
+        )
         ctx['contributors'] = User.objects.panel_contributors(ctx['panel'].pk)
         ctx['promote_panel_form'] = PromotePanelForm(
             instance=ctx['panel'],
@@ -205,11 +211,11 @@ class GeneDetailView(DetailView):
 
         entries = GenePanelEntrySnapshot.objects.get_gene_panels(self.kwargs['slug'], pks=gps)
         if not self.request.user.is_authenticated or not self.request.user.reviewer.is_GEL():
-            entries = entries.filter(panel__panel__approved=True)
+            entries = entries.filter(panel__panel__status=GenePanel.STATUS.public)
 
         if tag_filter:
             entries = entries.filter(tag__name=tag_filter)
-        
+
         ctx['entries'] = entries
         return ctx
 
@@ -223,7 +229,8 @@ class GeneListView(ListView):
         if self.request.user.is_authenticated and self.request.user.reviewer.is_GEL():
             panel_ids = GenePanelSnapshot.objects.get_latest_ids().values('pk')
         else:
-            panel_ids = GenePanelSnapshot.objects.get_latest_ids().filter(panel__approved=True).values('pk')
+            panel_ids = GenePanelSnapshot.objects.get_latest_ids()\
+                .filter(panel__status=GenePanel.STATUS.public).values('pk')
 
         qs = GenePanelEntrySnapshot.objects.filter(
             gene_core__active=True,
@@ -762,7 +769,7 @@ class DownloadAllGenes(GELReviewerRequiredMixin, View):
             "Panel Id",
             "Panel Name",
             "Panel Version",
-            "Approved",
+            "Panel Status",
             "List",
             "Sources",
             "Mode of inheritance",
@@ -776,7 +783,7 @@ class DownloadAllGenes(GELReviewerRequiredMixin, View):
             "GeneLocation((GRch38)"
         )
 
-        for gps in GenePanelSnapshot.objects.get_active(True):
+        for gps in GenePanelSnapshot.objects.get_active(all=True, internal=True):
             for entry in gps.get_all_entries_extra:
                 if entry.flagged:
                     colour = "grey"
@@ -797,7 +804,7 @@ class DownloadAllGenes(GELReviewerRequiredMixin, View):
                     entry.panel.panel.pk,
                     entry.panel.level4title.name,
                     entry.panel.version,
-                    str(entry.panel.panel.approved).upper(),
+                    str(entry.panel.panel.status).upper(),
                     colour,
                     ';'.join([evidence.name for evidence in entry.evidence.all()]),
                     entry.moi,
@@ -836,12 +843,12 @@ class DownloadAllPanels(GELReviewerRequiredMixin, View):
             "#reviewers",
             "Reviewer name and affiliation (;)",
             "Reviewer emails (;)",
-            "Approved",
+            "Status",
             "Relevant disorders"
         )
 
         panels = GenePanelSnapshot.objects\
-            .get_active_anotated(True)\
+            .get_active_anotated(all=True, internal=True)\
             .prefetch_related(
                 'genepanelentrysnapshot_set',
                 'genepanelentrysnapshot_set__evaluation',
@@ -869,7 +876,7 @@ class DownloadAllPanels(GELReviewerRequiredMixin, View):
                 len(reviewers),
                 ";".join(contributors),  # aff
                 ";".join([user[2] for user in reviewers if user[2]]),  # email
-                panel.panel.approved,
+                panel.panel.status.upper(),
                 ";".join(panel.old_panels)
             )
 
@@ -890,13 +897,11 @@ class ActivityListView(ListView):
     context_object_name = 'activities'
     paginate_by = 3000
 
-    def get_queryset(self, *args, **kwargs):
-        qs = super().get_queryset(*args, **kwargs).exclude(
-            panel__deleted=True
-        )
-
-        if not self.request.user.is_authenticated:
-            qs = qs.exclude(panel__approved=False)
+    def get_queryset(self):
+        if self.request.user.is_authenticated and self.request.user.reviewer.is_GEL():
+            qs = self.model.objects.visible_to_gel()
+        else:
+            qs = self.model.objects.visible_to_public()
 
         qs = qs.prefetch_related('user', 'panel', 'user__reviewer')
         return qs

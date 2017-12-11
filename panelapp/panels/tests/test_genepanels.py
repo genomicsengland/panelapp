@@ -30,7 +30,8 @@ class GenePanelTest(LoginGELUser):
             'omim': fake.sentences(nb=3),
             'orphanet': fake.sentences(nb=3),
             'hpo': fake.sentences(nb=3),
-            'old_panels': fake.sentences(nb=3)
+            'old_panels': fake.sentences(nb=3),
+            'status': GenePanel.STATUS.internal
         }
 
     def test_create_unauthorised(self):
@@ -76,6 +77,13 @@ class GenePanelTest(LoginGELUser):
 
         assert r.status_code == 200
 
+    def test_panel_check_internal_status_visible(self):
+        gps = GenePanelSnapshotFactory()
+        c = Client()
+        r = c.get(reverse_lazy('panels:detail', kwargs={'pk': gps.panel.pk}))
+
+        assert r.content.find(b'This Panel is marked as Internal') != -1
+
     def test_update_panel(self):
         gps = GenePanelSnapshotFactory()
         url = reverse_lazy('panels:update', kwargs={'pk': gps.panel.pk})
@@ -86,6 +94,16 @@ class GenePanelTest(LoginGELUser):
         assert gp.active_panel.major_version == 0
         assert gp.active_panel.minor_version == 1
         assert gp.name == data['level4']
+
+    def test_update_status(self):
+        gps = GenePanelSnapshotFactory()
+        url = reverse_lazy('panels:update', kwargs={'pk': gps.panel.pk})
+        data = self.create_panel_data()
+        data['status'] = GenePanel.STATUS.public
+        self.client.post(url, data)
+
+        gp = GenePanel.objects.get(pk=gps.panel.pk)
+        assert gp.status == data['status']
 
     def test_update_panel_many_to_many(self):
         gpes = GenePanelEntrySnapshotFactory()
@@ -162,8 +180,8 @@ class GenePanelTest(LoginGELUser):
         Make sure GenePanel.active_panel returns correct panel
         """
 
-        gps = GenePanelSnapshotFactory()
-        gps2 = GenePanelSnapshotFactory()
+        gps = GenePanelSnapshotFactory(panel__status=GenePanel.STATUS.public)
+        gps2 = GenePanelSnapshotFactory(panel__status=GenePanel.STATUS.public)
         gps.increment_version()
         gps.increment_version()
         gps.increment_version()
@@ -185,11 +203,11 @@ class GenePanelTest(LoginGELUser):
     def prepare_compare(self):
         gene = GeneFactory()
 
-        gps = GenePanelSnapshotFactory(panel__approved=True)
+        gps = GenePanelSnapshotFactory(panel__status=GenePanel.STATUS.public)
         GenePanelEntrySnapshotFactory.create_batch(2, panel=gps)  # random genes
         GenePanelEntrySnapshotFactory.create(gene_core=gene, panel=gps)
 
-        gps2 = GenePanelSnapshotFactory()
+        gps2 = GenePanelSnapshotFactory(panel__status=GenePanel.STATUS.public)
         GenePanelEntrySnapshotFactory.create_batch(2, panel=gps2)  # random genes
         GenePanelEntrySnapshotFactory.create(gene_core=gene, panel=gps2)
 

@@ -16,6 +16,7 @@ from .trackrecord import TrackRecord
 from .comment import Comment
 from .tag import Tag
 from .genepanelsnapshot import GenePanelSnapshot
+from .genepanel import GenePanel
 from panels.templatetags.panel_helpers import get_gene_list_data
 from panels.templatetags.panel_helpers import GeneDataType
 
@@ -28,7 +29,7 @@ class GenePanelEntrySnapshotManager(models.Manager):
 
         qs = super().get_queryset()
         if not deleted:
-            qs = qs.exclude(panel__panel__deleted=True)
+            qs = qs.exclude(panel__panel__status=GenePanel.STATUS.deleted)
 
         return qs.distinct('panel__panel__pk')\
             .values_list('panel__pk', flat=True)\

@@ -1,4 +1,7 @@
 {% load panel_helpers %}
+{% if not gene.panel.panel.is_public %}
+<div class="alert alert-danger" role="alert">This Panel is marked as {{ gene.panel.panel.status|title }}</div>
+{% endif %}
 <h1 class="remove-top-margin">
     <p class="text-muted normal add-label-margin" style="font-size: 18px">{{ panel.panel.name }}</p>
     {{ gene.gene.gene_symbol }}
