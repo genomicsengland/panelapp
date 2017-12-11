@@ -55,6 +55,9 @@ def import_panel(user_pk, upload_pk):
     except Exception as e:
         print(e)
         message = "Unhandled error occured, please forward it to the dev team:\n\n{}".format(e)
+    
+    panel_list.import_log = message
+    panel_list.save()
 
     send_email.delay(
         user.email,
@@ -95,6 +98,9 @@ def import_reviews(user_pk, review_pk):
     except Exception as e:
         print(e)
         message = "There was an error importing reviews"
+
+    panel_list.import_log = message
+    panel_list.save()
 
     send_email.delay(
         user.email,
