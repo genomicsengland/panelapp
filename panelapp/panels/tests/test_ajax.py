@@ -129,15 +129,15 @@ class AjaxGenePanelEntryTest(LoginGELUser):
         assert res.content.find(str.encode(self.gpes2.panel.panel.name))
 
     def test_approve_panel(self):
-        self.gpes.panel.panel.approved = False
+        self.gpes.panel.panel.status = GenePanel.STATUS.internal
         self.gpes.panel.panel.save()
 
         self.helper_panel('approve_panel')
-        assert GenePanel.objects.get(pk=self.gpes.panel.panel.pk).approved is True
+        assert GenePanel.objects.get(pk=self.gpes.panel.panel.pk).status == GenePanel.STATUS.public
 
     def test_reject_panel(self):
-        self.gpes.panel.panel.approved = True
+        self.gpes.panel.panel.status = GenePanel.STATUS.public
         self.gpes.panel.panel.save()
 
         self.helper_panel('reject_panel')
-        assert GenePanel.objects.get(pk=self.gpes.panel.panel.pk).approved is False
+        assert GenePanel.objects.get(pk=self.gpes.panel.panel.pk).status == GenePanel.STATUS.internal

@@ -29,26 +29,24 @@
     </thead>
     <tbody>
       {% for activity in activities %}
-        {% if request.user.is_authenticated and request.user.reviewer.is_GEL or activity.panel and activity.panel.approved %}
-          <tr>
-            <td>
-              <time title="{{activity.created}}" datetime={{activity.created|date:'c'}}>{{ activity.created|date:"d M Y" }}</time>
-            </td>
-            <td>
-              {% if activity.panel %}
-                <a href="{{ activity.panel.get_absolute_url }}">{{ activity.panel.name }}</a>
-              {% endif %}
-            </td>
-            <td>
-              {% if activity.gene_symbol %}
-                <a href="{% url 'panels:evaluation' activity.panel.pk activity.gene_symbol %}">{{ activity.gene_symbol }}</a>
-              {% endif %}
-            </td>
-            <td>
-              {{ activity.user.get_full_name }} {{ activity.text }}
-            </td>
-          </tr>
-        {% endif %}
+        <tr>
+          <td>
+            <time title="{{activity.created}}" datetime={{activity.created|date:'c'}}>{{ activity.created|date:"d M Y" }}</time>
+          </td>
+          <td>
+            {% if activity.panel %}
+              <a href="{{ activity.panel.get_absolute_url }}">{{ activity.panel.name }}</a>
+            {% endif %}
+          </td>
+          <td>
+            {% if activity.gene_symbol %}
+              <a href="{% url 'panels:evaluation' activity.panel.pk activity.gene_symbol %}">{{ activity.gene_symbol }}</a>
+            {% endif %}
+          </td>
+          <td>
+            {{ activity.user.get_full_name }} {{ activity.text }}
+          </td>
+        </tr>
       {% endfor %}
     </tbody>
   </table>

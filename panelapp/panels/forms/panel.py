@@ -13,6 +13,7 @@ class PanelForm(forms.ModelForm):
     omim = forms.CharField(required=False)
     orphanet = forms.CharField(required=False)
     hpo = forms.CharField(required=False)
+    status = forms.ChoiceField(required=True, choices=GenePanel.STATUS, initial=GenePanel.STATUS.internal)
 
     class Meta:
         model = GenePanelSnapshot
@@ -32,10 +33,14 @@ class PanelForm(forms.ModelForm):
         self.fields['orphanet'] = original_fields.get('orphanet')
         self.fields['hpo'] = original_fields.get('hpo')
         self.fields['old_panels'] = original_fields.get('old_panels')
+        self.fields['status'] = original_fields.get('status')
+
+        if self.instance.pk:
+            self.fields['status'].initial = self.instance.panel.status
 
     def clean_level4(self):
         if not self.instance.pk or self.cleaned_data['level4'] != self.instance.level4title.name:
-            if GenePanelSnapshot.objects.get_active(True).exclude(panel__deleted=True).filter(
+            if GenePanelSnapshot.objects.get_active(True).exclude(panel__status=GenePanel.STATUS.deleted).filter(
                     level4title__name=self.cleaned_data['level4']).exists():
                 raise forms.ValidationError('Panel with this name already exists')
 
@@ -75,13 +80,21 @@ class PanelForm(forms.ModelForm):
             if 'old_panels' in self.changed_data:
                 data_changed = True
                 self.instance.old_panels = self.cleaned_data['old_panels']
+            
+            if 'status' in self.changed_data:
+                self.instance.panel.status = self.cleaned_data['status']
 
             if data_changed:
                 self.instance.increment_version()
                 self.instance.panel.save()
+            else:
+                self.instance.panel.save()
 
         else:
-            panel = GenePanel.objects.create(name=self.cleaned_data['level4'].strip())
+            panel = GenePanel.objects.create(
+                name=self.cleaned_data['level4'].strip(),
+                status=self.cleaned_data['status']
+            )
             new_level4.save()
 
             self.instance.panel = panel

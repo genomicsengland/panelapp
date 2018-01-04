@@ -34,7 +34,7 @@ def update_gene_collection(results):
         to_update_gene_symbol = results['update_symbol']
         to_delete = results['delete']
 
-        for p in GenePanelSnapshot.objects.get_active(all=True):
+        for p in GenePanelSnapshot.objects.get_active(all=True, internal=True):
             p = p.increment_version()
 
         for record in to_insert:

@@ -17,6 +17,10 @@
       </li>
   </ol>
 
+  {% if not panel.panel.is_public %}
+  <div class="alert alert-danger" role="alert">This Panel is marked as {{ panel.panel.status|title }}</div>
+  {% endif %}
+
   <div id="banner">
       <h1>
           {% block title %}{{ panel.level4title.name }} (Version {{ panel.major_version}}.{{ panel.minor_version}}){% endblock %}
