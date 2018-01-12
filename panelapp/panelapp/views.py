@@ -40,3 +40,8 @@ class HealthCheckView(View):
             status = 500
 
         return JsonResponse(out, status=status)
+
+
+class VersionView(View):
+    def get(self, request, *args, **kwargs):
+        return JsonResponse({'version': settings.PACKAGE_VERSION})
