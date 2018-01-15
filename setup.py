@@ -6,9 +6,12 @@ from setuptools import find_packages, setup
 # allow setup.py to be run from any path
 os.chdir(os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir)))
 
+from panelapp.panelapp import get_package_version
+
+
 setup(
     name='panelapp',
-    version='2.1.0',
+    version=get_package_version(),
     author='Antonio Rueda-Martin,Oleg Gerasimenko',
     author_email='antonio.rueda-martin@genomicsengland.co.uk,oleg.gerasimenko@genomicsengland.co.uk',
     url='https://github.com/genomicsengland/PanelApp2',
