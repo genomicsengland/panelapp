@@ -92,7 +92,7 @@ class TrackRecordAdmin(admin.ModelAdmin):
 
 
 class GenePanelAdmin(admin.ModelAdmin):
-    list_display = ('created', 'name', 'approved')
+    list_display = ('created', 'name', 'status')
     search_fields = (
         'created',
         'name',

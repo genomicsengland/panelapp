@@ -151,7 +151,7 @@ def list_panels(request):
     if "Retired" in request.GET and request.GET['Retired'] == 'True':
         queryset = GenePanelSnapshot.objects.get_active_anotated(all=True, deleted=True).filter(**filters)
     else:
-        queryset = GenePanelSnapshot.objects.get_active_anotated().filter(**filters)
+        queryset = GenePanelSnapshot.objects.get_active_anotated(all=True).filter(**filters)
 
     serializer = ListPanelSerializer(instance=queryset,)
     return Response(serializer.data)
@@ -189,13 +189,13 @@ def search_by_gene(request, gene):
         panel_names = None
 
     if panel_names:
-        all_panels = GenePanelSnapshot.objects.get_active(deleted=True).filter(panel__name__in=panel_names, panel__approved=True)
+        all_panels = GenePanelSnapshot.objects.get_active().filter(panel__name__in=panel_names)
     else:
-        all_panels = GenePanelSnapshot.objects.get_active(deleted=True).filter(panel__approved=True)
+        all_panels = GenePanelSnapshot.objects.get_active()
 
     panels_ids_dict = {panel.panel.pk: (panel.panel.pk, panel) for panel in all_panels}
     filters.update({'panel__panel__pk__in': list(panels_ids_dict.keys())})
-    active_genes = GenePanelEntrySnapshot.objects.get_active(deleted=True)
+    active_genes = GenePanelEntrySnapshot.objects.get_active()
     genes = active_genes.filter(**filters)
 
     if genes_qs:
