@@ -6,6 +6,7 @@ from django.db.models import Value
 from django.contrib.postgres.aggregates import ArrayAgg
 from django.urls import reverse
 from django.utils.functional import cached_property
+from model_utils import Choices
 from model_utils.models import TimeStampedModel
 
 
@@ -21,11 +22,17 @@ class GenePanelManager(models.Manager):
 
 
 class GenePanel(TimeStampedModel):
+    STATUS = Choices(
+        'promoted',
+        'public',
+        'hidden',
+        'internal',
+        'deleted'
+    )
+
     old_pk = models.CharField(max_length=24, null=True, blank=True, db_index=True)  # Mongo ObjectID hex string
     name = models.CharField(max_length=255, db_index=True)
-    approved = models.BooleanField(default=False, db_index=True)
-    promoted = models.BooleanField(default=False)
-    deleted = models.BooleanField(default=False, db_index=True)
+    status = models.CharField(choices=STATUS, default=STATUS.internal, max_length=36, db_index=True)
 
     objects = GenePanelManager()
 
@@ -34,11 +41,17 @@ class GenePanel(TimeStampedModel):
         return "{} version {}.{}".format(self.name, ap.major_version, ap.minor_version)
 
     def approve(self):
-        self.approved = True
+        self.status = GenePanel.STATUS.public
         self.save()
 
+    def is_approved(self):
+        return self.status == GenePanel.STATUS.public
+
+    def is_public(self):
+        return self.status in [GenePanel.STATUS.public, GenePanel.STATUS.promoted]
+
     def reject(self):
-        self.approved = False
+        self.status = GenePanel.STATUS.internal
         self.save()
 
     def get_absolute_url(self):

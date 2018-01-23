@@ -48,7 +48,6 @@
       </thead>
       <tbody id="panel_records">
       {% for entry in view_panels %}
-          {% if entry.panel.approved or request.user.is_authenticated and request.user.reviewer.is_GEL %}
           <tr
               data-reviewers = "{{ entry.number_of_reviewers }}"
               data-panel = "{{ entry.panel.name }}"
@@ -73,6 +72,9 @@
                           <br />Relevant disorders: {{ entry.old_panels|join:", " }}<br />
                       {% endif %}
                       Version {{ entry.major_version }}.{{ entry.minor_version }}
+                      {% if not entry.panel.is_public %}
+                      <br /><strong>{{ entry.panel.status|title }}</strong>
+                      {% endif %}
                   </p>
               </td>
               <td>
@@ -94,8 +96,8 @@
                     <i class="fa fa-download"></i>{% if not request.user.is_authenticated or request.user.is_authenticated and not request.user.reviewer.is_GEL %} Download {% endif %}
                   </a>
                   {% if request.user.is_authenticated and request.user.reviewer.is_GEL %}
-                      {% if entry.panel.approved %}
-                          <a type="url" data-ajax="true" data-success="djangoAjaxHandler" href="{% url 'panels:reject_panel' entry.panel.id %}" class="btn btn-default btn-sm {% if not entry.panel.approved %} disabled {% endif %}" title="Reject panel">
+                      {% if entry.panel.is_approved %}
+                          <a type="url" data-ajax="true" data-success="djangoAjaxHandler" href="{% url 'panels:reject_panel' entry.panel.id %}" class="btn btn-default btn-sm {% if not entry.panel.is_approved %} disabled {% endif %}" title="Reject panel">
                             <i class="fa fa-thumbs-down"></i> Reject
                           </a>
                       {% else %}
@@ -112,7 +114,6 @@
                   {% endif %}
               </td>
           </tr>
-          {% endif %}
       {% endfor %}
       </tbody>
   </table>

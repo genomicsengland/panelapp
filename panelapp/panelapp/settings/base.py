@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/1.11/ref/settings/
 """
 
 import os
+import panelapp
 import dj_database_url
 from django.contrib.messages import constants as message_constants
 
@@ -80,6 +81,8 @@ MIDDLEWARE = [
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
+    'django.middleware.common.CommonMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -210,3 +213,10 @@ CELL_BASE_CONNECTOR_REST = os.getenv(
     "http://bioinfo.hpc.cam.ac.uk/cellbase/webservices/rest/"
 )
 HEALTH_CHECK_TOKEN = os.getenv('HEALTH_CHECK_TOKEN', None)
+
+# CORS headers support
+CORS_ORIGIN_ALLOW_ALL = True
+CORS_URLS_REGEX = r'^/WebServices/.*$'
+CORS_ALLOW_METHODS = ('GET',)
+
+PACKAGE_VERSION = panelapp.__version__

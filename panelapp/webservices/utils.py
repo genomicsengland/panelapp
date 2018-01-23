@@ -96,3 +96,6 @@ def make_null(value):
         return None
     else:
         return value
+
+def filter_empty(value):
+    return bool(value)

@@ -6,6 +6,7 @@ from django.db.models import Count
 from django.db.models import Case
 from django.db.models import When
 from django.db.models import Subquery
+from django.db.models import Q
 from django.urls import reverse
 from django.utils import timezone
 from django.contrib.postgres.fields import ArrayField
@@ -26,38 +27,50 @@ from .comment import Comment
 
 class GenePanelSnapshotManager(models.Manager):
     def get_latest_ids(self, deleted=False):
-        "Get latest versions for GenePanelsSnapshots"
+        """Get latest versions for GenePanelsSnapshots"""
 
         qs = super().get_queryset()
         if not deleted:
-            qs = qs.exclude(panel__deleted=True)
+            qs = qs.exclude(panel__status=GenePanel.STATUS.deleted)
 
         return qs\
             .distinct('panel__pk')\
             .values('pk')\
             .order_by('panel__pk', '-major_version', '-minor_version')
 
-    def get_active(self, all=False, deleted=False):
-        "Get all active panels"
+    def get_active(self, all=False, deleted=False, internal=False):
+        """Get active panels
+
+        Parameters:
+            - all
+                Setting it to False will only return `public` panels
+            - deleted
+                Whether to include the deleted panels
+            - internal
+                If we want to include `internal` panels in the list
+        """
 
         qs = super().get_queryset()
 
         if not all:
-            qs = qs.filter(panel__approved=True)
+            qs = qs.filter(Q(panel__status=GenePanel.STATUS.public) | Q(panel__status=GenePanel.STATUS.promoted))
+
+        if not internal:
+            qs = qs.exclude(panel__status=GenePanel.STATUS.internal)
 
         return qs.filter(pk__in=Subquery(self.get_latest_ids(deleted)))\
             .prefetch_related('panel', 'level4title')\
             .order_by('panel__name', '-major_version', '-minor_version')
 
-    def get_active_anotated(self, all=False, deleted=False):
+    def get_active_anotated(self, all=False, deleted=False, internal=False):
         "This method adds additional values to the queryset, such as number_of_genes, etc and returns active panels"
 
-        return self.get_active(all, deleted)
+        return self.get_active(all, deleted, internal)
 
-    def get_gene_panels(self, gene_symbol):
+    def get_gene_panels(self, gene_symbol, all=False, internal=False):
         "Get all panels for a specific gene"
 
-        return self.get_active_anotated().filter(genepanelentrysnapshot__gene__gene_symbol=gene_symbol)
+        return self.get_active_anotated(all=all, internal=internal).filter(genepanelentrysnapshot__gene__gene_symbol=gene_symbol)
 
 
 class GenePanelSnapshot(TimeStampedModel):
@@ -347,7 +360,8 @@ class GenePanelSnapshot(TimeStampedModel):
                 'evaluation__user__first_name',
                 'evaluation__user__last_name',
                 'evaluation__user__email',
-                'evaluation__user__reviewer__affiliation'
+                'evaluation__user__reviewer__affiliation',
+                'evaluation__user__username'
             ).order_by('evaluation__user')
 
     def mark_genes_not_ready(self):
