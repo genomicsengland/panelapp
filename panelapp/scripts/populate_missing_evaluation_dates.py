@@ -23,7 +23,7 @@ import sys
 import csv
 import django
 
-sys.path.append(os.path.abspath(os.path.curdir))
+sys.path.insert(0, os.path.abspath(os.path.curdir))
 django.setup()
 from panels.models import GenePanelEntrySnapshot
 
@@ -102,7 +102,14 @@ with transaction.atomic():
             try:
                 gene = gps.get_gene(gene_symbol)
             except GenePanelEntrySnapshot.DoesNotExist:
-                gene = gps.get_gene(original_gene_symbol)
+                try:
+                    gene = gps.get_gene(original_gene_symbol)
+                except GenePanelEntrySnapshot.DoesNotExist:
+                    print('[E] P:{0} G:{1: <12} or G:{1: <12} Does not exist'.format(
+                        old_pk,
+                        original_gene_symbol
+                    ))
+                    continue
 
             missing_gene = missing_panel_data[original_gene_symbol]
             for evaluation in gene.evaluation.all().prefetch_related('user'):
