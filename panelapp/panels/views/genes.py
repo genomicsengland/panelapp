@@ -2,16 +2,13 @@ import csv
 from datetime import datetime
 from django.contrib import messages
 from django.http import Http404
-from django.views.generic import TemplateView
 from django.views.generic.base import View
 from django.views.generic import FormView
 from django.views.generic import ListView
 from django.views.generic import UpdateView
 from django.views.generic import DetailView
 from django.views.generic import CreateView
-from django.core.exceptions import ValidationError
 from django.shortcuts import redirect
-from django.urls import reverse
 from django.urls import reverse_lazy
 from django.utils.functional import cached_property
 from django.template.defaultfilters import pluralize
@@ -20,168 +17,25 @@ from django.http import StreamingHttpResponse
 
 from panelapp.mixins import GELReviewerRequiredMixin
 from panelapp.mixins import VerifiedReviewerRequiredMixin
-from accounts.models import User
-from .forms import UploadGenesForm
-from .forms import UploadPanelsForm
-from .forms import UploadReviewsForm
-from .forms import PanelForm
-from .forms import PromotePanelForm
-from .forms import PanelGeneForm
-from .forms import PanelSTRForm
-from .forms import GeneReviewForm
-from .forms import GeneReadyForm
-from .forms import ComparePanelsForm
-from .forms import CopyReviewsForm
-from .forms.ajax import UpdateGeneTagsForm
-from .forms.ajax import UpdateGeneMOPForm
-from .forms.ajax import UpdateGeneMOIForm
-from .forms.ajax import UpdateGenePhenotypesForm
-from .forms.ajax import UpdateGenePublicationsForm
-from .forms.ajax import UpdateGeneRatingForm
-from .models import Tag
-from .models import Gene
-from .models import Activity
-from .models import GenePanel
-from .models import GenePanelSnapshot
-from .models import GenePanelEntrySnapshot
-from .models import ProcessingRunCode
-from .mixins import PanelMixin
-from .mixins import ActAndRedirectMixin
-from .utils import remove_non_ascii
-
-
-class PanelsIndexView(ListView):
-    template_name = "panels/genepanel_list.html"
-    model = GenePanelSnapshot
-    context_object_name = 'panels'
-    objects = []
-
-    def get_queryset(self, *args, **kwargs):
-        if self.request.user.is_authenticated and self.request.user.reviewer.is_GEL():
-            if self.request.GET.get('gene'):
-                self.objects = GenePanelSnapshot.objects.get_gene_panels(self.request.GET.get('gene'), all=True, internal=True)
-            else:
-                self.objects = GenePanelSnapshot.objects.get_active_anotated(all=True, internal=True)
-        else:
-            if self.request.GET.get('gene'):
-                self.objects = GenePanelSnapshot.objects.get_gene_panels(self.request.GET.get('gene'))
-            else:
-                self.objects = GenePanelSnapshot.objects.get_active_anotated()
-        return self.panels
-
-    @cached_property
-    def panels(self):
-        return self.objects
-
-    @cached_property
-    def compare_panels_form(self):
-        return ComparePanelsForm()
-
-    def get_context_data(self, *args, **kwargs):
-        ctx = super().get_context_data(*args, **kwargs)
-        return ctx
-
-
-class CreatePanelView(GELReviewerRequiredMixin, CreateView):
-    """Create a new panel"""
-
-    template_name = "panels/genepanel_create.html"
-    form_class = PanelForm
-
-    def form_valid(self, form):
-        self.instance = form.instance
-        ret = super().form_valid(form)
-        messages.success(self.request, "Successfully added a new panel")
-        return ret
-
-    def get_success_url(self):
-        return reverse_lazy('panels:detail', kwargs={'pk': self.instance.panel.pk})
-
-
-class UpdatePanelView(GELReviewerRequiredMixin, PanelMixin, UpdateView):
-    """Update panel information"""
-
-    template_name = "panels/genepanel_create.html"
-    form_class = PanelForm
-
-    def form_valid(self, form):
-        self.instance = form.instance
-        ret = super().form_valid(form)
-        messages.success(self.request, "Successfully updated the panel")
-        return ret
-
-
-class GenePanelView(DetailView):
-    model = GenePanel
-
-    def get_context_data(self, *args, **kwargs):
-        ctx = super().get_context_data(*args, **kwargs)
-        ctx['panel'] = self.object.active_panel
-        ctx['edit'] = PanelForm(
-            initial=ctx['panel'].get_form_initial(),
-            instance=ctx['panel']
-        )
-        ctx['contributors'] = User.objects.panel_contributors(ctx['panel'].pk)
-        ctx['promote_panel_form'] = PromotePanelForm(
-            instance=ctx['panel'],
-            request=self.request,
-            initial={'version_comment': None}
-        )
-        return ctx
-
-
-class AdminContextMixin:
-    def get_context_data(self, *args, **kwargs):
-        ctx = super().get_context_data(*args, **kwargs)
-        ctx['gene_form'] = UploadGenesForm()
-        ctx['panel_form'] = UploadPanelsForm()
-        ctx['review_form'] = UploadReviewsForm()
-        return ctx
-
-
-class AdminView(GELReviewerRequiredMixin, AdminContextMixin, TemplateView):
-    template_name = "panels/admin.html"
-
-
-class ImportToolMixin(GELReviewerRequiredMixin, AdminContextMixin, FormView):
-    template_name = "panels/admin.html"
-    success_url = reverse_lazy('panels:admin')
-
-    def form_valid(self, form):
-        ret = super().form_valid(form)
-        try:
-            res = form.process_file(user=self.request.user)
-            if res is ProcessingRunCode.PROCESS_BACKGROUND:
-                messages.error(self.request, "Import started in the background."
-                                               " You will get an email once it has"
-                                               " completed.")
-            else:
-                messages.success(self.request, "Import successful")
-        except ValidationError as errors:
-            for error in errors:
-                messages.error(self.request, error)
-        return ret
-
-
-class AdminUploadGenesView(ImportToolMixin, AdminContextMixin):
-    form_class = UploadGenesForm
-
-    def get(self, request, *args, **kwargs):
-        return redirect(reverse_lazy('panels:admin'))
-
-
-class AdminUploadPanelsView(ImportToolMixin, AdminContextMixin):
-    form_class = UploadPanelsForm
-
-    def get(self, request, *args, **kwargs):
-        return redirect(reverse_lazy('panels:admin'))
-
-
-class AdminUploadReviewsView(ImportToolMixin, AdminContextMixin):
-    form_class = UploadReviewsForm
-
-    def get(self, request, *args, **kwargs):
-        return redirect(reverse_lazy('panels:admin'))
+from panels.forms import UploadGenesForm
+from panels.forms import UploadPanelsForm
+from panels.forms import UploadReviewsForm
+from panels.forms import PanelForm
+from panels.forms import PromotePanelForm
+from panels.forms import PanelGeneForm
+from panels.forms import GeneReviewForm
+from panels.forms import GeneReadyForm
+from panels.forms import ComparePanelsForm
+from panels.forms import CopyReviewsForm
+from panels.models import Tag
+from panels.models import Gene
+from panels.models import GenePanel
+from panels.models import GenePanelSnapshot
+from panels.models import GenePanelEntrySnapshot
+from panels.models import ProcessingRunCode
+from panels.mixins import PanelMixin
+from panels.utils import remove_non_ascii
+from .entities import EchoWriter
 
 
 class GeneDetailView(DetailView):
@@ -252,26 +106,6 @@ class GeneListView(ListView):
         return ctx
 
 
-class PromotePanelView(GELReviewerRequiredMixin, GenePanelView, UpdateView):
-    template_name = "panels/genepanel_detail.html"
-    form_class = PromotePanelForm
-
-    def get_form_kwargs(self):
-        kwargs = super().get_form_kwargs()
-        kwargs['request'] = self.request
-        kwargs['instance'] = self.object.active_panel
-        return kwargs
-
-    def form_valid(self, form):
-        ret = super().form_valid(form)
-        self.instance = form.instance.panel
-        messages.success(self.request, "Panel {} will be promoted in a few moments.".format(self.get_object().name))
-        return ret
-
-    def get_success_url(self):
-        return self.get_object().get_absolute_url()
-
-
 class PanelAddGeneView(VerifiedReviewerRequiredMixin, CreateView):
     template_name = "panels/genepanel_add_gene.html"
 
@@ -306,43 +140,6 @@ class PanelAddGeneView(VerifiedReviewerRequiredMixin, CreateView):
         return reverse_lazy('panels:evaluation_gene', kwargs={
             'pk': self.kwargs['pk'],
             'gene_symbol': self.gene_symbol
-        })
-
-
-class PanelAddSTRView(VerifiedReviewerRequiredMixin, CreateView):
-    template_name = "panels/genepanel_add_str.html"
-
-    form_class = PanelSTRForm
-    name = None
-
-    def get_form_kwargs(self):
-        kwargs = super().get_form_kwargs()
-        kwargs['panel'] = self.panel
-        kwargs['request'] = self.request
-        return kwargs
-
-    def get_context_data(self, *args, **kwargs):
-        ctx = super().get_context_data(*args, **kwargs)
-        ctx['panel'] = self.panel
-        return ctx
-
-    @property
-    def panel(self):
-        return GenePanel.objects.get_active_panel(pk=self.kwargs['pk'])
-
-    def form_valid(self, form):
-        form.save_str()
-        self.name = form.cleaned_data['name']
-
-        ret = super().form_valid(form)
-        msg = "Successfully added a new STR to the panel {}".format(self.panel.panel.name)
-        messages.success(self.request, msg)
-        return ret
-
-    def get_success_url(self):
-        return reverse_lazy('panels:evaluation_str', kwargs={
-            'pk': self.kwargs['pk'],
-            'str': self.name
         })
 
 
@@ -386,91 +183,6 @@ class PanelEditGeneView(GELReviewerRequiredMixin, UpdateView):
         })
 
 
-class GenePanelSpanshotView(DetailView):
-    template_name = "panels/genepanelsnapshot_detail.html"
-    context_object_name = 'gene'
-
-    def get_object(self):
-        try:
-            if self.request.GET.get('pk'):
-                return self.panel.get_gene_by_pk(self.request.GET.get('pk'), prefetch_extra=True)
-            else:
-                return self.panel.get_gene(self.kwargs['gene_symbol'], prefetch_extra=True)
-        except GenePanelEntrySnapshot.DoesNotExist:
-            raise Http404
-
-    def get_context_data(self, *args, **kwargs):
-        ctx = super().get_context_data(*args, **kwargs)
-
-        is_admin_user = self.request.user.is_authenticated and self.request.user.reviewer.is_GEL()
-
-        ctx['panel'] = self.panel
-        ctx['sharing_panels'] = GenePanelSnapshot.objects.get_gene_panels(
-            self.kwargs['gene_symbol'],
-            all=is_admin_user,
-            internal=is_admin_user
-        )
-        ctx['feedback_review_parts'] = [
-            'Rating',
-            'Mode of inheritance',
-            'Mode of pathogenicity',
-            'Publications',
-            'Phenotypes'
-        ]
-
-        form_initial = {}
-        if self.request.user.is_authenticated:
-            user_review = self.object.review_by_user(self.request.user)
-            if user_review:
-                form_initial = user_review.dict_tr()
-                form_initial['comments'] = None
-
-        ctx['form'] = GeneReviewForm(
-            panel=self.panel,
-            request=self.request,
-            gene=self.object,
-            initial=form_initial
-        )
-        ctx['form_edit'] = PanelGeneForm(
-            instance=self.object,
-            initial=self.object.get_form_initial(),
-            panel=self.panel,
-            request=self.request
-        )
-
-        ctx['gene_ready_form'] = GeneReadyForm(
-            instance=self.object,
-            initial={},
-            request=self.request,
-        )
-
-        ctx['edit_gene_tags_form'] = UpdateGeneTagsForm(instance=self.object)
-        ctx['edit_gene_mop_form'] = UpdateGeneMOPForm(instance=self.object)
-        ctx['edit_gene_moi_form'] = UpdateGeneMOIForm(instance=self.object)
-        ctx['edit_gene_phenotypes_form'] = UpdateGenePhenotypesForm(instance=self.object)
-        ctx['edit_gene_publications_form'] = UpdateGenePublicationsForm(instance=self.object)
-        ctx['edit_gene_rating_form'] = UpdateGeneRatingForm(instance=self.object)
-
-        ctx['panel_genes'] = list(self.panel.get_all_genes_extra)
-        cgi = ctx['panel_genes'].index(self.object)
-        ctx['next_gene'] = None if cgi == len(ctx['panel_genes']) - 1 else ctx['panel_genes'][cgi + 1]
-        ctx['prev_gene'] = None if cgi == 0 else ctx['panel_genes'][cgi - 1]
-        ctx['updated'] = False
-
-        return ctx
-
-    @cached_property
-    def panel(self):
-        return GenePanel.objects.get_active_panel(pk=self.kwargs['pk'])
-
-
-class PanelMarkNotReadyView(GELReviewerRequiredMixin, PanelMixin, ActAndRedirectMixin, DetailView):
-    model = GenePanelSnapshot
-
-    def act(self):
-        self.get_object().mark_genes_not_ready()
-
-
 class GeneReviewView(VerifiedReviewerRequiredMixin, UpdateView):
     template_name = "panels/genepanel_edit_gene.html"
     context_object_name = 'gene'
@@ -510,58 +222,6 @@ class GeneReviewView(VerifiedReviewerRequiredMixin, UpdateView):
         msg = "Successfully reviewed gene {}".format(self.get_object().gene.get('gene_symbol'))
         messages.success(self.request, msg)
         return ret
-
-    def get_success_url(self):
-        return reverse_lazy('panels:evaluation_gene', kwargs={
-            'pk': self.kwargs['pk'],
-            'gene_symbol': self.kwargs['gene_symbol']
-        })
-
-
-class MarkGeneReadyView(GELReviewerRequiredMixin, UpdateView):
-    template_name = None  # it should only accept a POST request anyway
-    form_class = GeneReadyForm
-
-    def get_object(self):
-        return self.panel.get_gene(self.kwargs['gene_symbol'], prefetch_extra=True)
-
-    @cached_property
-    def panel(self):
-        return GenePanel.objects.get_active_panel(pk=self.kwargs['pk'])
-
-    def get_form_kwargs(self):
-        kwargs = super().get_form_kwargs()
-        kwargs['request'] = self.request
-        kwargs['initial'] = {}
-        return kwargs
-
-    def form_valid(self, form):
-        ret = super().form_valid(form)
-        msg = "{} marked as ready".format(self.get_object().gene.get('gene_symbol'))
-        messages.success(self.request, msg)
-        return ret
-
-    def get_success_url(self):
-        return reverse_lazy('panels:evaluation_gene', kwargs={
-            'pk': self.kwargs['pk'],
-            'gene_symbol': self.kwargs['gene_symbol']
-        })
-
-
-class MarkGeneNotReadyView(GELReviewerRequiredMixin, UpdateView):
-    def get_object(self):
-        return self.panel.get_gene(self.kwargs['gene_symbol'], prefetch_extra=True)
-
-    @cached_property
-    def panel(self):
-        return GenePanel.objects.get_active_panel(pk=self.kwargs['pk'])
-
-    def post(self, *args, **kwargs):
-        self.object = self.get_object()
-        self.object.ready = False
-        self.object.save()
-
-        return redirect(self.get_success_url())
 
     def get_success_url(self):
         return reverse_lazy('panels:evaluation_gene', kwargs={
@@ -809,11 +469,6 @@ class CopyReviewsView(GELReviewerRequiredMixin, FormView):
         return ctx
 
 
-class EchoWriter(object):
-    def write(self, value):
-        return value
-
-
 class DownloadAllGenes(GELReviewerRequiredMixin, View):
     def gene_iterator(self):
         yield (
@@ -883,79 +538,3 @@ class DownloadAllGenes(GELReviewerRequiredMixin, View):
             datetime.now().strftime('%Y%m%d-%H%M'))
         response['Content-Disposition'] = attachment
         return response
-
-
-class DownloadAllPanels(GELReviewerRequiredMixin, View):
-    def panel_iterator(self, request):
-        yield (
-            "Level 4 title",
-            "Level 3 title",
-            "Level 2 title",
-            "URL",
-            "Current Version",
-            "# rated genes/total genes",
-            "#reviewers",
-            "Reviewer name and affiliation (;)",
-            "Reviewer emails (;)",
-            "Status",
-            "Relevant disorders"
-        )
-
-        panels = GenePanelSnapshot.objects\
-            .get_active_anotated(all=True, internal=True)\
-            .prefetch_related(
-                'genepanelentrysnapshot_set',
-                'genepanelentrysnapshot_set__evaluation',
-                'genepanelentrysnapshot_set__evaluation__user',
-                'genepanelentrysnapshot_set__evaluation__user__reviewer',
-            )\
-            .all()
-
-        for panel in panels:
-            rate = "{} of {} genes reviewed".format(panel.number_of_evaluated_genes, panel.number_of_genes)
-            reviewers = panel.contributors
-            contributors = [
-                "{} {} ({})".format(user[0], user[1], user[3]) if user[0] else user[4]
-                for user in reviewers
-                if user[4]
-            ]
-
-            yield (
-                panel.level4title.name,
-                panel.level4title.level3title,
-                panel.level4title.level2title,
-                request.build_absolute_uri(reverse('panels:detail', args=(panel.panel.id,))),
-                panel.version,
-                rate,
-                len(contributors),
-                ";".join(contributors),  # aff
-                ";".join([user[2] for user in reviewers if user[2]]),  # email
-                panel.panel.status.upper(),
-                ";".join(panel.old_panels)
-            )
-
-    def get(self, request, *args, **kwargs):
-        pseudo_buffer = EchoWriter()
-        writer = csv.writer(pseudo_buffer, delimiter='\t')
-
-        response = StreamingHttpResponse((writer.writerow(row) for row in self.panel_iterator(request)),
-                                         content_type='text/tab-separated-values')
-        attachment = 'attachment; filename=All_panels_{}.tsv'.format(
-            datetime.now().strftime('%Y%m%d-%H%M'))
-        response['Content-Disposition'] = attachment
-        return response
-
-
-class ActivityListView(ListView):
-    model = Activity
-    context_object_name = 'activities'
-    paginate_by = 3000
-
-    def get_queryset(self):
-        if self.request.user.is_authenticated and self.request.user.reviewer.is_GEL():
-            qs = self.model.objects.visible_to_gel()
-        else:
-            qs = self.model.objects.visible_to_public()
-
-        qs = qs.prefetch_related('user', 'panel', 'user__reviewer')
-        return qs
