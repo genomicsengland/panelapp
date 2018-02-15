@@ -116,7 +116,7 @@ class GenePanelSnapshotTest(LoginGELUser):
 
     def test_gene_evaluation(self):
         gpes = GenePanelEntrySnapshotFactory()
-        url = reverse_lazy('panels:evaluation', kwargs={
+        url = reverse_lazy('panels:evaluation_gene', kwargs={
             'pk': gpes.panel.panel.pk,
             'gene_symbol': gpes.gene.get('gene_symbol')
         })

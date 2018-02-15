@@ -1,5 +1,6 @@
 from django.db import models
 from django.db.models import Sum
+from django.db.models import Count
 from django.db.models import Case
 from django.db.models import When
 from django.db.models import Value
@@ -58,15 +59,17 @@ class GenePanel(TimeStampedModel):
         return reverse('panels:detail', args=(self.pk,))
 
     def _prepare_panel_query(self):
-        "Returns a queryset for all snapshots ordered by version"
+        """Returns a queryset for all snapshots ordered by version"""
 
         return self.genepanelsnapshot_set\
             .prefetch_related(
                 'panel',
                 'level4title',
+                'str_set',
                 'genepanelentrysnapshot_set__evaluation__user',
                 'genepanelentrysnapshot_set__evaluation__user__reviewer'
             ).annotate(
+                number_of_strs=Count('str__pk', distinct=True),
                 number_of_green_genes=Sum(Case(When(
                     genepanelentrysnapshot__saved_gel_status__gt=3, then=Value(1)),
                     default=Value(0),
@@ -90,16 +93,20 @@ class GenePanel(TimeStampedModel):
             )\
             .order_by('-major_version', '-minor_version', '-created')
 
+    def clear_cache(self):
+        if self.active_panel:
+            del self.__dict__['active_panel']
+
     @cached_property
     def active_panel(self):
-        "Return the panel with the largest version"
+        """Return the panel with the largest version"""
 
         return self.genepanelsnapshot_set\
             .order_by('-major_version', '-minor_version', '-created').first()
 
     @property
     def active_panel_extra(self):
-        "Return the panel with the largest version and related info"
+        """Return the panel with the largest version and related info"""
 
         return self.genepanelsnapshot_set\
             .prefetch_related(
@@ -114,7 +121,7 @@ class GenePanel(TimeStampedModel):
             .order_by('-major_version', '-minor_version', '-created').first()
 
     def get_panel_version(self, version):
-        "Get a specific version. Version argument should be a string"
+        """Get a specific version. Version argument should be a string"""
 
         major_version, minor_version = version.split('.')
         return self._prepare_panel_query().filter(

@@ -6,7 +6,7 @@ from accounts.models import User
 
 
 class TrackRecord(TimeStampedModel):
-    "Keeps track of what's changed in a gene for a specific panel"
+    """Keeps track of what's changed in a gene for a specific panel"""
 
     ISSUE_TYPES = Choices(
         ("Created", "Created"),
@@ -18,10 +18,12 @@ class TrackRecord(TimeStampedModel):
         ("ClearSources", "Clear Sources"),
         ("SetModeofPathogenicity", "Set mode of pathogenicity"),
         ("GeneClassifiedbyGenomicsEnglandCurator", "Gene classified by Genomics England curator"),
+        ("EntityClassifiedbyGenomicsEnglandCurator", "Entity classified by Genomics England curator"),
         ("SetModeofInheritance", "Set mode of inheritance"),
         ("SetPenetrance", "Set penetrance"),
         ("SetPublications", "Set publications"),
         ("ApprovedGene", "Approved Gene"),
+        ("ApprovedEntity", "Approved Entity"),
         ("GelStatusUpdate", "Gel Status Update"),
         ("UploadGeneInformation", "Upload gene information"),
         ("RemovedTag", "Removed Tag"),

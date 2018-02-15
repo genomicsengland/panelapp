@@ -111,10 +111,11 @@ class GenePanelSnapshot(TimeStampedModel):
 
     @cached_property
     def stats(self):
-        "Get stats for a panel, i.e. number of reviewers, genes, evaluated genes, etc"
+        """Get stats for a panel, i.e. number of reviewers, genes, evaluated genes, etc"""
 
         return GenePanelSnapshot.objects.filter(pk=self.pk).aggregate(
-            number_of_reviewers=Count('genepanelentrysnapshot__evaluation__user__pk', distinct=True),
+            number_of_gene_reviewers=Count('genepanelentrysnapshot__evaluation__user__pk', distinct=True),
+            number_of_str_reviewers=Count('str__evaluation__user__pk', distinct=True),
             number_of_evaluated_genes=Count(Case(
                 # Count unique genes if that gene has more than 1 evaluation
                 When(
@@ -140,12 +141,20 @@ class GenePanelSnapshot(TimeStampedModel):
                     )
                 ),
                 distinct=True
-            )
+            ),
+            number_of_evaluated_strs=Count(Case(
+                # Count unique genes if that gene has more than 1 evaluation
+                When(
+                    str__evaluation__isnull=False,
+                    then=models.F('str__pk')
+                )
+            ), distinct=True),
+            number_of_strs=Count('str__pk', distinct=True),
         )
 
     @property
     def number_of_reviewers(self):
-        "Get number of reviewers or set it if it's None"
+        """Get number of reviewers or set it if it's None"""
 
         if self.current_number_of_reviewers is None:
             self.update_saved_stats()
@@ -153,7 +162,7 @@ class GenePanelSnapshot(TimeStampedModel):
 
     @property
     def number_of_evaluated_genes(self):
-        "Get number of evaluated genes or set it if it's None"
+        """Get number of evaluated genes or set it if it's None"""
 
         if self.current_number_of_evaluated_genes is None:
             self.update_saved_stats()
@@ -161,7 +170,7 @@ class GenePanelSnapshot(TimeStampedModel):
 
     @property
     def number_of_genes(self):
-        "Get number of genes or set it if it's None"
+        """Get number of genes or set it if it's None"""
 
         if self.current_number_of_genes is None:
             self.update_saved_stats()
@@ -171,19 +180,19 @@ class GenePanelSnapshot(TimeStampedModel):
     def version(self):
         return "{}.{}".format(self.major_version, self.minor_version)
 
-    def increment_version(self, major=False, user=None, comment=None, ignore_gene=None):
+    def increment_version(self, major=False, user=None, comment=None, ignore_gene=None, ignore_str=None):
         """Creates a new version of the panel.
 
         This script copies all genes, all information for these genes, and also
-        you can add a comment and a user if it's a major vresion increment.
+        you can add a comment and a user if it's a major version increment.
 
         DO NOT use it inside the methods of either genes or GenePanelSnapshot.
-        This has weird behaviour as self refernces still goes to the previous
+        This has weird behaviour as self references still goes to the previous
         snapshot and not the new one.
         """
 
         with transaction.atomic():
-            current_genes = deepcopy(self.get_all_entries)
+            self.get_all_genes  # cache the results
 
             self.pk = None
 
@@ -195,124 +204,10 @@ class GenePanelSnapshot(TimeStampedModel):
 
             self.save()
 
-            evidences = []
-            evaluations = []
-            tracks = []
-            tags = []
-            comments = []
+            self._increment_version_genes(major, user, comment, ignore_gene)
+            self._increment_version_str(major, user, comment, ignore_str)
 
-            genes = {}
-
-            for gene in current_genes:
-                if ignore_gene and ignore_gene == gene.gene.get('gene_symbol'):
-                    continue
-
-                old_gene = deepcopy(gene)
-                gene.pk = None
-                gene.panel = self
-
-                if major:
-                    gene.ready = False
-                    gene.save()
-
-                genes[gene.gene.get('gene_symbol')] = {
-                    'gene': gene,
-                    'old_gene': old_gene,
-                    'evidences': [
-                        {
-                            'evidence_id': ev,
-                            'genepanelentrysnapshot_id': gene.pk
-                        } for ev in set(gene.evidences) if ev is not None
-                    ],
-                    'evaluations': [
-                        {
-                            'evaluation_id': ev,
-                            'genepanelentrysnapshot_id': gene.pk
-                        } for ev in set(gene.evaluations) if ev is not None
-                    ],
-                    'tracks': [
-                        {
-                            'trackrecord_id': ev,
-                            'genepanelentrysnapshot_id': gene.pk
-                        } for ev in set(gene.tracks) if ev is not None
-                    ],
-                    'tags': [
-                        {
-                            'tag_id': ev,
-                            'genepanelentrysnapshot_id': gene.pk
-                        } for ev in set(gene.gene_tags) if ev is not None
-                    ],
-                    'comments': [
-                        {
-                            'comment_id': ev,
-                            'genepanelentrysnapshot_id': gene.pk
-                        } for ev in set(gene.comment_pks) if ev is not None
-                    ]
-                }
-
-                if major and user and comment:
-                    issue_type = "Panel promoted to version {}".format(self.version)
-                    issue_description = comment
-
-                    track_promoted = TrackRecord.objects.create(
-                        curator_status=user.reviewer.is_GEL(),
-                        issue_description=issue_description,
-                        gel_status=gene.status,
-                        issue_type=issue_type,
-                        user=user
-                    )
-                    gene.track.add(track_promoted)
-
-            # add in bulk
-            if not major:
-                bulk_genes = [genes[gene]['gene'] for gene in genes]
-                new_genes = self.genepanelentrysnapshot_set.model.objects.bulk_create(bulk_genes)
-            else:
-                new_genes = self.genepanelentrysnapshot_set.all()
-
-            self.clear_cache()
-
-            for gene in new_genes:
-                gene_data = genes[gene.gene.get('gene_symbol')]
-
-                for i, _ in enumerate(gene_data['evidences']):
-                    gene_data['evidences'][i]['genepanelentrysnapshot_id'] = gene_data['gene'].pk
-                evidences.extend(gene_data['evidences'])
-
-                for i, _ in enumerate(gene_data['evaluations']):
-                    gene_data['evaluations'][i]['genepanelentrysnapshot_id'] = gene_data['gene'].pk
-                evaluations.extend(gene_data['evaluations'])
-
-                for i, _ in enumerate(gene_data['tracks']):
-                    gene_data['tracks'][i]['genepanelentrysnapshot_id'] = gene_data['gene'].pk
-                tracks.extend(gene_data['tracks'])
-
-                for i, _ in enumerate(gene_data['tags']):
-                    gene_data['tags'][i]['genepanelentrysnapshot_id'] = gene_data['gene'].pk
-                tags.extend(gene_data['tags'])
-
-                for i, _ in enumerate(gene_data['comments']):
-                    gene_data['comments'][i]['genepanelentrysnapshot_id'] = gene_data['gene'].pk
-                comments.extend(gene_data['comments'])
-
-            self.genepanelentrysnapshot_set.model.evidence.through.objects.bulk_create([
-                self.genepanelentrysnapshot_set.model.evidence.through(**ev) for ev in evidences
-            ])
-            self.genepanelentrysnapshot_set.model.evaluation.through.objects.bulk_create([
-                self.genepanelentrysnapshot_set.model.evaluation.through(**ev) for ev in evaluations
-            ])
-            self.genepanelentrysnapshot_set.model.track.through.objects.bulk_create([
-                self.genepanelentrysnapshot_set.model.track.through(**ev) for ev in tracks
-            ])
-            self.genepanelentrysnapshot_set.model.tags.through.objects.bulk_create([
-                self.genepanelentrysnapshot_set.model.tags.through(**ev) for ev in tags
-            ])
-            self.genepanelentrysnapshot_set.model.comments.through.objects.bulk_create([
-                self.genepanelentrysnapshot_set.model.comments.through(**ev) for ev in comments
-            ])
-
-            if self.panel.active_panel:
-                del self.panel.active_panel
+            self.panel.clear_cache()
 
             if major:
                 email_panel_promoted.delay(self.panel.pk)
@@ -331,13 +226,250 @@ class GenePanelSnapshot(TimeStampedModel):
 
             return self.panel.active_panel
 
+    def _increment_version_genes(self, major, user, comment, ignore_gene):
+        evidences = []
+        evaluations = []
+        tracks = []
+        tags = []
+        comments = []
+
+        genes = {}
+
+        current_genes = deepcopy(self.get_all_genes)
+        print(len(current_genes))
+        for gene in current_genes:
+            if ignore_gene and ignore_gene == gene.gene.get('gene_symbol'):
+                continue
+
+            old_gene = deepcopy(gene)
+            gene.pk = None
+            gene.panel = self
+
+            if major:
+                gene.ready = False
+                gene.save()
+
+            genes[gene.gene.get('gene_symbol')] = {
+                'gene': gene,
+                'old_gene': old_gene,
+                'evidences': [
+                    {
+                        'evidence_id': ev,
+                        'genepanelentrysnapshot_id': gene.pk
+                    } for ev in set(gene.evidences) if ev is not None
+                ],
+                'evaluations': [
+                    {
+                        'evaluation_id': ev,
+                        'genepanelentrysnapshot_id': gene.pk
+                    } for ev in set(gene.evaluations) if ev is not None
+                ],
+                'tracks': [
+                    {
+                        'trackrecord_id': ev,
+                        'genepanelentrysnapshot_id': gene.pk
+                    } for ev in set(gene.tracks) if ev is not None
+                ],
+                'tags': [
+                    {
+                        'tag_id': ev,
+                        'genepanelentrysnapshot_id': gene.pk
+                    } for ev in set(gene.gene_tags) if ev is not None
+                ],
+                'comments': [
+                    {
+                        'comment_id': ev,
+                        'genepanelentrysnapshot_id': gene.pk
+                    } for ev in set(gene.comment_pks) if ev is not None
+                ]
+            }
+
+            if major and user and comment:
+                issue_type = "Panel promoted to version {}".format(self.version)
+                issue_description = comment
+
+                track_promoted = TrackRecord.objects.create(
+                    curator_status=user.reviewer.is_GEL(),
+                    issue_description=issue_description,
+                    gel_status=gene.status,
+                    issue_type=issue_type,
+                    user=user
+                )
+                gene.track.add(track_promoted)
+
+        # add in bulk
+        if not major:
+            bulk_genes = [genes[gene]['gene'] for gene in genes]
+            new_genes = self.genepanelentrysnapshot_set.model.objects.bulk_create(bulk_genes)
+        else:
+            new_genes = self.genepanelentrysnapshot_set.all()
+
+        self.clear_cache()
+
+        for gene in new_genes:
+            gene_data = genes[gene.gene.get('gene_symbol')]
+
+            for i, _ in enumerate(gene_data['evidences']):
+                gene_data['evidences'][i]['genepanelentrysnapshot_id'] = gene_data['gene'].pk
+            evidences.extend(gene_data['evidences'])
+
+            for i, _ in enumerate(gene_data['evaluations']):
+                gene_data['evaluations'][i]['genepanelentrysnapshot_id'] = gene_data['gene'].pk
+            evaluations.extend(gene_data['evaluations'])
+
+            for i, _ in enumerate(gene_data['tracks']):
+                gene_data['tracks'][i]['genepanelentrysnapshot_id'] = gene_data['gene'].pk
+            tracks.extend(gene_data['tracks'])
+
+            for i, _ in enumerate(gene_data['tags']):
+                gene_data['tags'][i]['genepanelentrysnapshot_id'] = gene_data['gene'].pk
+            tags.extend(gene_data['tags'])
+
+            for i, _ in enumerate(gene_data['comments']):
+                gene_data['comments'][i]['genepanelentrysnapshot_id'] = gene_data['gene'].pk
+            comments.extend(gene_data['comments'])
+
+        self.genepanelentrysnapshot_set.model.evidence.through.objects.bulk_create([
+            self.genepanelentrysnapshot_set.model.evidence.through(**ev) for ev in evidences
+        ])
+        self.genepanelentrysnapshot_set.model.evaluation.through.objects.bulk_create([
+            self.genepanelentrysnapshot_set.model.evaluation.through(**ev) for ev in evaluations
+        ])
+        self.genepanelentrysnapshot_set.model.track.through.objects.bulk_create([
+            self.genepanelentrysnapshot_set.model.track.through(**ev) for ev in tracks
+        ])
+        self.genepanelentrysnapshot_set.model.tags.through.objects.bulk_create([
+            self.genepanelentrysnapshot_set.model.tags.through(**ev) for ev in tags
+        ])
+        self.genepanelentrysnapshot_set.model.comments.through.objects.bulk_create([
+            self.genepanelentrysnapshot_set.model.comments.through(**ev) for ev in comments
+        ])
+
+    def _increment_version_str(self, major, user, comment, ignore_str):
+        evidences = []
+        evaluations = []
+        tracks = []
+        tags = []
+        comments = []
+
+        strs = {}
+
+        current_strs = deepcopy(self.get_all_strs)
+        for str_entity in current_strs:
+            if ignore_str and ignore_str == str_entity.name:
+                continue
+
+            old_str = deepcopy(str_entity)
+            str_entity.pk = None
+            str_entity.panel = self
+
+            if major:
+                str_entity.ready = False
+                str_entity.save()
+
+            strs[str_entity.name] = {
+                'str': str_entity,
+                'old_str': old_str,
+                'evidences': [
+                    {
+                        'evidence_id': ev,
+                        'str_id': str_entity.pk
+                    } for ev in set(str_entity.evidences) if ev is not None
+                ],
+                'evaluations': [
+                    {
+                        'evaluation_id': ev,
+                        'str_id': str_entity.pk
+                    } for ev in set(str_entity.evaluations) if ev is not None
+                ],
+                'tracks': [
+                    {
+                        'trackrecord_id': ev,
+                        'str_id': str_entity.pk
+                    } for ev in set(str_entity.tracks) if ev is not None
+                ],
+                'tags': [
+                    {
+                        'tag_id': ev,
+                        'str_id': str_entity.pk
+                    } for ev in set(str_entity.gene_tags) if ev is not None
+                ],
+                'comments': [
+                    {
+                        'comment_id': ev,
+                        'str_id': str_entity.pk
+                    } for ev in set(str_entity.comment_pks) if ev is not None
+                ]
+            }
+
+            if major and user and comment:
+                issue_type = "Panel promoted to version {}".format(self.version)
+                issue_description = comment
+
+                track_promoted = TrackRecord.objects.create(
+                    curator_status=user.reviewer.is_GEL(),
+                    issue_description=issue_description,
+                    gel_status=str_entity.status,
+                    issue_type=issue_type,
+                    user=user
+                )
+                str_entity.track.add(track_promoted)
+
+        # add in bulk
+        if not major:
+            bulk_genes = [strs[str_entity]['gene'] for str_entity in strs]
+            new_genes = self.str_set.model.objects.bulk_create(bulk_genes)
+        else:
+            new_genes = self.str_set.all()
+
+        self.clear_cache()
+
+        for str_entity in new_genes:
+            str_data = strs[str_entity.name]
+
+            for i, _ in enumerate(str_data['evidences']):
+                str_data['evidences'][i]['str_id'] = str_data['str'].pk
+            evidences.extend(str_data['evidences'])
+
+            for i, _ in enumerate(str_data['evaluations']):
+                str_data['evaluations'][i]['str_id'] = str_data['str'].pk
+            evaluations.extend(str_data['evaluations'])
+
+            for i, _ in enumerate(str_data['tracks']):
+                str_data['tracks'][i]['str_id'] = str_data['str'].pk
+            tracks.extend(str_data['tracks'])
+
+            for i, _ in enumerate(str_data['tags']):
+                str_data['tags'][i]['str_id'] = str_data['str'].pk
+            tags.extend(str_data['tags'])
+
+            for i, _ in enumerate(str_data['comments']):
+                str_data['comments'][i]['str_id'] = str_data['str'].pk
+            comments.extend(str_data['comments'])
+
+        self.str_set.model.evidence.through.objects.bulk_create([
+            self.str_set.model.evidence.through(**ev) for ev in evidences
+        ])
+        self.str_set.model.evaluation.through.objects.bulk_create([
+            self.str_set.model.evaluation.through(**ev) for ev in evaluations
+        ])
+        self.str_set.model.track.through.objects.bulk_create([
+            self.str_set.model.track.through(**ev) for ev in tracks
+        ])
+        self.str_set.model.tags.through.objects.bulk_create([
+            self.str_set.model.tags.through(**ev) for ev in tags
+        ])
+        self.str_set.model.comments.through.objects.bulk_create([
+            self.str_set.model.comments.through(**ev) for ev in comments
+        ])
+
     def update_saved_stats(self):
-        "Get the new values from the database"
+        """Get the new values from the database"""
 
         if self.stats:
             del self.stats
 
-        self.current_number_of_reviewers = self.stats.get('number_of_reviewers', 0)
+        self.current_number_of_reviewers = self.stats.get('number_of_gene_reviewers', 0)
         self.current_number_of_evaluated_genes = self.stats.get('number_of_evaluated_genes', 0)
         self.current_number_of_genes = self.stats.get('number_of_genes', 0)
         self.save(update_fields=[
@@ -354,7 +486,7 @@ class GenePanelSnapshot(TimeStampedModel):
             A tuple with the user first and last name, email, and reviewer affiliation
         """
 
-        return self.cached_entries\
+        return self.cached_genes\
             .distinct('evaluation__user')\
             .values_list(
                 'evaluation__user__first_name',
@@ -365,7 +497,7 @@ class GenePanelSnapshot(TimeStampedModel):
             ).order_by('evaluation__user')
 
     def mark_genes_not_ready(self):
-        for gene in self.cached_entries.all():
+        for gene in self.cached_genes.all():
             gene.ready = False
             gene.save()
 
@@ -382,28 +514,32 @@ class GenePanelSnapshot(TimeStampedModel):
         }
 
     @cached_property
-    def cached_entries(self):
+    def cached_genes(self):
         return self.genepanelentrysnapshot_set.all()
 
     @cached_property
+    def cached_strs(self):
+        return self.str_set.all()
+
+    @cached_property
     def current_genes(self):
-        "Select and cache gene names"
+        """Select and cache gene names"""
         return list(self.current_genes_count.keys())
 
     @cached_property
     def current_genes_count(self):
-        genes_list = [g.get('gene_symbol') for g in self.cached_entries.values_list('gene', flat=True)]
-        return { gene: genes_list.count(gene) for gene in genes_list if gene }
+        genes_list = [g.get('gene_symbol') for g in self.cached_genes.values_list('gene', flat=True)]
+        return {gene: genes_list.count(gene) for gene in genes_list if gene}
 
     @cached_property
     def current_genes_duplicates(self):
         return [gene for gene in self.current_genes_count if self.current_genes_count[gene] > 1]
 
     @cached_property
-    def get_all_entries(self):
-        "Returns all Genes for this panel"
+    def get_all_genes(self):
+        """Returns all Genes for this panel"""
 
-        return self.cached_entries\
+        return self.cached_genes\
             .annotate(
                 evidences=ArrayAgg('evidence__pk', distinct=True),
                 evaluations=ArrayAgg('evaluation__pk', distinct=True),
@@ -413,10 +549,22 @@ class GenePanelSnapshot(TimeStampedModel):
             )
 
     @cached_property
-    def get_all_entries_extra(self):
-        "Get all genes and annotated info, speeds up loading time"
+    def get_all_strs(self):
+        """Returns all Genes for this panel"""
 
-        return self.cached_entries\
+        return self.cached_strs.annotate(
+            evidences=ArrayAgg('evidence__pk', distinct=True),
+            evaluations=ArrayAgg('evaluation__pk', distinct=True),
+            gene_tags=ArrayAgg('tags__pk', distinct=True),
+            tracks=ArrayAgg('track__pk', distinct=True),
+            comment_pks=ArrayAgg('comments__pk', distinct=True)
+        )
+
+    @cached_property
+    def get_all_genes_extra(self):
+        """Get all genes and annotated info, speeds up loading time"""
+
+        return self.cached_genes\
             .prefetch_related(
                 'evidence',
                 'evidence__reviewer',
@@ -436,12 +584,34 @@ class GenePanelSnapshot(TimeStampedModel):
                 number_of_evaluations=Count('evaluation__pk', distinct=True)
             )\
             .order_by('-saved_gel_status', 'gene_core__gene_symbol')
+
+    @cached_property
+    def get_all_strs_extra(self):
+        """Get all genes and annotated info, speeds up loading time"""
+
+        return self.cached_strs.prefetch_related(
+            'evidence',
+            'evidence__reviewer',
+            'evaluation',
+            'evaluation__user',
+            'evaluation__user__reviewer',
+            'tags'
+        ).annotate(
+            number_of_green_evaluations=Count(Case(When(
+                evaluation__rating="GREEN", then=models.F('evaluation__pk'))
+            ), distinct=True),
+            number_of_red_evaluations=Count(Case(When(
+                evaluation__rating="RED", then=models.F('evaluation__pk'))
+            ), distinct=True),
+            evaluators=ArrayAgg('evaluation__user__pk'),
+            number_of_evaluations=Count('evaluation__pk', distinct=True)
+        ).order_by('-saved_gel_status', 'name')
     
     def get_gene_by_pk(self, gene_pk, prefetch_extra=False):
-        "Get a gene for a specific pk."
+        """Get a gene for a specific pk."""
 
         if prefetch_extra:
-            return self.get_all_entries_extra.prefetch_related(
+            return self.get_all_genes_extra.prefetch_related(
                 'evaluation__comments',
                 'evaluation__user__reviewer',
                 'track',
@@ -449,13 +619,13 @@ class GenePanelSnapshot(TimeStampedModel):
                 'track__user__reviewer'
             ).get(pk=gene_pk)
         else:
-            return self.get_all_entries.get(pk=gene_pk)
+            return self.get_all_genes.get(pk=gene_pk)
 
     def get_gene(self, gene_symbol, prefetch_extra=False):
-        "Get a gene for a specific gene symbol."
+        """Get a gene for a specific gene symbol."""
 
         if prefetch_extra:
-            return self.get_all_entries_extra.prefetch_related(
+            return self.get_all_genes_extra.prefetch_related(
                 'evaluation__comments',
                 'evaluation__user__reviewer',
                 'track',
@@ -463,28 +633,37 @@ class GenePanelSnapshot(TimeStampedModel):
                 'track__user__reviewer'
             ).get(gene__gene_symbol=gene_symbol)
         else:
-            return self.get_all_entries.get(gene__gene_symbol=gene_symbol)
+            return self.get_all_genes.get(gene__gene_symbol=gene_symbol)
 
     def has_gene(self, gene_symbol):
-        "Check if the panel has a gene with the provided gene symbol"
+        """Check if the panel has a gene with the provided gene symbol"""
 
         return gene_symbol in [
             symbol.get('gene_symbol') for symbol in self.genepanelentrysnapshot_set.values_list('gene', flat=True)
         ]
 
+    def has_str(self, str_name):
+        return self.str_set.filter(name=str_name).count() > 0
+
     def clear_cache(self):
-        if self.cached_entries:
-            del self.__dict__['cached_entries']
+        if self.cached_genes:
+            del self.__dict__['cached_genes']
+        if self.cached_strs:
+            del self.__dict__['cached_strs']
         if self.current_genes_count:
             del self.__dict__['current_genes_count']
         if self.current_genes_duplicates:
             del self.__dict__['current_genes_duplicates']
         if self.current_genes:
             del self.__dict__['current_genes']
-        if self.get_all_entries:
-            del self.__dict__['get_all_entries']
-        if self.get_all_entries_extra:
-            del self.__dict__['get_all_entries_extra']
+        if self.get_all_genes:
+            del self.__dict__['get_all_genes']
+        if self.get_all_genes_extra:
+            del self.__dict__['get_all_genes_extra']
+        if self.get_all_strs:
+            del self.__dict__['get_all_strs']
+        if self.get_all_strs_extra:
+            del self.__dict__['get_all_strs_extra']
 
     def delete_gene(self, gene_symbol, increment=True):
         """Removes gene from a panel, but leaves it in the previous versions of the same panel"""
@@ -493,7 +672,7 @@ class GenePanelSnapshot(TimeStampedModel):
             if increment:
                 self = self.increment_version(ignore_gene=gene_symbol)
             else:
-                self.get_all_entries.get(gene__gene_symbol=gene_symbol).delete()
+                self.get_all_genes.get(gene__gene_symbol=gene_symbol).delete()
                 self.clear_cache()
 
             self.update_saved_stats()
@@ -533,7 +712,7 @@ class GenePanelSnapshot(TimeStampedModel):
         gene_core = Gene.objects.get(gene_symbol=gene_symbol)
         gene_info = gene_core.dict_tr()
 
-        gene = self.cached_entries.model(
+        gene = self.cached_genes.model(
             gene=gene_info,
             panel=self,
             gene_core=gene_core,
@@ -965,14 +1144,124 @@ class GenePanelSnapshot(TimeStampedModel):
         else:
             return False
 
+    def add_str(self, user, str_name, str_data, increment_version=True):
+        """Adds a new gene to the panel
+
+        Args:
+            user: User instance. It's the user who is adding a new gene, we need
+                this info to add to TrackRecord, Activities, Evidence, and Evaluation
+            str_name: STR name
+            str_data: A dict with the values:
+                - moi
+                - penetrance
+                - publications
+                - phenotypes
+                - mode_of_pathogenicity
+                - comment
+                - current_diagnostic
+                - sources
+                - rating
+
+        Returns:
+            STR instance.
+            Or False in case the gene is already in the panel.
+        """
+
+        if self.has_str(str_name):
+            return False
+
+        if increment_version:
+            self = self.increment_version()
+
+        gene_core = Gene.objects.get(gene_symbol=str_data['gene'].gene_symbol)
+        gene_info = gene_core.dict_tr()
+
+        str_item = self.cached_strs.model(
+            name=str_name,
+            position=str_data.get('position'),
+            normal_range=str_data.get('normal_range'),
+            prepathogenic_range=str_data.get('prepathogenic_range'),
+            pathogenic_range=str_data.get('pathogenic_range'),
+            gene=gene_info,
+            panel=self,
+            gene_core=gene_core,
+            moi=str_data.get('moi'),
+            penetrance=str_data.get('penetrance'),
+            publications=str_data.get('publications'),
+            phenotypes=str_data.get('phenotypes'),
+            mode_of_pathogenicity=str_data.get('mode_of_pathogenicity'),
+            saved_gel_status=0,
+            flagged=False if user.reviewer.is_GEL() else True
+        )
+        str_item.save()
+        if str_data.get('comment'):
+            comment = Comment.objects.create(
+                user=user,
+                comment=str_data.get('comment')
+            )
+            str_item.comments.add(comment)
+
+        for source in str_data.get('sources'):
+            evidence = Evidence.objects.create(
+                rating=5,
+                reviewer=user.reviewer,
+                name=source.strip()
+            )
+            str_item.evidence.add(evidence)
+
+        evidence_status = str_item.evidence_status()
+        track_created = TrackRecord.objects.create(
+            gel_status=evidence_status,
+            curator_status=0,
+            user=user,
+            issue_type=TrackRecord.ISSUE_TYPES.Created,
+            issue_description="{} was created by {}".format(str_item.label, user.get_full_name())
+        )
+        str_item.track.add(track_created)
+        description = "{} was added to {} panel. Sources: {}".format(
+            str_item.label,
+            self.panel.name,
+            ",".join(str_data.get('sources'))
+        )
+        track_sources = TrackRecord.objects.create(
+            gel_status=evidence_status,
+            curator_status=0,
+            user=user,
+            issue_type=TrackRecord.ISSUE_TYPES.NewSource,
+            issue_description=description
+        )
+        str_item.track.add(track_sources)
+
+        if str_data.get('rating') or str_data.get('comment'):
+            evaluation = Evaluation.objects.create(
+                user=user,
+                rating=str_data.get('rating'),
+                mode_of_pathogenicity=str_data.get('mode_of_pathogenicity'),
+                phenotypes=str_data.get('phenotypes'),
+                publications=str_data.get('publications'),
+                moi=str_data.get('moi'),
+                current_diagnostic=str_data.get('current_diagnostic'),
+                version=self.version
+            )
+            if str_data.get('comment'):
+                evaluation.comments.add(comment)
+            str_item.evaluation.add(evaluation)
+        self.clear_cache()
+
+        self.add_activity(user, gene_core.gene_symbol, "Added gene to panel", str_item.label)
+
+        str_item.evidence_status(update=True)
+        self.update_saved_stats()
+        return str_item
+
     def copy_gene_reviews_from(self, genes, copy_from_panel):
         """Copy gene reviews from specified panel"""
 
         with transaction.atomic():
-            current_genes = {gpes.gene.get('gene_symbol'): gpes for gpes in self.get_all_entries_extra.prefetch_related(
+            current_genes = {gpes.gene.get('gene_symbol'): gpes for gpes in self.get_all_genes_extra.prefetch_related(
                 'evidence__reviewer'
             )}
-            copy_from_genes = {gpes.gene.get('gene_symbol'): gpes for gpes in copy_from_panel.get_all_entries_extra}
+            copy_from_genes = {gpes.gene.get('gene_symbol'): gpes for gpes in copy_from_panel.get_all_genes_extra}
 
             # The following code goes through all evaluations and creates evaluations, evidences, comments in bulk
             new_evaluations = {}
@@ -1070,12 +1359,13 @@ class GenePanelSnapshot(TimeStampedModel):
             self.update_saved_stats()
             return len(evaluations)
 
-    def add_activity(self, user, gene_symbol, text):
-        "Adds activity for this panel"
+    def add_activity(self, user, gene_symbol, text, str_name=None):
+        """Adds activity for this panel"""
 
         Activity.objects.create(
             user=user,
             panel=self.panel,
             gene_symbol=gene_symbol,
+            str_name=str_name,
             text=text
         )

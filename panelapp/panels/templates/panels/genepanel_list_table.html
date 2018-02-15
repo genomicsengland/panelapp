@@ -85,6 +85,9 @@
                   0<br>
                   <span class="text-muted">0%</span>
                   {% endif %}
+                {% if entry.number_of_strs %}
+                    STRs: {{ entry.number_of_strs }}
+                {% endif %}
               </td>
               <td>
                   {% if entry.number_of_reviewers != None %}

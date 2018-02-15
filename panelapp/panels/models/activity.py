@@ -11,7 +11,7 @@ class ActivityManager(models.Manager):
         """Return activities for all publicly visible panels"""
 
         qs = self.get_queryset()
-        qs = qs.filter(panel__status=GenePanel.STATUS.public)
+        qs = qs.filter(Q(panel__status=GenePanel.STATUS.public) | Q(panel__status=GenePanel.STATUS.promoted))
         return qs
 
     def visible_to_gel(self):
@@ -30,5 +30,6 @@ class Activity(TimeStampedModel):
 
     panel = models.ForeignKey(GenePanel)
     gene_symbol = models.CharField(max_length=255, null=True)
+    str_name = models.CharField(max_length=64, null=True, blank=True)
     user = models.ForeignKey(User)
     text = models.CharField(max_length=255)

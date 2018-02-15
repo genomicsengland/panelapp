@@ -266,7 +266,7 @@ class UpdateEvaluationsMixin(VerifiedReviewerRequiredMixin, GeneObjectMixin, Bas
             gene=self.gene
         )
 
-        ctx['panel_genes'] = list(self.panel.get_all_entries_extra)
+        ctx['panel_genes'] = list(self.panel.get_all_genes_extra)
         cgi = ctx['panel_genes'].index(self.gene)
         ctx['next_gene'] = None if cgi == len(ctx['panel_genes']) - 1 else ctx['panel_genes'][cgi + 1]
         ctx['prev_gene'] = None if cgi == 0 else ctx['panel_genes'][cgi - 1]
@@ -479,7 +479,7 @@ class SubmitGeneCommentFormAjaxView(VerifiedReviewerRequiredMixin, GeneObjectMix
             'pk': self.panel.panel.pk,
             'gene_symbol': self.gene.gene.get('gene_symbol')
         }
-        return redirect(reverse_lazy('panels:evaluation', kwargs=kwargs))
+        return redirect(reverse_lazy('panels:evaluation_gene', kwargs=kwargs))
 
 
 class GetGeneCommentFormAjaxView(UpdateEvaluationsMixin):

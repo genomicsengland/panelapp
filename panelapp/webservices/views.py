@@ -102,10 +102,10 @@ def get_panel(request, panel_name):
             if not queryset:
                 return Response({"Query Error: The version requested for panel:" + panel_name + " was not found."})
 
-            gene_list = queryset[0].get_all_entries
+            gene_list = queryset[0].get_all_genes
             queryset = [queryset[0]]
         else:
-            gene_list = queryset[0].get_all_entries
+            gene_list = queryset[0].get_all_genes
 
     else:
         queryset = GenePanelSnapshot.objects.get_active()
@@ -135,7 +135,7 @@ def get_panel(request, panel_name):
                 queryset = queryset_name
         else:
             queryset = queryset_name_exact
-        gene_list = queryset[0].get_all_entries
+        gene_list = queryset[0].get_all_genes
 
     serializer = PanelSerializer(
         filter_gene_list(gene_list, **filters),

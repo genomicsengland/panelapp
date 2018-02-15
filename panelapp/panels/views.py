@@ -27,6 +27,7 @@ from .forms import UploadReviewsForm
 from .forms import PanelForm
 from .forms import PromotePanelForm
 from .forms import PanelGeneForm
+from .forms import PanelSTRForm
 from .forms import GeneReviewForm
 from .forms import GeneReadyForm
 from .forms import ComparePanelsForm
@@ -302,9 +303,46 @@ class PanelAddGeneView(VerifiedReviewerRequiredMixin, CreateView):
         return ret
 
     def get_success_url(self):
-        return reverse_lazy('panels:evaluation', kwargs={
+        return reverse_lazy('panels:evaluation_gene', kwargs={
             'pk': self.kwargs['pk'],
             'gene_symbol': self.gene_symbol
+        })
+
+
+class PanelAddSTRView(VerifiedReviewerRequiredMixin, CreateView):
+    template_name = "panels/genepanel_add_str.html"
+
+    form_class = PanelSTRForm
+    name = None
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['panel'] = self.panel
+        kwargs['request'] = self.request
+        return kwargs
+
+    def get_context_data(self, *args, **kwargs):
+        ctx = super().get_context_data(*args, **kwargs)
+        ctx['panel'] = self.panel
+        return ctx
+
+    @property
+    def panel(self):
+        return GenePanel.objects.get_active_panel(pk=self.kwargs['pk'])
+
+    def form_valid(self, form):
+        form.save_str()
+        self.name = form.cleaned_data['name']
+
+        ret = super().form_valid(form)
+        msg = "Successfully added a new STR to the panel {}".format(self.panel.panel.name)
+        messages.success(self.request, msg)
+        return ret
+
+    def get_success_url(self):
+        return reverse_lazy('panels:evaluation_str', kwargs={
+            'pk': self.kwargs['pk'],
+            'str': self.name
         })
 
 
@@ -342,7 +380,7 @@ class PanelEditGeneView(GELReviewerRequiredMixin, UpdateView):
         return ret
 
     def get_success_url(self):
-        return reverse_lazy('panels:evaluation', kwargs={
+        return reverse_lazy('panels:evaluation_gene', kwargs={
             'pk': self.kwargs['pk'],
             'gene_symbol': self.gene_symbol
         })
@@ -413,7 +451,7 @@ class GenePanelSpanshotView(DetailView):
         ctx['edit_gene_publications_form'] = UpdateGenePublicationsForm(instance=self.object)
         ctx['edit_gene_rating_form'] = UpdateGeneRatingForm(instance=self.object)
 
-        ctx['panel_genes'] = list(self.panel.get_all_entries_extra)
+        ctx['panel_genes'] = list(self.panel.get_all_genes_extra)
         cgi = ctx['panel_genes'].index(self.object)
         ctx['next_gene'] = None if cgi == len(ctx['panel_genes']) - 1 else ctx['panel_genes'][cgi + 1]
         ctx['prev_gene'] = None if cgi == 0 else ctx['panel_genes'][cgi - 1]
@@ -474,7 +512,7 @@ class GeneReviewView(VerifiedReviewerRequiredMixin, UpdateView):
         return ret
 
     def get_success_url(self):
-        return reverse_lazy('panels:evaluation', kwargs={
+        return reverse_lazy('panels:evaluation_gene', kwargs={
             'pk': self.kwargs['pk'],
             'gene_symbol': self.kwargs['gene_symbol']
         })
@@ -504,7 +542,7 @@ class MarkGeneReadyView(GELReviewerRequiredMixin, UpdateView):
         return ret
 
     def get_success_url(self):
-        return reverse_lazy('panels:evaluation', kwargs={
+        return reverse_lazy('panels:evaluation_gene', kwargs={
             'pk': self.kwargs['pk'],
             'gene_symbol': self.kwargs['gene_symbol']
         })
@@ -526,7 +564,7 @@ class MarkGeneNotReadyView(GELReviewerRequiredMixin, UpdateView):
         return redirect(self.get_success_url())
 
     def get_success_url(self):
-        return reverse_lazy('panels:evaluation', kwargs={
+        return reverse_lazy('panels:evaluation_gene', kwargs={
             'pk': self.kwargs['pk'],
             'gene_symbol': self.kwargs['gene_symbol']
         })
@@ -574,7 +612,7 @@ class DownloadPanelTSVMixin(PanelMixin, DetailView):
         ))
 
         categories = self.get_categories()
-        for gpentry in self.object.get_all_entries_extra:
+        for gpentry in self.object.get_all_genes_extra:
             if not gpentry.flagged and str(gpentry.status) in categories:
                 amber_perc, green_perc, red_prec = gpentry.aggregate_ratings()
 
@@ -658,8 +696,8 @@ class ComparePanelsView(FormView):
             ctx['panel_2'] = panel_2 = GenePanel.objects.get_panel(
                 pk=self.kwargs['panel_2_id']).active_panel
 
-            panel_1_items = {e.gene.get('gene_symbol'): e for e in panel_1.get_all_entries_extra}
-            panel_2_items = {e.gene.get('gene_symbol'): e for e in panel_2.get_all_entries_extra}
+            panel_1_items = {e.gene.get('gene_symbol'): e for e in panel_1.get_all_genes_extra}
+            panel_2_items = {e.gene.get('gene_symbol'): e for e in panel_2.get_all_genes_extra}
 
             all = list(set(panel_1_items.keys()) | set(panel_2_items.keys()))
             all.sort()
@@ -758,8 +796,8 @@ class CopyReviewsView(GELReviewerRequiredMixin, FormView):
         ctx['panel_2'] = panel_2 = GenePanel.objects.get_panel(
             pk=self.kwargs['panel_2_id']).active_panel
 
-        panel_1_items = {e.gene.get('gene_symbol'): e for e in panel_1.get_all_entries_extra}
-        panel_2_items = {e.gene.get('gene_symbol'): e for e in panel_2.get_all_entries_extra}
+        panel_1_items = {e.gene.get('gene_symbol'): e for e in panel_1.get_all_genes_extra}
+        panel_2_items = {e.gene.get('gene_symbol'): e for e in panel_2.get_all_genes_extra}
 
         intersection = list(set(panel_1_items.keys() & set(panel_2_items.keys())))
         intersection.sort()
@@ -799,7 +837,7 @@ class DownloadAllGenes(GELReviewerRequiredMixin, View):
         )
 
         for gps in GenePanelSnapshot.objects.get_active(all=True, internal=True):
-            for entry in gps.get_all_entries_extra:
+            for entry in gps.get_all_genes_extra:
                 if entry.flagged:
                     colour = "grey"
                 elif entry.status < 2:
