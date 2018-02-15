@@ -102,7 +102,7 @@ class EvaluationTest(LoginGELUser):
 
         self.client.post(url, gene_data)
 
-        url = reverse_lazy('panels:evaluation', kwargs={
+        url = reverse_lazy('panels:evaluation_gene', kwargs={
             'pk': gpes.panel.panel.pk,
             'gene_symbol': gpes.gene.get('gene_symbol')
         })

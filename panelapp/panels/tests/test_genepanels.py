@@ -117,7 +117,7 @@ class GenePanelTest(LoginGELUser):
         assert active_snapshot.major_version == 0
         assert active_snapshot.minor_version == 1
         assert gp.name == data['level4']
-        assert active_snapshot.get_all_entries.count() == 1
+        assert active_snapshot.get_all_genes.count() == 1
 
     def test_mark_all_genes_not_ready(self):
         gps = GenePanelSnapshotFactory()
@@ -280,7 +280,7 @@ class GenePanelTest(LoginGELUser):
 
         gp = GenePanel.objects.get(name="Panel One")
         active_panel = gp.active_panel
-        entries = active_panel.get_all_entries
+        entries = active_panel.get_all_genes
         assert entries.count() == 2
 
     def test_import_wrong_panel(self):

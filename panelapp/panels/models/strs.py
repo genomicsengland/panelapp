@@ -1,14 +1,21 @@
+"""STRs (Short Tandem Repeats) manager and model
+
+Author: Oleg Gerasimenko
+
+(c) 2018 Genomics England
+"""
+
 from django.db import models
 from django.db.models import Count
 from django.db.models import Subquery
-from django.urls import reverse
-
 from django.core.serializers.json import DjangoJSONEncoder
 from django.contrib.postgres.fields import JSONField
 from django.contrib.postgres.fields import ArrayField
+from django.contrib.postgres.fields import IntegerRangeField
+from django.urls import reverse
 
 from model_utils.models import TimeStampedModel
-
+from .entity import AbstractEntity
 from .gene import Gene
 from .evidence import Evidence
 from .evaluation import Evaluation
@@ -17,16 +24,13 @@ from .comment import Comment
 from .tag import Tag
 from .genepanelsnapshot import GenePanelSnapshot
 from .genepanel import GenePanel
-from .entity import AbstractEntity
-from panels.templatetags.panel_helpers import get_gene_list_data
-from panels.templatetags.panel_helpers import GeneDataType
 
 
-class GenePanelEntrySnapshotManager(models.Manager):
-    """Objects manager for GenePanelEntrySnapshot."""
+class STRManager(models.Manager):
+    """Objects manager for STR."""
 
     def get_latest_ids(self, deleted=False):
-        """Get GenePanelSnapshot ids"""
+        """Get STR ids"""
 
         qs = super().get_queryset()
         if not deleted:
@@ -36,15 +40,15 @@ class GenePanelEntrySnapshotManager(models.Manager):
             .values_list('panel__pk', flat=True)\
             .order_by('panel__panel__pk', '-panel__major_version', '-panel__minor_version')
 
-    def get_active(self, deleted=False, gene_symbol=None, pks=None):
-        """Get active Gene Entry Snapshots"""
+    def get_active(self, deleted=False, name=None, pks=None):
+        """Get active STRs"""
 
         if pks:
             qs = super().get_queryset().filter(panel__pk__in=pks)
         else:
             qs = super().get_queryset().filter(panel__pk__in=Subquery(self.get_latest_ids(deleted)))
-        if gene_symbol:
-            qs = qs.filter(gene_core__gene_symbol=gene_symbol)
+        if name:
+            qs = qs.filter(name=name)
 
         return qs.annotate(
                 number_of_reviewers=Count('evaluation__user', distinct=True),
@@ -54,13 +58,15 @@ class GenePanelEntrySnapshotManager(models.Manager):
             .prefetch_related('evaluation', 'tags', 'evidence', 'panel', 'panel__level4title', 'panel__panel')\
             .order_by('panel__pk', '-panel__major_version', '-panel__minor_version')
 
-    def get_gene_panels(self, gene_symbol, deleted=False, pks=None):
-        """Get panels for the specified gene"""
+    def get_str_panels(self, name, deleted=False, pks=None):
+        """Get panels for the specified STR name"""
 
-        return self.get_active(deleted=deleted, gene_symbol=gene_symbol, pks=pks)
+        return self.get_active(deleted=deleted, name=name, pks=pks)
 
 
-class GenePanelEntrySnapshot(AbstractEntity, TimeStampedModel):
+class STR(AbstractEntity, TimeStampedModel):
+    """Short Tandem Repeat (STR) Entity"""
+
     class Meta:
         get_latest_by = "created"
         ordering = ['-saved_gel_status', ]
@@ -70,6 +76,13 @@ class GenePanelEntrySnapshot(AbstractEntity, TimeStampedModel):
         ]
 
     panel = models.ForeignKey(GenePanelSnapshot)
+
+    name = models.CharField(max_length=128)
+    position = models.CharField(max_length=32, help_text="Chr:Start Position")
+    normal_range = IntegerRangeField(blank=True, null=True)
+    prepathogenic_range = IntegerRangeField(blank=True, null=True)
+    pathogenic_range = IntegerRangeField()
+
     gene = JSONField(encoder=DjangoJSONEncoder)  # copy data from Gene.dict_tr
     gene_core = models.ForeignKey(Gene)  # reference to the original Gene
     evidence = models.ManyToManyField(Evidence)
@@ -91,26 +104,30 @@ class GenePanelEntrySnapshot(AbstractEntity, TimeStampedModel):
     )
     saved_gel_status = models.IntegerField(null=True, db_index=True)
 
-    objects = GenePanelEntrySnapshotManager()
+    objects = STRManager()
 
     def __str__(self):
-        return "Panel: {} Gene: {}".format(self.panel.panel.name, self.gene.get('gene_symbol'))
+        return "Panel: {panel_name} STR: {str_name}".format(
+            panel_name=self.panel.panel.name,
+            str_name=self.name
+        )
 
     @property
     def label(self):
-        return 'gene: {gene_symbol}'.format(gene_symbol=self.gene.get('gene_symbol'))
-
-    @property
-    def name(self):
-        return self.gene.get('gene_symbol')
+        return 'STR: {name}'.format(name=self.name)
 
     def get_absolute_url(self):
-        """Returns absolute url for this gene in a panel"""
+        """Returns absolute url for this STR in a panel"""
 
-        return reverse('panels:evaluation_gene', args=(self.panel.panel.pk, self.gene.get('gene_symbol')))
+        return reverse('panels:evaluation_str', args=(self.panel.panel.pk, self.name))
 
     def dict_tr(self):
         return {
+            "name": self.name,
+            "position": self.position,
+            "normal_range": (self.normal_range.lower, self.normal_range.upper),
+            "prepathogenic_range": (self.prepathogenic_range.lower, self.prepathogenic_range.upper),
+            "pathogenic_range": (self.pathogenic_range.lower, self.pathogenic_range.upper),
             "gene": self.gene,
             "evidence": [evidence.dict_tr() for evidence in self.evidence.all()],
             "evaluation": [evaluation.dict_tr() for evaluation in self.evaluation.all()],
@@ -130,6 +147,11 @@ class GenePanelEntrySnapshot(AbstractEntity, TimeStampedModel):
         """
 
         return {
+            "name": self.name,
+            "position": self.position,
+            "normal_range": self.normal_range,
+            "prepathogenic_range": self.prepathogenic_range,
+            "pathogenic_range": self.pathogenic_range.lower,
             "gene": self.gene_core,
             "gene_json": self.gene,
             "gene_name": self.gene.get('gene_name'),

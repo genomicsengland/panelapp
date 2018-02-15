@@ -87,7 +87,7 @@
                   <h4 class="remove-top-margin" title="Level 4 title">
                     <span style="font-size: 16px" class="gel-banner {{ entry|gene_list_class }}" title="{{ entry|gene_list_name }}">
                       {{ entry|gene_list_short_name }}
-                    </span> <a href="{% url 'panels:evaluation' entry.panel.panel.id entry.gene.gene_symbol %}" class="link-inherit gel-text {{ entry|gene_list_class }} js-open-on-submit">{{ entry.gene.gene_symbol }}</a> in <a href="{% url 'panels:detail' entry.panel.panel.id %}" class="js-open-on-submit">
+                    </span> <a href="{% url 'panels:evaluation_gene' entry.panel.panel.id entry.gene.gene_symbol %}" class="link-inherit gel-text {{ entry|gene_list_class }} js-open-on-submit">{{ entry.gene.gene_symbol }}</a> in <a href="{% url 'panels:detail' entry.panel.panel.id %}" class="js-open-on-submit">
                       {{ entry.panel.level4title.name }}
                     </a>
                   </h4>

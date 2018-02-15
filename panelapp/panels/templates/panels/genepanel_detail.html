@@ -64,13 +64,24 @@
       </div>
   </div>
 
-  <h2 class="add-label-margin">{{ panel.get_all_entries_extra|length }} gene{{ panel.get_all_entries_extra|length|pluralize}}</h2>
+  <h2 class="add-label-margin">{{ panel.get_all_genes_extra|length }} gene{{ panel.get_all_genes_extra|length|pluralize}}</h2>
   <h3 class="text-muted normal remove-top-margin add-bottom-margin">{{ panel.stats.number_of_evaluated_genes }} reviewed{% if request.user.is_authenticated and request.user.reviewer.is_GEL %}, {{ panel.stats.number_of_ready_genes }} ready{% endif %}, {{ panel.stats.number_of_green_genes }} green</h3>
 
   <div data-module="sortable-table" data-default-key="gene">
       <div class="table-responsive" data-module="filterable-table">
           <table class="table table-bordered table-hover" id="table">
             {% include "panels/genepanel_table.html" %}
+          </table>
+      </div>
+  </div>
+
+  <h2 class="add-label-margin">{{ panel.get_all_strs_extra|length }} STR{{ panel.get_all_strs_extra|length|pluralize}}</h2>
+  <h3 class="text-muted normal remove-top-margin add-bottom-margin">{{ panel.stats.number_of_evaluated_strs }} reviewed{% if request.user.is_authenticated and request.user.reviewer.is_GEL %}, {{ panel.stats.number_of_ready_strs }} ready{% endif %}, {{ panel.stats.number_of_green_strs }} green</h3>
+
+  <div data-module="sortable-table" data-default-key="str">
+      <div class="table-responsive" data-module="filterable-table">
+          <table class="table table-bordered table-hover" id="table">
+            {% include "panels/strs_table.html" %}
           </table>
       </div>
   </div>

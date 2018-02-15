@@ -57,10 +57,13 @@ class Evaluation(TimeStampedModel):
     comments = models.ManyToManyField(Comment)
 
     def __str__(self):
-        gene_symbol = None
-        if self.genepanelentrysnapshot_set.first():
-            gene_symbol = self.genepanelentrysnapshot_set.first().gene.get('gene_symbol')
-        return "{} review by {}".format(gene_symbol, self.user.get_full_name())
+        label = None
+        # first check if it's STR, then GPES
+        if self.str_set.first():
+            label = self.str_set.first().label
+        elif self.genepanelentrysnapshot_set.first():
+            label = self.genepanelentrysnapshot_set.first().label
+        return "{} review by {}".format(label, self.user.get_full_name())
 
     def is_comment_without_review(self):
         if (self.rating
