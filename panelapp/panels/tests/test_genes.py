@@ -76,7 +76,7 @@ class GeneTest(LoginGELUser):
 
     def test_gene_not_ready(self):
         gpes = GenePanelEntrySnapshotFactory()
-        url = reverse_lazy('panels:mark_gene_as_not_ready', args=(gpes.panel.panel.pk, gpes.gene.get('gene_symbol')))
+        url = reverse_lazy('panels:mark_entity_as_not_ready', args=(gpes.panel.panel.pk, 'gene', gpes.gene.get('gene_symbol')))
         r = self.client.post(url, {})
         self.assertEqual(r.status_code, 302)
 

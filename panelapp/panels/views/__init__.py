@@ -11,8 +11,6 @@ from .panels import UpdatePanelView
 from .panels import PromotePanelView
 from .genes import GeneDetailView
 from .genes import GeneListView
-from .genes import PanelAddGeneView
-from .genes import PanelEditGeneView
 from .genes import GeneReviewView
 from .genes import DownloadPanelTSVView
 from .genes import DownloadPanelVersionTSVView
@@ -20,8 +18,9 @@ from .genes import ComparePanelsView
 from .genes import CompareGeneView
 from .genes import CopyReviewsView
 from .genes import DownloadAllGenes
+from .entities import PanelEditEntityView
+from .entities import PanelAddEntityView
 from .entities import PanelMarkNotReadyView
 from .entities import GenePanelSpanshotView
-from .entities import MarkGeneReadyView
+from .entities import MarkEntityReadyView
 from .entities import MarkGeneNotReadyView
-from .strs import PanelAddSTRView

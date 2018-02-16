@@ -102,14 +102,14 @@
     </div>
   {% if request.user.is_authenticated and request.user.reviewer.is_GEL %}
   <div class="panel-footer">
-    <a href="{% url 'panels:edit_gene' panel.panel_id gene.gene.gene_symbol %}" class="btn btn-info" data-module="showhide" data-show=".edit-gene-form" data-hide=".panel.panel-details">
+    <a href="{% url 'panels:edit_entity' panel.panel_id 'gene' gene.gene.gene_symbol %}" class="btn btn-info" data-module="showhide" data-show=".edit-gene-form" data-hide=".panel.panel-details">
       <i class="fa fa-edit"></i> Edit gene
     </a>
   </div>
   {% endif %}
 </div>
 {% if request.user.is_authenticated and request.user.reviewer.is_GEL %}
-<form class="edit-gene-form form row hidden" action="{% url 'panels:edit_gene' panel.panel_id  gene.gene.gene_symbol %}#!details" method="post">
+<form class="edit-gene-form form row hidden" action="{% url 'panels:edit_entity' panel.panel_id 'gene' gene.gene.gene_symbol %}#!details" method="post">
   {% csrf_token %}
   <div class="col-md-12">
     <div class="well">

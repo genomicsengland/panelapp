@@ -61,12 +61,12 @@ class GenePanelTest(LoginGELUser):
 
     def test_view_add_gene_to_panel(self):
         gpes = GenePanelEntrySnapshotFactory()
-        r = self.client.get(reverse_lazy('panels:add_gene', args=(gpes.panel.panel.pk,)))
+        r = self.client.get(reverse_lazy('panels:add_entity', args=(gpes.panel.panel.pk, 'gene')))
         self.assertEqual(r.status_code, 200)
 
     def test_view_edit_gene_in_panel(self):
         gpes = GenePanelEntrySnapshotFactory()
-        url = reverse_lazy('panels:edit_gene', args=(gpes.panel.panel.pk, gpes.gene.get('gene_symbol'),))
+        url = reverse_lazy('panels:edit_entity', args=(gpes.panel.panel.pk, 'gene', gpes.gene.get('gene_symbol'),))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
 

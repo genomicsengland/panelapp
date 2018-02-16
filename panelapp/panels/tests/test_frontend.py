@@ -25,7 +25,7 @@ class TestActivities(LoginReviewerUser):
         GenePanelEntrySnapshotFactory.create_batch(4, panel=gps)
         gene = GeneFactory()
 
-        url = reverse_lazy('panels:add_gene', kwargs={'pk': gps.panel.pk})
+        url = reverse_lazy('panels:add_entity', kwargs={'pk': gps.panel.pk, 'entity_type': 'gene'})
         gene_data = {
             "gene": gene.pk,
             "source": Evidence.OTHER_SOURCES[0],
@@ -35,6 +35,6 @@ class TestActivities(LoginReviewerUser):
             "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][randint(1, 2)][0],
             "penetrance": GenePanelEntrySnapshot.PENETRANCE.Incomplete,
         }
-        self.client.post(url, gene_data)
+        req = self.client.post(url, gene_data)
 
         self.assertEqual(Activity.objects.count(), 1)

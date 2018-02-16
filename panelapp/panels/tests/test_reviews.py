@@ -102,9 +102,10 @@ class EvaluationTest(LoginGELUser):
 
         self.client.post(url, gene_data)
 
-        url = reverse_lazy('panels:evaluation_gene', kwargs={
+        url = reverse_lazy('panels:evaluation', kwargs={
             'pk': gpes.panel.panel.pk,
-            'gene_symbol': gpes.gene.get('gene_symbol')
+            'entity_type': 'gene',
+            'entity_name': gpes.gene.get('gene_symbol')
         })
         res = self.client.get(url)
         assert res.content.find(str.encode('<option value="{}" selected>'.format(gene_data['moi']))) != -1
@@ -180,9 +181,10 @@ class GeneReviewTest(LoginGELUser):
     def test_mark_as_ready(self):
         gpes = GenePanelEntrySnapshotFactory()
         gpes.evaluation.all().delete()
-        url = reverse_lazy('panels:mark_gene_as_ready', kwargs={
+        url = reverse_lazy('panels:mark_entity_as_ready', kwargs={
             'pk': gpes.panel.panel.pk,
-            'gene_symbol': gpes.gene.get('gene_symbol')
+            'entity_type': 'gene',
+            'entity_name': gpes.gene.get('gene_symbol')
         })
 
         self.client.post(url, {'ready_comment': fake.sentence()})

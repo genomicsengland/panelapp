@@ -496,10 +496,21 @@ class GenePanelSnapshot(TimeStampedModel):
                 'evaluation__user__username'
             ).order_by('evaluation__user')
 
-    def mark_genes_not_ready(self):
+    def mark_entities_not_ready(self):
+        """Mark entities (genes, STRs) as not ready
+
+        @TODO(Oleg) refactor this method at some point, and run it as a single query per entity
+
+        Returns:
+             None
+        """
         for gene in self.cached_genes.all():
             gene.ready = False
             gene.save()
+
+        for str_item in self.cached_strs.all():
+            str_item.ready = False
+            str_item.save()
 
     def get_form_initial(self):
         return {

@@ -106,83 +106,6 @@ class GeneListView(ListView):
         return ctx
 
 
-class PanelAddGeneView(VerifiedReviewerRequiredMixin, CreateView):
-    template_name = "panels/genepanel_add_gene.html"
-
-    form_class = PanelGeneForm
-    gene_symbol = None
-
-    def get_form_kwargs(self):
-        kwargs = super().get_form_kwargs()
-        kwargs['panel'] = GenePanel.objects.get_active_panel(pk=self.kwargs['pk'])
-        kwargs['request'] = self.request
-        return kwargs
-
-    def get_context_data(self, *args, **kwargs):
-        ctx = super().get_context_data(*args, **kwargs)
-        ctx['panel'] = self.panel
-        return ctx
-
-    @property
-    def panel(self):
-        return GenePanel.objects.get_active_panel(pk=self.kwargs['pk'])
-
-    def form_valid(self, form):
-        form.save_gene()
-        self.gene_symbol = form.cleaned_data['gene'].gene_symbol
-
-        ret = super().form_valid(form)
-        msg = "Successfully added a new gene to the panel {}".format(self.panel.panel.name)
-        messages.success(self.request, msg)
-        return ret
-
-    def get_success_url(self):
-        return reverse_lazy('panels:evaluation_gene', kwargs={
-            'pk': self.kwargs['pk'],
-            'gene_symbol': self.gene_symbol
-        })
-
-
-class PanelEditGeneView(GELReviewerRequiredMixin, UpdateView):
-    template_name = "panels/genepanel_edit_gene.html"
-
-    form_class = PanelGeneForm
-    gene_symbol = None
-
-    def get_object(self):
-        return self.panel.get_gene(self.kwargs['gene_symbol'], prefetch_extra=True)
-
-    @cached_property
-    def panel(self):
-        return GenePanel.objects.get_active_panel(pk=self.kwargs['pk'])
-
-    def get_form_kwargs(self):
-        kwargs = super().get_form_kwargs()
-        kwargs['panel'] = self.panel
-        kwargs['request'] = self.request
-        kwargs['initial'] = self.object.get_form_initial()
-        return kwargs
-
-    def get_context_data(self, *args, **kwargs):
-        ctx = super().get_context_data(*args, **kwargs)
-        ctx['panel'] = self.panel
-        return ctx
-
-    def form_valid(self, form):
-        form.save_gene()
-        self.gene_symbol = form.cleaned_data['gene'].gene_symbol
-        ret = super().form_valid(form)
-        msg = "Successfully changed gene information for panel {}".format(self.panel.panel.name)
-        messages.success(self.request, msg)
-        return ret
-
-    def get_success_url(self):
-        return reverse_lazy('panels:evaluation_gene', kwargs={
-            'pk': self.kwargs['pk'],
-            'gene_symbol': self.gene_symbol
-        })
-
-
 class GeneReviewView(VerifiedReviewerRequiredMixin, UpdateView):
     template_name = "panels/genepanel_edit_gene.html"
     context_object_name = 'gene'
@@ -224,9 +147,10 @@ class GeneReviewView(VerifiedReviewerRequiredMixin, UpdateView):
         return ret
 
     def get_success_url(self):
-        return reverse_lazy('panels:evaluation_gene', kwargs={
+        return reverse_lazy('panels:evaluation', kwargs={
             'pk': self.kwargs['pk'],
-            'gene_symbol': self.kwargs['gene_symbol']
+            'entity_type': 'gene',
+            'entity_name': self.kwargs['gene_symbol']
         })
 
 
