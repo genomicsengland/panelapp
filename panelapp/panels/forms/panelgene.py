@@ -16,8 +16,7 @@ from panels.models import GenePanel
 
 
 class PanelGeneForm(forms.ModelForm):
-    """
-    The goal for this form is to add a Gene to a Panel.
+    """The goal for this form is to add a Gene to a Panel.
 
     How this works:
 
@@ -124,7 +123,7 @@ class PanelGeneForm(forms.ModelForm):
         return self.cleaned_data['moi']
 
     def clean_gene(self):
-        "Check if gene exists in a panel if we add a new gene or change the gene"
+        """Check if gene exists in a panel if we add a new gene or change the gene"""
 
         gene_symbol = self.cleaned_data['gene'].gene_symbol
         if not self.instance.pk and self.panel.has_gene(gene_symbol):
@@ -145,11 +144,11 @@ class PanelGeneForm(forms.ModelForm):
         return self.cleaned_data['gene']
 
     def save(self, *args, **kwargs):
-        "Don't save the original panel as we need to increment version first"
+        """Don't save the original panel as we need to increment version first"""
         return False
 
     def save_gene(self, *args, **kwargs):
-        "Saves the gene, increments version and returns the gene back"
+        """Saves the gene, increments version and returns the gene back"""
 
         gene_data = self.cleaned_data
         gene_data['sources'] = gene_data.pop('source')

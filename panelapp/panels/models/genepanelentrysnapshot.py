@@ -107,7 +107,7 @@ class GenePanelEntrySnapshot(AbstractEntity, TimeStampedModel):
     def get_absolute_url(self):
         """Returns absolute url for this gene in a panel"""
 
-        return reverse('panels:evaluation_gene', args=(self.panel.panel.pk, self.gene.get('gene_symbol')))
+        return reverse('panels:evaluation', args=(self.panel.panel.pk, 'gene', self.gene.get('gene_symbol')))
 
     def dict_tr(self):
         return {

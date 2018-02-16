@@ -19,14 +19,14 @@ fake = Factory.create()
 
 
 class GenePanelSnapshotReviewerTest(LoginReviewerUser):
-    "Verified reviewer tests"
+    """Verified reviewer tests"""
 
     def test_reviewer_gene_grey(self):
-        "When a reviewer adds a gene it should be marked as grey gene"
+        """When a reviewer adds a gene it should be marked as grey gene"""
 
         gene = GeneFactory()
         gps = GenePanelSnapshotFactory()
-        url = reverse_lazy('panels:add_gene', kwargs={'pk': gps.panel.pk})
+        url = reverse_lazy('panels:add_entity', kwargs={'pk': gps.panel.pk, 'entity_type': 'gene'})
         gene_data = {
             "gene": gene.pk,
             "source": Evidence.OTHER_SOURCES[0],
@@ -46,7 +46,7 @@ class GenePanelSnapshotReviewerTest(LoginReviewerUser):
 
         gene = GeneFactory()
         gps = GenePanelSnapshotFactory()
-        url = reverse_lazy('panels:add_gene', kwargs={'pk': gps.panel.pk})
+        url = reverse_lazy('panels:add_entity', kwargs={'pk': gps.panel.pk, 'entity_type': 'gene'})
         gene_data = {
             "gene": gene.pk,
             "source": Evidence.OTHER_SOURCES[0],
@@ -63,7 +63,7 @@ class GenePanelSnapshotReviewerTest(LoginReviewerUser):
 
 
 class GenePanelSnapshotTest(LoginGELUser):
-    "GeL currator tests"
+    """GeL currator tests"""
 
     def test_add_gene_to_panel(self):
         gene = GeneFactory()
@@ -71,7 +71,7 @@ class GenePanelSnapshotTest(LoginGELUser):
 
         number_of_genes = gps.number_of_genes
 
-        url = reverse_lazy('panels:add_gene', kwargs={'pk': gps.panel.pk})
+        url = reverse_lazy('panels:add_entity', kwargs={'pk': gps.panel.pk, 'entity_type': 'gene'})
         gene_data = {
             "gene": gene.pk,
             "source": Evidence.ALL_SOURCES[randint(0, 9)],
@@ -95,11 +95,11 @@ class GenePanelSnapshotTest(LoginGELUser):
         assert number_of_genes + 1 == new_current_number
 
     def test_gel_curator_gene_red(self):
-        "When gene is added by a GeL currator it should be marked as red"
+        """When gene is added by a GeL currator it should be marked as red"""
 
         gene = GeneFactory()
         gps = GenePanelSnapshotFactory()
-        url = reverse_lazy('panels:add_gene', kwargs={'pk': gps.panel.pk})
+        url = reverse_lazy('panels:add_entity', kwargs={'pk': gps.panel.pk, 'entity_type': 'gene'})
         gene_data = {
             "gene": gene.pk,
             "source": Evidence.OTHER_SOURCES[0],
@@ -116,18 +116,20 @@ class GenePanelSnapshotTest(LoginGELUser):
 
     def test_gene_evaluation(self):
         gpes = GenePanelEntrySnapshotFactory()
-        url = reverse_lazy('panels:evaluation_gene', kwargs={
+        url = reverse_lazy('panels:evaluation', kwargs={
             'pk': gpes.panel.panel.pk,
-            'gene_symbol': gpes.gene.get('gene_symbol')
+            'entity_type': 'gene',
+            'entity_name': gpes.gene.get('gene_symbol')
         })
         res = self.client.get(url)
         assert res.status_code == 200
 
     def test_edit_gene_in_panel(self):
         gpes = GenePanelEntrySnapshotFactory()
-        url = reverse_lazy('panels:edit_gene', kwargs={
+        url = reverse_lazy('panels:edit_entity', kwargs={
             'pk': gpes.panel.panel.pk,
-            'gene_symbol': gpes.gene.get('gene_symbol')
+            'entity_type': 'gene',
+            'entity_name': gpes.gene.get('gene_symbol')
         })
 
         number_of_genes = gpes.panel.number_of_genes
@@ -166,9 +168,10 @@ class GenePanelSnapshotTest(LoginGELUser):
         gpes = GenePanelEntrySnapshotFactory(
             penetrance=GenePanelEntrySnapshot.PENETRANCE.Incomplete
         )
-        url = reverse_lazy('panels:edit_gene', kwargs={
+        url = reverse_lazy('panels:edit_entity', kwargs={
             'pk': gpes.panel.panel.pk,
-            'gene_symbol': gpes.gene.get('gene_symbol')
+            'entity_type': 'gene',
+            'entity_name': gpes.gene.get('gene_symbol')
         })
 
         gene_data = {
@@ -193,9 +196,10 @@ class GenePanelSnapshotTest(LoginGELUser):
         gpes = GenePanelEntrySnapshotFactory(
             penetrance=GenePanelEntrySnapshot.PENETRANCE.Incomplete
         )
-        url = reverse_lazy('panels:edit_gene', kwargs={
+        url = reverse_lazy('panels:edit_entity', kwargs={
             'pk': gpes.panel.panel.pk,
-            'gene_symbol': gpes.gene.get('gene_symbol')
+            'entity_type': 'gene',
+            'entity_name': gpes.gene.get('gene_symbol')
         })
 
         tag = TagFactory(name='some tag')
@@ -226,9 +230,10 @@ class GenePanelSnapshotTest(LoginGELUser):
         tag = TagFactory(name='some tag')
         gpes.tags.add(tag)
 
-        url = reverse_lazy('panels:edit_gene', kwargs={
+        url = reverse_lazy('panels:edit_entity', kwargs={
             'pk': gpes.panel.panel.pk,
-            'gene_symbol': gpes.gene.get('gene_symbol')
+            'entity_type': 'gene',
+            'entity_name': gpes.gene.get('gene_symbol')
         })
 
         gene_data = {
@@ -253,9 +258,10 @@ class GenePanelSnapshotTest(LoginGELUser):
         gpes = GenePanelEntrySnapshotFactory(
             penetrance=GenePanelEntrySnapshot.PENETRANCE.Incomplete
         )
-        url = reverse_lazy('panels:edit_gene', kwargs={
+        url = reverse_lazy('panels:edit_entity', kwargs={
             'pk': gpes.panel.panel.pk,
-            'gene_symbol': gpes.gene.get('gene_symbol')
+            'entity_type': 'gene',
+            'entity_name': gpes.gene.get('gene_symbol')
         })
 
         gene_data = {
@@ -283,9 +289,10 @@ class GenePanelSnapshotTest(LoginGELUser):
         gpes.publications = []
         gpes.save()
 
-        url = reverse_lazy('panels:edit_gene', kwargs={
+        url = reverse_lazy('panels:edit_entity', kwargs={
             'pk': gpes.panel.panel.pk,
-            'gene_symbol': gpes.gene.get('gene_symbol')
+            'entity_type': 'gene',
+            'entity_name': gpes.gene.get('gene_symbol')
         })
 
         gene_data = {
@@ -313,9 +320,10 @@ class GenePanelSnapshotTest(LoginGELUser):
         gpes.publications = [fake.sentence(), fake.sentence()]
         gpes.save()
 
-        url = reverse_lazy('panels:edit_gene', kwargs={
+        url = reverse_lazy('panels:edit_entity', kwargs={
             'pk': gpes.panel.panel.pk,
-            'gene_symbol': gpes.gene.get('gene_symbol')
+            'entity_type': 'gene',
+            'entity_name': gpes.gene.get('gene_symbol')
         })
 
         gene_data = {
@@ -337,9 +345,10 @@ class GenePanelSnapshotTest(LoginGELUser):
     def test_mitochondrial_gene(self):
         gene = GeneFactory(gene_symbol="MT-LORUM")
         gpes = GenePanelEntrySnapshotFactory(gene_core=gene)
-        url = reverse_lazy('panels:edit_gene', kwargs={
+        url = reverse_lazy('panels:edit_entity', kwargs={
             'pk': gpes.panel.panel.pk,
-            'gene_symbol': gpes.gene.get('gene_symbol')
+            'entity_type': 'gene',
+            'entity_name': gpes.gene.get('gene_symbol')
         })
 
         # make sure new data has at least 1 of the same items
@@ -409,9 +418,10 @@ class GenePanelSnapshotTest(LoginGELUser):
 
     def test_edit_gene_name_ajax(self):
         gpes = GenePanelEntrySnapshotFactory()
-        url = reverse_lazy('panels:edit_gene', kwargs={
+        url = reverse_lazy('panels:edit_entity', kwargs={
             'pk': gpes.panel.panel.pk,
-            'gene_symbol': gpes.gene.get('gene_symbol')
+            'entity_type': 'gene',
+            'entity_name': gpes.gene.get('gene_symbol')
         })
 
         old_gene_symbol = gpes.gene.get('gene_symbol')

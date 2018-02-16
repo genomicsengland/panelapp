@@ -59,7 +59,7 @@
 {% if request.user.is_authenticated and request.user.reviewer.is_verified %}
     <ul class="list-group">
         <li class="list-group-item" style="border-top: none">
-            <a href="{% url 'panels:add_gene' panel.panel_id %}">
+            <a href="{% url 'panels:add_entity' panel.panel_id 'gene' %}">
                 <i class="fa fa-plus add-right-margin"></i>Add a gene
             </a>
         </li>

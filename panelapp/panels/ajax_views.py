@@ -477,9 +477,10 @@ class SubmitGeneCommentFormAjaxView(VerifiedReviewerRequiredMixin, GeneObjectMix
     def return_post_data(self):
         kwargs = {
             'pk': self.panel.panel.pk,
-            'gene_symbol': self.gene.gene.get('gene_symbol')
+            'entity_name': self.gene.gene.get('gene_symbol'),
+            'entity_type': 'gene'
         }
-        return redirect(reverse_lazy('panels:evaluation_gene', kwargs=kwargs))
+        return redirect(reverse_lazy('panels:evaluation', kwargs=kwargs))
 
 
 class GetGeneCommentFormAjaxView(UpdateEvaluationsMixin):

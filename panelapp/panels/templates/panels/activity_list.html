@@ -40,7 +40,7 @@
           </td>
           <td>
             {% if activity.gene_symbol %}
-              <a href="{% url 'panels:evaluation_gene' activity.panel.pk activity.gene_symbol %}">{{ activity.gene_symbol }}</a>
+              <a href="{% url 'panels:evaluation' activity.panel.pk 'gene' activity.gene_symbol %}">{{ activity.gene_symbol }}</a>
             {% endif %}
           </td>
           <td>

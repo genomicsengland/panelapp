@@ -15,7 +15,6 @@ from django.urls import reverse_lazy
 from django.urls import reverse
 from django.http import StreamingHttpResponse
 from panelapp.mixins import GELReviewerRequiredMixin
-from panelapp.mixins import VerifiedReviewerRequiredMixin
 from accounts.models import User
 from panels.forms import PromotePanelForm
 from panels.forms import ComparePanelsForm

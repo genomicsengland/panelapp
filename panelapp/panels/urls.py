@@ -11,12 +11,12 @@ from .views import GenePanelView
 from .views import PanelsIndexView
 from .views import UpdatePanelView
 from .views import PromotePanelView
-from .views import PanelAddGeneView
-from .views import PanelEditGeneView
+from .views import PanelAddEntityView
+from .views import PanelEditEntityView
 from .views import PanelMarkNotReadyView
 from .views import GenePanelSpanshotView
 from .views import GeneReviewView
-from .views import MarkGeneReadyView
+from .views import MarkEntityReadyView
 from .views import DownloadPanelTSVView
 from .views import DownloadPanelVersionTSVView
 from .views import MarkGeneNotReadyView
@@ -26,7 +26,6 @@ from .views import CopyReviewsView
 from .views import DownloadAllGenes
 from .views import DownloadAllPanels
 from .views import ActivityListView
-from .views import PanelAddSTRView
 from .ajax_views import ClearPublicationsAjaxView
 from .ajax_views import ClearPhoenotypesAjaxView
 from .ajax_views import ClearModeOfPathogenicityAjaxView
@@ -61,8 +60,7 @@ urlpatterns = [
     url(r'^(?P<pk>[0-9]+)/$', GenePanelView.as_view(), name="detail"),
     url(r'^(?P<pk>[0-9]+)/update$', UpdatePanelView.as_view(), name="update"),
     url(r'^(?P<pk>[0-9]+)/promote$', PromotePanelView.as_view(), name="promote"),
-    url(r'^(?P<pk>[0-9]+)/add_gene$', PanelAddGeneView.as_view(), name="add_gene"),
-    url(r'^(?P<pk>[0-9]+)/add_str', PanelAddSTRView.as_view(), name="add_str"),
+    url(r'^(?P<pk>[0-9]+)/(?P<entity_type>(gene|str))/add', PanelAddEntityView.as_view(), name="add_entity"),
     url(r'^(?P<pk>[0-9]+)/delete$', DeletePanelAjaxView.as_view(), name="delete_panel"),
     url(r'^(?P<pk>[0-9]+)/reject$', RejectPanelAjaxView.as_view(), name="reject_panel"),
     url(r'^(?P<pk>[0-9]+)/approve$', ApprovePanelAjaxView.as_view(), name="approve_panel"),
@@ -70,13 +68,13 @@ urlpatterns = [
         DownloadPanelTSVView.as_view(), name="download_panel_tsv"),
     url(r'^(?P<pk>[0-9]+)/download_version/$',
         DownloadPanelVersionTSVView.as_view(), name="download_old_panel_tsv"),
-    url(r'^(?P<pk>[0-9]+)/gene/(?P<gene_symbol>{})/$'.format(gene_regex), GenePanelSpanshotView.as_view(), name="evaluation_gene"),
-    url(r'^(?P<pk>[0-9]+)/gene/(?P<gene_symbol>{})/edit$'.format(gene_regex), PanelEditGeneView.as_view(), name="edit_gene"),
+    url(r'^(?P<pk>[0-9]+)/(?P<entity_type>(gene|str))/(?P<entity_name>{})/$'.format(gene_regex), GenePanelSpanshotView.as_view(), name="evaluation"),
+    url(r'^(?P<pk>[0-9]+)/(?P<entity_type>(gene|str))/(?P<entity_name>{})/edit$'.format(gene_regex), PanelEditEntityView.as_view(), name="edit_entity"),
     url(r'^(?P<pk>[0-9]+)/gene/(?P<gene_symbol>{})/review$'.format(gene_regex), GeneReviewView.as_view(), name="review_gene"),
-    url(r'^(?P<pk>[0-9]+)/gene/(?P<gene_symbol>{})/mark_as_ready$'.format(gene_regex),
-        MarkGeneReadyView.as_view(), name="mark_gene_as_ready"),
-    url(r'^(?P<pk>[0-9]+)/gene/(?P<gene_symbol>{})/mark_as_not_ready$'.format(gene_regex),
-        MarkGeneNotReadyView.as_view(), name="mark_gene_as_not_ready"),
+    url(r'^(?P<pk>[0-9]+)/(?P<entity_type>(gene|str))/(?P<entity_name>{})/mark_as_ready$'.format(gene_regex),
+        MarkEntityReadyView.as_view(), name="mark_entity_as_ready"),
+    url(r'^(?P<pk>[0-9]+)/(?P<entity_type>(gene|str))/(?P<entity_name>{})/mark_as_not_ready$'.format(gene_regex),
+        MarkGeneNotReadyView.as_view(), name="mark_entity_as_not_ready"),
 
     # AJAX endpoints
     url(r'^(?P<pk>[0-9]+)/gene/(?P<gene_symbol>{})/delete$'.format(gene_regex), DeleteGeneAjaxView.as_view(), name="delete_gene"),

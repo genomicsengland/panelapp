@@ -46,7 +46,7 @@
                 <h4 class="remove-top-margin remove-bottom-margin">
                   <span style="font-size: 16px" class="gel-banner {{ gene.1|gene_list_class }}" title="{{ gene.1|gene_list_name }}">
                     {{ gene.1|gene_list_short_name }}
-                  </span> <a href="{% url 'panels:evaluation_gene' gene.1.panel.panel_id gene.0 %}" class="link-inherit gel-text {{ gene.1|gene_list_class }} js-open-on-submit">{{ gene.0 }}</a>
+                  </span> <a href="{% url 'panels:evaluation' gene.1.panel.panel_id 'gene' gene.0 %}" class="link-inherit gel-text {{ gene.1|gene_list_class }} js-open-on-submit">{{ gene.0 }}</a>
                 </h4>
                 {{ gene.1.evaluation.count }} review{{gene.1.evaluation.count|pluralize}}
               {% endif %}
@@ -59,7 +59,7 @@
             <td>
               {% if gene.2 %}
                 <h4 class="remove-top-margin remove-bottom-margin">
-                  <a href="{% url 'panels:evaluation_gene' gene.2.panel.panel_id gene.0 %}" class="link-inherit gel-text {{ gene.2|gene_list_class }} js-open-on-submit">{{ gene.0 }}</a> <span style="font-size: 12px" class="gel-banner {{ gene.2|gene_list_class }}" title="{{ gene.2|gene_list_name }}">
+                  <a href="{% url 'panels:evaluation' gene.2.panel.panel_id 'gene' gene.0 %}" class="link-inherit gel-text {{ gene.2|gene_list_class }} js-open-on-submit">{{ gene.0 }}</a> <span style="font-size: 12px" class="gel-banner {{ gene.2|gene_list_class }}" title="{{ gene.2|gene_list_name }}">
                     {{ gene.2|gene_list_short_name }}
                   </span>
                 </h4>
