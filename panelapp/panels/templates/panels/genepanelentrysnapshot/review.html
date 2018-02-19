@@ -82,12 +82,12 @@
             <div data-module="ajax-form">
               {% if part == "Rating" %}
                 <div id="part-rating">
-                  {% include "panels/genepanelentrysnapshot/review/part_rating.html" %}
+                  {% include "panels/entity/part_rating.html" %}
                 </div>
               {% endif %}
               {% if part == "Mode of inheritance" %}
                 <div id="part-moi">
-                  {% include "panels/genepanelentrysnapshot/review/part_moi.html" %}
+                  {% include "panels/entity/part_moi.html" %}
                 </div>
               {% endif %}
               {% if part == "Mode of pathogenicity" %}
@@ -130,7 +130,7 @@
     </ul>
   </div>
   <div class="well">
-    <form action="{% url 'panels:mark_entity_as_ready' panel.panel_id 'gene' gene.gene.gene_symbol %}#!review" method="post" class="form">
+    <form action="{% url 'panels:mark_entity_as_ready' panel.panel_id entity_type entity_name %}#!review" method="post" class="form">
       {% csrf_token %}
       <fieldset>
         {% for field in gene_ready_form %}

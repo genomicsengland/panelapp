@@ -119,7 +119,7 @@ class STR(AbstractEntity, TimeStampedModel):
     def get_absolute_url(self):
         """Returns absolute url for this STR in a panel"""
 
-        return reverse('panels:evaluation_str', args=(self.panel.panel.pk, self.name))
+        return reverse('panels:evaluation', args=(self.panel.panel.pk, 'str', self.name))
 
     def dict_tr(self):
         return {

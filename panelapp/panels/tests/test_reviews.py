@@ -25,7 +25,8 @@ class EvaluationTest(LoginGELUser):
         gpes.evaluation.all().delete()
         url = reverse_lazy('panels:review_gene', kwargs={
             'pk': gpes.panel.panel.pk,
-            'gene_symbol': gpes.gene.get('gene_symbol')
+            'entity_type': 'gene',
+            'entity_name': gpes.gene.get('gene_symbol')
         })
 
         current_version = gpes.panel.version
@@ -54,7 +55,8 @@ class EvaluationTest(LoginGELUser):
         gpes.evaluation.all().delete()
         url = reverse_lazy('panels:review_gene', kwargs={
             'pk': gpes.panel.panel.pk,
-            'gene_symbol': gpes.gene.get('gene_symbol')
+            'entity_type': 'gene',
+            'entity_name': gpes.gene.get('gene_symbol')
         })
 
         gene_data = {
@@ -89,7 +91,8 @@ class EvaluationTest(LoginGELUser):
         gpes.evaluation.all().delete()
         url = reverse_lazy('panels:review_gene', kwargs={
             'pk': gpes.panel.panel.pk,
-            'gene_symbol': gpes.gene.get('gene_symbol')
+            'entity_type': 'gene',
+            'entity_name': gpes.gene.get('gene_symbol')
         })
 
         gene_data = {
@@ -116,7 +119,8 @@ class EvaluationTest(LoginGELUser):
         gpes.evaluation.all().delete()
         url = reverse_lazy('panels:review_gene', kwargs={
             'pk': gpes.panel.panel.pk,
-            'gene_symbol': gpes.gene.get('gene_symbol')
+            'entity_type': 'gene',
+            'entity_name': gpes.gene.get('gene_symbol')
         })
 
         old_phenotypes = [fake.sentence(), fake.sentence(), fake.sentence()]
@@ -149,7 +153,8 @@ class EvaluationTest(LoginGELUser):
         gpes.evaluation.all().delete()
         url = reverse_lazy('panels:review_gene', kwargs={
             'pk': gpes.panel.panel.pk,
-            'gene_symbol': gpes.gene.get('gene_symbol')
+            'entity_type': 'gene',
+            'entity_name': gpes.gene.get('gene_symbol')
         })
 
         gene_data = {
@@ -169,7 +174,8 @@ class EvaluationTest(LoginGELUser):
         }
         url_review = reverse_lazy('panels:review_gene', kwargs={
             'pk': gpes.panel.panel.pk,
-            'gene_symbol': gpes.gene.get('gene_symbol')
+            'entity_type': 'gene',
+            'entity_name': gpes.gene.get('gene_symbol')
         })
         self.client.post(url_review, review_data)
         res_review = self.client.get(url_review)
@@ -195,9 +201,10 @@ class GeneReviewTest(LoginGELUser):
         gpes = GenePanelEntrySnapshotFactory()
         current_version = gpes.panel.version
         gpes.evaluation.all().delete()
-        url = reverse_lazy('panels:update_gene_tags', kwargs={
+        url = reverse_lazy('panels:update_entity_tags', kwargs={
             'pk': gpes.panel.panel.pk,
-            'gene_symbol': gpes.gene.get('gene_symbol')
+            'entity_type': 'gene',
+            'entity_name': gpes.gene.get('gene_symbol')
         })
 
         tag1 = TagFactory()
@@ -212,9 +219,10 @@ class GeneReviewTest(LoginGELUser):
     def test_update_mop(self):
         gpes = GenePanelEntrySnapshotFactory()
         gpes.evaluation.all().delete()
-        url = reverse_lazy('panels:update_gene_mop', kwargs={
+        url = reverse_lazy('panels:update_entity_mop', kwargs={
             'pk': gpes.panel.panel.pk,
-            'gene_symbol': gpes.gene.get('gene_symbol')
+            'entity_type': 'gene',
+            'entity_name': gpes.gene.get('gene_symbol')
         })
 
         mop = [x for x in Evaluation.MODES_OF_PATHOGENICITY][randint(1, 2)]
@@ -230,9 +238,10 @@ class GeneReviewTest(LoginGELUser):
     def test_update_moi(self):
         gpes = GenePanelEntrySnapshotFactory()
         gpes.evaluation.all().delete()
-        url = reverse_lazy('panels:update_gene_moi', kwargs={
+        url = reverse_lazy('panels:update_entity_moi', kwargs={
             'pk': gpes.panel.panel.pk,
-            'gene_symbol': gpes.gene.get('gene_symbol')
+            'entity_type': 'gene',
+            'entity_name': gpes.gene.get('gene_symbol')
         })
 
         moi = [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 2)]
@@ -248,9 +257,10 @@ class GeneReviewTest(LoginGELUser):
     def test_update_phenotypes(self):
         gpes = GenePanelEntrySnapshotFactory()
         gpes.evaluation.all().delete()
-        url = reverse_lazy('panels:update_gene_phenotypes', kwargs={
+        url = reverse_lazy('panels:update_entity_phenotypes', kwargs={
             'pk': gpes.panel.panel.pk,
-            'gene_symbol': gpes.gene.get('gene_symbol')
+            'entity_type': 'gene',
+            'entity_name': gpes.gene.get('gene_symbol')
         })
 
         phenotypes_array = [fake.word(), fake.word()]
@@ -267,9 +277,10 @@ class GeneReviewTest(LoginGELUser):
     def test_update_publications(self):
         gpes = GenePanelEntrySnapshotFactory()
         gpes.evaluation.all().delete()
-        url = reverse_lazy('panels:update_gene_publications', kwargs={
+        url = reverse_lazy('panels:update_entity_publications', kwargs={
             'pk': gpes.panel.panel.pk,
-            'gene_symbol': gpes.gene.get('gene_symbol')
+            'entity_type': 'gene',
+            'entity_name': gpes.gene.get('gene_symbol')
         })
 
         publications_array = [fake.word(), fake.word()]
@@ -286,9 +297,10 @@ class GeneReviewTest(LoginGELUser):
     def test_curator_comment_added(self):
         gpes = GenePanelEntrySnapshotFactory()
         gpes.evaluation.all().delete()
-        url = reverse_lazy('panels:update_gene_rating', kwargs={
+        url = reverse_lazy('panels:update_entity_rating', kwargs={
             'pk': gpes.panel.panel.pk,
-            'gene_symbol': gpes.gene.get('gene_symbol')
+            'entity_type': 'gene',
+            'entity_name': gpes.gene.get('gene_symbol')
         })
 
         new_status = 0
@@ -303,9 +315,10 @@ class GeneReviewTest(LoginGELUser):
     def test_update_rating(self):
         gpes = GenePanelEntrySnapshotFactory()
         gpes.evaluation.all().delete()
-        url = reverse_lazy('panels:update_gene_rating', kwargs={
+        url = reverse_lazy('panels:update_entity_rating', kwargs={
             'pk': gpes.panel.panel.pk,
-            'gene_symbol': gpes.gene.get('gene_symbol')
+            'entity_type': 'gene',
+            'entity_name': gpes.gene.get('gene_symbol')
         })
 
         new_status = 0
@@ -352,7 +365,8 @@ class GeneReviewTest(LoginGELUser):
 
         evaluation_url = reverse_lazy('panels:review_gene', kwargs={
             'pk': gpes.panel.panel.pk,
-            'gene_symbol': gpes.gene.get('gene_symbol')
+            'entity_type': 'gene',
+            'entity_name': gpes.gene.get('gene_symbol')
         })
 
         gene_data = {
@@ -371,7 +385,8 @@ class GeneReviewTest(LoginGELUser):
 
         delete_evaluation_url = reverse_lazy('panels:delete_evaluation_by_user', kwargs={
             'pk': gpes.panel.panel.pk,
-            'gene_symbol': gpes.gene.get('gene_symbol'),
+            'entity_type': 'gene',
+            'entity_name': gpes.gene.get('gene_symbol'),
             'evaluation_pk': gene.evaluation.get(user=self.gel_user).pk
         })
         res = self.client.get(delete_evaluation_url, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
@@ -381,13 +396,13 @@ class GeneReviewTest(LoginGELUser):
         assert gene.panel.version == last_gene.panel.version
 
     def test_delete_comment(self):
-        # FIXME shouldn't create a new version
         gpes = GenePanelEntrySnapshotFactory()
         current_version = gpes.panel.version
 
         evaluation_url = reverse_lazy('panels:review_gene', kwargs={
             'pk': gpes.panel.panel.pk,
-            'gene_symbol': gpes.gene.get('gene_symbol')
+            'entity_type': 'gene',
+            'entity_name': gpes.gene.get('gene_symbol')
         })
 
         gene_data = {
@@ -407,7 +422,8 @@ class GeneReviewTest(LoginGELUser):
 
         delete_comment_url = reverse_lazy('panels:delete_comment_by_user', kwargs={
             'pk': gpes.panel.panel.pk,
-            'gene_symbol': gpes.gene.get('gene_symbol'),
+            'entity_type': 'gene',
+            'entity_name': gpes.gene.get('gene_symbol'),
             'comment_pk': evaluation.comments.first().pk
         })
         res = self.client.get(delete_comment_url, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
@@ -422,7 +438,8 @@ class GeneReviewTest(LoginGELUser):
 
         evaluation_url = reverse_lazy('panels:review_gene', kwargs={
             'pk': gpes.panel.panel.pk,
-            'gene_symbol': gpes.gene.get('gene_symbol')
+            'entity_type': 'gene',
+            'entity_name': gpes.gene.get('gene_symbol')
         })
 
         comment = fake.sentence()
@@ -444,7 +461,8 @@ class GeneReviewTest(LoginGELUser):
 
         get_comment_url = reverse_lazy('panels:edit_comment_by_user', kwargs={
             'pk': gpes.panel.panel.pk,
-            'gene_symbol': gpes.gene.get('gene_symbol'),
+            'entity_type': 'gene',
+            'entity_name': gpes.gene.get('gene_symbol'),
             'comment_pk': evaluation.comments.first().pk
         })
         res = self.client.get(get_comment_url, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
@@ -453,7 +471,8 @@ class GeneReviewTest(LoginGELUser):
         new_comment = fake.sentence()
         edit_comment_url = reverse_lazy('panels:submit_edit_comment_by_user', kwargs={
             'pk': gpes.panel.panel.pk,
-            'gene_symbol': gpes.gene.get('gene_symbol'),
+            'entity_type': 'gene',
+            'entity_name': gpes.gene.get('gene_symbol'),
             'comment_pk': evaluation.comments.first().pk
         })
         res = self.client.post(edit_comment_url, {'comment': new_comment})
@@ -465,7 +484,7 @@ class GeneReviewTest(LoginGELUser):
         gene = GeneFactory()
         gps = GenePanelSnapshotFactory()
         gpes = GenePanelEntrySnapshotFactory(panel=gps, gene_core=gene)
-        url = reverse_lazy('panels:review_gene', args=(gpes.panel.panel.pk, gene.gene_symbol,))
+        url = reverse_lazy('panels:review_gene', args=(gpes.panel.panel.pk, 'gene', gene.gene_symbol,))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
 

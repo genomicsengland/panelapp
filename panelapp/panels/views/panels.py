@@ -41,12 +41,12 @@ class PanelsIndexView(ListView):
             if self.request.GET.get('gene'):
                 self.objects = GenePanelSnapshot.objects.get_gene_panels(self.request.GET.get('gene'), all=True, internal=True)
             else:
-                self.objects = GenePanelSnapshot.objects.get_active_anotated(all=True, internal=True)
+                self.objects = GenePanelSnapshot.objects.get_active_annotated(all=True, internal=True)
         else:
             if self.request.GET.get('gene'):
                 self.objects = GenePanelSnapshot.objects.get_gene_panels(self.request.GET.get('gene'))
             else:
-                self.objects = GenePanelSnapshot.objects.get_active_anotated()
+                self.objects = GenePanelSnapshot.objects.get_active_annotated()
         return self.panels
 
     @cached_property
@@ -215,7 +215,7 @@ class DownloadAllPanels(GELReviewerRequiredMixin, View):
         )
 
         panels = GenePanelSnapshot.objects\
-            .get_active_anotated(all=True, internal=True)\
+            .get_active_annotated(all=True, internal=True)\
             .prefetch_related(
                 'genepanelentrysnapshot_set',
                 'genepanelentrysnapshot_set__evaluation',

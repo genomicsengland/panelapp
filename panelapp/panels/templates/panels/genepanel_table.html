@@ -89,9 +89,9 @@
         >
             <i class="fa fa-unlock fa-lg"></i>
         </a>
-        <a href="{% url 'panels:delete_gene' panel.panel_id entry.gene.gene_symbol %}" class="hidden delete_gene_{{ entry.gene.gene_symbol|remove_special }}" data-ajax="true" data-success="djangoAjaxHandler"> <i class="fa fa-trash fa-lg"></i></a>
+        <a href="{% url 'panels:delete_entity' panel.panel_id 'gene' entry.gene.gene_symbol %}" class="hidden delete_gene_{{ entry.gene.gene_symbol|remove_special }}" data-ajax="true" data-success="djangoAjaxHandler"> <i class="fa fa-trash fa-lg"></i></a>
         {% if entry.flagged %}
-        <a href="{% url 'panels:approve_gene' panel.panel_id entry.gene.gene_symbol %}" data-ajax="true" data-success="djangoAjaxHandler"> <i class="fa fa-plus fa-lg"></i></a>
+        <a href="{% url 'panels:approve_entity' panel.panel_id 'gene' entry.gene.gene_symbol %}" data-ajax="true" data-success="djangoAjaxHandler"> <i class="fa fa-plus fa-lg"></i></a>
         {% endif %}
       </div>
     {% endif %}
@@ -145,7 +145,7 @@
                 {{ ev.name }}
 
                 {% if request.user.is_authenticated and request.user.reviewer.is_GEL %}
-                <a type="url" href="{% url 'panels:clear_gene_source' panel.panel_id entry.gene.gene_symbol ev.name %}" class="hidden delete_source_{{ entry.gene.gene_symbol }}" data-ajax="true"> <i class="fa fa-times-circle-o"></i></a>
+                <a type="url" href="{% url 'panels:clear_entity_source' panel.panel_id 'gene' entry.gene.gene_symbol ev.name %}" class="hidden delete_source_{{ entry.gene.gene_symbol }}" data-ajax="true"> <i class="fa fa-times-circle-o"></i></a>
                 {% endif %}
             </li>
           {% endif %}

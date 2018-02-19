@@ -7,83 +7,83 @@
         <dl class="dl-separated">
             {% if request.user.is_authenticated and request.user.reviewer.is_GEL %}
                 <dt>GEL status</dt>
-                <dd>{{ gene.status }}</dd>
+                <dd>{{ entity.status }}</dd>
             {% endif %}
-            {% if gene.moi %}
+            {% if entity.moi %}
             <dt>Mode of Inheritance</dt>
-            <dd>{{ gene.moi }}</dd>
+            <dd>{{ entity.moi }}</dd>
             {% endif %}
-            {% if gene.evidence.all %}
+            {% if entity.evidence.all %}
             <dt>Sources</dt>
             <dd>
                 <ul>
-                    {% for ev in gene.evidence.all %}
+                    {% for ev in entity.evidence.all %}
                         {% if ev.is_GEL %}
                             <li>{{ ev.name }}</li>
                         {% endif %}
                     {% endfor %}
                 </ul>
                 {% if request.user.is_authenticated and request.user.reviewer.is_GEL %}
-                    <a class="link-muted" href="{% url 'panels:clear_gene_sources' panel.panel_id gene.gene.gene_symbol %}" data-ajax="true" data-success="djangoAjaxHandler">Clear Sources</a>
+                    <a class="link-muted" href="{% url 'panels:clear_gene_sources' panel.panel_id entity_type entity_name %}" data-ajax="true" data-success="djangoAjaxHandler">Clear Sources</a>
                 {% endif %}
             </dd>
             {% endif %}
-            {% if gene.phenotypes %}
+            {% if entity.phenotypes %}
                 <dt>Phenotypes</dt>
                 <dd>
                     <ul>
-                        {% for phenotype in gene.phenotypes %}
+                        {% for phenotype in entity.phenotypes %}
                             {% if phenotype %}
                                 <li>{{ phenotype }}</li>
                             {% endif %}
                         {% endfor %}
                     </ul>
                     {% if request.user.is_authenticated and request.user.reviewer.is_GEL %}
-                        <a href="{% url 'panels:clear_gene_phenotypes' panel.panel_id gene.gene.gene_symbol %}" class="link-muted" data-ajax="true" data-success="djangoAjaxHandler">
+                        <a href="{% url 'panels:clear_entity_phenotypes' panel.panel_id entity_type entity_name %}" class="link-muted" data-ajax="true" data-success="djangoAjaxHandler">
                             Clear phenotypes
                         </a>
                     {% endif %}
                 </dd>
             {% endif %}
-            {% if gene.tags.all %}
+            {% if entity.tags.all %}
                 <dt>Tags</dt>
                 <dd class="tag-list">
-                    {% for tag in gene.tags.all %}
+                    {% for tag in entity.tags.all %}
                         <span class="label label-default">{{ tag.name }}</span>
                     {% endfor %}
                 </dd>
             {% endif %}
-            {% if gene.gene.omim_gene|length > 0 %}
+            {% if entity.gene.omim_gene|length > 0 %}
             <dt>OMIM</dt>
-            <dd><a href="http://omim.org/entry/{{ gene.gene.omim_gene.0 }}" target="_blank">{{ gene.gene.omim_gene.0 }}</a></dd>
+            <dd><a href="http://omim.org/entry/{{ entity.gene.omim_gene.0 }}" target="_blank">{{ entity.gene.omim_gene.0 }}</a></dd>
             {% endif %}
             <dt>Clinvar variants</dt>
             <dd>
-                <a href="http://www.ncbi.nlm.nih.gov/clinvar?term={{ gene.gene.gene_symbol }}%5BGene%20Name%5D" target="_blank"> Variants in {{ gene.gene.gene_symbol }}</a>
+                <a href="http://www.ncbi.nlm.nih.gov/clinvar?term={{ entity.gene.gene_symbol }}%5BGene%20Name%5D" target="_blank"> Variants in {{ entity.gene.gene_symbol }}</a>
             </dd>
             <dt>Penetrance</dt>
-            <dd>{{ gene.penetrance }}</dd>
-            {% if gene.publications %}
+            <dd>{{ entity.penetrance }}</dd>
+            {% if entity.publications %}
             <dt>Publications</dt>
             <dd>
                 <ul>
-                {% for publication in gene.publications %}
+                {% for publication in entity.publications %}
                     <li>{{ publication|pubmed_link|join:'' }}</li>
                 {% endfor %}
                 </ul>
 
                 {% if request.user.is_authenticated and request.user.reviewer.is_GEL %}
-                    <a href="{% url 'panels:clear_gene_publications' panel.panel_id gene.gene.gene_symbol %}" class="link-muted" data-ajax="true" data-success="djangoAjaxHandler">
+                    <a href="{% url 'panels:clear_entity_publications' panel.panel_id entity_type entity_name %}" class="link-muted" data-ajax="true" data-success="djangoAjaxHandler">
                         Clear publications
                     </a>
                 {% endif %}
             </dd>
             {% endif %}
-            {% if gene.mode_of_pathogenicity %}
+            {% if entity.mode_of_pathogenicity %}
             <dt>Mode of Pathogenicity</dt>
-            <dd>{{ gene.mode_of_pathogenicity }}</dd>
+            <dd>{{ entity.mode_of_pathogenicity }}</dd>
                 {% if request.user.is_authenticated and request.user.reviewer.is_GEL %}
-                    <a href="{% url 'panels:clear_gene_mode_of_pathogenicity' panel.panel_id gene.gene.gene_symbol %}" class="link-muted" data-ajax="true" data-success="djangoAjaxHandler">
+                    <a href="{% url 'panels:clear_entity_mode_of_pathogenicity' panel.panel_id entity_type entity_name %}" class="link-muted" data-ajax="true" data-success="djangoAjaxHandler">
                         Clear Mode of Pathogenicity
                     </a>
                 {% endif %}
@@ -102,14 +102,14 @@
     </div>
   {% if request.user.is_authenticated and request.user.reviewer.is_GEL %}
   <div class="panel-footer">
-    <a href="{% url 'panels:edit_entity' panel.panel_id 'gene' gene.gene.gene_symbol %}" class="btn btn-info" data-module="showhide" data-show=".edit-gene-form" data-hide=".panel.panel-details">
+    <a href="{% url 'panels:edit_entity' panel.panel_id entity_type entity_name %}" class="btn btn-info" data-module="showhide" data-show=".edit-gene-form" data-hide=".panel.panel-details">
       <i class="fa fa-edit"></i> Edit gene
     </a>
   </div>
   {% endif %}
 </div>
 {% if request.user.is_authenticated and request.user.reviewer.is_GEL %}
-<form class="edit-gene-form form row hidden" action="{% url 'panels:edit_entity' panel.panel_id 'gene' gene.gene.gene_symbol %}#!details" method="post">
+<form class="edit-gene-form form row hidden" action="{% url 'panels:edit_entity' panel.panel_id entity_type entity_name %}#!details" method="post">
   {% csrf_token %}
   <div class="col-md-12">
     <div class="well">
@@ -134,7 +134,7 @@
             {% bootstrap_field field show_label=False %}
           </div>
         {% endfor %}
-        <a href="{{ gene.get_absolute_url }}" class="btn btn-default">Cancel</a>
+        <a href="{{ entity.get_absolute_url }}" class="btn btn-default">Cancel</a>
         <button type="submit" class="btn btn-primary">Save</button>
       </fieldset>
   </div>

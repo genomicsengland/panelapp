@@ -1,11 +1,11 @@
 {% load bootstrap3 %}
 <div class="js-toggle-target">
-    {{ gene.phenotypes|join:"; " }}
+    {{ entity.phenotypes|join:"; " }}
     <a href="#" class="add-left-margin link-inherit js-toggle">Edit</a>
 </div>
-<form data-ajax-action="{% url 'panels:update_gene_phenotypes' panel.panel_id gene.gene.gene_symbol %}" action="{% url 'panels:update_gene_phenotypes' panel.panel_id gene.gene.gene_symbol %}#!review" method="post" class="form js-toggle-target hide">
+<form data-ajax-action="{% url 'panels:update_entity_phenotypes' panel.panel_id entity_type entity_name %}" action="{% url 'panels:update_entity_phenotypes' panel.panel_id entity_type entity_name %}#!review" method="post" class="form js-toggle-target hide">
     {% csrf_token %}
-    {% for field in edit_gene_phenotypes_form %}
+    {% for field in edit_entity_phenotypes_form %}
       {{ field.label_tag }}
       <div class="add-label-margin">{% bootstrap_field field show_label=False %}</div>
       <span class="rm">{{ field.label_tag }}</span>

@@ -1,9 +1,9 @@
 {% load bootstrap3 %}
 <h4 class="add-bottom-margin">Tags</h4>
 <div class="panel panel-default review-table" data-module="ajax-form">
-  <form data-module="tag-input" data-ajax-action="{% url 'panels:update_gene_tags' panel.panel_id  gene.gene.gene_symbol %}" action="{% url 'panels:update_gene_tags' panel.panel_id  gene.gene.gene_symbol %}#!review" method="post" class="form panel-body">
+  <form data-module="tag-input" data-ajax-action="{% url 'panels:update_entity_tags' panel.panel_id entity_type entity_name %}" action="{% url 'panels:update_entity_tags' panel.panel_id entity_type entity_name %}#!review" method="post" class="form panel-body">
     {% csrf_token %}
-    {% for field in edit_gene_tags_form %}
+    {% for field in edit_entity_tags_form %}
       <span class="rm">{{ field.label_tag }}</span>
       {% bootstrap_field field show_label=False %}
     {% endfor %}
