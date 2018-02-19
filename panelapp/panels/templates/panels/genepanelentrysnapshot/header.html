@@ -1,16 +1,16 @@
 {% load panel_helpers %}
-{% if not gene.panel.panel.is_public %}
-<div class="alert alert-danger" role="alert">This Panel is marked as {{ gene.panel.panel.status|title }}</div>
+{% if not entity.panel.panel.is_public %}
+<div class="alert alert-danger" role="alert">This Panel is marked as {{ entity.panel.panel.status|title }}</div>
 {% endif %}
 <h1 class="remove-top-margin">
     <p class="text-muted normal add-label-margin" style="font-size: 18px">{{ panel.panel.name }}</p>
     {{ gene.gene.gene_symbol }}
 </h1>
-<span id="gene-banner-heading"><span class="gel-banner {{ gene|gene_list_class }}">{{ gene|gene_list_name }}</span></span>
-{% if gene.ready and request.user.is_authenticated and request.user.reviewer.is_GEL %}
+<span id="gene-banner-heading"><span class="gel-banner {{ entity|gene_list_class }}">{{ entity|gene_list_name }}</span></span>
+{% if entity.ready and request.user.is_authenticated and request.user.reviewer.is_GEL %}
     <span class="banner banner-ready">Ready for major version</span>
 {% endif %}
-{% if request.user.pk in gene.evaluators %}
+{% if request.user.pk in entity.evaluators %}
     <span class="banner banner-reviewed">
         <i class="fa fa-check"></i> You reviewed
     </span>

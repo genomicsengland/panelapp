@@ -89,9 +89,9 @@
         >
             <i class="fa fa-unlock fa-lg"></i>
         </a>
-        <a href="{% url 'panels:delete_str' panel.panel_id entry.name %}" class="hidden delete_str_{{ entry.name|remove_special }}" data-ajax="true" data-success="djangoAjaxHandler"> <i class="fa fa-trash fa-lg"></i></a>
+        <a href="{% url 'panels:delete_entity' panel.panel_id 'str' entry.name %}" class="hidden delete_str_{{ entry.name|remove_special }}" data-ajax="true" data-success="djangoAjaxHandler"> <i class="fa fa-trash fa-lg"></i></a>
         {% if entry.flagged %}
-        <a href="{% url 'panels:approve_str' panel.panel_id entry.name %}" data-ajax="true" data-success="djangoAjaxHandler"> <i class="fa fa-plus fa-lg"></i></a>
+        <a href="{% url 'panels:approve_entity' panel.panel_id 'str' entry.name %}" data-ajax="true" data-success="djangoAjaxHandler"> <i class="fa fa-plus fa-lg"></i></a>
         {% endif %}
       </div>
     {% endif %}
@@ -145,7 +145,7 @@
                 {{ ev.name }}
 
                 {% if request.user.is_authenticated and request.user.reviewer.is_GEL %}
-                <a type="url" href="{% url 'panels:clear_str_source' panel.panel_id entry.name ev.name %}" class="hidden delete_source_{{ entry.name }}" data-ajax="true"> <i class="fa fa-times-circle-o"></i></a>
+                <a type="url" href="{% url 'panels:clear_entity_source' panel.panel_id 'str' entry.name ev.name %}" class="hidden delete_source_{{ entry.name }}" data-ajax="true"> <i class="fa fa-times-circle-o"></i></a>
                 {% endif %}
             </li>
           {% endif %}

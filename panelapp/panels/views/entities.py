@@ -53,7 +53,7 @@ class EntityMixin:
 
 class GenePanelSpanshotView(EntityMixin, DetailView):
     template_name = "panels/genepanelsnapshot_detail.html"
-    context_object_name = 'gene'
+    context_object_name = 'entity'
 
     def get_context_data_gene(self, ctx):
         ctx['sharing_panels'] = GenePanelSnapshot.objects.get_gene_panels(self.kwargs['entity_name'])
@@ -100,6 +100,8 @@ class GenePanelSpanshotView(EntityMixin, DetailView):
     def get_context_data(self, *args, **kwargs):
         ctx = super().get_context_data(*args, **kwargs)
         ctx['panel'] = self.panel
+        ctx['entity_type'] = self.kwargs['entity_type']
+        ctx['entity_name'] = self.kwargs['entity_name']
         ctx['feedback_review_parts'] = [
             'Rating',
             'Mode of inheritance',

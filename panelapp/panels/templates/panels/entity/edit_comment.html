@@ -1,5 +1,5 @@
 {% load bootstrap3 %}
-<form action="{% url 'panels:submit_edit_comment_by_user' panel_id  gene_symbol comment_pk %}#your-review" method="post" class="form">
+<form action="{% url 'panels:submit_edit_comment_by_user' panel_id entity_type entity_name comment_pk %}#your-review" method="post" class="form">
   {% csrf_token %}
   {% for field in edit_comment_form %}
     <span class="rm">{{ field.label_tag }}</span>

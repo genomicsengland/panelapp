@@ -113,7 +113,7 @@ class GeneReviewView(VerifiedReviewerRequiredMixin, UpdateView):
     form_class = GeneReviewForm
 
     def get_object(self):
-        return self.panel.get_gene(self.kwargs['gene_symbol'], prefetch_extra=True)
+        return self.panel.get_gene(self.kwargs['entity_name'], prefetch_extra=True)
 
     @cached_property
     def panel(self):
@@ -150,7 +150,7 @@ class GeneReviewView(VerifiedReviewerRequiredMixin, UpdateView):
         return reverse_lazy('panels:evaluation', kwargs={
             'pk': self.kwargs['pk'],
             'entity_type': 'gene',
-            'entity_name': self.kwargs['gene_symbol']
+            'entity_name': self.kwargs['entity_name']
         })
 
 

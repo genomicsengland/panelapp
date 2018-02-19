@@ -62,15 +62,15 @@ class GenePanelSnapshotManager(models.Manager):
             .prefetch_related('panel', 'level4title')\
             .order_by('panel__name', '-major_version', '-minor_version')
 
-    def get_active_anotated(self, all=False, deleted=False, internal=False):
-        "This method adds additional values to the queryset, such as number_of_genes, etc and returns active panels"
+    def get_active_annotated(self, all=False, deleted=False, internal=False):
+        """This method adds additional values to the queryset, such as number_of_genes, etc and returns active panels"""
 
         return self.get_active(all, deleted, internal)
 
     def get_gene_panels(self, gene_symbol, all=False, internal=False):
-        "Get all panels for a specific gene"
+        """Get all panels for a specific gene"""
 
-        return self.get_active_anotated(all=all, internal=internal).filter(genepanelentrysnapshot__gene__gene_symbol=gene_symbol)
+        return self.get_active_annotated(all=all, internal=internal).filter(genepanelentrysnapshot__gene__gene_symbol=gene_symbol)
 
 
 class GenePanelSnapshot(TimeStampedModel):

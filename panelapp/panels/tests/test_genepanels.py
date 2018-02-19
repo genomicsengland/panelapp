@@ -163,9 +163,10 @@ class GenePanelTest(LoginGELUser):
 
         number_of_genes = gps.number_of_genes
 
-        url = reverse_lazy('panels:delete_gene', kwargs={
+        url = reverse_lazy('panels:delete_entity', kwargs={
             'pk': gps.panel.pk,
-            'gene_symbol': gene_symbol
+            'entity_type': 'gene',
+            'entity_name': gene_symbol
         })
         res = self.client.get(url, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
 
