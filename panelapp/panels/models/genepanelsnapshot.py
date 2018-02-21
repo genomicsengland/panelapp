@@ -102,6 +102,8 @@ class GenePanelSnapshot(TimeStampedModel):
     current_number_of_reviewers = models.IntegerField(null=True, blank=True)
     current_number_of_evaluated_genes = models.IntegerField(null=True, blank=True)
     current_number_of_genes = models.IntegerField(null=True, blank=True)
+    current_number_of_evaluated_strs = models.IntegerField(null=True, blank=True)
+    current_number_of_strs = models.IntegerField(null=True, blank=True)
 
     def __str__(self):
         return "{} v{}.{}".format(self.level4title.name, self.major_version, self.minor_version)
@@ -177,6 +179,22 @@ class GenePanelSnapshot(TimeStampedModel):
         return self.current_number_of_genes
 
     @property
+    def number_of_evaluated_strs(self):
+        """Get number of evaluated genes or set it if it's None"""
+
+        if self.current_number_of_evaluated_strs is None:
+            self.update_saved_stats()
+        return self.current_number_of_evaluated_strs
+
+    @property
+    def number_of_strs(self):
+        """Get number of genes or set it if it's None"""
+
+        if self.current_number_of_strs is None:
+            self.update_saved_stats()
+        return self.current_number_of_strs
+
+    @property
     def version(self):
         return "{}.{}".format(self.major_version, self.minor_version)
 
@@ -192,7 +210,8 @@ class GenePanelSnapshot(TimeStampedModel):
         """
 
         with transaction.atomic():
-            self.get_all_genes  # cache the results
+            current_genes = deepcopy(self.get_all_genes)  # cache the results
+            current_strs = deepcopy(self.get_all_strs)
 
             self.pk = None
 
@@ -204,16 +223,14 @@ class GenePanelSnapshot(TimeStampedModel):
 
             self.save()
 
-            self._increment_version_genes(major, user, comment, ignore_gene)
-            self._increment_version_str(major, user, comment, ignore_str)
-
-            self.panel.clear_cache()
+            self._increment_version_genes(current_genes, major, user, comment, ignore_gene)
+            self._increment_version_str(current_strs, major, user, comment, ignore_str)
 
             if major:
                 email_panel_promoted.delay(self.panel.pk)
 
                 activity = "promoted panel to version {}".format(self.version)
-                self.add_activity(user, '', activity)
+                self.add_activity(user, None, activity)
 
                 self.version_comment = "{} {} promoted panel to {}\n{}\n\n{}".format(
                     timezone.now().strftime('%Y-%m-%d %H:%M'),
@@ -226,7 +243,7 @@ class GenePanelSnapshot(TimeStampedModel):
 
             return self.panel.active_panel
 
-    def _increment_version_genes(self, major, user, comment, ignore_gene):
+    def _increment_version_genes(self, current_genes, major, user, comment, ignore_gene):
         evidences = []
         evaluations = []
         tracks = []
@@ -235,8 +252,6 @@ class GenePanelSnapshot(TimeStampedModel):
 
         genes = {}
 
-        current_genes = deepcopy(self.get_all_genes)
-        print(len(current_genes))
         for gene in current_genes:
             if ignore_gene and ignore_gene == gene.gene.get('gene_symbol'):
                 continue
@@ -345,7 +360,7 @@ class GenePanelSnapshot(TimeStampedModel):
             self.genepanelentrysnapshot_set.model.comments.through(**ev) for ev in comments
         ])
 
-    def _increment_version_str(self, major, user, comment, ignore_str):
+    def _increment_version_str(self, current_strs, major, user, comment, ignore_str):
         evidences = []
         evaluations = []
         tracks = []
@@ -354,7 +369,6 @@ class GenePanelSnapshot(TimeStampedModel):
 
         strs = {}
 
-        current_strs = deepcopy(self.get_all_strs)
         for str_entity in current_strs:
             if ignore_str and ignore_str == str_entity.name:
                 continue
@@ -417,14 +431,14 @@ class GenePanelSnapshot(TimeStampedModel):
 
         # add in bulk
         if not major:
-            bulk_genes = [strs[str_entity]['gene'] for str_entity in strs]
-            new_genes = self.str_set.model.objects.bulk_create(bulk_genes)
+            bulk_strs = [strs[str_entity]['str'] for str_entity in strs]
+            new_strs = self.str_set.model.objects.bulk_create(bulk_strs)
         else:
-            new_genes = self.str_set.all()
+            new_strs = self.str_set.all()
 
         self.clear_cache()
 
-        for str_entity in new_genes:
+        for str_entity in new_strs:
             str_data = strs[str_entity.name]
 
             for i, _ in enumerate(str_data['evidences']):
@@ -472,10 +486,14 @@ class GenePanelSnapshot(TimeStampedModel):
         self.current_number_of_reviewers = self.stats.get('number_of_gene_reviewers', 0)
         self.current_number_of_evaluated_genes = self.stats.get('number_of_evaluated_genes', 0)
         self.current_number_of_genes = self.stats.get('number_of_genes', 0)
+        self.current_number_of_evaluated_strs = self.stats.get('number_of_evaluated_strs', 0)
+        self.current_number_of_strs = self.stats.get('number_of_strs', 0)
         self.save(update_fields=[
             'current_number_of_evaluated_genes',
             'current_number_of_reviewers',
-            'current_number_of_genes'
+            'current_number_of_genes',
+            'current_number_of_evaluated_strs',
+            'current_number_of_strs',
         ])
 
     @property
@@ -653,27 +671,41 @@ class GenePanelSnapshot(TimeStampedModel):
             symbol.get('gene_symbol') for symbol in self.genepanelentrysnapshot_set.values_list('gene', flat=True)
         ]
 
+    def get_str(self, name, prefetch_extra=False):
+        """Get a STR."""
+
+        if prefetch_extra:
+            return self.get_all_strs_extra.prefetch_related(
+                'evaluation__comments',
+                'evaluation__user__reviewer',
+                'track',
+                'track__user',
+                'track__user__reviewer'
+            ).get(name=name)
+        else:
+            return self.get_all_strs.get(name=name)
+
     def has_str(self, str_name):
         return self.str_set.filter(name=str_name).count() > 0
 
     def clear_cache(self):
-        if self.cached_genes:
+        if self.__dict__.get('cached_genes'):
             del self.__dict__['cached_genes']
-        if self.cached_strs:
+        if self.__dict__.get('cached_strs'):
             del self.__dict__['cached_strs']
-        if self.current_genes_count:
+        if self.__dict__.get('current_genes_count'):
             del self.__dict__['current_genes_count']
-        if self.current_genes_duplicates:
+        if self.__dict__.get('current_genes_duplicates'):
             del self.__dict__['current_genes_duplicates']
-        if self.current_genes:
+        if self.__dict__.get('current_genes'):
             del self.__dict__['current_genes']
-        if self.get_all_genes:
+        if self.__dict__.get('get_all_genes'):
             del self.__dict__['get_all_genes']
-        if self.get_all_genes_extra:
+        if self.__dict__.get('get_all_genes_extra'):
             del self.__dict__['get_all_genes_extra']
-        if self.get_all_strs:
+        if self.__dict__.get('get_all_strs'):
             del self.__dict__['get_all_strs']
-        if self.get_all_strs_extra:
+        if self.__dict__.get('get_all_strs_extra'):
             del self.__dict__['get_all_strs_extra']
 
     def delete_gene(self, gene_symbol, increment=True):
@@ -684,6 +716,21 @@ class GenePanelSnapshot(TimeStampedModel):
                 self = self.increment_version(ignore_gene=gene_symbol)
             else:
                 self.get_all_genes.get(gene__gene_symbol=gene_symbol).delete()
+                self.clear_cache()
+
+            self.update_saved_stats()
+            return True
+        else:
+            return False
+
+    def delete_str(self, str_name, increment=True):
+        """Removes STR from a panel, but leaves it in the previous versions of the same panel"""
+
+        if self.has_str(str_name):
+            if increment:
+                self = self.increment_version(ignore_str=str_name)
+            else:
+                self.cached_strs.get(name=str_name).delete()
                 self.clear_cache()
 
             self.update_saved_stats()
@@ -1143,6 +1190,9 @@ class GenePanelSnapshot(TimeStampedModel):
                 )
                 new_gpes.track.add(track_gene)
                 self.delete_gene(old_gene_symbol, increment=False)
+                self.clear_cache()
+                self.update_saved_stats()
+                return gene
             elif gene_name and gene.gene.get('gene_name') != gene_name:
                 logging.debug("Updating gene_name for gene:{} in panel:{}".format(gene_symbol, self))
                 gene.gene['gene_name'] = gene_name
@@ -1184,18 +1234,13 @@ class GenePanelSnapshot(TimeStampedModel):
         if increment_version:
             self = self.increment_version()
 
-        gene_core = Gene.objects.get(gene_symbol=str_data['gene'].gene_symbol)
-        gene_info = gene_core.dict_tr()
-
         str_item = self.cached_strs.model(
             name=str_name,
             position=str_data.get('position'),
             normal_range=str_data.get('normal_range'),
             prepathogenic_range=str_data.get('prepathogenic_range'),
             pathogenic_range=str_data.get('pathogenic_range'),
-            gene=gene_info,
             panel=self,
-            gene_core=gene_core,
             moi=str_data.get('moi'),
             penetrance=str_data.get('penetrance'),
             publications=str_data.get('publications'),
@@ -1204,6 +1249,14 @@ class GenePanelSnapshot(TimeStampedModel):
             saved_gel_status=0,
             flagged=False if user.reviewer.is_GEL() else True
         )
+
+        if str_data.get('gene'):
+            gene_core = Gene.objects.get(gene_symbol=str_data['gene'].gene_symbol)
+            gene_info = gene_core.dict_tr()
+
+            str_item.gene_core = gene_core
+            str_item.gene = gene_info
+
         str_item.save()
         if str_data.get('comment'):
             comment = Comment.objects.create(
@@ -1259,11 +1312,443 @@ class GenePanelSnapshot(TimeStampedModel):
             str_item.evaluation.add(evaluation)
         self.clear_cache()
 
-        self.add_activity(user, gene_core.gene_symbol, "Added gene to panel", str_item.label)
+        self.add_activity(user, gene_core.gene_symbol if str_data.get('gene') else None, "Added STR to panel", str_item.name)
 
         str_item.evidence_status(update=True)
         self.update_saved_stats()
         return str_item
+
+    def update_str(self, user, str_name, str_data, append_only=False, remove_gene=False):
+        """Updates a STR if it exists in this panel
+
+        Args:
+            user: User instance. It's the user who is updating a gene, we need
+                this info to add to TrackRecord, Activities, Evidence, and Evaluation
+            str_name: STR name
+            str_data: A dict with the values:
+                - name
+                - position
+                - repeated_sequence
+                - normal_range
+                - prepathogenic_range
+                - pathogenic_range
+                - moi
+                - penetrance
+                - publications
+                - phenotypes
+                - mode_of_pathogenicity
+                - comment
+                - current_diagnostic
+                - sources
+                - rating
+                - gene
+
+                if `gene` is in the gene_data and it's different to the stored gene
+                it will change the gene data, and remove the old gene from the panel.
+            append_only: bool If it's True we don't remove evidences, but only add them
+            remove_gene: bool Remove gene data from this STR
+
+        Returns:
+            STR if the gene was successfully updated, False otherwise
+        """
+
+        logging.debug("Updating STR:{} panel:{} str_data:{}".format(str_name, self, str_data))
+        has_str = self.has_str(str_name)
+        if has_str:
+            logging.debug("Found STR:{} in panel:{}. Incrementing version.".format(str_name, self))
+            str_item = self.get_str(str_name)
+
+            if str_data.get('flagged') is not None:
+                str_item.flagged = str_data.get('flagged')
+
+            tracks = []
+
+            if str_data.get('name') and str_data.get('name') != str_name:
+                if self.has_str(str_data.get('name')):
+                    logging.info("Can't change STR name as the new name already exist in panel:{}".format(self))
+                    return False
+
+                old_str_name = str_item.name
+
+                new_evidences = str_item.evidence.all()
+                for evidence in new_evidences:
+                    evidence.pk = None
+
+                new_evaluations = str_item.evaluation.all()
+                for evaluation in new_evaluations:
+                    evaluation.create_comments = []
+                    for comment in evaluation.comments.all():
+                        comment.pk = None
+                        evaluation.create_comments.append(comment)
+                    evaluation.pk = None
+
+                new_tracks = str_item.track.all()
+                for track in new_tracks:
+                    track.pk = None
+
+                tags = str_item.tags.all()
+
+                new_comments = str_item.comments.all()
+                for comment in new_comments:
+                    comment.pk = None
+
+                str_item.name = str_data.get('name')
+                str_item.pk = None
+                str_item.panel = self
+                str_item.save()
+
+                Evidence.objects.bulk_create(new_evidences)
+                str_item.evidence.through.objects.bulk_create([
+                    str_item.evidence.through(**{
+                        'evidence_id': ev.pk,
+                        'str_id': str_item.pk
+                    }) for ev in new_evidences
+                ])
+
+                Evaluation.objects.bulk_create(new_evaluations)
+                str_item.evaluation.through.objects.bulk_create([
+                    str_item.evaluation.through(**{
+                        'evaluation_id': ev.pk,
+                        'str_id': str_item.pk
+                    }) for ev in new_evaluations
+                ])
+
+                for evaluation in new_evaluations:
+                    Comment.objects.bulk_create(evaluation.create_comments)
+
+                evaluation_comments = []
+                for evaluation in new_evaluations:
+                    for comment in evaluation.create_comments:
+                        evaluation_comments.append(Evaluation.comments.through(**{
+                            'comment_id': comment.pk,
+                            'evaluation_id': evaluation.pk
+                        }))
+
+                Evaluation.comments.through.objects.bulk_create(evaluation_comments)
+
+                TrackRecord.objects.bulk_create(new_tracks)
+                str_item.track.through.objects.bulk_create([
+                    str_item.track.through(**{
+                        'trackrecord_id': track.pk,
+                        'str_id': str_item.pk
+                    }) for track in new_tracks
+                ])
+
+                str_item.tags.through.objects.bulk_create([
+                    str_item.tags.through(**{
+                        'tag_id': tag.pk,
+                        'str_id': str_item.pk
+                    }) for tag in tags
+                ])
+
+                Comment.objects.bulk_create(new_comments)
+                str_item.comments.through.objects.bulk_create([
+                    str_item.comments.through(**{
+                        'comment_id': comment.pk,
+                        'str_id': str_item.pk
+                    }) for comment in new_comments
+                ])
+
+                description = "{} was changed to {}".format(old_str_name, str_item.name)
+                track_gene = TrackRecord.objects.create(
+                    gel_status=str_item.status,
+                    curator_status=0,
+                    user=user,
+                    issue_type=TrackRecord.ISSUE_TYPES.ChangedSTRName,
+                    issue_description=description
+                )
+                str_item.track.add(track_gene)
+                self.delete_str(old_str_name, increment=False)
+                logging.debug("Changed STR name:{} to {} panel:{}".format(
+                    str_name, str_data.get('name'), self
+                ))
+
+            repeated_sequence = str_data.get('repeated_sequence')
+            if repeated_sequence and repeated_sequence != str_item.repeated_sequence:
+                logging.debug("Repeated Sequence for {} was changed from {} to {} panel:{}".format(
+                    str_item.label, str_item.repeated_sequence, str_data.get('repeated_sequence'), self
+                ))
+
+                description = "Repeated Sequence for {} was changed from {} to {}. Panel: {}".format(
+                    str_item.name,
+                    str_item.repeated_sequence,
+                    str_data.get('repeated_sequence'),
+                    self.panel.name
+                )
+
+                tracks.append((
+                    TrackRecord.ISSUE_TYPES.ChangedRepeatedSequence,
+                    description
+                ))
+
+                str_item.repeated_sequence = str_data.get('repeated_sequence')
+
+            normal_range = str_data.get('normal_range')
+            if normal_range and normal_range != str_item.normal_range:
+                logging.debug("Normal Range for {} was changed from {} to {} panel:{}".format(
+                    str_item.label, str_item.normal_range, str_data.get('normal_range'), self
+                ))
+
+                description = "Normal range for {} was changed from {} to {}. Panel: {}".format(
+                    str_item.name,
+                    str_item.normal_range,
+                    str_data.get('normal_range'),
+                    self.panel.name
+                )
+
+                tracks.append((
+                    TrackRecord.ISSUE_TYPES.ChangedNormalRange,
+                    description
+                ))
+
+                str_item.normal_range = str_data.get('normal_range')
+
+            prepathogenic_range = str_data.get('prepathogenic_range')
+            if prepathogenic_range and prepathogenic_range != str_item.prepathogenic_range:
+                logging.debug("Pre-pathogenic Range for {} was changed from {} to {} panel:{}".format(
+                    str_item.label, str_item.prepathogenic_range, str_data.get('prepathogenic_range'), self
+                ))
+
+                description = "Pre-Pathogenic range for {} was changed from {} to {}. Panel: {}".format(
+                    str_item.name,
+                    str_item.prepathogenic_range,
+                    str_data.get('prepathogenic_range'),
+                    self.panel.name
+                )
+
+                tracks.append((
+                    TrackRecord.ISSUE_TYPES.ChangedPrepathogenicRange,
+                    description
+                ))
+
+                str_item.prepathogenic_range = str_data.get('prepathogenic_range')
+
+            pathogenic_range = str_data.get('pathogenic_range')
+            if pathogenic_range and pathogenic_range != str_item.pathogenic_range:
+                logging.debug("Pathogenic Range for {} was changed from {} to {} panel:{}".format(
+                    str_item.label, str_item.pathogenic_range, str_data.get('pathogenic_range'), self
+                ))
+
+                description = "Pathogenic range for {} was changed from {} to {}. Panel: {}".format(
+                    str_item.name,
+                    str_item.pathogenic_range,
+                    str_data.get('pathogenic_range'),
+                    self.panel.name
+                )
+
+                tracks.append((
+                    TrackRecord.ISSUE_TYPES.ChangedPathogenicRange,
+                    description
+                ))
+
+                str_item.pathogenic_range = str_data.get('pathogenic_range')
+
+            evidences_names = [ev.strip() for ev in str_item.evidence.values_list('name', flat=True)]
+
+            logging.debug("Updating evidences_names for {} in panel:{}".format(str_item.label, self))
+            if str_data.get('sources'):
+                add_evidences = [
+                    source.strip() for source in str_data.get('sources')
+                    if source not in evidences_names
+                ]
+                delete_evidences = [
+                    source for source in evidences_names
+                    if source not in Evidence.EXPERT_REVIEWS and not source in str_data.get('sources')
+                ]
+
+                if not append_only:
+                    for source in delete_evidences:
+                        ev = str_item.evidence.filter(name=source).first()
+                        str_item.evidence.remove(ev)
+
+                for source in add_evidences:
+                    logging.debug("Adding new evidence:{} for {} panel:{}".format(
+                        source, str_item.label, self
+                    ))
+                    evidence = Evidence.objects.create(
+                        name=source,
+                        rating=5,
+                        reviewer=user.reviewer
+                    )
+                    str_item.evidence.add(evidence)
+
+                    description = "{} was added to {}. Panel: {}".format(
+                        source,
+                        str_item.label,
+                        self.panel.name,
+                    )
+                    tracks.append((
+                        TrackRecord.ISSUE_TYPES.NewSource,
+                        description
+                    ))
+
+            moi = str_data.get('moi')
+            if moi and str_item.moi != moi:
+                logging.debug("Updating moi for {} in panel:{}".format(str_item.label, self))
+                str_item.moi = moi
+
+                description = "Model of inheritance for {} was set to {}".format(
+                    str_item.label,
+                    moi
+                )
+                tracks.append((
+                    TrackRecord.ISSUE_TYPES.SetModeofInheritance,
+                    description
+                ))
+
+            mop = str_data.get('mode_of_pathogenicity')
+            if mop and str_item.mode_of_pathogenicity != mop:
+                logging.debug("Updating mop for {} in panel:{}".format(str_item.label, self))
+                str_item.mode_of_pathogenicity = mop
+
+                description = "Model of pathogenicity for {} was set to {}".format(
+                    str_item.label,
+                    mop
+                )
+                tracks.append((
+                    TrackRecord.ISSUE_TYPES.SetModeofPathogenicity,
+                    description
+                ))
+
+            phenotypes = str_data.get('phenotypes')
+            if phenotypes:
+                logging.debug("Updating phenotypes for {} in panel:{}".format(str_item.label, self))
+                str_item.phenotypes = phenotypes
+
+            penetrance = str_data.get('penetrance')
+            if penetrance and str_item.penetrance != penetrance:
+                str_item.penetrance = penetrance
+                logging.debug("Updating penetrance for {} in panel:{}".format(str_item.label, self))
+                description = "Penetrance for gene {} was set to {}".format(
+                    str_item.name,
+                    penetrance
+                )
+                tracks.append((
+                    TrackRecord.ISSUE_TYPES.SetPenetrance,
+                    description
+                ))
+
+            publications = str_data.get('publications')
+            if publications and str_item.publications != publications:
+                str_item.publications = publications
+                logging.debug("Updating publications for {} in panel:{}".format(str_item.label, self))
+                description = "Publications for {} was set to {}".format(
+                    str_item.label,
+                    publications
+                )
+                tracks.append((
+                    TrackRecord.ISSUE_TYPES.SetPublications,
+                    description
+                ))
+
+            current_tags = [tag.pk for tag in str_item.tags.all()]
+            tags = str_data.get('tags')
+            if tags or current_tags:
+                if not tags:
+                    tags = []
+
+                new_tags = [tag.pk for tag in tags]
+                add_tags = [
+                    tag for tag in tags
+                    if tag.pk not in current_tags
+                ]
+                delete_tags = [
+                    tag for tag in current_tags
+                    if tag not in new_tags
+                ]
+
+                if not append_only:
+                    for tag in delete_tags:
+                        tag = str_item.tags.get(pk=tag)
+                        str_item.tags.remove(tag)
+                        logging.debug("Removing tag:{} for {} panel:{}".format(
+                            tag.name, str_item.label, self
+                        ))
+                        description = "{} was removed from {}. Panel: {}".format(
+                            tag,
+                            str_item.label,
+                            self.panel.name,
+                        )
+                        tracks.append((
+                            TrackRecord.ISSUE_TYPES.RemovedTag,
+                            description
+                        ))
+
+                for tag in add_tags:
+                    logging.debug("Adding new tag:{} for {} panel:{}".format(
+                        tag, str_item.label, self
+                    ))
+                    str_item.tags.add(tag)
+
+                    description = "{} was added to {}. Panel: {}".format(
+                        tag,
+                        str_item.label,
+                        self.panel.name,
+                    )
+                    tracks.append((
+                        TrackRecord.ISSUE_TYPES.AddedTag,
+                        description
+                    ))
+
+            new_gene = str_data.get('gene')
+            gene_name = str_data.get('gene_name')
+
+            if remove_gene and str_item.gene_core:
+                logging.debug("{} in panel:{} was removed".format(
+                    str_item.gene['gene_name'], self
+                ))
+
+                description = "Gene: {} was removed. Panel: {}".format(
+                    str_item.gene_core.gene_symbol,
+                    self.panel.name
+                )
+
+                tracks.append((
+                    TrackRecord.ISSUE_TYPES.RemovedGene,
+                    description
+                ))
+                str_item.gene_core = None
+                str_item.gene = None
+            elif new_gene and str_item.gene_core != new_gene:
+                logging.debug("{} in panel:{} has changed to gene:{}".format(
+                    gene_name, self, new_gene.gene_symbol
+                ))
+
+                description = "Gene: {} was changed to {}. Panel: {}".format(
+                    str_item.gene_core.gene_symbol,
+                    new_gene.gene_core.gene_symbol,
+                    self.panel.name
+                )
+
+                tracks.append((
+                    TrackRecord.ISSUE_TYPES.AddedTag,
+                    description
+                ))
+
+                str_item.gene_core = new_gene
+                str_item.gene = new_gene.dict_tr()
+            elif gene_name and str_item.gene.get('gene_name') != gene_name:
+                logging.debug("Updating gene_name for {} in panel:{}".format(str_item.label, self))
+                str_item.gene['gene_name'] = gene_name
+
+            if tracks:
+                logging.debug("Adding tracks for {} in panel:{}".format(str_item.label, self))
+                status = str_item.evidence_status(True)
+                track = TrackRecord.objects.create(
+                    gel_status=status,
+                    curator_status=0,
+                    user=user,
+                    issue_type=",".join([t[0] for t in tracks]),
+                    issue_description="\n".join([t[1] for t in tracks])
+                )
+                str_item.track.add(track)
+
+            str_item.save()
+            self.clear_cache()
+            self.update_saved_stats()
+            return str_item
+        else:
+            return False
 
     def copy_gene_reviews_from(self, genes, copy_from_panel):
         """Copy gene reviews from specified panel"""

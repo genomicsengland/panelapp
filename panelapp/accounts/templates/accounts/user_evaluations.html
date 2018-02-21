@@ -12,7 +12,7 @@
                   <a href="{{ gene.get_absolute_url }}" class="link-inherit">{{ gene.gene.gene_symbol }}</a>
                 </div>
               </div>
-            {% include "panels/genepanelentrysnapshot/gene_evaluation.html" with ev=evaluation panel=panel %}
+            {% include "panels/entity/entity_evaluation.html" with entity_name=gene.gene.gene_symbol entity_type='gene' ev=evaluation panel=panel %}
           </div>
         {% endwith %}
       {% endwith %}

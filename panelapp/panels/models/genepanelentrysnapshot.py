@@ -97,6 +97,10 @@ class GenePanelEntrySnapshot(AbstractEntity, TimeStampedModel):
         return "Panel: {} Gene: {}".format(self.panel.panel.name, self.gene.get('gene_symbol'))
 
     @property
+    def entity_type(self):
+        return 'gene'
+
+    @property
     def label(self):
         return 'gene: {gene_symbol}'.format(gene_symbol=self.gene.get('gene_symbol'))
 

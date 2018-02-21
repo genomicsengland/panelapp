@@ -1,6 +1,6 @@
 {% load bootstrap3 %}
 {% if request.user.is_authenticated and request.user.reviewer.is_verified %}
-{% include "panels/genepanelentrysnapshot/evaluation_form.html" %}
+{% include "panels/entity/evaluation_form.html" %}
 {% endif %}
 
 <div id="evaluations">
@@ -18,7 +18,7 @@
         </div>
       </div>
       {% endif %}
-      {% include "panels/genepanelentrysnapshot/gene_evaluation.html" with ev=ev %}
+      {% include "panels/entity/entity_evaluation.html" with ev=ev %}
     </div>
   {% endfor %}
 </div>

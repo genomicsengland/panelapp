@@ -28,6 +28,12 @@ class TrackRecord(TimeStampedModel):
         ("UploadGeneInformation", "Upload gene information"),
         ("RemovedTag", "Removed Tag"),
         ("AddedTag", "Added Tag"),
+        ("ChangedSTRName", "Changed STR Name"),
+        ("ChangedNormalRange", "Changed Normal Range"),
+        ("ChangedPrepathogenicRange", "Changed Pre-Pathogenic Range"),
+        ("ChangedPathogenicRange", "Changed Pathogenic Range"),
+        ("RemovedGene", "Removed Gene from the STR"),
+        ("ChangedRepeatedSequence", "Changed Repeated Sequence")
     )
 
     class Meta:

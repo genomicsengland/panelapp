@@ -41,6 +41,7 @@ class PanelSTRForm(forms.ModelForm):
 
     gene = forms.ModelChoiceField(
         label="Gene symbol",
+        required=False,
         queryset=Gene.objects.filter(active=True),
         widget=ModelSelect2(
             url="autocomplete-gene",
@@ -49,10 +50,10 @@ class PanelSTRForm(forms.ModelForm):
     )
 
     normal_range = IntegerRangeField()
-    prepathogenic_range = IntegerRangeField(require_all_fields=True)
-    pathogenic_range = IntegerRangeField(require_all_fields=True)
+    prepathogenic_range = IntegerRangeField(require_all_fields=True, required=True)
+    pathogenic_range = IntegerRangeField(require_all_fields=True, required=True)
 
-    gene_name = forms.CharField()
+    gene_name = forms.CharField(required=False)
 
     source = Select2ListMultipleChoiceField(
         choice_list=Evidence.ALL_SOURCES, required=False,
@@ -88,6 +89,7 @@ class PanelSTRForm(forms.ModelForm):
         fields = (
             'name',
             'position',
+            'repeated_sequence',
             'normal_range',
             'prepathogenic_range',
             'pathogenic_range',
@@ -108,6 +110,7 @@ class PanelSTRForm(forms.ModelForm):
         self.fields = OrderedDict()
         self.fields['name'] = original_fields.get('name')
         self.fields['position'] = original_fields.get('position')
+        self.fields['repeated_sequence'] = original_fields.get('repeated_sequence')
         self.fields['normal_range'] = original_fields.get('normal_range')
         self.fields['normal_range'].widget.widgets[0].attrs = {'placeholder': 'Normal range from %'}
         self.fields['normal_range'].widget.widgets[1].attrs = {'placeholder': 'Normal range to %'}
@@ -191,7 +194,8 @@ class PanelSTRForm(forms.ModelForm):
             self.panel.update_str(
                 self.request.user,
                 initial_name,
-                str_data
+                str_data,
+                remove_gene=True if not str_data.get('gene') else False
             )
             self.panel = GenePanel.objects.get(pk=self.panel.panel.pk).active_panel
             return self.panel.get_str(new_str_name)

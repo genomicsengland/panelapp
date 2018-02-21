@@ -1,6 +1,6 @@
 from django.http import Http404
 from django.contrib import messages
-from django.views.generic import DetailView
+from django.views.generic import DetailView, RedirectView
 from django.views.generic import CreateView
 from django.utils.functional import cached_property
 from django.views.generic import UpdateView
@@ -10,15 +10,23 @@ from django.views.generic import TemplateView
 from panelapp.mixins import GELReviewerRequiredMixin
 from panelapp.mixins import VerifiedReviewerRequiredMixin
 from panels.forms import GeneReviewForm
+from panels.forms import STRReviewForm
 from panels.forms import PanelGeneForm
 from panels.forms import GeneReadyForm
 from panels.forms import PanelSTRForm
+from panels.forms import STRReadyForm
 from panels.forms.ajax import UpdateGeneTagsForm
 from panels.forms.ajax import UpdateGeneMOPForm
 from panels.forms.ajax import UpdateGeneMOIForm
 from panels.forms.ajax import UpdateGenePhenotypesForm
 from panels.forms.ajax import UpdateGenePublicationsForm
 from panels.forms.ajax import UpdateGeneRatingForm
+from panels.forms.ajax import UpdateSTRTagsForm
+from panels.forms.ajax import UpdateSTRMOPForm
+from panels.forms.ajax import UpdateSTRMOIForm
+from panels.forms.ajax import UpdateSTRPhenotypesForm
+from panels.forms.ajax import UpdateSTRPublicationsForm
+from panels.forms.ajax import UpdateSTRRatingForm
 from panels.mixins import PanelMixin
 from panels.mixins import ActAndRedirectMixin
 from panels.models import GenePanel
@@ -83,17 +91,56 @@ class GenePanelSpanshotView(EntityMixin, DetailView):
             request=self.request,
         )
 
-        ctx['edit_gene_tags_form'] = UpdateGeneTagsForm(instance=self.object)
-        ctx['edit_gene_mop_form'] = UpdateGeneMOPForm(instance=self.object)
-        ctx['edit_gene_moi_form'] = UpdateGeneMOIForm(instance=self.object)
-        ctx['edit_gene_phenotypes_form'] = UpdateGenePhenotypesForm(instance=self.object)
-        ctx['edit_gene_publications_form'] = UpdateGenePublicationsForm(instance=self.object)
-        ctx['edit_gene_rating_form'] = UpdateGeneRatingForm(instance=self.object)
+        ctx['edit_entity_tags_form'] = UpdateGeneTagsForm(instance=self.object)
+        ctx['edit_entity_mop_form'] = UpdateGeneMOPForm(instance=self.object)
+        ctx['edit_entity_moi_form'] = UpdateGeneMOIForm(instance=self.object)
+        ctx['edit_entity_phenotypes_form'] = UpdateGenePhenotypesForm(instance=self.object)
+        ctx['edit_entity_publications_form'] = UpdateGenePublicationsForm(instance=self.object)
+        ctx['edit_entity_rating_form'] = UpdateGeneRatingForm(instance=self.object)
 
-        ctx['panel_genes'] = list(self.panel.get_all_genes_extra)
         cgi = ctx['panel_genes'].index(self.object)
         ctx['next_gene'] = None if cgi == len(ctx['panel_genes']) - 1 else ctx['panel_genes'][cgi + 1]
         ctx['prev_gene'] = None if cgi == 0 else ctx['panel_genes'][cgi - 1]
+
+        return ctx
+
+    def get_context_data_str(self, ctx):
+        form_initial = {}
+        if self.request.user.is_authenticated:
+            user_review = self.object.review_by_user(self.request.user)
+            if user_review:
+                form_initial = user_review.dict_tr()
+                form_initial['comments'] = None
+
+        ctx['form'] = GeneReviewForm(
+            panel=self.panel,
+            request=self.request,
+            gene=self.object,
+            initial=form_initial
+        )
+        ctx['form_edit'] = PanelSTRForm(
+            instance=self.object,
+            initial=self.object.get_form_initial(),
+            panel=self.panel,
+            request=self.request
+        )
+
+        ctx['entity_ready_form'] = STRReadyForm(
+            instance=self.object,
+            initial={},
+            request=self.request,
+        )
+
+        ctx['edit_entity_tags_form'] = UpdateSTRTagsForm(instance=self.object)
+        ctx['edit_entity_mop_form'] = UpdateSTRMOPForm(instance=self.object)
+        ctx['edit_entity_moi_form'] = UpdateSTRMOIForm(instance=self.object)
+        ctx['edit_entity_phenotypes_form'] = UpdateSTRPhenotypesForm(instance=self.object)
+        ctx['edit_entity_publications_form'] = UpdateSTRPublicationsForm(instance=self.object)
+        ctx['edit_entity_rating_form'] = UpdateSTRRatingForm(instance=self.object)
+
+        cgi = ctx['panel_strs'].index(self.object)
+        ctx['next_str'] = None if cgi == len(ctx['panel_strs']) - 1 else ctx['panel_strs'][cgi + 1]
+        ctx['prev_str'] = None if cgi == 0 else ctx['panel_strs'][cgi - 1]
 
         return ctx
 
@@ -102,6 +149,9 @@ class GenePanelSpanshotView(EntityMixin, DetailView):
         ctx['panel'] = self.panel
         ctx['entity_type'] = self.kwargs['entity_type']
         ctx['entity_name'] = self.kwargs['entity_name']
+        ctx['panel_genes'] = list(self.panel.get_all_genes_extra)
+        ctx['panel_strs'] = list(self.panel.get_all_strs_extra)
+
         ctx['feedback_review_parts'] = [
             'Rating',
             'Mode of inheritance',
@@ -153,7 +203,7 @@ class ModifyEntityCommonMixin(EntityMixin):
     def get_success_url(self):
         return reverse_lazy('panels:evaluation', kwargs={
             'pk': self.kwargs['pk'],
-            'entity_type': 'gene',
+            'entity_type': self.kwargs['entity_type'],
             'entity_name': self.entity_name
         })
 
@@ -186,9 +236,9 @@ class PanelAddEntityView(ModifyEntityCommonMixin, VerifiedReviewerRequiredMixin,
 class PanelEditEntityView(ModifyEntityCommonMixin, GELReviewerRequiredMixin, UpdateView):
     def get_template_names(self):
         if self.is_gene():
-            return "panels/genepanel_edit_gene.html"
+            return "panels/gene_edit.html"
         elif self.is_str():
-            return "panels/genepanel_edit_str.html"
+            return "panels/str_edit.html"
 
     def form_valid(self, form):
         label = ''
@@ -259,3 +309,82 @@ class MarkGeneNotReadyView(EntityMixin, GELReviewerRequiredMixin, UpdateView):
             'entity_type': self.kwargs['entity_type'],
             'entity_name': self.kwargs['entity_name']
         })
+
+
+class EntityReviewView(VerifiedReviewerRequiredMixin, EntityMixin, UpdateView):
+    context_object_name = 'entity'
+
+    def get_form_class(self):
+        if self.is_gene():
+            return GeneReviewForm
+        elif self.is_str():
+            return STRReviewForm
+
+    def get_template_names(self):
+        if self.is_gene():
+            return "panels/gene_edit.html"
+        elif self.is_str():
+            return "panels/str_edit.html"
+
+    def get_object(self):
+        if self.is_gene():
+            return self.panel.get_gene(self.kwargs['entity_name'], prefetch_extra=True)
+        elif self.is_str():
+            return self.panel.get_str(self.kwargs['entity_name'], prefetch_extra=True)
+
+    @cached_property
+    def panel(self):
+        return GenePanel.objects.get_active_panel(pk=self.kwargs['pk'])
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['panel'] = self.panel
+        kwargs['request'] = self.request
+
+        if self.is_gene():
+            kwargs['gene'] = self.object
+        elif self.is_str():
+            kwargs['str'] = self.object
+
+        if not kwargs['initial']:
+            kwargs['initial'] = {}
+            if self.request.user.is_authenticated:
+                user_review = self.object.review_by_user(self.request.user)
+                if user_review:
+                    kwargs['initial'] = user_review.dict_tr()
+                    kwargs['initial']['comments'] = None
+        kwargs['instance'] = None
+        return kwargs
+
+    def get_context_data(self, *args, **kwargs):
+        ctx = super().get_context_data(*args, **kwargs)
+        ctx['panel'] = self.panel.panel
+        return ctx
+
+    def form_valid(self, form):
+        ret = super().form_valid(form)
+        if self.is_gene():
+            msg = "Successfully reviewed gene {}".format(self.kwargs['entity_name'])
+        elif self.is_str():
+            msg = "Successfully reviewed STR {}".format(self.kwargs['entity_name'])
+        messages.success(self.request, msg)
+        return ret
+
+    def get_success_url(self):
+        return reverse_lazy('panels:evaluation', kwargs={
+            'pk': self.kwargs['pk'],
+            'entity_type': self.kwargs['entity_type'],
+            'entity_name': self.kwargs['entity_name']
+        })
+
+
+class RedirectGenesToEntities(RedirectView):
+    """Redirect URL schema which was supported before, i.e. /panels/<pk>/<gene_symbol>"""
+
+    def dispatch(self, request, *args, **kwargs):
+        self.url = reverse_lazy('panels:evaluation', kwargs={
+            'pk': self.kwargs['pk'],
+            'entity_type': 'gene',
+            'entity_name': self.kwargs['entity_name']
+        })
+        return super().dispatch(request, *args, **kwargs)

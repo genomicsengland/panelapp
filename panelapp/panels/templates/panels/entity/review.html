@@ -1,14 +1,14 @@
 {% load bootstrap3 %}
 {% load panel_helpers %}
 <h3 class="remove-bottom-margin">Review feedback</h3>
-<p class="lead">{{ gene.evaluation.all|length }} review{{ gene.evaluation.all|pluralize }}</p>
+<p class="lead">{{ entity.evaluation.all|length }} review{{ entity.evaluation.all|pluralize }}</p>
 
 <div id="review-evaluations">
-  {% include "panels/genepanelentrysnapshot/review/review_evaluations.html" %}
+  {% include "panels/entity/review/review_evaluations.html" %}
 </div>
 
 <div id="part-tags">
-  {% include "panels/genepanelentrysnapshot/review/part_tags.html" %}
+  {% include "panels/entity/review/part_tags.html" %}
 </div>
 
 {% for part in feedback_review_parts %}
@@ -22,7 +22,7 @@
         </tr>
       </thead>
       <tbody>
-        {% for ev in gene.evaluation.all %}
+        {% for ev in entity.evaluation.all %}
             {% if part == "Rating" and ev.rating %}
               <tr>
                 <td>{{ ev.user.get_reviewer_name }}</td>
@@ -82,27 +82,27 @@
             <div data-module="ajax-form">
               {% if part == "Rating" %}
                 <div id="part-rating">
-                  {% include "panels/entity/part_rating.html" %}
+                  {% include "panels/entity/review/part_rating.html" %}
                 </div>
               {% endif %}
               {% if part == "Mode of inheritance" %}
                 <div id="part-moi">
-                  {% include "panels/entity/part_moi.html" %}
+                  {% include "panels/entity/review/part_moi.html" %}
                 </div>
               {% endif %}
               {% if part == "Mode of pathogenicity" %}
                 <div id="part-mop">
-                  {% include "panels/genepanelentrysnapshot/review/part_mop.html" %}
+                  {% include "panels/entity/review/part_mop.html" %}
                 </div>
               {% endif %}
               {% if part == "Publications" %}
                 <div id="part-publications">
-                  {% include "panels/genepanelentrysnapshot/review/part_publications.html" %}
+                  {% include "panels/entity/review/part_publications.html" %}
                 </div>
               {% endif %}
               {% if part == "Phenotypes" %}
                 <div id="part-phenotypes">
-                  {% include "panels/genepanelentrysnapshot/review/part_phenotypes.html" %}
+                  {% include "panels/entity/review/part_phenotypes.html" %}
                 </div>
               {% endif %}
             </div>
@@ -113,16 +113,16 @@
   </div>
 {% endfor %}
 
-{% if gene.ready %}
-  <h3 class="add-top-margin">Mark {{ gene.gene.gene_symbol }} as not ready</h3>
-  <form action="{% url 'panels:mark_entity_as_not_ready' panel.panel_id 'gene' gene.gene.gene_symbol %}#!review" method="post" class="add-top-margin well form">
+{% if entity.ready %}
+  <h3 class="add-top-margin">Mark {{ entity.label }} as not ready</h3>
+  <form action="{% url 'panels:mark_entity_as_not_ready' panel.panel_id entity_type entity_name %}#!review" method="post" class="add-top-margin well form">
     {% csrf_token %}
     <input type="submit" class="btn btn-default" value="Mark as not ready">
   </form>
 {% else %}
-  <h3 class="add-top-margin">Mark {{ gene.gene.gene_symbol }} as ready</h3>
+  <h3 class="add-top-margin">Mark {{ entity.label }} as ready</h3>
   <div class="add-bottom-margin">
-    A gene can be marked as ready for the next major version of the panel if it has:
+    A {{ entity_type }} can be marked as ready for the next major version of the panel if it has:
     <ul>
       <li>sufficient expert reviews from a variety of sources</li>
       <li>been assessed against expert reviews</li>

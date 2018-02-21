@@ -450,14 +450,14 @@ class AbstractEntity:
 
             evaluation.version = self.panel.version
 
-            is_str = self.gene.get('gene_symbol') != self.name
+            is_str = self.gene.get('gene_symbol') != self.name if self.gene else True  # STRs might not have genes
             activity_text = None
 
-            args = [user, self.gene.get('gene_symbol')]
+            args = [user, self.gene.get('gene_symbol') if self.gene else None]
             if changed:
-                activity_text = "commented on {}".format(self.label)
-            elif evaluation_data.get('comment'):
                 activity_text = "edited their review of {}".format(self.label)
+            elif evaluation_data.get('comment'):
+                activity_text = "commented on {}".format(self.label)
 
             if activity_text:
                 args.append(activity_text)
