@@ -12,12 +12,21 @@ from .forms import PanelGeneForm
 from .forms import PanelSTRForm
 from .forms import GeneReadyForm
 from .forms import GeneReviewForm
+from .forms import STRReviewForm
+from .forms import STRReadyForm
 from .forms.ajax import UpdateGeneTagsForm
 from .forms.ajax import UpdateGeneMOPForm
 from .forms.ajax import UpdateGeneMOIForm
 from .forms.ajax import UpdateGenePhenotypesForm
 from .forms.ajax import UpdateGenePublicationsForm
 from .forms.ajax import UpdateGeneRatingForm
+from .forms.ajax import UpdateSTRTagsForm
+from .forms.ajax import UpdateSTRMOPForm
+from .forms.ajax import UpdateSTRMOIForm
+from .forms.ajax import UpdateSTRPhenotypesForm
+from .forms.ajax import UpdateSTRPublicationsForm
+from .forms.ajax import UpdateSTRRatingForm
+
 from .forms.ajax import EditCommentForm
 from .models import GenePanel
 from .models import GenePanelSnapshot
@@ -295,30 +304,30 @@ class UpdateEvaluationsMixin(VerifiedReviewerRequiredMixin, BaseAjaxGeneMixin, E
             ctx['edit_entity_publications_form'] = UpdateGenePublicationsForm(instance=self.object)
             ctx['edit_entity_rating_form'] = UpdateGeneRatingForm(instance=self.object)
         elif self.is_str():
-            ctx['form_edit'] = PanelGeneForm(
+            ctx['form_edit'] = PanelSTRForm(
                 instance=self.object,
                 initial=self.object.get_form_initial(),
                 panel=self.panel,
                 request=self.request
             )
-            ctx['entity_ready_form'] = GeneReadyForm(
+            ctx['entity_ready_form'] = STRReadyForm(
                 instance=self.object,
                 initial={},
                 request=self.request,
             )
 
-            ctx['form'] = GeneReviewForm(
+            ctx['form'] = STRReviewForm(
                 panel=self.panel,
                 request=self.request,
-                gene=self.object
+                str=self.object
             )
 
-            ctx['edit_entity_tags_form'] = UpdateGeneTagsForm(instance=self.object)
-            ctx['edit_entity_mop_form'] = UpdateGeneMOPForm(instance=self.object)
-            ctx['edit_entity_moi_form'] = UpdateGeneMOIForm(instance=self.object)
-            ctx['edit_entity_phenotypes_form'] = UpdateGenePhenotypesForm(instance=self.object)
-            ctx['edit_entity_publications_form'] = UpdateGenePublicationsForm(instance=self.object)
-            ctx['edit_entity_rating_form'] = UpdateGeneRatingForm(instance=self.object)
+            ctx['edit_entity_tags_form'] = UpdateSTRTagsForm(instance=self.object)
+            ctx['edit_entity_mop_form'] = UpdateSTRMOPForm(instance=self.object)
+            ctx['edit_entity_moi_form'] = UpdateSTRMOIForm(instance=self.object)
+            ctx['edit_entity_phenotypes_form'] = UpdateSTRPhenotypesForm(instance=self.object)
+            ctx['edit_entity_publications_form'] = UpdateSTRPublicationsForm(instance=self.object)
+            ctx['edit_entity_rating_form'] = UpdateSTRRatingForm(instance=self.object)
 
         return ctx
 
@@ -326,19 +335,19 @@ class UpdateEvaluationsMixin(VerifiedReviewerRequiredMixin, BaseAjaxGeneMixin, E
         ctx = self.get_context_data()
 
         if self.is_gene():
-            evaluations = render(self.request, 'panels/genepanelentrysnapshot/evaluate.html', ctx)
-            reviews = render(self.request, 'panels/genepanelentrysnapshot/review/review_evaluations.html', ctx)
+            evaluations = render(self.request, 'panels/entity/evaluate.html', ctx)
+            reviews = render(self.request, 'panels/entity/review/review_evaluations.html', ctx)
             details = render(self.request, 'panels/genepanelentrysnapshot/details.html', ctx)
-            genes_list = render(self.request, 'panels/genepanelentrysnapshot/evaluation_genes_list.html', ctx)
-            history = render(self.request, 'panels/genepanelentrysnapshot/history.html', ctx)
-            header = render(self.request, 'panels/genepanelentrysnapshot/header.html', ctx)
+            genes_list = render(self.request, 'panels/entity/evaluation_genes_list.html', ctx)
+            history = render(self.request, 'panels/entity/history.html', ctx)
+            header = render(self.request, 'panels/entity/header.html', ctx)
         elif self.is_str():
-            evaluations = render(self.request, 'panels/genepanelentrysnapshot/evaluate.html', ctx)
-            reviews = render(self.request, 'panels/genepanelentrysnapshot/review/review_evaluations.html', ctx)
-            details = render(self.request, 'panels/genepanelentrysnapshot/details.html', ctx)
-            genes_list = render(self.request, 'panels/genepanelentrysnapshot/evaluation_genes_list.html', ctx)
-            history = render(self.request, 'panels/genepanelentrysnapshot/history.html', ctx)
-            header = render(self.request, 'panels/genepanelentrysnapshot/header.html', ctx)
+            evaluations = render(self.request, 'panels/entity/evaluate.html', ctx)
+            reviews = render(self.request, 'panels/entity/review/review_evaluations.html', ctx)
+            details = render(self.request, 'panels/strs/details.html', ctx)
+            genes_list = render(self.request, 'panels/entity/evaluation_genes_list.html', ctx)
+            history = render(self.request, 'panels/entity/history.html', ctx)
+            header = render(self.request, 'panels/entity/header.html', ctx)
 
         return {
             'inner-fragments': {
@@ -353,10 +362,17 @@ class UpdateEvaluationsMixin(VerifiedReviewerRequiredMixin, BaseAjaxGeneMixin, E
 
 
 class UpdateEntityTagsAjaxView(GELReviewerRequiredMixin, UpdateEvaluationsMixin):
-    template_name = "panels/genepanelentrysnapshot/review/part_tags.html"
+    template_name = "panels/entity/review/part_tags.html"
+
+    @property
+    def form_class(self):
+        if self.is_gene():
+            return UpdateGeneTagsForm
+        elif self.is_str():
+            return UpdateSTRTagsForm
 
     def process(self):
-        form = UpdateGeneTagsForm(instance=self.object, data=self.request.POST)
+        form = self.form_class(instance=self.object, data=self.request.POST)
         if form.is_valid():
             form.save()
             del self.panel
@@ -373,7 +389,7 @@ class UpdateEntityTagsAjaxView(GELReviewerRequiredMixin, UpdateEvaluationsMixin)
             'entity': self.object,
             'entity_name': self.kwargs['entity_name'],
             'entity_type': self.kwargs['entity_type'],
-            'edit_gene_tags_form': UpdateGeneTagsForm(instance=self.object),
+            'edit_entity_tags_form': self.form_class(instance=self.object),
             "updated": datetime.datetime.now().strftime('%H:%M:%S')
         }
         tags = render(self.request, self.template_name, ctx)
@@ -382,10 +398,17 @@ class UpdateEntityTagsAjaxView(GELReviewerRequiredMixin, UpdateEvaluationsMixin)
 
 
 class UpdateEntityMOPAjaxView(GELReviewerRequiredMixin, UpdateEvaluationsMixin):
-    template_name = "panels/genepanelentrysnapshot/review/part_mop.html"
+    template_name = "panels/entity/review/part_mop.html"
+
+    @property
+    def form_class(self):
+        if self.is_gene():
+            return UpdateGeneMOPForm
+        elif self.is_str():
+            return UpdateSTRMOPForm
 
     def process(self):
-        form = UpdateGeneMOPForm(instance=self.object, data=self.request.POST)
+        form = self.form_class(instance=self.object, data=self.request.POST)
         if form.is_valid():
             form.save(user=self.request.user)
             return self.return_data()
@@ -394,7 +417,7 @@ class UpdateEntityMOPAjaxView(GELReviewerRequiredMixin, UpdateEvaluationsMixin):
 
     def get_context_data(self):
         ctx = super().get_context_data()
-        ctx['edit_gene_mop_form'] = UpdateGeneMOPForm(instance=self.object)
+        ctx['edit_entity_mop_form'] = self.form_class(instance=self.object)
         return ctx
 
     def return_data(self):
@@ -405,10 +428,17 @@ class UpdateEntityMOPAjaxView(GELReviewerRequiredMixin, UpdateEvaluationsMixin):
 
 
 class UpdateEntityMOIAjaxView(GELReviewerRequiredMixin, UpdateEvaluationsMixin):
-    template_name = "panels/entity/part_moi.html"
+    template_name = "panels/entity/review/part_moi.html"
+
+    @property
+    def form_class(self):
+        if self.is_gene():
+            return UpdateGeneMOIForm
+        elif self.is_str():
+            return UpdateSTRMOIForm
 
     def process(self):
-        form = UpdateGeneMOIForm(instance=self.object, data=self.request.POST)
+        form = self.form_class(instance=self.object, data=self.request.POST)
         if form.is_valid():
             form.save(user=self.request.user)
             return self.return_data()
@@ -417,7 +447,7 @@ class UpdateEntityMOIAjaxView(GELReviewerRequiredMixin, UpdateEvaluationsMixin):
 
     def get_context_data(self):
         ctx = super().get_context_data()
-        ctx['edit_gene_moi_form'] = UpdateGeneMOIForm(instance=self.gene)
+        ctx['edit_entity_moi_form'] = self.form_class(instance=self.object)
         return ctx
 
     def return_data(self):
@@ -428,10 +458,17 @@ class UpdateEntityMOIAjaxView(GELReviewerRequiredMixin, UpdateEvaluationsMixin):
 
 
 class UpdateEntityPhenotypesAjaxView(GELReviewerRequiredMixin, UpdateEvaluationsMixin):
-    template_name = "panels/genepanelentrysnapshot/review/part_phenotypes.html"
+    template_name = "panels/entity/review/part_phenotypes.html"
+
+    @property
+    def form_class(self):
+        if self.is_gene():
+            return UpdateGenePhenotypesForm
+        elif self.is_str():
+            return UpdateSTRPhenotypesForm
 
     def process(self):
-        form = UpdateGenePhenotypesForm(instance=self.object, data=self.request.POST)
+        form = self.form_class(instance=self.object, data=self.request.POST)
         if form.is_valid():
             form.save(user=self.request.user)
             return self.return_data()
@@ -440,7 +477,7 @@ class UpdateEntityPhenotypesAjaxView(GELReviewerRequiredMixin, UpdateEvaluations
 
     def get_context_data(self):
         ctx = super().get_context_data()
-        ctx['edit_gene_phenotypes_form'] = UpdateGenePhenotypesForm(instance=self.object)
+        ctx['edit_entity_phenotypes_form'] = self.form_class(instance=self.object)
         return ctx
 
     def return_data(self):
@@ -451,10 +488,17 @@ class UpdateEntityPhenotypesAjaxView(GELReviewerRequiredMixin, UpdateEvaluations
 
 
 class UpdateEntityPublicationsAjaxView(GELReviewerRequiredMixin, UpdateEvaluationsMixin):
-    template_name = "panels/genepanelentrysnapshot/review/part_publications.html"
+    template_name = "panels/entity/review/part_publications.html"
+
+    @property
+    def form_class(self):
+        if self.is_gene():
+            return UpdateGenePublicationsForm
+        elif self.is_str():
+            return UpdateSTRPublicationsForm
 
     def process(self):
-        form = UpdateGenePublicationsForm(instance=self.object, data=self.request.POST)
+        form = self.form_class(instance=self.object, data=self.request.POST)
         if form.is_valid():
             form.save(user=self.request.user)
             return self.return_data()
@@ -463,7 +507,7 @@ class UpdateEntityPublicationsAjaxView(GELReviewerRequiredMixin, UpdateEvaluatio
 
     def get_context_data(self):
         ctx = super().get_context_data()
-        ctx['edit_gene_publications_form'] = UpdateGenePublicationsForm(instance=self.object)
+        ctx['edit_entity_publications_form'] = self.form_class(instance=self.object)
         return ctx
 
     def return_data(self):
@@ -474,10 +518,17 @@ class UpdateEntityPublicationsAjaxView(GELReviewerRequiredMixin, UpdateEvaluatio
 
 
 class UpdateEntityRatingAjaxView(GELReviewerRequiredMixin, UpdateEvaluationsMixin):
-    template_name = "panels/entity/part_rating.html"
+    template_name = "panels/entity/review/part_rating.html"
+
+    @property
+    def form_class(self):
+        if self.is_gene():
+            return UpdateGeneRatingForm
+        elif self.is_str():
+            return UpdateSTRRatingForm
 
     def process(self):
-        form = UpdateGeneRatingForm(instance=self.object, data=self.request.POST)
+        form = self.form_class(instance=self.object, data=self.request.POST)
         if form.is_valid():
             form.save(user=self.request.user)
             return self.return_data()
@@ -486,7 +537,7 @@ class UpdateEntityRatingAjaxView(GELReviewerRequiredMixin, UpdateEvaluationsMixi
 
     def get_context_data(self):
         ctx = super().get_context_data()
-        ctx['edit_gene_rating_form'] = UpdateGeneRatingForm(instance=self.object)
+        ctx['edit_entity_rating_form'] = self.form_class(instance=self.object)
         return ctx
 
     def return_data(self):

@@ -23,8 +23,8 @@ from panels.forms import UploadReviewsForm
 from panels.forms import PanelForm
 from panels.forms import PromotePanelForm
 from panels.forms import PanelGeneForm
-from panels.forms import GeneReviewForm
 from panels.forms import GeneReadyForm
+from panels.forms import GeneReviewForm
 from panels.forms import ComparePanelsForm
 from panels.forms import CopyReviewsForm
 from panels.models import Tag
@@ -104,54 +104,6 @@ class GeneListView(ListView):
         ctx['tags'] = Tag.objects.all().order_by('name')
         ctx['tag_filter'] = self.request.GET.get('tag')
         return ctx
-
-
-class GeneReviewView(VerifiedReviewerRequiredMixin, UpdateView):
-    template_name = "panels/genepanel_edit_gene.html"
-    context_object_name = 'gene'
-
-    form_class = GeneReviewForm
-
-    def get_object(self):
-        return self.panel.get_gene(self.kwargs['entity_name'], prefetch_extra=True)
-
-    @cached_property
-    def panel(self):
-        return GenePanel.objects.get_active_panel(pk=self.kwargs['pk'])
-
-    def get_form_kwargs(self):
-        kwargs = super().get_form_kwargs()
-        kwargs['panel'] = self.panel
-        kwargs['request'] = self.request
-        kwargs['gene'] = self.object
-
-        if not kwargs['initial']:
-            kwargs['initial'] = {}
-            if self.request.user.is_authenticated:
-                user_review = self.object.review_by_user(self.request.user)
-                if user_review:
-                    kwargs['initial'] = user_review.dict_tr()
-                    kwargs['initial']['comments'] = None
-        kwargs['instance'] = None
-        return kwargs
-
-    def get_context_data(self, *args, **kwargs):
-        ctx = super().get_context_data(*args, **kwargs)
-        ctx['panel'] = self.panel.panel
-        return ctx
-
-    def form_valid(self, form):
-        ret = super().form_valid(form)
-        msg = "Successfully reviewed gene {}".format(self.get_object().gene.get('gene_symbol'))
-        messages.success(self.request, msg)
-        return ret
-
-    def get_success_url(self):
-        return reverse_lazy('panels:evaluation', kwargs={
-            'pk': self.kwargs['pk'],
-            'entity_type': 'gene',
-            'entity_name': self.kwargs['entity_name']
-        })
 
 
 class DownloadPanelTSVMixin(PanelMixin, DetailView):

@@ -1,6 +1,6 @@
 {% load panel_helpers %}
 <h3>History</h3>
-{% for track in gene.track.all %}
+{% for track in entity.track.all %}
   <div class="panel panel-default">
     <div class="panel-body">
       <span class="text-muted">{{ track.created|date }}, Gel status: {{ track.gel_status }}</span>

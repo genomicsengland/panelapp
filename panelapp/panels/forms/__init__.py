@@ -10,6 +10,8 @@ from .panelgene import PanelGeneForm  # noqa
 from .str import PanelSTRForm  # noqa
 from .genereview import GeneReviewForm  # noqa
 from .geneready import GeneReadyForm  # noqa
+from .strreview import STRReviewForm  # noqa
+from .str_ready import STRReadyForm  # noqa
 from panels.models import ProcessingRunCode
 from panels.exceptions import UserDoesNotExist
 from panels.exceptions import GeneDoesNotExist

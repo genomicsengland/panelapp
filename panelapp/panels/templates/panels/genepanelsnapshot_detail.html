@@ -2,7 +2,7 @@
 {% load static %}
 {% load staticfiles %}
 {% load panel_helpers %}
-{% block title %}{{ entity.gene.gene_symbol }} ({{ panel.level4title.name }}){% endblock %}
+{% block title %}{{ entity.label|capfirst }} ({{ panel.level4title.name }}){% endblock %}
 {% block header %}
   <script src="{% static 'django_ajax/js/jquery.ajax.min.js' %}"></script>
   <script src="{% static 'django_ajax/js/jquery.ajax-plugin.min.js' %}"></script>
@@ -19,22 +19,38 @@
         </a>
     </li>
     <li class="active">
-        {{ entity.gene.gene_symbol }}
+        {{ entity.name }}
     </li>
 </ol>
 
 <div class="row">
     <div class="col-sm-2">
         <div id="genes_list" class="panel panel-default">
-            {% include "panels/genepanelentrysnapshot/evaluation_genes_list.html" %}
+            {% include "panels/entity/evaluation_genes_list.html" %}
+        </div>
+        <div id="strs_list" class="panel panel-default">
+            {% include "panels/entity/evaluation_strs_list.html" %}
         </div>
     </div>
     <div class="col-sm-10">
         <div id="gene_header">
-            {% include "panels/genepanelentrysnapshot/header.html" %}
+            {% include "panels/entity/header.html" %}
         </div>
         <hr />
         <p class="lead">
+            {% if entity_type == 'str' %}
+                Position (Chr:Position): {{ entity.position }}<br />
+                {% if entity.normal_range %}
+                    Normal Range: {{ entity.normal_range.lower }}-{{ entity.normal_range.upper }}% <br />
+                {% endif %}
+                {% if entity.prepathogenic_range %}
+                    Pre-pathogenic Range: {{ entity.prepathogenic_range.lower }}-{{ entity.prepathogenic_range.upper }}%<br />
+                {% endif %}
+                {% if entity.pathogenic_range %}
+                    Pathogenic Range: {{ entity.pathogenic_range.lower }}-{{ entity.pathogenic_range.upper }}%<br />
+                {% endif %}
+                <br />
+            {% endif %}
             {{ entity.gene.gene_name }}<br />
             {% if entity.gene.ensembl_genes %}
                 {% if entity.gene.ensembl_genes.GRch38.90  %}
@@ -51,9 +67,11 @@
             {% if entity.gene.omim_gene|length > 0 %}
               <a href="http://omim.org/entry/{{ entity.gene.omim_gene.0 }}" target="_blank">OMIM: {{ entity.gene.omim_gene.0 }}</a>, <a href=" http://www.ebi.ac.uk/gene2phenotype/gene2phenotype-webcode/cgi-bin/handler.cgi?panel=ALL&search_term={{ entity.gene.gene_symbol }}" target="_blank">Gene2Phenotype</a><br />
             {% endif %}
+            {% if entity_type == 'gene' %}
             {% with shared_panels=sharing_panels %}
             {{ entity.gene.gene_symbol }} is in <a href="{% url 'panels:gene_detail' entity.gene.gene_symbol %}">{{ shared_panels|length }} panel{{ shared_panels|pluralize }}</a>
             {% endwith %}
+            {% endif %}
         </p>
 
         <div data-module="tab-switcher" data-default-tab="evaluate">
@@ -76,17 +94,21 @@
 
             <div class="tab-content">
                 <div role="tabpanel" class="tab-pane active" id="evaluate">
-                    {% include "panels/genepanelentrysnapshot/evaluate.html" %}
+                    {% include "panels/entity/evaluate.html" %}
                 </div>
                 <div role="tabpanel" class="tab-pane" id="details">
-                    {% include "panels/genepanelentrysnapshot/details.html" %}
+                    {% if entity_type == 'gene' %}
+                        {% include "panels/genepanelentrysnapshot/details.html" %}
+                    {% elif entity_type == 'str' %}
+                        {% include "panels/strs/details.html" %}
+                    {% endif %}
                 </div>
                 <div role="tabpanel" class="tab-pane" id="history">
-                    {% include "panels/genepanelentrysnapshot/history.html" %}
+                    {% include "panels/entity/history.html" %}
                 </div>
                 {% if request.user.is_authenticated and request.user.reviewer.is_GEL %}
                 <div role="tabpanel" class="tab-pane" id="review">
-                    {% include "panels/genepanelentrysnapshot/review.html" %}
+                    {% include "panels/entity/review.html" %}
                 </div>
                 {% endif %}
             </div>

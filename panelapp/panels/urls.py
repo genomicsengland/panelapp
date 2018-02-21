@@ -15,7 +15,7 @@ from .views import PanelAddEntityView
 from .views import PanelEditEntityView
 from .views import PanelMarkNotReadyView
 from .views import GenePanelSpanshotView
-from .views import GeneReviewView
+from .views import EntityReviewView
 from .views import MarkEntityReadyView
 from .views import DownloadPanelTSVView
 from .views import DownloadPanelVersionTSVView
@@ -26,6 +26,8 @@ from .views import CopyReviewsView
 from .views import DownloadAllGenes
 from .views import DownloadAllPanels
 from .views import ActivityListView
+from .views import DownloadAllSTRs
+from .views import RedirectGenesToEntities
 from .ajax_views import ClearPublicationsAjaxView
 from .ajax_views import ClearPhoenotypesAjaxView
 from .ajax_views import ClearModeOfPathogenicityAjaxView
@@ -68,9 +70,10 @@ urlpatterns = [
         DownloadPanelTSVView.as_view(), name="download_panel_tsv"),
     url(r'^(?P<pk>[0-9]+)/download_version/$',
         DownloadPanelVersionTSVView.as_view(), name="download_old_panel_tsv"),
+    url(r'^(?P<pk>[0-9]+)/(?P<entity_name>{})/$'.format(entity_regex), RedirectGenesToEntities.as_view(), name="redirect_previous_structure"),
     url(r'^(?P<pk>[0-9]+)/(?P<entity_type>(gene|str))/(?P<entity_name>{})/$'.format(entity_regex), GenePanelSpanshotView.as_view(), name="evaluation"),
     url(r'^(?P<pk>[0-9]+)/(?P<entity_type>(gene|str))/(?P<entity_name>{})/edit$'.format(entity_regex), PanelEditEntityView.as_view(), name="edit_entity"),
-    url(r'^(?P<pk>[0-9]+)/(?P<entity_type>(gene|str))/(?P<entity_name>{})/review$'.format(entity_regex), GeneReviewView.as_view(), name="review_gene"),
+    url(r'^(?P<pk>[0-9]+)/(?P<entity_type>(gene|str))/(?P<entity_name>{})/review$'.format(entity_regex), EntityReviewView.as_view(), name="review_entity"),
     url(r'^(?P<pk>[0-9]+)/(?P<entity_type>(gene|str))/(?P<entity_name>{})/mark_as_ready$'.format(entity_regex),
         MarkEntityReadyView.as_view(), name="mark_entity_as_ready"),
     url(r'^(?P<pk>[0-9]+)/(?P<entity_type>(gene|str))/(?P<entity_name>{})/mark_as_not_ready$'.format(entity_regex),
@@ -80,7 +83,7 @@ urlpatterns = [
     url(r'^(?P<pk>[0-9]+)/(?P<entity_type>(gene|str))/(?P<entity_name>{})/delete$'.format(entity_regex), DeleteEntityAjaxView.as_view(), name="delete_entity"),
     url(r'^(?P<pk>[0-9]+)/(?P<entity_type>(gene|str))/(?P<entity_name>{})/approve$'.format(entity_regex), ApproveGeneAjaxView.as_view(), name="approve_entity"),
     url(r'^(?P<pk>[0-9]+)/(?P<entity_type>(gene|str))/(?P<entity_name>{})/clear_entity_sources$'.format(entity_regex),
-        ClearSourcesAjaxView.as_view(), name="clear_gene_sources"),
+        ClearSourcesAjaxView.as_view(), name="clear_entity_sources"),
     url(r'^(?P<pk>[0-9]+)/(?P<entity_type>(gene|str))/(?P<entity_name>{})/clear_entity_source/(?P<source>(.*))/$'.format(entity_regex),
         ClearSingleSourceAjaxView.as_view(), name="clear_entity_source"),
     url(r'^(?P<pk>[0-9]+)/(?P<entity_type>(gene|str))/(?P<entity_name>{})/clear_entity_phenotypes$'.format(entity_regex),
@@ -123,6 +126,7 @@ urlpatterns = [
     url(r'^admin/', AdminView.as_view(), name="admin"),
     url(r'^upload_genes/', AdminUploadGenesView.as_view(), name="upload_genes"),
     url(r'^download_genes/', DownloadAllGenes.as_view(), name="download_genes"),
+    url(r'^download_strs/', DownloadAllSTRs.as_view(), name="download_strs"),
     url(r'^upload_panel/', AdminUploadPanelsView.as_view(), name="upload_panels"),
     url(r'^download_panel/', DownloadAllPanels.as_view(), name="download_panels"),
     url(r'^upload_reviews/', AdminUploadReviewsView.as_view(), name="upload_reviews"),

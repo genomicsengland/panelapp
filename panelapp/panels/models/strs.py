@@ -72,19 +72,21 @@ class STR(AbstractEntity, TimeStampedModel):
         ordering = ['-saved_gel_status', ]
         indexes = [
             models.Index(fields=['panel_id']),
-            models.Index(fields=['gene_core_id'])
+            models.Index(fields=['gene_core_id']),
+            models.Index(fields=['name'])
         ]
 
     panel = models.ForeignKey(GenePanelSnapshot)
 
     name = models.CharField(max_length=128)
+    repeated_sequence = models.CharField(max_length=128)
     position = models.CharField(max_length=32, help_text="Chr:Start Position")
     normal_range = IntegerRangeField(blank=True, null=True)
     prepathogenic_range = IntegerRangeField(blank=True, null=True)
     pathogenic_range = IntegerRangeField()
 
-    gene = JSONField(encoder=DjangoJSONEncoder)  # copy data from Gene.dict_tr
-    gene_core = models.ForeignKey(Gene)  # reference to the original Gene
+    gene = JSONField(encoder=DjangoJSONEncoder, blank=True, null=True)  # copy data from Gene.dict_tr
+    gene_core = models.ForeignKey(Gene, blank=True, null=True)  # reference to the original Gene
     evidence = models.ManyToManyField(Evidence)
     evaluation = models.ManyToManyField(Evaluation, db_index=True)
     moi = models.CharField("Mode of inheritance", choices=Evaluation.MODES_OF_INHERITANCE, max_length=255)
@@ -113,6 +115,10 @@ class STR(AbstractEntity, TimeStampedModel):
         )
 
     @property
+    def entity_type(self):
+        return 'str'
+
+    @property
     def label(self):
         return 'STR: {name}'.format(name=self.name)
 
@@ -125,6 +131,7 @@ class STR(AbstractEntity, TimeStampedModel):
         return {
             "name": self.name,
             "position": self.position,
+            "repeated_sequence": self.repeated_sequence,
             "normal_range": (self.normal_range.lower, self.normal_range.upper),
             "prepathogenic_range": (self.prepathogenic_range.lower, self.prepathogenic_range.upper),
             "pathogenic_range": (self.pathogenic_range.lower, self.pathogenic_range.upper),
@@ -149,12 +156,13 @@ class STR(AbstractEntity, TimeStampedModel):
         return {
             "name": self.name,
             "position": self.position,
+            "repeated_sequence": self.repeated_sequence,
             "normal_range": self.normal_range,
             "prepathogenic_range": self.prepathogenic_range,
-            "pathogenic_range": self.pathogenic_range.lower,
+            "pathogenic_range": self.pathogenic_range,
             "gene": self.gene_core,
             "gene_json": self.gene,
-            "gene_name": self.gene.get('gene_name'),
+            "gene_name": self.gene.get('gene_name') if self.gene else None,
             "source": [e.name for e in self.evidence.all() if e.is_GEL],
             "tags": self.tags.all(),
             "publications": self.publications,

@@ -10,6 +10,7 @@ from panels.models import Comment
 from panels.models import Level4Title
 from panels.models import GenePanel
 from panels.models import GenePanelSnapshot
+from panels.models import STR
 
 
 class Level4TitleFactory(factory.django.DjangoModelFactory):
@@ -91,6 +92,51 @@ class GenePanelEntrySnapshotFactory(factory.django.DjangoModelFactory):
         model = GenePanelEntrySnapshot
         django_get_or_create = False
 
+    panel = factory.SubFactory(GenePanelSnapshotFactory)
+    gene_core = factory.SubFactory(GeneFactory)
+    publications = factory.Faker('sentences', nb=3)
+    phenotypes = factory.Faker('sentences', nb=3)
+    moi = Evaluation.MODES_OF_INHERITANCE.Unknown
+    mode_of_pathogenicity = Evaluation.MODES_OF_PATHOGENICITY['Other - please provide details in the comments']
+    saved_gel_status = 0
+    gene = factory.LazyAttribute(lambda g: g.gene_core.dict_tr())
+
+    @factory.post_generation
+    def evaluation(self, create, evaluations, **kwargs):
+        if not create:
+            return
+
+        if not evaluations:
+            evaluations = EvaluationFactory.create_batch(4)
+
+        for evaluation in evaluations:
+            if evaluation:
+                self.evaluation.add(evaluation)
+
+    @factory.post_generation
+    def evidence(self, create, extracted, **kwargs):
+        if not create:
+            return
+
+        evidences = extracted
+        if not extracted:
+            evidences = EvidenceFactory.create_batch(4)
+
+        for evidence in evidences:
+            self.evidence.add(evidence)
+
+
+class STRFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = STR
+        django_get_or_create = False
+
+    name = factory.Faker('word')
+    position = factory.Faker('word')
+    repeated_sequence = factory.Faker('word')
+    normal_range = factory.LazyAttribute(lambda s: [1, 2])
+    prepathogenic_range = factory.LazyAttribute(lambda s: [2, 3])
+    pathogenic_range = factory.LazyAttribute(lambda s: [7, 8])
     panel = factory.SubFactory(GenePanelSnapshotFactory)
     gene_core = factory.SubFactory(GeneFactory)
     publications = factory.Faker('sentences', nb=3)

@@ -4,12 +4,12 @@ from django.contrib.postgres.forms import SimpleArrayField
 from dal_select2.widgets import ModelSelect2Multiple
 from panels.models import Tag
 from panels.models import GenePanel
-from panels.models import GenePanelEntrySnapshot
+from panels.models import STR
 
 
-class UpdateGeneTagsForm(forms.ModelForm):
+class UpdateSTRTagsForm(forms.ModelForm):
     class Meta:
-        model = GenePanelEntrySnapshot
+        model = STR
         fields = ('tags',)
 
     tags = forms.ModelMultipleChoiceField(
@@ -19,11 +19,11 @@ class UpdateGeneTagsForm(forms.ModelForm):
     )
 
 
-class UpdateGeneMOPForm(forms.ModelForm):
+class UpdateSTRMOPForm(forms.ModelForm):
     comment = forms.CharField(required=False, widget=forms.Textarea)
 
     class Meta:
-        model = GenePanelEntrySnapshot
+        model = STR
         fields = ('mode_of_pathogenicity',)
 
     def save(self, *args, **kwargs):
@@ -32,16 +32,16 @@ class UpdateGeneMOPForm(forms.ModelForm):
         user = kwargs.pop('user')
         self.instance.panel.increment_version()
         self.instance = GenePanel.objects.get(pk=self.instance.panel.panel.pk)\
-            .active_panel.get_gene(self.instance.gene['gene_symbol'])
+            .active_panel.get_str(self.instance.name)
         self.instance.update_pathogenicity(mop, user, comment)
         self.instance.panel.update_saved_stats()
 
 
-class UpdateGeneMOIForm(forms.ModelForm):
+class UpdateSTRMOIForm(forms.ModelForm):
     comment = forms.CharField(required=False, widget=forms.Textarea)
 
     class Meta:
-        model = GenePanelEntrySnapshot
+        model = STR
         fields = ('moi',)
 
     def save(self, *args, **kwargs):
@@ -50,12 +50,12 @@ class UpdateGeneMOIForm(forms.ModelForm):
         user = kwargs.pop('user')
         self.instance.panel.increment_version()
         self.instance = GenePanel.objects.get(pk=self.instance.panel.panel.pk)\
-            .active_panel.get_gene(self.instance.gene['gene_symbol'])
+            .active_panel.get_str(self.instance.name)
         self.instance.update_moi(moi, user, comment)
         self.instance.panel.update_saved_stats()
 
 
-class UpdateGenePhenotypesForm(forms.ModelForm):
+class UpdateSTRPhenotypesForm(forms.ModelForm):
     comment = forms.CharField(required=False, widget=forms.Textarea)
     phenotypes = SimpleArrayField(
         forms.CharField(max_length=255),
@@ -64,7 +64,7 @@ class UpdateGenePhenotypesForm(forms.ModelForm):
     )
 
     class Meta:
-        model = GenePanelEntrySnapshot
+        model = STR
         fields = ('phenotypes',)
 
     def save(self, *args, **kwargs):
@@ -73,12 +73,12 @@ class UpdateGenePhenotypesForm(forms.ModelForm):
         user = kwargs.pop('user')
         self.instance.panel.increment_version()
         self.instance = GenePanel.objects.get(pk=self.instance.panel.panel.pk)\
-            .active_panel.get_gene(self.instance.gene['gene_symbol'])
+            .active_panel.get_str(self.instance.name)
         self.instance.update_phenotypes(phenotypes, user, comment)
         self.instance.panel.update_saved_stats()
 
 
-class UpdateGenePublicationsForm(forms.ModelForm):
+class UpdateSTRPublicationsForm(forms.ModelForm):
     comment = forms.CharField(required=False, widget=forms.Textarea)
 
     publications = SimpleArrayField(
@@ -88,7 +88,7 @@ class UpdateGenePublicationsForm(forms.ModelForm):
     )
 
     class Meta:
-        model = GenePanelEntrySnapshot
+        model = STR
         fields = ('publications',)
 
     def save(self, *args, **kwargs):
@@ -97,17 +97,17 @@ class UpdateGenePublicationsForm(forms.ModelForm):
         user = kwargs.pop('user')
         self.instance.panel.increment_version()
         self.instance = GenePanel.objects.get(pk=self.instance.panel.panel.pk)\
-            .active_panel.get_gene(self.instance.gene['gene_symbol'])
+            .active_panel.get_str(self.instance.name)
         self.instance.update_publications(publications, user, comment)
         self.instance.panel.update_saved_stats()
 
 
-class UpdateGeneRatingForm(forms.ModelForm):
+class UpdateSTRRatingForm(forms.ModelForm):
     comment = forms.CharField(required=False, widget=forms.Textarea)
-    status = forms.ChoiceField(choices=GenePanelEntrySnapshot.GEL_STATUS)
+    status = forms.ChoiceField(choices=STR.GEL_STATUS)
 
     class Meta:
-        model = GenePanelEntrySnapshot
+        model = STR
         fields = ('saved_gel_status',)
 
     def __init__(self, *args, **kwargs):
@@ -123,10 +123,6 @@ class UpdateGeneRatingForm(forms.ModelForm):
         user = kwargs.pop('user')
         self.instance.panel.increment_version()
         self.instance = GenePanel.objects.get(pk=self.instance.panel.panel.pk)\
-            .active_panel.get_gene(self.instance.gene['gene_symbol'])
+            .active_panel.get_str(self.instance.name)
         self.instance.update_rating(status, user, self.cleaned_data['comment'])
         self.instance.panel.update_saved_stats()
-
-
-class EditCommentForm(forms.Form):
-    comment = forms.CharField(widget=forms.Textarea)

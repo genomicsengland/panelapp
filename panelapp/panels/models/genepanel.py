@@ -69,7 +69,6 @@ class GenePanel(TimeStampedModel):
                 'genepanelentrysnapshot_set__evaluation__user',
                 'genepanelentrysnapshot_set__evaluation__user__reviewer'
             ).annotate(
-                number_of_strs=Count('str__pk', distinct=True),
                 number_of_green_genes=Sum(Case(When(
                     genepanelentrysnapshot__saved_gel_status__gt=3, then=Value(1)),
                     default=Value(0),

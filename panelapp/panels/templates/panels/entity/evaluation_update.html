@@ -13,20 +13,20 @@
         </a>
     </li>
     <li>
-        <a href="{% url 'panels:evaluation' panel.pk 'gene' gene.gene_symbol  %}">
-            {{ gene.gene_symbol }}
+        <a href="{% url 'panels:evaluation' panel.pk entity_type entity_name  %}">
+            {{ entity.name }}
         </a>
     </li>
     <li class="active">
-        Review gene
+        Review {{ entity.label }}
     </li>
 </ol>
 
 <h1>
-    {% block title %}Review gene {{ gene.gene_symbol }} in panel {{ panel.level4title.name }}{% endblock %}
+    {% block title %}Review {{ entity.label }} in panel {{ panel.level4title.name }}{% endblock %}
 </h1>
 
 {% if request.user.is_authenticated and request.user.reviewer.is_verified %}
-{% include "panels/genepanelentrysnapshot/evaluation_form.html" %}
+{% include "panels/entity/evaluation_form.html" %}
 {% endif %}
 {% endblock %}

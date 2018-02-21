@@ -80,13 +80,13 @@
               <td>
                   {% if entry.number_of_genes %}
                       {{ entry.number_of_evaluated_genes  }} of {{ entry.number_of_genes }}<br >
-                      <span class="text-muted">{% if entry.number_of_genes %}{% widthratio entry.number_of_evaluated_genes entry.number_of_genes 100 %}{% else %}0{% endif %}%</span>
+                      <span class="text-muted">{% if entry.number_of_genes %}{% widthratio entry.number_of_evaluated_genes entry.number_of_genes 100 %}{% else %}0{% endif %}%</span><br />
                   {% else %}
                   0<br>
-                  <span class="text-muted">0%</span>
+                  <span class="text-muted">0%</span><br>
                   {% endif %}
                 {% if entry.number_of_strs %}
-                    STRs: {{ entry.number_of_strs }}
+                    <br />STRs: {{ entry.number_of_strs }}
                 {% endif %}
               </td>
               <td>

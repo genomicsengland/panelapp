@@ -4,7 +4,7 @@
 {% endif %}
 <h1 class="remove-top-margin">
     <p class="text-muted normal add-label-margin" style="font-size: 18px">{{ panel.panel.name }}</p>
-    {{ gene.gene.gene_symbol }}
+    {{ entity.label|capfirst }}
 </h1>
 <span id="gene-banner-heading"><span class="gel-banner {{ entity|gene_list_class }}">{{ entity|gene_list_name }}</span></span>
 {% if entity.ready and request.user.is_authenticated and request.user.reviewer.is_GEL %}

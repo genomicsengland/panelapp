@@ -9,6 +9,18 @@
                 <dt>GEL status</dt>
                 <dd>{{ entity.status }}</dd>
             {% endif %}
+            <dt>Name</dt>
+            <dd>{{ entity.name }}</dd>
+            <dt>Positions</dt>
+            <dd>{{ entity.position }}</dd>
+            {% if entity.normal_range %}
+            <dt>Normal Range</dt>
+            <dd>{{ entity.normal_range.lower }}-{{ entity.normal_range.upper }}</dd>
+            {% endif %}
+            <dt>Pre-Pathogenic Range</dt>
+            <dd>{{ entity.prepathogenic_range.lower }}-{{ entity.prepathogenic_range.upper }}%</dd>
+            <dt>Pathogenic Range</dt>
+            <dd>{{ entity.pathogenic_range.lower }}-{{ entity.pathogenic_range.upper }}%</dd>
             {% if entity.moi %}
             <dt>Mode of Inheritance</dt>
             <dd>{{ entity.moi }}</dd>
@@ -88,33 +100,23 @@
                     </a>
                 {% endif %}
             {% endif %}
-            <dt>Panels with this gene</dt>
-            <dd>
-                <ul>
-                    {% for sharing_panel in sharing_panels %}
-                        <li><a href="{% url 'panels:detail' sharing_panel.panel_id  %}">
-                            {{ sharing_panel.panel.name }}
-                        </a></li>
-                    {% endfor %}
-                </ul>
-            </dd>
         </dl>
     </div>
   {% if request.user.is_authenticated and request.user.reviewer.is_GEL %}
   <div class="panel-footer">
-    <a href="{% url 'panels:edit_entity' panel.panel_id entity_type entity_name %}" class="btn btn-info" data-module="showhide" data-show=".edit-gene-form" data-hide=".panel.panel-details">
-      <i class="fa fa-edit"></i> Edit gene
+    <a href="{% url 'panels:edit_entity' panel.panel_id entity_type entity_name %}" class="btn btn-info" data-module="showhide" data-show=".edit-str-form" data-hide=".panel.panel-details">
+      <i class="fa fa-edit"></i> Edit STR
     </a>
   </div>
   {% endif %}
 </div>
 {% if request.user.is_authenticated and request.user.reviewer.is_GEL %}
-<form class="edit-gene-form form row hidden" action="{% url 'panels:edit_entity' panel.panel_id entity_type entity_name %}#!details" method="post">
+<form class="edit-str-form form row hidden" action="{% url 'panels:edit_entity' panel.panel_id entity_type entity_name %}#!details" method="post">
   {% csrf_token %}
   <div class="col-md-12">
     <div class="well">
       <fieldset>
-        <legend>Edit Gene</legend>
+        <legend>Edit STR</legend>
         {% for field in form_edit %}
           <div class="form-group">
             {% if field.errors %}

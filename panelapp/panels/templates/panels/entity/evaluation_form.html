@@ -1,7 +1,7 @@
 {% load bootstrap3 %}
-<h3>Review gene</h3>
+<h3>Review {% if entity_type == 'gene' %}gene{% elif entity_type == 'str' %}STR{% endif %}</h3>
 <div class="well">
-  <form class="form" id="add-review" action="{% url 'panels:review_gene' panel.panel_id entity_type entity_name %}#your-review" method="post">{% csrf_token %}
+  <form class="form" id="add-review" action="{% url 'panels:review_entity' panel.panel_id entity_type entity_name %}#your-review" method="post">{% csrf_token %}
     <fieldset>
       {% for field in form %}
         <div class="form-group">

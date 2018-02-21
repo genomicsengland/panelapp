@@ -2,7 +2,7 @@
   <blockquote class="add-top-margin">
     {{ comment.comment }}
     <h6>{{ comment.user.get_reviewer_name }}, {{ comment.created|date }}</h6>
-    {% if request.user == comment.user and panel and gene %}
+    {% if request.user == comment.user and panel and entity %}
       <a href="{% url "panels:delete_comment_by_user" panel.panel_id entity_type entity_name comment.pk %}" class="btn btn-default btn-xs" data-ajax="true" data-success="djangoAjaxHandler">Delete comment</a>
     {% endif %}
   </blockquote>

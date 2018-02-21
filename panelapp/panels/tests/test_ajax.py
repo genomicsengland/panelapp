@@ -49,7 +49,7 @@ class AjaxGenePanelEntrySnapshotTest(LoginGELUser):
         assert gene.mode_of_pathogenicity == ""
 
     def test_clear_sources(self):
-        res, gene = self.helper_clear('clear_gene_sources')
+        res, gene = self.helper_clear('clear_entity_sources')
         assert gene.evidence.count() == 3
 
         self.assertTrue(gene.track.filter(issue_type=TrackRecord.ISSUE_TYPES.ClearSources).count() > 0)

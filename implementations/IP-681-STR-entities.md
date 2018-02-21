@@ -30,17 +30,17 @@ These STRs also should keep the same items as the genepanelentrysnapshot + allel
 - [*] Change activities so it supports STRs
 - [*] List of STRs in a panel
 - [*] Change templates (panels)
-- [ ] Forms
+- [*] Forms
 - [*] Making sure it's all added to the activities
-- [ ] Add new templates and pages for STRs
-- [ ] Change urls /panels/<panel id>/<gene symbol> -> /panels/<panel id>/gene/<gene symbol> so we can add /panels/<panel id>/str/<name>
-- [ ] Support previous URLs
+- [*] Add new templates and pages for STRs
+- [*] Change urls /panels/<panel id>/<gene symbol> -> /panels/<panel id>/gene/<gene symbol> so we can add /panels/<panel id>/str/<name>
+- [*] Support previous URLs
 - [ ] Webservices changes
 - [ ] Export STR data and reviews (?)
 - [ ] Import STR reviews
-- [ ] Make sure indexes are in place for complex queries
-- [ ] Add database aggregates for STRs
-- [ ] Tests
+- [*] Make sure indexes are in place for complex queries
+- [*] Add database aggregates for STRs
+- [*] Tests
 - [ ] Copy STR reviews
 - [ ] Compare panels changes
 
