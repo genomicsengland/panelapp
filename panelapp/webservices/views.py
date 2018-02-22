@@ -16,23 +16,23 @@ from .serializers import ListPanelSerializer
 from .serializers import GenesSerializer
 
 
-def filter_gene_list(gene_list, moi=None, mop=None, penetrance=None, conf_level=None, evidence=None):
+def filter_entity_list(entity_list, moi=None, mop=None, penetrance=None, conf_level=None, evidence=None):
     final_list = []
-    for gene in gene_list:
+    for entity in entity_list:
         filters = True
-        if gene.moi is not None and (moi is not None and convert_moi(gene.moi) not in moi):
+        if entity.moi is not None and (moi is not None and convert_moi(entity.moi) not in moi):
             filters = False
 
-        if gene.mode_of_pathogenicity is not None and (mop is not None and convert_mop(gene.mode_of_pathogenicity) not in mop):
+        if entity.mode_of_pathogenicity is not None and (mop is not None and convert_mop(entity.mode_of_pathogenicity) not in mop):
             filters = False
-        if gene.penetrance is not None and (penetrance is not None and gene.penetrance not in penetrance):
+        if entity.penetrance is not None and (penetrance is not None and entity.penetrance not in penetrance):
             filters = False
-        if conf_level is not None and convert_gel_status(gene.saved_gel_status) not in conf_level:
+        if conf_level is not None and convert_gel_status(entity.saved_gel_status) not in conf_level:
             filters = False
-        if evidence is not None and not set([ev.name for ev in gene.evidence.all]).intersection(set(evidence)):
+        if evidence is not None and not set([ev.name for ev in entity.evidence.all]).intersection(set(evidence)):
             filters = False
         if filters:
-            final_list.append(gene)
+            final_list.append(entity)
     return final_list
 
 
@@ -40,7 +40,6 @@ def filter_gene_list(gene_list, moi=None, mop=None, penetrance=None, conf_level=
 @permission_classes((permissions.AllowAny,))
 def get_panel(request, panel_name):
     queryset = None
-    gene_list = None
     filters = {}
 
     if 'ModeOfInheritance' in request.GET:
@@ -102,11 +101,7 @@ def get_panel(request, panel_name):
             if not queryset:
                 return Response({"Query Error: The version requested for panel:" + panel_name + " was not found."})
 
-            gene_list = queryset[0].get_all_genes
             queryset = [queryset[0]]
-        else:
-            gene_list = queryset[0].get_all_genes
-
     else:
         queryset = GenePanelSnapshot.objects.get_active()
 
@@ -135,11 +130,12 @@ def get_panel(request, panel_name):
                 queryset = queryset_name
         else:
             queryset = queryset_name_exact
-        gene_list = queryset[0].get_all_genes
 
+    instance = queryset[0]
     serializer = PanelSerializer(
-        filter_gene_list(gene_list, **filters),
-        instance=queryset[0],
+        filter_entity_list(instance.get_all_genes, **filters),
+        filter_entity_list(instance.get_all_strs, **filters),
+        instance=instance,
         context={'request': request}
     )
     return Response(serializer.data)
@@ -206,7 +202,7 @@ def search_by_gene(request, gene):
         genes = genes.filter(genes_qs)
 
     serializer = GenesSerializer(
-        filter_gene_list(genes, **post_filters),
+        filter_entity_list(genes, **post_filters),
         instance=queryset,
         context={'request': request}
     )
