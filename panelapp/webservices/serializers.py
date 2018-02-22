@@ -23,13 +23,14 @@ class EnsembleIdMixin:
                 raise NotAcceptedValue(detail='Unaccepted value for assembly, please use: GRch37 or GRch38')
 
         ensemblId = None
-        if assembly == 'GRch38' and gene.gene.get('ensembl_genes'):
-            ensemblId = gene.gene.get('ensembl_genes', {}).get(assembly, {}).get(version, {}).get('ensembl_id', None)
-        elif assembly == 'GRch37':
-            if gene.gene.get('ensembl_genes'):
+        if gene.gene:
+            if assembly == 'GRch38' and gene.gene.get('ensembl_genes'):
                 ensemblId = gene.gene.get('ensembl_genes', {}).get(assembly, {}).get(version, {}).get('ensembl_id', None)
-            elif gene.gene.get('other_transcripts') and len(gene.gene.get('other_transcripts')) > 0:
-                ensemblId = gene.gene.get('other_transcripts', [{}])[0].get('geneid', None)
+            elif assembly == 'GRch37':
+                if gene.gene.get('ensembl_genes'):
+                    ensemblId = gene.gene.get('ensembl_genes', {}).get(assembly, {}).get(version, {}).get('ensembl_id', None)
+                elif gene.gene.get('other_transcripts') and len(gene.gene.get('other_transcripts')) > 0:
+                    ensemblId = gene.gene.get('other_transcripts', [{}])[0].get('geneid', None)
 
         if ensemblId is None:
             return []
@@ -43,14 +44,16 @@ class NotAcceptedValue(APIException):
 
 
 class PanelSerializer(EnsembleIdMixin, serializers.BaseSerializer):
-    def __init__(self, list_of_genes, **kwargs):
+    def __init__(self, list_of_genes, list_of_strs, **kwargs):
         super(PanelSerializer, self).__init__(**kwargs)
         self.list_of_genes = list_of_genes
+        self.list_of_strs = list_of_strs
 
     def to_representation(self, panel):
         result = {
             "result": {
                 "Genes": [],
+                "STRs": [],
                 "SpecificDiseaseName": panel.panel.name,
                 "version": panel.version,
                 "DiseaseGroup": panel.level4title.level2title,
@@ -60,10 +63,9 @@ class PanelSerializer(EnsembleIdMixin, serializers.BaseSerializer):
         }
 
         for gene in self.list_of_genes:
-            ensemblId = self.get_ensemblId(gene)
             result["result"]["Genes"].append({
                 "GeneSymbol": gene.gene.get('gene_symbol'),
-                "EnsembleGeneIds": ensemblId,
+                "EnsembleGeneIds": self.get_ensemblId(gene),
                 "ModeOfInheritance": make_null(convert_moi(gene.moi)),
                 "Penetrance": make_null(gene.penetrance),
                 "Publications": make_null(gene.publications),
@@ -71,6 +73,26 @@ class PanelSerializer(EnsembleIdMixin, serializers.BaseSerializer):
                 "ModeOfPathogenicity": make_null(gene.mode_of_pathogenicity),
                 "LevelOfConfidence": convert_gel_status(gene.saved_gel_status),
                 "Evidences": [ev.name for ev in gene.evidence.all()],
+            })
+
+        for str_item in self.list_of_strs:
+            result["result"]["STRs"].append({
+                "Name": str_item.name,
+                "Position": str_item.position,
+                "RepeatedSequence": str_item.repeated_sequence,
+                "NormalRange": [str_item.normal_range.lower,
+                                str_item.normal_range.upper] if str_item.normal_range else None,
+                "PrepathogenicRange": [str_item.prepathogenic_range.lower, str_item.prepathogenic_range.upper],
+                "PathogenicRange": [str_item.pathogenic_range.lower, str_item.pathogenic_range.upper],
+                "GeneSymbol": str_item.gene.get('gene_symbol') if str_item.gene else None,
+                "EnsembleGeneIds": self.get_ensemblId(str_item),
+                "ModeOfInheritance": make_null(convert_moi(str_item.moi)),
+                "Penetrance": make_null(str_item.penetrance),
+                "Publications": make_null(str_item.publications),
+                "Phenotypes": make_null(str_item.phenotypes),
+                "ModeOfPathogenicity": make_null(str_item.mode_of_pathogenicity),
+                "LevelOfConfidence": convert_gel_status(str_item.saved_gel_status),
+                "Evidences": [ev.name for ev in str_item.evidence.all()],
             })
         return result
 
