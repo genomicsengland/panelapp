@@ -85,7 +85,7 @@ class TestWebservices(TransactionTestCase):
         r = self.client.get("{}?version=0.1".format(url))
         self.assertEqual(r.status_code, 200)
 
-        self.gps.panel.status = GenePanel.STATUS.hidden
+        self.gps.panel.status = GenePanel.STATUS.retired
         self.gps.panel.save()
 
         url = reverse_lazy('webservices:get_panel', args=(self.gpes.panel.panel.pk,))
