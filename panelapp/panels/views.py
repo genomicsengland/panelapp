@@ -883,7 +883,7 @@ class DownloadAllPanels(GELReviewerRequiredMixin, View):
                 request.build_absolute_uri(reverse('panels:detail', args=(panel.panel.id,))),
                 panel.version,
                 rate,
-                len(reviewers),
+                len(contributors),
                 ";".join(contributors),  # aff
                 ";".join([user[2] for user in reviewers if user[2]]),  # email
                 panel.panel.status.upper(),
