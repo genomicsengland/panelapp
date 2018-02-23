@@ -561,7 +561,11 @@ class DownloadPanelTSVMixin(PanelMixin, DetailView):
             "UserRatings_Green_amber_red",
             "version",
             "ready",
-            "Mode of pathogenicity"))
+            "Mode of pathogenicity",
+            "EnsemblId(GRch37)",
+            "EnsemblId(GRch38)",
+            "HGNC"
+        ))
 
         categories = self.get_categories()
         for gpentry in self.object.get_all_entries_extra:
@@ -587,7 +591,11 @@ class DownloadPanelTSVMixin(PanelMixin, DetailView):
                     ";".join(map(str, [green_perc, amber_perc, red_prec])),
                     str(version),
                     gpentry.ready,
-                    gpentry.mode_of_pathogenicity)
+                    gpentry.mode_of_pathogenicity,
+                    gpentry.gene.get('ensembl_genes', {}).get('GRch37', {}).get('82', {}).get('ensembl_id', '-'),
+                    gpentry.gene.get('ensembl_genes', {}).get('GRch38', {}).get('90', {}).get('ensembl_id', '-'),
+                    gpentry.gene.get('hgnc_id', '-'),
+                )
                 writer.writerow(export_gpentry)
 
         return response
@@ -777,6 +785,7 @@ class DownloadAllGenes(GELReviewerRequiredMixin, View):
             "Tags",
             "EnsemblId(GRch37)",
             "EnsemblId(GRch38)",
+            "HGNC",
             "Biotype",
             "Phenotypes",
             "GeneLocation((GRch37)",
@@ -812,6 +821,7 @@ class DownloadAllGenes(GELReviewerRequiredMixin, View):
                     ';'.join([tag.name for tag in entry.tags.all()]),
                     entry.gene.get('ensembl_genes', {}).get('GRch37', {}).get('82', {}).get('ensembl_id', '-'),
                     entry.gene.get('ensembl_genes', {}).get('GRch38', {}).get('90', {}).get('ensembl_id', '-'),
+                    entry.gene.get('hgnc_id', '-'),
                     entry.gene.get('biotype', '-'),
                     phenotypes,
                     entry.gene.get('ensembl_genes', {}).get('GRch37', {}).get('82', {}).get('location', '-'),
