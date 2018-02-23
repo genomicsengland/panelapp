@@ -48,6 +48,21 @@ class TestWebservices(TransactionTestCase):
         self.assertEqual(len(r.json()['result']), 1)  # one for gpes via factory, second is internals
         self.assertEqual(r.status_code, 200)
 
+    def test_internal_panel(self):
+        self.gps.panel.status = GenePanel.STATUS.internal
+        self.gps.panel.save()
+        url = reverse_lazy('webservices:get_panel', args=(self.gps.panel.pk, ))
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.json(), ["Query Error: {} not found.".format(self.gps.panel.pk)])
+
+        self.gps.increment_version()
+        self.gps.increment_version()
+        r = self.client.get("{}?version=0.1".format(url))
+        self.assertEqual(r.status_code, 200)
+        self.assertIsNot(type(r.json()), list)
+        self.assertIsNotNone(r.json().get('result'))
+
     def test_get_panel_name(self):
         r = self.client.get(reverse_lazy('webservices:get_panel', args=(self.gpes.panel.panel.name,)))
         self.assertEqual(r.status_code, 200)
