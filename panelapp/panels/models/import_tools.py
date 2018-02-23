@@ -9,6 +9,7 @@ from django.db import transaction
 from model_utils.models import TimeStampedModel
 from accounts.models import User, Reviewer
 from .genepanelentrysnapshot import GenePanelEntrySnapshot
+from .strs import STR
 from panels.tasks import import_panel
 from panels.tasks import import_reviews
 from panels.exceptions import TSVIncorrectFormat
@@ -65,6 +66,11 @@ def update_gene_collection(results):
         for gene_in_panel in genes_in_panels:
             grouped_genes[gene_in_panel.gene_core.gene_symbol].append(gene_in_panel)
 
+        strs_in_panels = STR.objects.get_active()
+        grouped_strs = {gp.gene_core.gene_symbol: [] for gp in strs_in_panels if gp.gene_core}
+        for str_in_panel in strs_in_panels:
+            grouped_strs[str_in_panel.gene_core.gene_symbol].append(str_in_panel)
+
         for record in to_update:
             try:
                 gene = Gene.objects.get(gene_symbol=record['gene_symbol'])
@@ -92,6 +98,12 @@ def update_gene_collection(results):
                 gene_entry.gene_core = gene
                 gene_entry.gene = gene.dict_tr()
                 gene_entry.save()
+
+            for str_entry in grouped_strs.get(record['gene_symbol'], []):
+                str_entry.gene_core = gene
+                str_entry.gene = gene.dict_tr()
+                str_entry.save()
+
             logger.debug("Updated {} gene".format(record['gene_symbol']))
 
         grouped_genes = None
@@ -149,6 +161,11 @@ def update_gene_collection(results):
                 panel = gene_entry.panel
                 panel.update_gene(user, record[1], {'gene': new_gene})
 
+            for str_entry in STR.objects.get_active().filter(
+                    gene_core__gene_symbol=record[1]):
+                panel = str_entry.panel
+                panel.update_str(user, str_entry.name, {'gene': new_gene})
+
             try:
                 d = Gene.objects.get(gene_symbol=record[1])
                 d.active = False
@@ -161,6 +178,11 @@ def update_gene_collection(results):
             gene_in_panels = GenePanelEntrySnapshot.objects.get_active().filter(gene_core__gene_symbol=record)
             if gene_in_panels.count() > 0:
                 distinct_panels = gene_in_panels.distinct().values_list('panel__panel__name', flat=True)
+                logger.warning("Deleted {} gene, this one is still used in {}".format(record, distinct_panels))
+
+            strs_in_panels = STR.objects.get_active().filter(gene_core__gene_symbol=record)
+            if strs_in_panels.count() > 0:
+                distinct_panels = strs_in_panels.distinct().values_list('panel__panel__name', flat=True)
                 logger.warning("Deleted {} gene, this one is still used in {}".format(record, distinct_panels))
 
             try:
