@@ -25,7 +25,7 @@ class GenePanel(TimeStampedModel):
     STATUS = Choices(
         'promoted',
         'public',
-        'hidden',
+        'retired',
         'internal',
         'deleted'
     )
