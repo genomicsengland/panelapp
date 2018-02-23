@@ -64,14 +64,14 @@ def get_panel(request, panel_name):
         if queryset.first():
             queryset = [queryset[0].active_panel]
         if not queryset:
-            queryset = GenePanelSnapshot.objects.get_active(all=True, deleted=True).filter(old_panels__icontains=panel_name)
+            queryset = GenePanelSnapshot.objects.get_active(all=True, deleted=True, internal=True).filter(old_panels__icontains=panel_name)
             if not queryset:
                 try:
                     try:
                         int(panel_name)
-                        queryset = GenePanelSnapshot.objects.get_active(all=True, deleted=True).filter(panel__id=panel_name)
+                        queryset = GenePanelSnapshot.objects.get_active(all=True, deleted=True, internal=True).filter(panel__id=panel_name)
                     except ValueError:
-                        queryset = GenePanelSnapshot.objects.get_active(all=True, deleted=True).filter(panel__old_pk=panel_name)
+                        queryset = GenePanelSnapshot.objects.get_active(all=True, deleted=True, internal=True).filter(panel__old_pk=panel_name)
                     if not queryset:
                         return Response({"Query Error: " + panel_name + " not found."})
                 except DatabaseError:
