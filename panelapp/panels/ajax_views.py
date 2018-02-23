@@ -365,7 +365,7 @@ class UpdateGeneMOIAjaxView(GELReviewerRequiredMixin, UpdateEvaluationsMixin):
 
     def get_context_data(self):
         ctx = super().get_context_data()
-        ctx['edit_gene_moi_form'] = UpdateGeneMOPForm(instance=self.gene)
+        ctx['edit_gene_moi_form'] = UpdateGeneMOIForm(instance=self.gene)
         return ctx
 
     def return_data(self):
