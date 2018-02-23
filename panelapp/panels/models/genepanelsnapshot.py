@@ -1716,7 +1716,7 @@ class GenePanelSnapshot(TimeStampedModel):
 
                 description = "Gene: {} was changed to {}. Panel: {}".format(
                     str_item.gene_core.gene_symbol,
-                    new_gene.gene_core.gene_symbol,
+                    new_gene.gene_symbol,
                     self.panel.name
                 )
 
