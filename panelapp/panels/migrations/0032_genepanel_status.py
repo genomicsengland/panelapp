@@ -15,6 +15,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='genepanel',
             name='status',
-            field=models.CharField(choices=[('promoted', 'promoted'), ('public', 'public'), ('hidden', 'hidden'), ('internal', 'internal'), ('deleted', 'deleted')], default='internal', max_length=36),
+            field=models.CharField(choices=[('promoted', 'promoted'), ('public', 'public'), ('retired', 'retired'), ('internal', 'internal'), ('deleted', 'deleted')], default='internal', max_length=36),
         ),
     ]
