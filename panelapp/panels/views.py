@@ -204,8 +204,8 @@ class GeneDetailView(DetailView):
         ctx['tag_filter'] = tag_filter
         ctx['gene_symbol'] = self.kwargs['slug']
 
-        admin_user = self.request.user.is_authenticated and self.request.user.reviewer.is_GEL()
-        gps = GenePanelSnapshot.objects.get_active(admin_user).filter(
+        is_admin_user = self.request.user.is_authenticated and self.request.user.reviewer.is_GEL()
+        gps = GenePanelSnapshot.objects.get_active(all=is_admin_user, internal=is_admin_user).filter(
             genepanelentrysnapshot__gene_core__gene_symbol=self.kwargs['slug']
         ).values_list('pk', flat=True)
 
@@ -227,10 +227,9 @@ class GeneListView(ListView):
 
     def get_queryset(self, *args, **kwargs):
         if self.request.user.is_authenticated and self.request.user.reviewer.is_GEL():
-            panel_ids = GenePanelSnapshot.objects.get_latest_ids().values('pk')
+            panel_ids = GenePanelSnapshot.objects.get_active(all=True, internal=True).values('pk')
         else:
-            panel_ids = GenePanelSnapshot.objects.get_latest_ids()\
-                .filter(panel__status=GenePanel.STATUS.public).values('pk')
+            panel_ids = GenePanelSnapshot.objects.get_active().values('pk')
 
         qs = GenePanelEntrySnapshot.objects.filter(
             gene_core__active=True,
@@ -364,8 +363,15 @@ class GenePanelSpanshotView(DetailView):
 
     def get_context_data(self, *args, **kwargs):
         ctx = super().get_context_data(*args, **kwargs)
+
+        is_admin_user = self.request.user.is_authenticated and self.request.user.reviewer.is_GEL()
+
         ctx['panel'] = self.panel
-        ctx['sharing_panels'] = GenePanelSnapshot.objects.get_gene_panels(self.kwargs['gene_symbol'])
+        ctx['sharing_panels'] = GenePanelSnapshot.objects.get_gene_panels(
+            self.kwargs['gene_symbol'],
+            all=is_admin_user,
+            internal=is_admin_user
+        )
         ctx['feedback_review_parts'] = [
             'Rating',
             'Mode of inheritance',

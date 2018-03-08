@@ -7,6 +7,8 @@ from faker import Factory
 from accounts.tests.setup import LoginGELUser
 from panels.models.import_tools import update_gene_collection
 from panels.models import Gene
+from panels.models import GenePanel
+from panels.models import GenePanelSnapshot
 from panels.models import GenePanelEntrySnapshot
 from panels.tests.factories import GeneFactory
 from panels.tests.factories import GenePanelSnapshotFactory
@@ -151,3 +153,25 @@ class GeneTest(LoginGELUser):
         url = reverse_lazy('panels:gene_detail', kwargs={'slug': gene.gene_symbol})
         res = self.client.get(url)
         assert len(res.context_data['entries']) == 3
+
+    def test_get_internal_panels_for_a_gene(self):
+        gene = GeneFactory()
+
+        gps = GenePanelSnapshotFactory(panel__status=GenePanel.STATUS.public)
+        GenePanelEntrySnapshotFactory.create_batch(2, panel=gps)  # random genes
+        GenePanelEntrySnapshotFactory.create(gene_core=gene, panel=gps)
+
+        gps2 = GenePanelSnapshotFactory(panel__status=GenePanel.STATUS.internal)
+        GenePanelEntrySnapshotFactory.create_batch(2, panel=gps2)  # random genes
+        GenePanelEntrySnapshotFactory.create(gene_core=gene, panel=gps2)
+
+        gps3 = GenePanelSnapshotFactory(panel__status=GenePanel.STATUS.public)
+        GenePanelEntrySnapshotFactory.create_batch(2, panel=gps3)  # random genes
+
+        self.assertEqual(GenePanelEntrySnapshot.objects.get_gene_panels(gene.gene_symbol).count(), 2)
+        self.assertEqual(GenePanelSnapshot.objects.get_gene_panels(gene.gene_symbol).count(), 1)
+        self.assertEqual(GenePanelSnapshot.objects.get_gene_panels(gene.gene_symbol, all=True, internal=True).count(), 2)
+
+        url = reverse_lazy('panels:gene_detail', kwargs={'slug': gene.gene_symbol})
+        res = self.client.get(url)
+        self.assertEqual(len(res.context_data['entries']), 2)

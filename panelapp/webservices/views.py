@@ -108,10 +108,10 @@ def get_panel(request, panel_name):
             gene_list = queryset[0].get_all_entries
 
     else:
-        queryset = GenePanelSnapshot.objects.get_active(all=True)
+        queryset = GenePanelSnapshot.objects.get_active()
 
         queryset_name_exact = queryset.filter(panel__name=panel_name)
-        if not queryset_name_exact :
+        if not queryset_name_exact:
             queryset_name = queryset.filter(panel__name__icontains=panel_name)
             if not queryset_name:
                 queryset_old_names = queryset_name.filter(old_panels__icontains=panel_name)
@@ -152,10 +152,10 @@ def list_panels(request):
     if "Name" in request.GET:
         filters["panel__name__icontains"] = request.GET["Name"]
 
-    if "Retired" in request.GET and request.GET['Retired'] == 'True':
-        queryset = GenePanelSnapshot.objects.get_active_anotated(all=True, deleted=True).filter(**filters)
-    else:
+    if "Retired" in request.GET and request.GET.get('Retired', '').lower() == 'true':
         queryset = GenePanelSnapshot.objects.get_active_anotated(all=True).filter(**filters)
+    else:
+        queryset = GenePanelSnapshot.objects.get_active_anotated().filter(**filters)
 
     serializer = ListPanelSerializer(instance=queryset,)
     return Response(serializer.data)
