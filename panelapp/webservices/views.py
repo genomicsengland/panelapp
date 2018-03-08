@@ -111,7 +111,7 @@ def get_panel(request, panel_name):
         queryset = GenePanelSnapshot.objects.get_active(all=True)
 
         queryset_name_exact = queryset.filter(panel__name=panel_name)
-        if not queryset_name_exact :
+        if not queryset_name_exact:
             queryset_name = queryset.filter(panel__name__icontains=panel_name)
             if not queryset_name:
                 queryset_old_names = queryset_name.filter(old_panels__icontains=panel_name)
