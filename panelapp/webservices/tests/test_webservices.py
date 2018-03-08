@@ -1,6 +1,7 @@
 from django.test import TransactionTestCase
 from django.urls import reverse_lazy
 from panels.models import GenePanel
+from panels.models import GenePanelSnapshot
 from panels.tests.factories import GenePanelSnapshotFactory
 from panels.tests.factories import GenePanelEntrySnapshotFactory
 
@@ -9,7 +10,10 @@ class TestWebservices(TransactionTestCase):
     def setUp(self):
         super().setUp()
         self.gps = GenePanelSnapshotFactory(panel__status=GenePanel.STATUS.public)
-        self.gpes = GenePanelEntrySnapshotFactory(panel__panel__status=GenePanel.STATUS.public)
+        self.gps_public = GenePanelSnapshotFactory(panel__status=GenePanel.STATUS.public)
+        self.gpes = GenePanelEntrySnapshotFactory(panel=self.gps_public)
+        self.gpes_internal = GenePanelEntrySnapshotFactory(panel__panel__status=GenePanel.STATUS.internal)
+        self.gpes_retired = GenePanelEntrySnapshotFactory(panel__panel__status=GenePanel.STATUS.retired)
         self.gpes_deleted = GenePanelEntrySnapshotFactory(panel__panel__status=GenePanel.STATUS.deleted)
         self.genes = GenePanelEntrySnapshotFactory.create_batch(4, panel=self.gps)
 
@@ -28,25 +32,24 @@ class TestWebservices(TransactionTestCase):
 
         self.gps.panel.status = GenePanel.STATUS.deleted
         self.gps.panel.save()
-        self.gpes.panel.panel.status = GenePanel.STATUS.deleted
-        self.gpes.panel.panel.save()
 
         r = self.client.get(url)
-        self.assertEqual(len(r.json()['result']), 0)
+        self.assertEqual(len(r.json()['result']), 1)
         self.assertEqual(r.status_code, 200)
 
         # Test deleted panels
         url = reverse_lazy('webservices:list_panels')
         r = self.client.get("{}?Retired=True".format(url))
-        self.assertEqual(len(r.json()['result']), 3)  # one for gpes via factory, second for gps
+        self.assertEqual(len(r.json()['result']), 2)  # one for gpes via factory, 2nd - retired
         self.assertEqual(r.status_code, 200)
 
         # Test for unapproved panels
-        self.gps.panel.status = GenePanel.STATUS.internal
-        self.gps.panel.save()
+        self.gps_public.panel.status = GenePanel.STATUS.internal
+        self.gps_public.panel.save()
+
         url = reverse_lazy('webservices:list_panels')
         r = self.client.get("{}?Retired=True".format(url))
-        self.assertEqual(len(r.json()['result']), 2)  # one for gpes via factory, second is internals
+        self.assertEqual(len(r.json()['result']), 1)  # only retired panel will be visible
         self.assertEqual(r.status_code, 200)
 
     def test_internal_panel(self):
@@ -72,6 +75,16 @@ class TestWebservices(TransactionTestCase):
         r = self.client.get(reverse_lazy('webservices:get_panel', args=(self.gpes_deleted.panel.panel.name,)))
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.json(), ["Query Error: {} not found.".format(self.gpes_deleted.panel.panel.name)])
+
+    def test_get_panel_internal(self):
+        r = self.client.get(reverse_lazy('webservices:get_panel', args=(self.gpes_internal.panel.panel.name,)))
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.json(), ["Query Error: {} not found.".format(self.gpes_internal.panel.panel.name)])
+
+    def test_get_panel_retired(self):
+        r = self.client.get(reverse_lazy('webservices:get_panel', args=(self.gpes_retired.panel.panel.name,)))
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.json(), ["Query Error: {} not found.".format(self.gpes_retired.panel.panel.name)])
 
     def test_get_panel_pk(self):
         r = self.client.get(reverse_lazy('webservices:get_panel', args=(self.gpes.panel.panel.pk,)))
