@@ -149,9 +149,9 @@ def list_panels(request):
         filters["panel__name__icontains"] = request.GET["Name"]
 
     if request.GET.get('Retired', '').lower() == 'true':
-        queryset = GenePanelSnapshot.objects.get_active_anotated(all=True).filter(**filters)
+        queryset = GenePanelSnapshot.objects.get_active_annotated(all=True).filter(**filters)
     else:
-        queryset = GenePanelSnapshot.objects.get_active_anotated().filter(**filters)
+        queryset = GenePanelSnapshot.objects.get_active_annotated().filter(**filters)
 
     serializer = ListPanelSerializer(instance=queryset,)
     return Response(serializer.data)
