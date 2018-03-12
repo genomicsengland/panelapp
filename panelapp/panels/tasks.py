@@ -151,7 +151,7 @@ def background_copy_reviews(user_pk, gene_symbols, panel_from_pk, panel_to_pk):
 
     user = User.objects.get(pk=user_pk)
 
-    panels = GenePanelSnapshot.objects.get_active(True).filter(pk__in=[panel_from_pk, panel_to_pk])
+    panels = GenePanelSnapshot.objects.get_active(all=True, internal=True).filter(pk__in=[panel_from_pk, panel_to_pk])
     if panels[0].pk == panel_from_pk:
         panel_from = panels[0]
         panel_to = panels[1]
