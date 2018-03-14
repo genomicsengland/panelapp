@@ -1238,6 +1238,7 @@ class GenePanelSnapshot(TimeStampedModel):
             name=str_name,
             position=str_data.get('position'),
             normal_range=str_data.get('normal_range'),
+            repeated_sequence=str_data.get('repeated_sequence'),
             prepathogenic_range=str_data.get('prepathogenic_range'),
             pathogenic_range=str_data.get('pathogenic_range'),
             panel=self,

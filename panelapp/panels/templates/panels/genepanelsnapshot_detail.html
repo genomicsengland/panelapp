@@ -40,6 +40,7 @@
         <p class="lead">
             {% if entity_type == 'str' %}
                 Position (Chr:Position): {{ entity.position }}<br />
+                Repeated Sequence: {{ entity.repeated_sequence }}<br />
                 {% if entity.normal_range %}
                     Normal Range: {{ entity.normal_range.lower }}-{{ entity.normal_range.upper }}% <br />
                 {% endif %}

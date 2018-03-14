@@ -163,6 +163,7 @@ class AdminUploadReviewsView(ImportToolMixin, AdminContextMixin):
     def get(self, request, *args, **kwargs):
         return redirect(reverse_lazy('panels:admin'))
 
+
 class PromotePanelView(GELReviewerRequiredMixin, GenePanelView, UpdateView):
     template_name = "panels/genepanel_detail.html"
     form_class = PromotePanelForm
