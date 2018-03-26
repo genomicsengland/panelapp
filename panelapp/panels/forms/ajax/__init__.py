@@ -7,7 +7,6 @@ from .gene import UpdateGenePublicationsForm
 from .gene import UpdateGeneRatingForm
 from .gene import UpdateGeneTagsForm
 from .strs import UpdateSTRTagsForm
-from .strs import UpdateSTRMOPForm
 from .strs import UpdateSTRMOIForm
 from .strs import UpdateSTRPhenotypesForm
 from .strs import UpdateSTRPublicationsForm

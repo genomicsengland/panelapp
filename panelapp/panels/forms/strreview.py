@@ -11,6 +11,7 @@ class STRReviewForm(forms.ModelForm):
             'user',
             'version',
             'comments',
+            'mode_of_pathogenicity'
         )
 
     publications = SimpleArrayField(
@@ -33,7 +34,7 @@ class STRReviewForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         self.panel = kwargs.pop('panel')
         self.request = kwargs.pop('request')
-        self.str = kwargs.pop('str')
+        self.str_item = kwargs.pop('str_item')
         super().__init__(*args, **kwargs)
 
         original_fields = self.fields
@@ -41,16 +42,16 @@ class STRReviewForm(forms.ModelForm):
         self.fields = OrderedDict()
         self.fields['rating'] = original_fields.get('rating')
         self.fields['moi'] = original_fields.get('moi')
-        self.fields['mode_of_pathogenicity'] = original_fields.get('mode_of_pathogenicity')
         self.fields['publications'] = original_fields.get('publications')
         self.fields['phenotypes'] = original_fields.get('phenotypes')
         self.fields['current_diagnostic'] = original_fields.get('current_diagnostic')
+        self.fields['clinically_relevant'] = original_fields.get('clinically_relevant')
         self.fields['comments'] = original_fields.get('comments')
 
     def save(self, *args, **kwargs):
         evaluation_data = self.cleaned_data
         evaluation_data['comment'] = evaluation_data.pop('comments')
-        panel = self.str.panel
-        ev = panel.get_str(self.str.name).update_evaluation(self.request.user, evaluation_data)
+        panel = self.str_item.panel
+        ev = panel.get_str(self.str_item.name).update_evaluation(self.request.user, evaluation_data)
         panel.update_saved_stats()
         return ev

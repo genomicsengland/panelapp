@@ -217,25 +217,6 @@ class STRReviewTest(LoginGELUser):
         assert gene.tags.count() == 2
         assert current_version == str_item.panel.panel.active_panel.version
 
-    def test_update_mop(self):
-        str_item = STRFactory()
-        str_item.evaluation.all().delete()
-        url = reverse_lazy('panels:update_entity_mop', kwargs={
-            'pk': str_item.panel.panel.pk,
-            'entity_type': 'str',
-            'entity_name': str_item.name
-        })
-
-        mop = [x for x in Evaluation.MODES_OF_PATHOGENICITY][randint(1, 2)]
-        data = {'comment': fake.sentence(), 'mode_of_pathogenicity': mop[1]}
-
-        res = self.client.post(url, data, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
-        gene = GenePanel.objects.get(pk=str_item.panel.panel.pk).active_panel.get_str(str_item.name)
-        assert res.json().get('status') == 200
-        assert Comment.objects.count() == 1
-        assert gene.mode_of_pathogenicity == mop[1]
-        assert gene.panel.version != str_item.panel.version
-
     def test_update_moi(self):
         str_item = STRFactory()
         str_item.evaluation.all().delete()

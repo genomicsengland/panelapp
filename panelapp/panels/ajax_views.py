@@ -21,7 +21,6 @@ from .forms.ajax import UpdateGenePhenotypesForm
 from .forms.ajax import UpdateGenePublicationsForm
 from .forms.ajax import UpdateGeneRatingForm
 from .forms.ajax import UpdateSTRTagsForm
-from .forms.ajax import UpdateSTRMOPForm
 from .forms.ajax import UpdateSTRMOIForm
 from .forms.ajax import UpdateSTRPhenotypesForm
 from .forms.ajax import UpdateSTRPublicationsForm
@@ -261,18 +260,18 @@ class UpdateEvaluationsMixin(VerifiedReviewerRequiredMixin, BaseAjaxGeneMixin, E
             'panel': self.panel,
             'entity_type': self.kwargs['entity_type'],
             'entity_name': self.kwargs['entity_name'],
-            'feedback_review_parts': [
-                'Rating',
-                'Mode of inheritance',
-                'Mode of pathogenicity',
-                'Publications',
-                'Phenotypes'
-            ],
             'entity': self.object,
             'panel_genes': list(self.panel.get_all_genes_extra)
         }
 
         if self.is_gene():
+            ctx['feedback_review_parts'] = [
+                'Rating',
+                'Mode of inheritance',
+                'Mode of pathogenicity',
+                'Publications',
+                'Phenotypes'
+            ]
             ctx['form_edit'] = PanelGeneForm(
                 instance=self.object,
                 initial=self.object.get_form_initial(),
@@ -319,11 +318,10 @@ class UpdateEvaluationsMixin(VerifiedReviewerRequiredMixin, BaseAjaxGeneMixin, E
             ctx['form'] = STRReviewForm(
                 panel=self.panel,
                 request=self.request,
-                str=self.object
+                str_item=self.object
             )
 
             ctx['edit_entity_tags_form'] = UpdateSTRTagsForm(instance=self.object)
-            ctx['edit_entity_mop_form'] = UpdateSTRMOPForm(instance=self.object)
             ctx['edit_entity_moi_form'] = UpdateSTRMOIForm(instance=self.object)
             ctx['edit_entity_phenotypes_form'] = UpdateSTRPhenotypesForm(instance=self.object)
             ctx['edit_entity_publications_form'] = UpdateSTRPublicationsForm(instance=self.object)
@@ -404,10 +402,12 @@ class UpdateEntityMOPAjaxView(GELReviewerRequiredMixin, UpdateEvaluationsMixin):
     def form_class(self):
         if self.is_gene():
             return UpdateGeneMOPForm
-        elif self.is_str():
-            return UpdateSTRMOPForm
+        return None
 
     def process(self):
+        if self.is_str():
+            return {'status': 501, 'reason': 'Not implemented'}
+
         form = self.form_class(instance=self.object, data=self.request.POST)
         if form.is_valid():
             form.save(user=self.request.user)

@@ -19,24 +19,6 @@ class UpdateSTRTagsForm(forms.ModelForm):
     )
 
 
-class UpdateSTRMOPForm(forms.ModelForm):
-    comment = forms.CharField(required=False, widget=forms.Textarea)
-
-    class Meta:
-        model = STR
-        fields = ('mode_of_pathogenicity',)
-
-    def save(self, *args, **kwargs):
-        mop = self.cleaned_data['mode_of_pathogenicity']
-        comment = self.cleaned_data['comment']
-        user = kwargs.pop('user')
-        self.instance.panel.increment_version()
-        self.instance = GenePanel.objects.get(pk=self.instance.panel.panel.pk)\
-            .active_panel.get_str(self.instance.name)
-        self.instance.update_pathogenicity(mop, user, comment)
-        self.instance.panel.update_saved_stats()
-
-
 class UpdateSTRMOIForm(forms.ModelForm):
     comment = forms.CharField(required=False, widget=forms.Textarea)
 

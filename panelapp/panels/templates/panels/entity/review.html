@@ -36,6 +36,9 @@
                   {% if ev.current_diagnostic  %}
                     <div><i class="fa fa-check-circle"></i> Current diagnostic</div>
                   {% endif %}
+                  {% if entity.is_str and ev.clinically_relevant  %}
+                    <div><i class="fa fa-check-circle"></i> Clinically relevant</div>
+                  {% endif %}
                 </td>
               </tr>
             {% endif %}

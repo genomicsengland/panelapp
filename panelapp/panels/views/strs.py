@@ -11,7 +11,8 @@ class DownloadAllSTRs(GELReviewerRequiredMixin, View):
     def gene_iterator(self):
         yield (
             "Name",
-            "Position",
+            "Position GRCh37",
+            "Position GRCh38",
             "Normal range lower",
             "Normal range upper",
             "Pre-pathogenic range lower",
@@ -26,7 +27,6 @@ class DownloadAllSTRs(GELReviewerRequiredMixin, View):
             "List",
             "Sources",
             "Mode of inheritance",
-            "Mode of pathogenicity",
             "Tags",
             "EnsemblId(GRch37)",
             "EnsemblId(GRch38)",
@@ -54,7 +54,8 @@ class DownloadAllSTRs(GELReviewerRequiredMixin, View):
 
                 row = [
                     entry.name,
-                    entry.position,
+                    entry.position_37,
+                    entry.position_38,
                     entry.normal_range.lower if entry.normal_range else '-',
                     entry.normal_range.upper if entry.normal_range else '-',
                     entry.prepathogenic_range.lower,
@@ -69,7 +70,6 @@ class DownloadAllSTRs(GELReviewerRequiredMixin, View):
                     colour,
                     ';'.join([evidence.name for evidence in entry.evidence.all()]),
                     entry.moi,
-                    entry.mode_of_pathogenicity,
                     ';'.join([tag.name for tag in entry.tags.all()]),
                     entry.gene.get('ensembl_genes', {}).get('GRch37', {}).get('82', {}).get('ensembl_id', '-') if entry.gene else '-',
                     entry.gene.get('ensembl_genes', {}).get('GRch38', {}).get('90', {}).get('ensembl_id', '-') if entry.gene else '-',

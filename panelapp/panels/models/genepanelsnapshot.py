@@ -1217,7 +1217,6 @@ class GenePanelSnapshot(TimeStampedModel):
                 - penetrance
                 - publications
                 - phenotypes
-                - mode_of_pathogenicity
                 - comment
                 - current_diagnostic
                 - sources
@@ -1236,7 +1235,8 @@ class GenePanelSnapshot(TimeStampedModel):
 
         str_item = self.cached_strs.model(
             name=str_name,
-            position=str_data.get('position'),
+            position_37=str_data.get('position_37'),
+            position_38=str_data.get('position_38'),
             normal_range=str_data.get('normal_range'),
             repeated_sequence=str_data.get('repeated_sequence'),
             prepathogenic_range=str_data.get('prepathogenic_range'),
@@ -1246,7 +1246,6 @@ class GenePanelSnapshot(TimeStampedModel):
             penetrance=str_data.get('penetrance'),
             publications=str_data.get('publications'),
             phenotypes=str_data.get('phenotypes'),
-            mode_of_pathogenicity=str_data.get('mode_of_pathogenicity'),
             saved_gel_status=0,
             flagged=False if user.reviewer.is_GEL() else True
         )
@@ -1306,6 +1305,7 @@ class GenePanelSnapshot(TimeStampedModel):
                 publications=str_data.get('publications'),
                 moi=str_data.get('moi'),
                 current_diagnostic=str_data.get('current_diagnostic'),
+                clinically_relevant=str_data.get('clinically_relevant'),
                 version=self.version
             )
             if str_data.get('comment'):
@@ -1328,7 +1328,8 @@ class GenePanelSnapshot(TimeStampedModel):
             str_name: STR name
             str_data: A dict with the values:
                 - name
-                - position
+                - position_37
+                - position_38
                 - repeated_sequence
                 - normal_range
                 - prepathogenic_range
@@ -1337,7 +1338,6 @@ class GenePanelSnapshot(TimeStampedModel):
                 - penetrance
                 - publications
                 - phenotypes
-                - mode_of_pathogenicity
                 - comment
                 - current_diagnostic
                 - sources

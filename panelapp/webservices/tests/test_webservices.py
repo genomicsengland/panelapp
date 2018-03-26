@@ -146,5 +146,6 @@ class TestWebservices(TransactionTestCase):
         r = self.client.get(reverse_lazy('webservices:get_panel', args=(self.str.panel.panel.pk,)))
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.json()['result']['STRs'][0]['Name'], self.str.name)
-        self.assertEqual(r.json()['result']['STRs'][0]['Position'], self.str.position)
+        self.assertEqual(r.json()['result']['STRs'][0]['Position37'], self.str.position_37)
+        self.assertEqual(r.json()['result']['STRs'][0]['Position38'], self.str.position_38)
         self.assertEqual(r.json()['result']['STRs'][0]['PathogenicRange'], self.str.pathogenic_range)

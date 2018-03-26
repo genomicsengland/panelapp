@@ -25,7 +25,7 @@ class PanelSTRForm(forms.ModelForm):
     This form actually contains data for multiple models: STR,
     Evidence, Evaluation. Some of this data is duplicated, and it's not clear if
     it needs to stay this way or should be refactored and moved to the models where
-    it belongs. I.e. GenePanelEntrySnapshot has moi, mop, comments, etc. It's
+    it belongs. I.e. GenePanelEntrySnapshot has moi, comments, etc. It's
     not clear if we need to keep it here, or move it to Evaluation model since
     it has the same values.
 
@@ -49,8 +49,8 @@ class PanelSTRForm(forms.ModelForm):
         )
     )
 
-    normal_range = IntegerRangeField()
-    prepathogenic_range = IntegerRangeField(require_all_fields=True, required=True)
+    normal_range = IntegerRangeField(required=False)
+    prepathogenic_range = IntegerRangeField(required=False)
     pathogenic_range = IntegerRangeField(require_all_fields=True, required=True)
 
     gene_name = forms.CharField(required=False)
@@ -82,18 +82,21 @@ class PanelSTRForm(forms.ModelForm):
         required=False
     )
     current_diagnostic = forms.BooleanField(required=False)
+    clinically_relevant = forms.BooleanField(required=False, help_text="Interruptions in the normal alleles are"
+                                                                       " reported as part of standard"
+                                                                       " diagnostic practice")
     comments = forms.CharField(widget=forms.Textarea, required=False)
 
     class Meta:
         model = STR
         fields = (
             'name',
-            'position',
+            'position_37',
+            'position_38',
             'repeated_sequence',
             'normal_range',
             'prepathogenic_range',
             'pathogenic_range',
-            'mode_of_pathogenicity',
             'moi',
             'penetrance',
             'publications',
@@ -109,22 +112,22 @@ class PanelSTRForm(forms.ModelForm):
 
         self.fields = OrderedDict()
         self.fields['name'] = original_fields.get('name')
-        self.fields['position'] = original_fields.get('position')
+        self.fields['position_37'] = original_fields.get('position_37')
+        self.fields['position_38'] = original_fields.get('position_38')
         self.fields['repeated_sequence'] = original_fields.get('repeated_sequence')
         self.fields['normal_range'] = original_fields.get('normal_range')
-        self.fields['normal_range'].widget.widgets[0].attrs = {'placeholder': 'Normal range from %'}
-        self.fields['normal_range'].widget.widgets[1].attrs = {'placeholder': 'Normal range to %'}
+        self.fields['normal_range'].widget.widgets[0].attrs = {'placeholder': 'Normal range from'}
+        self.fields['normal_range'].widget.widgets[1].attrs = {'placeholder': 'Normal range to'}
         self.fields['prepathogenic_range'] = original_fields.get('prepathogenic_range')
-        self.fields['prepathogenic_range'].widget.widgets[0].attrs = {'placeholder': 'Pre pathogenic range from %'}
-        self.fields['prepathogenic_range'].widget.widgets[1].attrs = {'placeholder': 'Pre pathogenic range to %'}
+        self.fields['prepathogenic_range'].widget.widgets[0].attrs = {'placeholder': 'Pre pathogenic range from'}
+        self.fields['prepathogenic_range'].widget.widgets[1].attrs = {'placeholder': 'Pre pathogenic range to'}
         self.fields['pathogenic_range'] = original_fields.get('pathogenic_range')
-        self.fields['pathogenic_range'].widget.widgets[0].attrs = {'placeholder': 'Pathogenic range from %'}
-        self.fields['pathogenic_range'].widget.widgets[1].attrs = {'placeholder': 'Pathogenic range to %'}
+        self.fields['pathogenic_range'].widget.widgets[0].attrs = {'placeholder': 'Pathogenic range from'}
+        self.fields['pathogenic_range'].widget.widgets[1].attrs = {'placeholder': 'Pathogenic range to'}
         self.fields['gene'] = original_fields.get('gene')
         if self.instance.pk:
             self.fields['gene_name'] = original_fields.get('gene_name')
         self.fields['source'] = original_fields.get('source')
-        self.fields['mode_of_pathogenicity'] = original_fields.get('mode_of_pathogenicity')
         self.fields['moi'] = original_fields.get('moi')
         self.fields['moi'].required = False
         self.fields['penetrance'] = original_fields.get('penetrance')
@@ -135,6 +138,8 @@ class PanelSTRForm(forms.ModelForm):
         if not self.instance.pk:
             self.fields['rating'] = original_fields.get('rating')
             self.fields['current_diagnostic'] = original_fields.get('current_diagnostic')
+            if self.instance.is_str():
+                self.fields['clinically_relevant'] = original_fields.get('clinically_relevant')
             self.fields['comments'] = original_fields.get('comments')
 
     def clean_source(self):

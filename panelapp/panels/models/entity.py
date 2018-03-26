@@ -68,6 +68,12 @@ class AbstractEntity:
 
         return gel_status
 
+    def is_str(self):
+        return self.entity_type == 'str'
+
+    def is_gene(self):
+        return self.entity_type == 'gene'
+
     @property
     def status(self):
         """Save gel_status in the gene panel snapshot if saved_gel_status isn't set"""
@@ -448,6 +454,11 @@ class AbstractEntity:
                 changed = True
                 evaluation.current_diagnostic = current_diagnostic
 
+            clinically_relevant = evaluation_data.get('clinically_relevant')
+            if self.is_str() and evaluation.clinically_relevant != clinically_relevant:
+                changed = True
+                evaluation.clinically_relevant = clinically_relevant
+
             evaluation.version = self.panel.version
 
             is_str = self.gene.get('gene_symbol') != self.name if self.gene else True  # STRs might not have genes
@@ -477,6 +488,7 @@ class AbstractEntity:
                 phenotypes=evaluation_data.get('phenotypes'),
                 moi=evaluation_data.get('moi'),
                 current_diagnostic=evaluation_data.get('current_diagnostic'),
+                clinically_relevant=evaluation_data.get('clinically_relevant'),
                 version=self.panel.version
             )
             self.evaluation.add(evaluation)
