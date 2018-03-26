@@ -38,17 +38,18 @@
         </div>
         <hr />
         <p class="lead">
-            {% if entity_type == 'str' %}
-                Position (Chr:Position): {{ entity.position }}<br />
+            {% if entity.is_str %}
+                GRCh37 Position (Chr:Position): {{ entity.position_37 }}<br />
+                GRCh38 Position (Chr:Position): {{ entity.position_38 }}<br />
                 Repeated Sequence: {{ entity.repeated_sequence }}<br />
                 {% if entity.normal_range %}
-                    Normal Range: {{ entity.normal_range.lower }}-{{ entity.normal_range.upper }}% <br />
+                    Normal Range: {{ entity.normal_range.lower }}-{{ entity.normal_range.upper }}<br />
                 {% endif %}
                 {% if entity.prepathogenic_range %}
-                    Pre-pathogenic Range: {{ entity.prepathogenic_range.lower }}-{{ entity.prepathogenic_range.upper }}%<br />
+                    Pre-pathogenic Range: {{ entity.prepathogenic_range.lower }}-{{ entity.prepathogenic_range.upper }}<br />
                 {% endif %}
                 {% if entity.pathogenic_range %}
-                    Pathogenic Range: {{ entity.pathogenic_range.lower }}-{{ entity.pathogenic_range.upper }}%<br />
+                    Pathogenic Range: {{ entity.pathogenic_range.lower }}-{{ entity.pathogenic_range.upper }}<br />
                 {% endif %}
                 <br />
             {% endif %}
@@ -68,7 +69,7 @@
             {% if entity.gene.omim_gene|length > 0 %}
               <a href="http://omim.org/entry/{{ entity.gene.omim_gene.0 }}" target="_blank">OMIM: {{ entity.gene.omim_gene.0 }}</a>, <a href=" http://www.ebi.ac.uk/gene2phenotype/gene2phenotype-webcode/cgi-bin/handler.cgi?panel=ALL&search_term={{ entity.gene.gene_symbol }}" target="_blank">Gene2Phenotype</a><br />
             {% endif %}
-            {% if entity_type == 'gene' %}
+            {% if entity.is_gene %}
             {% with shared_panels=sharing_panels %}
             {{ entity.gene.gene_symbol }} is in <a href="{% url 'panels:gene_detail' entity.gene.gene_symbol %}">{{ shared_panels|length }} panel{{ shared_panels|pluralize }}</a>
             {% endwith %}

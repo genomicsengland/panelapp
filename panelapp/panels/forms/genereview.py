@@ -11,6 +11,7 @@ class GeneReviewForm(forms.ModelForm):
             'user',
             'version',
             'comments',
+            'clinically_relevant'
         )
 
     publications = SimpleArrayField(

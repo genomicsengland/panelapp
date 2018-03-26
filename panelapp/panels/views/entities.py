@@ -22,7 +22,6 @@ from panels.forms.ajax import UpdateGenePhenotypesForm
 from panels.forms.ajax import UpdateGenePublicationsForm
 from panels.forms.ajax import UpdateGeneRatingForm
 from panels.forms.ajax import UpdateSTRTagsForm
-from panels.forms.ajax import UpdateSTRMOPForm
 from panels.forms.ajax import UpdateSTRMOIForm
 from panels.forms.ajax import UpdateSTRPhenotypesForm
 from panels.forms.ajax import UpdateSTRPublicationsForm
@@ -102,6 +101,14 @@ class GenePanelSpanshotView(EntityMixin, DetailView):
         ctx['next_gene'] = None if cgi == len(ctx['panel_genes']) - 1 else ctx['panel_genes'][cgi + 1]
         ctx['prev_gene'] = None if cgi == 0 else ctx['panel_genes'][cgi - 1]
 
+        ctx['feedback_review_parts'] = [
+            'Rating',
+            'Mode of inheritance',
+            'Mode of pathogenicity',
+            'Publications',
+            'Phenotypes'
+        ]
+
         return ctx
 
     def get_context_data_str(self, ctx):
@@ -112,10 +119,10 @@ class GenePanelSpanshotView(EntityMixin, DetailView):
                 form_initial = user_review.dict_tr()
                 form_initial['comments'] = None
 
-        ctx['form'] = GeneReviewForm(
+        ctx['form'] = STRReviewForm(
             panel=self.panel,
             request=self.request,
-            gene=self.object,
+            str_item=self.object,
             initial=form_initial
         )
         ctx['form_edit'] = PanelSTRForm(
@@ -132,7 +139,6 @@ class GenePanelSpanshotView(EntityMixin, DetailView):
         )
 
         ctx['edit_entity_tags_form'] = UpdateSTRTagsForm(instance=self.object)
-        ctx['edit_entity_mop_form'] = UpdateSTRMOPForm(instance=self.object)
         ctx['edit_entity_moi_form'] = UpdateSTRMOIForm(instance=self.object)
         ctx['edit_entity_phenotypes_form'] = UpdateSTRPhenotypesForm(instance=self.object)
         ctx['edit_entity_publications_form'] = UpdateSTRPublicationsForm(instance=self.object)
@@ -141,6 +147,13 @@ class GenePanelSpanshotView(EntityMixin, DetailView):
         cgi = ctx['panel_strs'].index(self.object)
         ctx['next_str'] = None if cgi == len(ctx['panel_strs']) - 1 else ctx['panel_strs'][cgi + 1]
         ctx['prev_str'] = None if cgi == 0 else ctx['panel_strs'][cgi - 1]
+
+        ctx['feedback_review_parts'] = [
+            'Rating',
+            'Mode of inheritance',
+            'Publications',
+            'Phenotypes'
+        ]
 
         return ctx
 
@@ -151,14 +164,6 @@ class GenePanelSpanshotView(EntityMixin, DetailView):
         ctx['entity_name'] = self.kwargs['entity_name']
         ctx['panel_genes'] = list(self.panel.get_all_genes_extra)
         ctx['panel_strs'] = list(self.panel.get_all_strs_extra)
-
-        ctx['feedback_review_parts'] = [
-            'Rating',
-            'Mode of inheritance',
-            'Mode of pathogenicity',
-            'Publications',
-            'Phenotypes'
-        ]
 
         if self.is_gene():
             ctx = self.get_context_data_gene(ctx)
@@ -344,7 +349,7 @@ class EntityReviewView(VerifiedReviewerRequiredMixin, EntityMixin, UpdateView):
         if self.is_gene():
             kwargs['gene'] = self.object
         elif self.is_str():
-            kwargs['str'] = self.object
+            kwargs['str_item'] = self.object
 
         if not kwargs['initial']:
             kwargs['initial'] = {}

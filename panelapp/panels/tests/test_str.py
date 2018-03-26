@@ -28,7 +28,8 @@ class STRTest(LoginGELUser):
         active_panel = gpes.panel
         str_item = active_panel.add_str(self.gel_user, 'ABC', {
             'gene': gpes.gene_core,
-            'position': '1:12345',
+            'position_37': '1:12345',
+            'position_38': '1:12345',
             'repeated_sequence': 'ATAT',
             'normal_range': (1, 2),
             'prepathogenic_range': (1, 2),
@@ -39,7 +40,6 @@ class STRTest(LoginGELUser):
             'publications': None,
             'phenotypes': None,
             'sources': [],
-            'mode_of_pathogenicity': 'Loss-of-function variants (as defined in pop up message) DO NOT cause this phenotype - please provide details in the comments'
         })
 
         assert active_panel.has_str(str_item.name)
@@ -55,7 +55,8 @@ class STRTest(LoginGELUser):
         url = reverse_lazy('panels:add_entity', kwargs={'pk': gps.panel.pk, 'entity_type': 'str'})
         gene_data = {
             'name': 'SomeSTR',
-            'position': '1:12345',
+            'position_37': '1:12345',
+            'position_38': '1:12345',
             'repeated_sequence': 'ATAT',
             'normal_range_0': 1,
             'normal_range_1': 2,
@@ -71,7 +72,6 @@ class STRTest(LoginGELUser):
             "rating": Evaluation.RATINGS.AMBER,
             "comments": fake.sentence(),
             "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)][0],
-            "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][randint(1, 2)][0],
             "penetrance": GenePanelEntrySnapshot.PENETRANCE.Incomplete,
             "current_diagnostic": "True"
         }
@@ -94,7 +94,8 @@ class STRTest(LoginGELUser):
         url = reverse_lazy('panels:add_entity', kwargs={'pk': gps.panel.pk, 'entity_type': 'str'})
         gene_data = {
             'name': 'SomeSTR',
-            'position': '1:12345',
+            'position_37': '1:12345',
+            'position_38': '1:12345',
             'repeated_sequence': 'ATAT',
             'normal_range_0': 1,
             'normal_range_1': 2,
@@ -109,7 +110,6 @@ class STRTest(LoginGELUser):
             "rating": Evaluation.RATINGS.AMBER,
             "comments": fake.sentence(),
             "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)][0],
-            "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][randint(1, 2)][0],
             "penetrance": GenePanelEntrySnapshot.PENETRANCE.Incomplete,
             "current_diagnostic": "True"
         }
@@ -130,7 +130,8 @@ class STRTest(LoginGELUser):
         url = reverse_lazy('panels:add_entity', kwargs={'pk': gps.panel.pk, 'entity_type': 'str'})
         str_data = {
             'name': 'SomeSTR',
-            'position': '1:12345',
+            'position_37': '1:12345',
+            'position_38': '1:12345',
             'repeated_sequence': 'ATAT',
             'normal_range_0': 1,
             'normal_range_1': 2,
@@ -183,7 +184,8 @@ class STRTest(LoginGELUser):
 
         str_data = {
             'name': str_item.name,
-            'position': '1:12345',
+            'position_37': '1:12345',
+            'position_38': '1:12345',
             'repeated_sequence': 'ATAT',
             'normal_range_0': 1,
             'normal_range_1': 2,
@@ -198,7 +200,6 @@ class STRTest(LoginGELUser):
             "publications": ";".join([publication, fake.sentence()]),
             "phenotypes": ";".join([phenotype, fake.sentence(), fake.sentence()]),
             "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)],
-            "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][randint(1, 2)],
             "penetrance": GenePanelEntrySnapshot.PENETRANCE.Incomplete,
         }
         res = self.client.post(url, str_data)
@@ -230,7 +231,8 @@ class STRTest(LoginGELUser):
 
         str_data = {
             'name': str_item.name,
-            'position': '1:12345',
+            'position_37': '1:12345',
+            'position_38': '1:12345',
             'repeated_sequence': 'ATATAT',
             'normal_range_0': 1,
             'normal_range_1': 2,
@@ -245,7 +247,6 @@ class STRTest(LoginGELUser):
             "publications": ";".join([publication, fake.sentence()]),
             "phenotypes": ";".join([phenotype, fake.sentence(), fake.sentence()]),
             "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)],
-            "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][randint(1, 2)],
             "penetrance": GenePanelEntrySnapshot.PENETRANCE.Incomplete,
         }
         res = self.client.post(url, str_data)
@@ -277,7 +278,8 @@ class STRTest(LoginGELUser):
 
         str_data = {
             'name': str_item.name,
-            'position': '1:12345',
+            'position_37': '1:12345',
+            'position_38': '1:12345',
             'repeated_sequence': 'ATAT',
             'normal_range_0': 1,
             'normal_range_1': 2,
@@ -291,7 +293,6 @@ class STRTest(LoginGELUser):
             "publications": ";".join([publication, fake.sentence()]),
             "phenotypes": ";".join([phenotype, fake.sentence(), fake.sentence()]),
             "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)],
-            "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][randint(1, 2)],
             "penetrance": GenePanelEntrySnapshot.PENETRANCE.Incomplete,
         }
         res = self.client.post(url, str_data)
@@ -317,7 +318,8 @@ class STRTest(LoginGELUser):
 
         str_data = {
             'name': str_item.name,
-            'position': '1:12345',
+            'position_37': '1:12345',
+            'position_38': '1:12345',
             'repeated_sequence': 'ATAT',
             'normal_range_0': 1,
             'normal_range_1': 2,
@@ -332,7 +334,6 @@ class STRTest(LoginGELUser):
             "publications": ";".join([publication for publication in str_item.publications]),
             "phenotypes": ";".join([phenotype for phenotype in str_item.phenotypes]),
             "moi": str_item.moi,
-            "mode_of_pathogenicity": str_item.mode_of_pathogenicity,
             "penetrance": GenePanelEntrySnapshot.PENETRANCE.Complete,
         }
         res = self.client.post(url, str_data)
@@ -356,7 +357,8 @@ class STRTest(LoginGELUser):
 
         str_data = {
             'name': str_item.name,
-            'position': '1:12345',
+            'position_37': '1:12345',
+            'position_38': '1:12345',
             'repeated_sequence': 'ATAT',
             'normal_range_0': 1,
             'normal_range_1': 2,
@@ -371,7 +373,6 @@ class STRTest(LoginGELUser):
             "publications": ";".join([publication for publication in str_item.publications]),
             "phenotypes": ";".join([phenotype for phenotype in str_item.phenotypes]),
             "moi": str_item.moi,
-            "mode_of_pathogenicity": str_item.mode_of_pathogenicity,
             "penetrance": GenePanelEntrySnapshot.PENETRANCE.Complete,
         }
         res = self.client.post(url, str_data)
@@ -397,7 +398,8 @@ class STRTest(LoginGELUser):
 
         str_data = {
             'name': str_item.name,
-            'position': '1:12345',
+            'position_37': '1:12345',
+            'position_38': '1:12345',
             'repeated_sequence': 'ATAT',
             'normal_range_0': '1',
             'normal_range_1': '2',
@@ -412,7 +414,6 @@ class STRTest(LoginGELUser):
             "publications": ";".join([publication for publication in str_item.publications]),
             "phenotypes": ";".join([phenotype for phenotype in str_item.phenotypes]),
             "moi": str_item.moi,
-            "mode_of_pathogenicity": str_item.mode_of_pathogenicity,
             "penetrance": GenePanelEntrySnapshot.PENETRANCE.Complete,
         }
         res = self.client.post(url, str_data)
@@ -434,7 +435,8 @@ class STRTest(LoginGELUser):
 
         str_data = {
             'name': str_item.name,
-            'position': '1:12345',
+            'position_37': '1:12345',
+            'position_38': '1:12345',
             'repeated_sequence': 'ATAT',
             'normal_range_0': 1,
             'normal_range_1': 2,
@@ -449,7 +451,6 @@ class STRTest(LoginGELUser):
             "publications": ";".join([publication for publication in str_item.publications]),
             "phenotypes": ";".join([phenotype for phenotype in str_item.phenotypes]),
             "moi": str_item.moi,
-            "mode_of_pathogenicity": str_item.mode_of_pathogenicity,
             "penetrance": GenePanelEntrySnapshot.PENETRANCE.Complete,
         }
         res = self.client.post(url, str_data)
@@ -474,7 +475,8 @@ class STRTest(LoginGELUser):
 
         str_data = {
             'name': str_item.name,
-            'position': '1:12345',
+            'position_37': '1:12345',
+            'position_38': '1:12345',
             'repeated_sequence': 'ATAT',
             'normal_range_0': 1,
             'normal_range_1': 2,
@@ -489,7 +491,6 @@ class STRTest(LoginGELUser):
             "publications": ";".join([fake.sentence(), fake.sentence()]),
             "phenotypes": ";".join([phenotype for phenotype in str_item.phenotypes]),
             "moi": str_item.moi,
-            "mode_of_pathogenicity": str_item.mode_of_pathogenicity,
             "penetrance": GenePanelEntrySnapshot.PENETRANCE.Complete,
         }
         res = self.client.post(url, str_data)
@@ -514,7 +515,8 @@ class STRTest(LoginGELUser):
 
         str_data = {
             'name': str_item.name,
-            'position': '1:12345',
+            'position_37': '1:12345',
+            'position_38': '1:12345',
             'repeated_sequence': 'ATAT',
             'normal_range_0': 1,
             'normal_range_1': 2,
@@ -529,7 +531,6 @@ class STRTest(LoginGELUser):
             "publications": ";".join(str_item.publications[:1]),
             "phenotypes": ";".join([phenotype for phenotype in str_item.phenotypes]),
             "moi": str_item.moi,
-            "mode_of_pathogenicity": str_item.mode_of_pathogenicity,
             "penetrance": GenePanelEntrySnapshot.PENETRANCE.Complete,
         }
         res = self.client.post(url, str_data)
@@ -594,7 +595,8 @@ class STRTest(LoginGELUser):
 
         gene_data = {
             'name': 'NewSTR',
-            'position': '1:12345',
+            'position_37': '1:12345',
+            'position_38': '1:12345',
             'repeated_sequence': 'ATAT',
             'normal_range_0': 1,
             'normal_range_1': 2,
@@ -609,7 +611,6 @@ class STRTest(LoginGELUser):
             "publications": ";".join([publication, fake.sentence()]),
             "phenotypes": ";".join([phenotype, fake.sentence(), fake.sentence()]),
             "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)],
-            "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][randint(1, 2)],
             "penetrance": GenePanelEntrySnapshot.PENETRANCE.Incomplete,
         }
         res = self.client.post(url, gene_data)

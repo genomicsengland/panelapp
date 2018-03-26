@@ -12,7 +12,8 @@
             <dt>Name</dt>
             <dd>{{ entity.name }}</dd>
             <dt>Positions</dt>
-            <dd>{{ entity.position }}</dd>
+            <dd>GRCh37 {{ entity.position_37 }}</dd>
+            <dd>GRCh38 {{ entity.position_38 }}</dd>
             <dt>Repeated Sequence</dt>
             <dd>{{ entity.repeated_sequence }}</dd>
             {% if entity.normal_range %}
@@ -20,9 +21,9 @@
             <dd>{{ entity.normal_range.lower }}-{{ entity.normal_range.upper }}</dd>
             {% endif %}
             <dt>Pre-Pathogenic Range</dt>
-            <dd>{{ entity.prepathogenic_range.lower }}-{{ entity.prepathogenic_range.upper }}%</dd>
+            <dd>{{ entity.prepathogenic_range.lower }}-{{ entity.prepathogenic_range.upper }}</dd>
             <dt>Pathogenic Range</dt>
-            <dd>{{ entity.pathogenic_range.lower }}-{{ entity.pathogenic_range.upper }}%</dd>
+            <dd>{{ entity.pathogenic_range.lower }}-{{ entity.pathogenic_range.upper }}</dd>
             {% if entity.moi %}
             <dt>Mode of Inheritance</dt>
             <dd>{{ entity.moi }}</dd>
@@ -92,15 +93,6 @@
                     </a>
                 {% endif %}
             </dd>
-            {% endif %}
-            {% if entity.mode_of_pathogenicity %}
-            <dt>Mode of Pathogenicity</dt>
-            <dd>{{ entity.mode_of_pathogenicity }}</dd>
-                {% if request.user.is_authenticated and request.user.reviewer.is_GEL %}
-                    <a href="{% url 'panels:clear_entity_mode_of_pathogenicity' panel.panel_id entity_type entity_name %}" class="link-muted" data-ajax="true" data-success="djangoAjaxHandler">
-                        Clear Mode of Pathogenicity
-                    </a>
-                {% endif %}
             {% endif %}
         </dl>
     </div>

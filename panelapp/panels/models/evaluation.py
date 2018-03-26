@@ -53,6 +53,9 @@ class Evaluation(TimeStampedModel):
     phenotypes = ArrayField(models.TextField(), blank=True, null=True)
     moi = models.CharField("Mode of Inheritance", choices=MODES_OF_INHERITANCE, null=True,  blank=True, max_length=255)
     current_diagnostic = models.BooleanField(default=False, blank=True)
+    clinically_relevant = models.NullBooleanField(
+        default=False, blank=True, null=True,
+        help_text="Interruptions in the normal alleles are reported as part of standard diagnostic practice")
     version = models.CharField(null=True, blank=True, max_length=255)
     comments = models.ManyToManyField(Comment)
 
@@ -71,6 +74,7 @@ class Evaluation(TimeStampedModel):
                 or self.moi
                 or self.mode_of_pathogenicity
                 or self.current_diagnostic
+                or self.clinically_relevant
                 or self.publications
                 or self.phenotypes):
             return False
@@ -86,6 +90,7 @@ class Evaluation(TimeStampedModel):
             "phenotypes": self.phenotypes,
             "publications": self.publications,
             "current_diagnostic": self.current_diagnostic,
+            "clinically_relevant": self.clinically_relevant,
             "version": self.version,
             "date": self.created
         }

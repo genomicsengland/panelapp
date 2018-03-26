@@ -132,7 +132,8 @@ class STRFactory(factory.django.DjangoModelFactory):
         django_get_or_create = False
 
     name = factory.Faker('word')
-    position = factory.Faker('word')
+    position_37 = factory.Faker('word')
+    position_38 = factory.Faker('word')
     repeated_sequence = factory.Faker('word')
     normal_range = factory.LazyAttribute(lambda s: [1, 2])
     prepathogenic_range = factory.LazyAttribute(lambda s: [2, 3])
@@ -142,7 +143,6 @@ class STRFactory(factory.django.DjangoModelFactory):
     publications = factory.Faker('sentences', nb=3)
     phenotypes = factory.Faker('sentences', nb=3)
     moi = Evaluation.MODES_OF_INHERITANCE.Unknown
-    mode_of_pathogenicity = Evaluation.MODES_OF_PATHOGENICITY['Other - please provide details in the comments']
     saved_gel_status = 0
     gene = factory.LazyAttribute(lambda g: g.gene_core.dict_tr())
 

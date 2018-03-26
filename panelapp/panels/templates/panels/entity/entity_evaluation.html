@@ -63,6 +63,11 @@
   {% if ev.current_diagnostic  %}
     <p>Variants in this {{ entity_type }} are reported as part of current diagnostic practice</p>
   {% endif %}
+
+  {% if ev.clinically_relevant %}
+      <strong>Clinically Relevant</strong><br>
+      <p>Interruptions in the normal alleles are reported as part of standard diagnostic practice</p>
+  {% endif %}
 </div>
 
 {% if ev.version %}

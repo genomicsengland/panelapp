@@ -78,11 +78,13 @@ class PanelSerializer(EnsembleIdMixin, serializers.BaseSerializer):
         for str_item in self.list_of_strs:
             result["result"]["STRs"].append({
                 "Name": str_item.name,
-                "Position": str_item.position,
+                "Position37": str_item.position_37,
+                "Position38": str_item.position_38,
                 "RepeatedSequence": str_item.repeated_sequence,
                 "NormalRange": [str_item.normal_range.lower,
                                 str_item.normal_range.upper] if str_item.normal_range else None,
-                "PrepathogenicRange": [str_item.prepathogenic_range.lower, str_item.prepathogenic_range.upper],
+                "PrepathogenicRange": [str_item.prepathogenic_range.lower,
+                                       str_item.prepathogenic_range.upper] if str_item.prepathogenic_range else None,
                 "PathogenicRange": [str_item.pathogenic_range.lower, str_item.pathogenic_range.upper],
                 "GeneSymbol": str_item.gene.get('gene_symbol') if str_item.gene else None,
                 "EnsembleGeneIds": self.get_ensemblId(str_item),
@@ -90,7 +92,6 @@ class PanelSerializer(EnsembleIdMixin, serializers.BaseSerializer):
                 "Penetrance": make_null(str_item.penetrance),
                 "Publications": make_null(str_item.publications),
                 "Phenotypes": make_null(str_item.phenotypes),
-                "ModeOfPathogenicity": make_null(str_item.mode_of_pathogenicity),
                 "LevelOfConfidence": convert_gel_status(str_item.saved_gel_status),
                 "Evidences": [ev.name for ev in str_item.evidence.all()],
             })

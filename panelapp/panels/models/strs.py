@@ -80,7 +80,8 @@ class STR(AbstractEntity, TimeStampedModel):
 
     name = models.CharField(max_length=128)
     repeated_sequence = models.CharField(max_length=128)
-    position = models.CharField(max_length=32, help_text="Chr:Start Position")
+    position_37 = models.CharField(max_length=32, help_text="Chr:Start Position (GRCh37)")
+    position_38 = models.CharField(max_length=32, help_text="Chr:Start Position (GRCh38)")
     normal_range = IntegerRangeField(blank=True, null=True)
     prepathogenic_range = IntegerRangeField(blank=True, null=True)
     pathogenic_range = IntegerRangeField()
@@ -130,7 +131,8 @@ class STR(AbstractEntity, TimeStampedModel):
     def dict_tr(self):
         return {
             "name": self.name,
-            "position": self.position,
+            "position_37": self.position_37,
+            "position_38": self.position_38,
             "repeated_sequence": self.repeated_sequence,
             "normal_range": (self.normal_range.lower, self.normal_range.upper),
             "prepathogenic_range": (self.prepathogenic_range.lower, self.prepathogenic_range.upper),
@@ -143,7 +145,6 @@ class STR(AbstractEntity, TimeStampedModel):
             "publications": self.publications,
             "phenotypes": self.phenotypes,
             "flagged": self.flagged,
-            "mode_of_pathogenicity": self.mode_of_pathogenicity,
             "penetrance": self.penetrance,
             "tags": [tag.name for tag in self.tags.all()]
         }
@@ -155,7 +156,8 @@ class STR(AbstractEntity, TimeStampedModel):
 
         return {
             "name": self.name,
-            "position": self.position,
+            "position_37": self.position_37,
+            "position_38": self.position_38,
             "repeated_sequence": self.repeated_sequence,
             "normal_range": self.normal_range,
             "prepathogenic_range": self.prepathogenic_range,
@@ -167,7 +169,6 @@ class STR(AbstractEntity, TimeStampedModel):
             "tags": self.tags.all(),
             "publications": self.publications,
             "phenotypes": self.phenotypes,
-            "mode_of_pathogenicity": self.mode_of_pathogenicity,
             "moi": self.moi,
             "penetrance": self.penetrance
         }
