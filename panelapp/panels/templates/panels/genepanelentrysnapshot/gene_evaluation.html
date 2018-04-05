@@ -67,7 +67,7 @@
 
 {% if ev.version %}
 <div class="panel-footer">
-  {{ ev.created|date:'DATETIME_FORMAT' }}<br>
+  {{ ev.modified|date:'DATETIME_FORMAT' }} {% if ev.modified != ev.created %}(Original review date {{ ev.created|date:'DATETIME_FORMAT' }}){% endif %}<br>
   <strong>Panel version: </strong>{{ ev.version }}
 </div>
 {% endif %}
