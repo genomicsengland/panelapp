@@ -281,7 +281,7 @@ class UploadedPanelList(TimeStampedModel):
         returns ProcessingRunCode
         """
 
-        with open(self.panel_list.path) as file:
+        with open(self.panel_list.path, encoding='utf-8', errors="ignore") as file:
             logger.info('Started importing list of genes')
             reader = csv.reader(file, delimiter='\t')
             header = next(reader)  # noqa
@@ -405,7 +405,7 @@ class UploadedReviewsList(TimeStampedModel):
 
         Returns ProcessingRunCode"""
 
-        with open(self.reviews.path) as file:
+        with open(self.reviews.path, encoding='utf-8', errors="ignore") as file:
             logger.info('Started importing list of genes')
             reader = csv.reader(file, delimiter='\t')
             header = next(reader)  # noqa

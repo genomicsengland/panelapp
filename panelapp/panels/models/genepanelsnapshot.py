@@ -652,7 +652,7 @@ class GenePanelSnapshot(TimeStampedModel):
                 ]
                 delete_evidences = [
                     source for source in evidences_names
-                    if source not in Evidence.EXPERT_REVIEWS and not source in gene_data.get('sources')
+                    if source not in Evidence.EXPERT_REVIEWS and source not in gene_data.get('sources')
                 ]
 
                 if not append_only:
@@ -734,8 +734,37 @@ class GenePanelSnapshot(TimeStampedModel):
 
             phenotypes = gene_data.get('phenotypes')
             if phenotypes:
+                current_phenotypes = [ph.strip() for ph in gene.phenotypes]
+
+                add_phenotypes = [
+                    phenotype.strip() for phenotype in phenotypes
+                    if phenotype not in current_phenotypes
+                ]
+
+                delete_phenotypes = [
+                    phenotype.strip() for phenotype in current_phenotypes
+                    if phenotype not in phenotypes
+                ]
+
                 logging.debug("Updating phenotypes for gene:{} in panel:{}".format(gene_symbol, self))
-                gene.phenotypes = phenotypes
+
+                if not append_only:
+                    for phenotype in delete_phenotypes:
+                        current_phenotypes.remove(phenotype)
+
+                for phenotype in add_phenotypes:
+                    current_phenotypes.append(phenotype)
+
+                gene.phenotypes = current_phenotypes
+
+                description = "Phenotypes for gene {} were set to {}".format(
+                    gene_symbol,
+                    ', '.join(current_phenotypes)
+                )
+                tracks.append((
+                    TrackRecord.ISSUE_TYPES.SetPenetrance,
+                    description
+                ))
 
             penetrance = gene_data.get('penetrance')
             if penetrance and gene.penetrance != penetrance:
