@@ -78,8 +78,8 @@ class PanelSerializer(EnsembleIdMixin, serializers.BaseSerializer):
         for str_item in self.list_of_strs:
             result["result"]["STRs"].append({
                 "Name": str_item.name,
-                "Position37": str_item.position_37,
-                "Position38": str_item.position_38,
+                "GRCh37Coordinates": str_item.position_37,
+                "GRCh38Coordinates": str_item.position_38,
                 "RepeatedSequence": str_item.repeated_sequence,
                 "NormalRange": [str_item.normal_range.lower,
                                 str_item.normal_range.upper] if str_item.normal_range else None,
