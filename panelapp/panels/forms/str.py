@@ -152,6 +152,11 @@ class PanelSTRForm(forms.ModelForm):
             raise forms.ValidationError('Please select a mode of inheritance')
         return self.cleaned_data['moi']
 
+    def clean_repeated_sequence(self):
+        if len(set(self.cleaned_data['repeated_sequence']).difference({'A', 'T', 'C', 'G'})) > 0:
+            raise forms.ValidationError('Repeated sequence contains incorrect nucleotides')
+        return self.cleaned_data['repeated_sequence']
+
     def clean_name(self):
         """Check if gene exists in a panel if we add a new gene or change the gene"""
 

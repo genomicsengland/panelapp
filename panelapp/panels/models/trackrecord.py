@@ -29,6 +29,8 @@ class TrackRecord(TimeStampedModel):
         ("RemovedTag", "Removed Tag"),
         ("AddedTag", "Added Tag"),
         ("ChangedSTRName", "Changed STR Name"),
+        ("ChangedPosition37", "Changed GRCh37"),
+        ("ChangedPosition38", "Changed GRCh38"),
         ("ChangedNormalRange", "Changed Normal Range"),
         ("ChangedPrepathogenicRange", "Changed Pre-Pathogenic Range"),
         ("ChangedPathogenicRange", "Changed Pathogenic Range"),

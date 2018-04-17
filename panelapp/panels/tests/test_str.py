@@ -208,6 +208,7 @@ class STRTest(LoginGELUser):
         assert str_item.panel.panel.active_panel.version != str_item.panel.version
         new_current_number = new_str.panel.panel.active_panel.number_of_strs
         assert number_of_strs == new_current_number
+        self.assertEqual(str_data['position_37'], new_str.position_37)
 
     def test_edit_repeated_sequence(self):
         str_item = STRFactory()
@@ -253,6 +254,50 @@ class STRTest(LoginGELUser):
         assert res.status_code == 302
         new_str = GenePanel.objects.get(pk=str_item.panel.panel.pk).active_panel.get_str(str_item.name)
         assert new_str.repeated_sequence == 'ATATAT'
+
+    def test_edit_incorrect_repeated_sequence(self):
+        str_item = STRFactory()
+        url = reverse_lazy('panels:edit_entity', kwargs={
+            'pk': str_item.panel.panel.pk,
+            'entity_type': 'str',
+            'entity_name': str_item.name
+        })
+
+        number_of_strs = str_item.panel.number_of_strs
+
+        # make sure new data has at least 1 of the same items
+        source = str_item.evidence.last().name
+
+        publication = str_item.publications[0]
+        phenotype = str_item.publications[1]
+
+        new_evidence = Evidence.ALL_SOURCES[randint(0, 9)]
+        original_evidences = set([ev.name for ev in str_item.evidence.all()])
+        original_evidences.add(new_evidence)
+
+        str_data = {
+            'name': str_item.name,
+            'position_37': '1:12345',
+            'position_38': '1:12345',
+            'repeated_sequence': 'ABCD',
+            'normal_range_0': 1,
+            'normal_range_1': 2,
+            'prepathogenic_range_0': 1,
+            'prepathogenic_range_1': 2,
+            'pathogenic_range_0': 1,
+            'pathogenic_range_1': 2,
+            "gene": str_item.gene_core.pk,
+            "gene_name": "Gene name",
+            "source": set([source, new_evidence]),
+            "tags": [TagFactory().pk, ] + [tag.name for tag in str_item.tags.all()],
+            "publications": ";".join([publication, fake.sentence()]),
+            "phenotypes": ";".join([phenotype, fake.sentence(), fake.sentence()]),
+            "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)],
+            "penetrance": GenePanelEntrySnapshot.PENETRANCE.Incomplete,
+        }
+        res = self.client.post(url, str_data)
+        assert res.status_code == 200
+        assert res.content.find(b'Repeated sequence contains incorrect nucleotides') != -1
 
     def test_remove_gene_from_str(self):
         """We need ability to remove genes from STRs"""

@@ -1464,6 +1464,46 @@ class GenePanelSnapshot(TimeStampedModel):
                     str_name, str_data.get('name'), self
                 ))
 
+            position_37 = str_data.get('position_37')
+            if position_37 and position_37 != str_item.position_37:
+                logging.debug("GRCh37 position for {} was changed from {} to {} panel:{}".format(
+                    str_item.label, str_item.position_37, str_data.get('position_37'), self
+                ))
+
+                description = "GRCh37 position for {} was changed from {} to {}. Panel: {}".format(
+                    str_item.name,
+                    str_item.position_37,
+                    str_data.get('position_37'),
+                    self.panel.name
+                )
+
+                tracks.append((
+                    TrackRecord.ISSUE_TYPES.ChangedPosition37,
+                    description
+                ))
+
+                str_item.position_37 = str_data.get('position_37')
+
+            position_38 = str_data.get('position_38')
+            if position_38 and position_38 != str_item.position_38:
+                logging.debug("GRCh38 position for {} was changed from {} to {} panel:{}".format(
+                    str_item.label, str_item.position_38, str_data.get('position_38'), self
+                ))
+
+                description = "GRCh38 position for {} was changed from {} to {}. Panel: {}".format(
+                    str_item.name,
+                    str_item.position_38,
+                    str_data.get('position_38'),
+                    self.panel.name
+                )
+
+                tracks.append((
+                    TrackRecord.ISSUE_TYPES.ChangedPosition38,
+                    description
+                ))
+
+                str_item.position_38 = str_data.get('position_38')
+
             repeated_sequence = str_data.get('repeated_sequence')
             if repeated_sequence and repeated_sequence != str_item.repeated_sequence:
                 logging.debug("Repeated Sequence for {} was changed from {} to {} panel:{}".format(
@@ -1594,20 +1634,6 @@ class GenePanelSnapshot(TimeStampedModel):
                 )
                 tracks.append((
                     TrackRecord.ISSUE_TYPES.SetModeofInheritance,
-                    description
-                ))
-
-            mop = str_data.get('mode_of_pathogenicity')
-            if mop and str_item.mode_of_pathogenicity != mop:
-                logging.debug("Updating mop for {} in panel:{}".format(str_item.label, self))
-                str_item.mode_of_pathogenicity = mop
-
-                description = "Model of pathogenicity for {} was set to {}".format(
-                    str_item.label,
-                    mop
-                )
-                tracks.append((
-                    TrackRecord.ISSUE_TYPES.SetModeofPathogenicity,
                     description
                 ))
 
