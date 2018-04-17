@@ -219,8 +219,9 @@ class ComparePanelsView(FormView):
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
-        all = True if self.request.user.is_authenticated and self.request.user.reviewer.is_GEL() else False
-        kwargs['panels'] = GenePanelSnapshot.objects.get_active(all)
+        is_admin = True if self.request.user.is_authenticated and self.request.user.reviewer.is_GEL() else False
+        kwargs['panels'] = GenePanelSnapshot.objects.get_active(all=is_admin, internal=is_admin)
+
         return kwargs
 
     def get_context_data(self, *args, **kwargs):
@@ -272,8 +273,9 @@ class CompareGeneView(FormView):
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
-        all = True if self.request.user.is_authenticated and self.request.user.reviewer.is_GEL() else False
-        kwargs['panels'] = GenePanelSnapshot.objects.get_active(all)
+        is_admin = True if self.request.user.is_authenticated and self.request.user.reviewer.is_GEL() else False
+        kwargs['panels'] = GenePanelSnapshot.objects.get_active(all=is_admin, internal=is_admin)
+
         return kwargs
 
     def get_context_data(self, *args, **kwargs):

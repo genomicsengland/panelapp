@@ -46,7 +46,7 @@ class GenePanel(TimeStampedModel):
         self.save()
 
     def is_approved(self):
-        return self.status == GenePanel.STATUS.public
+        return self.status in [GenePanel.STATUS.public, GenePanel.STATUS.promoted]
 
     def is_public(self):
         return self.status in [GenePanel.STATUS.public, GenePanel.STATUS.promoted]

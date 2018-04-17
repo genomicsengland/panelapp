@@ -205,7 +205,7 @@ class GenePanelTest(LoginGELUser):
     def prepare_compare(self):
         gene = GeneFactory()
 
-        gps = GenePanelSnapshotFactory(panel__status=GenePanel.STATUS.public)
+        gps = GenePanelSnapshotFactory(panel__status=GenePanel.STATUS.internal)
         GenePanelEntrySnapshotFactory.create_batch(2, panel=gps)  # random genes
         GenePanelEntrySnapshotFactory.create(gene_core=gene, panel=gps)
 
