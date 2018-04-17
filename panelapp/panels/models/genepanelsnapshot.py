@@ -887,12 +887,22 @@ class GenePanelSnapshot(TimeStampedModel):
                     source.strip() for source in gene_data.get('sources')
                     if source not in evidences_names
                 ]
+
+                has_expert_review = any([evidence in Evidence.EXPERT_REVIEWS for evidence in add_evidences])
+
                 delete_evidences = [
                     source for source in evidences_names
-                    if source not in Evidence.EXPERT_REVIEWS and source not in gene_data.get('sources')
+                    if (has_expert_review or source not in Evidence.EXPERT_REVIEWS)
+                    and source not in gene_data.get('sources')
                 ]
 
-                if not append_only:
+                if append_only and has_expert_review:
+                    # just remove expert review
+                    expert_reviews = [source for source in evidences_names if source in Evidence.EXPERT_REVIEWS]
+                    for expert_review in expert_reviews:
+                        ev = gene.evidence.filter(name=expert_review).first()
+                        gene.evidence.remove(ev)
+                elif not append_only:
                     for source in delete_evidences:
                         ev = gene.evidence.filter(name=source).first()
                         gene.evidence.remove(ev)

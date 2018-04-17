@@ -8,6 +8,7 @@ from panels.models import GenePanel
 from panels.models import GenePanelEntrySnapshot
 from panels.tasks import email_panel_promoted
 from panels.tests.factories import GeneFactory
+from panels.tests.factories import EvidenceFactory
 from panels.tests.factories import GenePanelSnapshotFactory
 from panels.tests.factories import GenePanelEntrySnapshotFactory
 
@@ -283,6 +284,26 @@ class GenePanelTest(LoginGELUser):
         active_panel = gp.active_panel
         entries = active_panel.get_all_genes
         assert entries.count() == 2
+
+    def test_import_panel_sources(self):
+        gene = GeneFactory(gene_symbol="ABCC5-AS1")
+        GeneFactory(gene_symbol="A1CF")
+
+        gps = GenePanelSnapshotFactory()
+        gps.panel.name = "Panel One"
+        gps.panel.save()
+        evidence = EvidenceFactory.create(name="Expert Review Amber")
+        GenePanelEntrySnapshotFactory.create(gene_core=gene, panel=gps, evaluation=(None,), evidence=(evidence,))
+
+        file_path = os.path.join(os.path.dirname(__file__), 'import_panel_data.tsv')
+        test_panel_file = os.path.abspath(file_path)
+
+        with open(test_panel_file) as f:
+            url = reverse_lazy('panels:upload_panels')
+            self.client.post(url, {'panel_list': f})
+
+        ap = GenePanel.objects.get(name="Panel One").active_panel
+        assert ap.get_gene(gene.gene_symbol).evidence.first().name == "Expert Review Green"
 
     def test_import_wrong_panel(self):
         file_path = os.path.join(os.path.dirname(__file__), 'import_panel_data.tsv')

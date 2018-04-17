@@ -123,7 +123,8 @@ class GenePanelEntrySnapshotFactory(factory.django.DjangoModelFactory):
             evidences = EvidenceFactory.create_batch(4)
 
         for evidence in evidences:
-            self.evidence.add(evidence)
+            if evidence:
+                self.evidence.add(evidence)
 
 
 class STRFactory(factory.django.DjangoModelFactory):
@@ -168,4 +169,5 @@ class STRFactory(factory.django.DjangoModelFactory):
             evidences = EvidenceFactory.create_batch(4)
 
         for evidence in evidences:
-            self.evidence.add(evidence)
+            if evidence:
+                self.evidence.add(evidence)
