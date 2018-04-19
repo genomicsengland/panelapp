@@ -152,6 +152,24 @@ class GenePanelSnapshot(TimeStampedModel):
                 )
             ), distinct=True),
             number_of_strs=Count('str__pk', distinct=True),
+            number_of_ready_strs=Count(
+                Case(
+                    When(
+                        str__ready=True,
+                        then=models.F('str__pk')
+                    )
+                ),
+                distinct=True
+            ),
+            number_of_green_strs=Count(
+                Case(
+                    When(
+                        str__saved_gel_status__gte=3,
+                        then=models.F('str__pk')
+                    )
+                ),
+                distinct=True
+            ),
         )
 
     @property
