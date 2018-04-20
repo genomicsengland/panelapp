@@ -8,7 +8,7 @@ from panelapp.mixins import GELReviewerRequiredMixin
 
 
 class DownloadAllSTRs(GELReviewerRequiredMixin, View):
-    def gene_iterator(self):
+    def strs_iterator(self):
         yield (
             "Name",
             "Chromosome",
@@ -16,6 +16,7 @@ class DownloadAllSTRs(GELReviewerRequiredMixin, View):
             "Position GRCh37 end",
             "Position GRCh38 start",
             "Position GRCh38 end",
+            "Repeated sequence",
             "Normal repeats",
             "Pathogenic repeats",
             "Symbol",
@@ -31,8 +32,8 @@ class DownloadAllSTRs(GELReviewerRequiredMixin, View):
             "EnsemblId(GRch38)",
             "Biotype",
             "Phenotypes",
-            "GeneLocation((GRch37)",
-            "GeneLocation((GRch38)"
+            "GeneLocation(GRch37)",
+            "GeneLocation(GRch38)"
         )
 
         for gps in GenePanelSnapshot.objects.get_active(all=True, internal=True):
@@ -60,6 +61,7 @@ class DownloadAllSTRs(GELReviewerRequiredMixin, View):
                     entry.position_38.upper,
                     entry.normal_repeats,
                     entry.pathogenic_repeats,
+                    entry.repeated_sequence,
                     entry.gene.get('gene_symbol') if entry.gene else '-',
                     entry.panel.panel.pk,
                     entry.panel.level4title.name,
@@ -82,7 +84,7 @@ class DownloadAllSTRs(GELReviewerRequiredMixin, View):
         pseudo_buffer = EchoWriter()
         writer = csv.writer(pseudo_buffer, delimiter='\t')
 
-        response = StreamingHttpResponse((writer.writerow(row) for row in self.gene_iterator()),
+        response = StreamingHttpResponse((writer.writerow(row) for row in self.strs_iterator()),
                                          content_type='text/tab-separated-values')
         attachment = 'attachment; filename=All_strs_{}.tsv'.format(
             datetime.now().strftime('%Y%m%d-%H%M'))
