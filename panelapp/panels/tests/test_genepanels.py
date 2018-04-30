@@ -353,3 +353,18 @@ class GenePanelTest(LoginGELUser):
         gpes = GenePanelEntrySnapshotFactory()
         email_panel_promoted(gpes.panel.panel.pk)
         self.assertEqual(len(mail.outbox), 4)
+
+    def test_old_pk_redirect(self):
+        gpes = GenePanelEntrySnapshotFactory()
+        gpes.panel.panel.old_pk = fake.password(length=24, special_chars=False, upper_case=False)
+        gpes.panel.panel.save()
+
+        res = self.client.get(reverse_lazy('panels:old_code_url_redirect', args=(gpes.panel.panel.old_pk, '',)))
+        self.assertEqual(res.status_code, 301)
+        self.assertEqual(res.url, reverse_lazy('panels:detail', args=(gpes.panel.panel.pk,)))
+
+        res = self.client.get(reverse_lazy('panels:old_code_url_redirect', args=(
+            gpes.panel.panel.old_pk, 'gene/' + gpes.gene.get('gene_symbol'))))
+        self.assertEqual(res.status_code, 301)
+        self.assertEqual(res.url + '/', reverse_lazy('panels:evaluation', args=(
+            gpes.panel.panel.id, 'gene', gpes.gene.get('gene_symbol'))))
