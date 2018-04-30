@@ -47,7 +47,7 @@
                 Pathogenic Number of Repeats: {{ entity.pathogenic_repeats }}<br />
                 <br />
             {% endif %}
-            {{ entity.gene.gene_name }}<br />
+            {{ entity.gene.gene_symbol }} ({{ entity.gene.gene_name }})<br />
             {% if entity.gene.ensembl_genes %}
                 {% if entity.gene.ensembl_genes.GRch38.90  %}
                     EnsemblGeneIds (GRCh38):
@@ -63,11 +63,9 @@
             {% if entity.gene.omim_gene|length > 0 %}
               <a href="http://omim.org/entry/{{ entity.gene.omim_gene.0 }}" target="_blank">OMIM: {{ entity.gene.omim_gene.0 }}</a>, <a href=" http://www.ebi.ac.uk/gene2phenotype/gene2phenotype-webcode/cgi-bin/handler.cgi?panel=ALL&search_term={{ entity.gene.gene_symbol }}" target="_blank">Gene2Phenotype</a><br />
             {% endif %}
-            {% if entity.is_gene %}
             {% with shared_panels=sharing_panels %}
-            {{ entity.gene.gene_symbol }} is in <a href="{% url 'panels:gene_detail' entity.gene.gene_symbol %}">{{ shared_panels|length }} panel{{ shared_panels|pluralize }}</a>
+            {% if entity.is_gene %}{{ entity.gene.gene_symbol }}{% else %}{{ entity.name }}{% endif %} is in <a href="{% url 'panels:gene_detail' entity.gene.gene_symbol %}">{{ shared_panels|length }} panel{{ shared_panels|pluralize }}</a>
             {% endwith %}
-            {% endif %}
         </p>
 
         <div data-module="tab-switcher" data-default-tab="evaluate">

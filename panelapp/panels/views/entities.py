@@ -63,7 +63,6 @@ class GenePanelSpanshotView(EntityMixin, DetailView):
     context_object_name = 'entity'
 
     def get_context_data_gene(self, ctx):
-        ctx['sharing_panels'] = GenePanelSnapshot.objects.get_gene_panels(self.kwargs['entity_name'])
         form_initial = {}
         if self.request.user.is_authenticated:
             user_review = self.object.review_by_user(self.request.user)
@@ -162,6 +161,19 @@ class GenePanelSpanshotView(EntityMixin, DetailView):
         ctx['panel'] = self.panel
         ctx['entity_type'] = self.kwargs['entity_type']
         ctx['entity_name'] = self.kwargs['entity_name']
+
+        is_admin = self.request.user.is_authenticated and self.request.user.reviewer.is_GEL()
+
+        # check if STR has a linked Gene
+        if self.is_gene() or (self.object.gene and self.object.gene.get('gene_symbol')):
+            ctx['sharing_panels'] = GenePanelSnapshot.objects.get_shared_panels(
+                self.object.gene.get('gene_symbol'),
+                all=is_admin,
+                internal=is_admin
+            )
+        else:
+            ctx['sharing_panels'] = []
+
         ctx['panel_genes'] = list(self.panel.get_all_genes_extra)
         ctx['panel_strs'] = list(self.panel.get_all_strs_extra)
 

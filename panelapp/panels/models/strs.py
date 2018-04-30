@@ -40,7 +40,7 @@ class STRManager(models.Manager):
             .values_list('panel__pk', flat=True)\
             .order_by('panel__panel__pk', '-panel__major_version', '-panel__minor_version')
 
-    def get_active(self, deleted=False, name=None, pks=None):
+    def get_active(self, deleted=False, name=None, gene_symbol=None, pks=None):
         """Get active STRs"""
 
         if pks:
@@ -49,6 +49,8 @@ class STRManager(models.Manager):
             qs = super().get_queryset().filter(panel__pk__in=Subquery(self.get_latest_ids(deleted)))
         if name:
             qs = qs.filter(name=name)
+        if gene_symbol:
+            qs = qs.filter(gene__gene_symbol=gene_symbol)
 
         return qs.annotate(
                 number_of_reviewers=Count('evaluation__user', distinct=True),
@@ -62,6 +64,11 @@ class STRManager(models.Manager):
         """Get panels for the specified STR name"""
 
         return self.get_active(deleted=deleted, name=name, pks=pks)
+
+    def get_str_gene_panels(self, gene_symbol, deleted=False, pks=None):
+        """Get panels for the specified STR name"""
+
+        return self.get_active(deleted=deleted, gene_symbol=gene_symbol, pks=pks)
 
 
 class STR(AbstractEntity, TimeStampedModel):

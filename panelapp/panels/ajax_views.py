@@ -53,6 +53,10 @@ class BaseAjaxGeneMixin:
     def panel(self):
         return GenePanel.objects.get(pk=self.kwargs['pk']).active_panel
 
+    @property
+    def is_admin(self):
+        return self.request.user.is_authenticated and self.request.user.reviewer.is_GEL()
+
 
 class GeneClearDataAjaxMixin(BaseAjaxGeneMixin, EntityMixin):
     """Mixin for clearing various elements of an entity, for example sources, phenotypes, etc"""
@@ -67,10 +71,19 @@ class GeneClearDataAjaxMixin(BaseAjaxGeneMixin, EntityMixin):
             'entity_type': self.kwargs['entity_type'],
             'entity_name': self.kwargs['entity_name'],
         }
+
+        if self.is_gene() or (self.object.gene and self.object.gene.get('gene_symbol')):
+            ctx['sharing_panels'] = GenePanelSnapshot.objects.get_shared_panels(
+                self.object.gene.get('gene_symbol'),
+                all=self.is_admin,
+                internal=self.is_admin
+            )
+        else:
+            ctx['sharing_panels'] = []
+
         if self.is_gene():
             ctx.update({
                 'panel': self.panel,
-                'sharing_panels': GenePanelSnapshot.objects.get_gene_panels(self.kwargs['entity_name']),
                 'form_edit': PanelGeneForm(
                     instance=self.object,
                     initial=self.object.get_form_initial(),
@@ -264,6 +277,15 @@ class UpdateEvaluationsMixin(VerifiedReviewerRequiredMixin, BaseAjaxGeneMixin, E
             'panel_genes': list(self.panel.get_all_genes_extra)
         }
 
+        if self.is_gene() or (self.object.gene and self.object.gene.get('gene_symbol')):
+            ctx['sharing_panels'] = GenePanelSnapshot.objects.get_shared_panels(
+                self.object.gene.get('gene_symbol'),
+                all=self.is_admin,
+                internal=self.is_admin
+            )
+        else:
+            ctx['sharing_panels'] = []
+
         if self.is_gene():
             ctx['feedback_review_parts'] = [
                 'Rating',
@@ -283,8 +305,6 @@ class UpdateEvaluationsMixin(VerifiedReviewerRequiredMixin, BaseAjaxGeneMixin, E
                 initial={},
                 request=self.request,
             )
-
-            ctx['sharing_panels'] = GenePanelSnapshot.objects.get_gene_panels(self.kwargs['entity_name'])
 
             ctx['form'] = GeneReviewForm(
                 panel=self.panel,
