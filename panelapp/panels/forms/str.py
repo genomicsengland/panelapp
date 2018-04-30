@@ -49,9 +49,8 @@ class PanelSTRForm(forms.ModelForm):
         )
     )
 
-    normal_range = IntegerRangeField(required=False)
-    prepathogenic_range = IntegerRangeField(required=False)
-    pathogenic_range = IntegerRangeField(require_all_fields=True, required=True)
+    position_37 = IntegerRangeField(require_all_fields=True, required=True)
+    position_38 = IntegerRangeField(require_all_fields=True, required=True)
 
     gene_name = forms.CharField(required=False)
 
@@ -82,21 +81,21 @@ class PanelSTRForm(forms.ModelForm):
         required=False
     )
     current_diagnostic = forms.BooleanField(required=False)
-    clinically_relevant = forms.BooleanField(required=False, help_text="Interruptions in the normal alleles are"
-                                                                       " reported as part of standard"
-                                                                       " diagnostic practice")
+    clinically_relevant = forms.BooleanField(required=False, help_text="Interruptions in the repeated sequence are " +
+                                                                       "reported as part of standard diagnostic " +
+                                                                       "practise")
     comments = forms.CharField(widget=forms.Textarea, required=False)
 
     class Meta:
         model = STR
         fields = (
             'name',
+            'chromosome',
             'position_37',
             'position_38',
             'repeated_sequence',
-            'normal_range',
-            'prepathogenic_range',
-            'pathogenic_range',
+            'normal_repeats',
+            'pathogenic_repeats',
             'moi',
             'penetrance',
             'publications',
@@ -112,18 +111,16 @@ class PanelSTRForm(forms.ModelForm):
 
         self.fields = OrderedDict()
         self.fields['name'] = original_fields.get('name')
+        self.fields['chromosome'] = original_fields.get('chromosome')
         self.fields['position_37'] = original_fields.get('position_37')
+        self.fields['position_37'].widget.widgets[0].attrs = {'placeholder': 'Position start (GRCh37)'}
+        self.fields['position_37'].widget.widgets[1].attrs = {'placeholder': 'Position end (GRCh37)'}
         self.fields['position_38'] = original_fields.get('position_38')
+        self.fields['position_38'].widget.widgets[0].attrs = {'placeholder': 'Position start (GRCh38)'}
+        self.fields['position_38'].widget.widgets[1].attrs = {'placeholder': 'Position end (GRCh38)'}
         self.fields['repeated_sequence'] = original_fields.get('repeated_sequence')
-        self.fields['normal_range'] = original_fields.get('normal_range')
-        self.fields['normal_range'].widget.widgets[0].attrs = {'placeholder': 'Normal range from'}
-        self.fields['normal_range'].widget.widgets[1].attrs = {'placeholder': 'Normal range to'}
-        self.fields['prepathogenic_range'] = original_fields.get('prepathogenic_range')
-        self.fields['prepathogenic_range'].widget.widgets[0].attrs = {'placeholder': 'Pre pathogenic range from'}
-        self.fields['prepathogenic_range'].widget.widgets[1].attrs = {'placeholder': 'Pre pathogenic range to'}
-        self.fields['pathogenic_range'] = original_fields.get('pathogenic_range')
-        self.fields['pathogenic_range'].widget.widgets[0].attrs = {'placeholder': 'Pathogenic range from'}
-        self.fields['pathogenic_range'].widget.widgets[1].attrs = {'placeholder': 'Pathogenic range to'}
+        self.fields['normal_repeats'] = original_fields.get('normal_repeats')
+        self.fields['pathogenic_repeats'] = original_fields.get('pathogenic_repeats')
         self.fields['gene'] = original_fields.get('gene')
         if self.instance.pk:
             self.fields['gene_name'] = original_fields.get('gene_name')

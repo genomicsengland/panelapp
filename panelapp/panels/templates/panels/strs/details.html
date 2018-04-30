@@ -11,19 +11,18 @@
             {% endif %}
             <dt>Name</dt>
             <dd>{{ entity.name }}</dd>
-            <dt>Positions</dt>
-            <dd>GRCh37 {{ entity.position_37 }}</dd>
-            <dd>GRCh38 {{ entity.position_38 }}</dd>
+            <dt>Chromosome</dt>
+            <dd>{{ entity.chromosome }}</dd>
+            <dt>GRCh37 Coordinates</dt>
+            <dd>{{ entity.position_37.lower }}-{{ entity.position_37.upper }}</dd>
+            <dt>GRCh38 Coordinates</dt>
+            <dd>{{ entity.position_38.lower }}-{{ entity.position_38.upper }}</dd>
             <dt>Repeated Sequence</dt>
             <dd>{{ entity.repeated_sequence }}</dd>
-            {% if entity.normal_range %}
-            <dt>Normal Range</dt>
-            <dd>{{ entity.normal_range.lower }}-{{ entity.normal_range.upper }}</dd>
-            {% endif %}
-            <dt>Pre-Pathogenic Range</dt>
-            <dd>{{ entity.prepathogenic_range.lower }}-{{ entity.prepathogenic_range.upper }}</dd>
-            <dt>Pathogenic Range</dt>
-            <dd>{{ entity.pathogenic_range.lower }}-{{ entity.pathogenic_range.upper }}</dd>
+            <dt>Normal Repeats</dt>
+            <dd>{{ entity.normal_repeats }}</dd>
+            <dt>Pathogenic Repeats</dt>
+            <dd>{{ entity.pathogenic_repeats }}</dd>
             {% if entity.moi %}
             <dt>Mode of Inheritance</dt>
             <dd>{{ entity.moi }}</dd>
@@ -127,7 +126,11 @@
                 {{ field.label_tag }}
             {% endif %}
 
-            {% bootstrap_field field show_label=False %}
+            {% if field.help_text %}
+                <div class="text-muted">{{ field.help_text }}</div>
+            {% endif %}
+
+            {% bootstrap_field field show_label=False show_help=False %}
           </div>
         {% endfor %}
         <a href="{{ entity.get_absolute_url }}" class="btn btn-default">Cancel</a>

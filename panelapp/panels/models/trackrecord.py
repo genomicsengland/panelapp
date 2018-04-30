@@ -29,11 +29,11 @@ class TrackRecord(TimeStampedModel):
         ("RemovedTag", "Removed Tag"),
         ("AddedTag", "Added Tag"),
         ("ChangedSTRName", "Changed STR Name"),
+        ("ChangedChromosome", "Changed Chromosome"),
         ("ChangedPosition37", "Changed GRCh37"),
         ("ChangedPosition38", "Changed GRCh38"),
-        ("ChangedNormalRange", "Changed Normal Range"),
-        ("ChangedPrepathogenicRange", "Changed Pre-Pathogenic Range"),
-        ("ChangedPathogenicRange", "Changed Pathogenic Range"),
+        ("ChangedNormalRepeats", "Changed Normal Number of Repeats"),
+        ("ChangedPathogenicRepeats", "Changed Pathogenic Number of Repeats"),
         ("RemovedGene", "Removed Gene from the STR"),
         ("ChangedRepeatedSequence", "Changed Repeated Sequence")
     )

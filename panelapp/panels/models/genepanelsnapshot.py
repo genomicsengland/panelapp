@@ -1245,12 +1245,12 @@ class GenePanelSnapshot(TimeStampedModel):
 
         str_item = self.cached_strs.model(
             name=str_name,
+            chromosome=str_data.get('chromosome'),
             position_37=str_data.get('position_37'),
             position_38=str_data.get('position_38'),
-            normal_range=str_data.get('normal_range'),
+            normal_repeats=str_data.get('normal_repeats'),
             repeated_sequence=str_data.get('repeated_sequence'),
-            prepathogenic_range=str_data.get('prepathogenic_range'),
-            pathogenic_range=str_data.get('pathogenic_range'),
+            pathogenic_repeats=str_data.get('pathogenic_repeats'),
             panel=self,
             moi=str_data.get('moi'),
             penetrance=str_data.get('penetrance'),
@@ -1474,16 +1474,46 @@ class GenePanelSnapshot(TimeStampedModel):
                     str_name, str_data.get('name'), self
                 ))
 
-            position_37 = str_data.get('position_37')
-            if position_37 and position_37 != str_item.position_37:
-                logging.debug("GRCh37 position for {} was changed from {} to {} panel:{}".format(
-                    str_item.label, str_item.position_37, str_data.get('position_37'), self
+            chromosome = str_data.get('chromosome')
+            if chromosome and chromosome != str_item.chromosome:
+                logging.debug("Chromosome for {} was changed from {} to {} panel:{}".format(
+                    str_item.label,
+                    str_item.chromosome,
+                    str_data.get('chromosome'),
+                    self
                 ))
 
-                description = "GRCh37 position for {} was changed from {} to {}. Panel: {}".format(
+                description = "Chromosome for {} was changed from {} to {}. Panel: {}".format(
                     str_item.name,
-                    str_item.position_37,
-                    str_data.get('position_37'),
+                    str_item.chromosome,
+                    str_data.get('chromosome'),
+                    self.panel.name
+                )
+
+                tracks.append((
+                    TrackRecord.ISSUE_TYPES.ChangedChromosome,
+                    description
+                ))
+
+                str_item.chromosome = str_data.get('chromosome')
+
+            position_37 = str_data.get('position_37')
+            if position_37 and position_37 != str_item.position_37:
+                logging.debug("GRCh37 position for {} was changed from {}-{} to {}-{} panel:{}".format(
+                    str_item.label,
+                    str_item.position_37.lower,
+                    str_item.position_37.upper,
+                    str_data.get('position_37').lower,
+                    str_data.get('position_37').upper,
+                    self
+                ))
+
+                description = "GRCh37 position for {} was changed from {}-{} to {}-{}. Panel: {}".format(
+                    str_item.name,
+                    str_item.position_37.lower,
+                    str_item.position_37.upper,
+                    str_data.get('position_37').lower,
+                    str_data.get('position_37').upper,
                     self.panel.name
                 )
 
@@ -1500,10 +1530,12 @@ class GenePanelSnapshot(TimeStampedModel):
                     str_item.label, str_item.position_38, str_data.get('position_38'), self
                 ))
 
-                description = "GRCh38 position for {} was changed from {} to {}. Panel: {}".format(
+                description = "GRCh38 position for {} was changed from {}-{} to {}-{}. Panel: {}".format(
                     str_item.name,
-                    str_item.position_38,
-                    str_data.get('position_38'),
+                    str_item.position_38.lower,
+                    str_item.position_38.upper,
+                    str_data.get('position_38').lower,
+                    str_data.get('position_38').upper,
                     self.panel.name
                 )
 
@@ -1534,65 +1566,45 @@ class GenePanelSnapshot(TimeStampedModel):
 
                 str_item.repeated_sequence = str_data.get('repeated_sequence')
 
-            normal_range = str_data.get('normal_range')
-            if normal_range and normal_range != str_item.normal_range:
-                logging.debug("Normal Range for {} was changed from {} to {} panel:{}".format(
-                    str_item.label, str_item.normal_range, str_data.get('normal_range'), self
+            normal_repeats = str_data.get('normal_repeats')
+            if normal_repeats and normal_repeats != str_item.normal_repeats:
+                logging.debug("Normal Number of Repeats for {} was changed from {} to {} panel:{}".format(
+                    str_item.label, str_item.normal_repeats, str_data.get('normal_repeats'), self
                 ))
 
-                description = "Normal range for {} was changed from {} to {}. Panel: {}".format(
+                description = "Normal Number of Repeats for {} was changed from {} to {}. Panel: {}".format(
                     str_item.name,
-                    str_item.normal_range,
-                    str_data.get('normal_range'),
+                    str_item.normal_repeats,
+                    str_data.get('normal_repeats'),
                     self.panel.name
                 )
 
                 tracks.append((
-                    TrackRecord.ISSUE_TYPES.ChangedNormalRange,
+                    TrackRecord.ISSUE_TYPES.ChangedNormalRepeats,
                     description
                 ))
 
-                str_item.normal_range = str_data.get('normal_range')
+                str_item.normal_repeats = str_data.get('normal_repeats')
 
-            prepathogenic_range = str_data.get('prepathogenic_range')
-            if prepathogenic_range and prepathogenic_range != str_item.prepathogenic_range:
-                logging.debug("Pre-pathogenic Range for {} was changed from {} to {} panel:{}".format(
-                    str_item.label, str_item.prepathogenic_range, str_data.get('prepathogenic_range'), self
+            pathogenic_repeats = str_data.get('pathogenic_repeats')
+            if pathogenic_repeats and pathogenic_repeats != str_item.pathogenic_repeats:
+                logging.debug("Pathogenic Number of Repeats for {} was changed from {} to {} panel:{}".format(
+                    str_item.label, str_item.pathogenic_repeats, str_data.get('pathogenic_repeats'), self
                 ))
 
-                description = "Pre-Pathogenic range for {} was changed from {} to {}. Panel: {}".format(
+                description = "Pathogenic Number of Repeats for {} was changed from {} to {}. Panel: {}".format(
                     str_item.name,
-                    str_item.prepathogenic_range,
-                    str_data.get('prepathogenic_range'),
+                    str_item.pathogenic_repeats,
+                    str_data.get('pathogenic_repeats'),
                     self.panel.name
                 )
 
                 tracks.append((
-                    TrackRecord.ISSUE_TYPES.ChangedPrepathogenicRange,
+                    TrackRecord.ISSUE_TYPES.ChangedPathogenicRepeats,
                     description
                 ))
 
-                str_item.prepathogenic_range = str_data.get('prepathogenic_range')
-
-            pathogenic_range = str_data.get('pathogenic_range')
-            if pathogenic_range and pathogenic_range != str_item.pathogenic_range:
-                logging.debug("Pathogenic Range for {} was changed from {} to {} panel:{}".format(
-                    str_item.label, str_item.pathogenic_range, str_data.get('pathogenic_range'), self
-                ))
-
-                description = "Pathogenic range for {} was changed from {} to {}. Panel: {}".format(
-                    str_item.name,
-                    str_item.pathogenic_range,
-                    str_data.get('pathogenic_range'),
-                    self.panel.name
-                )
-
-                tracks.append((
-                    TrackRecord.ISSUE_TYPES.ChangedPathogenicRange,
-                    description
-                ))
-
-                str_item.pathogenic_range = str_data.get('pathogenic_range')
+                str_item.pathogenic_repeats = str_data.get('pathogenic_repeats')
 
             evidences_names = [ev.strip() for ev in str_item.evidence.values_list('name', flat=True)]
 

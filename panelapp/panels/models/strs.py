@@ -67,6 +67,13 @@ class STRManager(models.Manager):
 class STR(AbstractEntity, TimeStampedModel):
     """Short Tandem Repeat (STR) Entity"""
 
+    CHROMOSOMES = [
+        ('0', '0'),  ('1', '1'), ('2', '2'), ('3', '3'), ('4', '4'), ('5', '5'), ('6', '6'), ('7', '7'),
+        ('8', '8'), ('9', '9'), ('10', '10'), ('11', '11'), ('12', '12'), ('13', '13'), ('14', '14'),
+        ('15', '15'), ('16', '16'), ('17', '17'), ('18', '18'), ('19', '19'), ('20', '20'), ('21', '21'),
+        ('22', '22'), ('X', 'X'), ('Y', 'Y')
+    ]
+
     class Meta:
         get_latest_by = "created"
         ordering = ['-saved_gel_status', ]
@@ -80,11 +87,12 @@ class STR(AbstractEntity, TimeStampedModel):
 
     name = models.CharField(max_length=128)
     repeated_sequence = models.CharField(max_length=128)
-    position_37 = models.CharField(max_length=32, help_text="Chr:Start Position (GRCh37)")
-    position_38 = models.CharField(max_length=32, help_text="Chr:Start Position (GRCh38)")
-    normal_range = IntegerRangeField(blank=True, null=True)
-    prepathogenic_range = IntegerRangeField(blank=True, null=True)
-    pathogenic_range = IntegerRangeField()
+    chromosome = models.CharField(max_length=8, choices=CHROMOSOMES)
+    position_37 = IntegerRangeField()
+    position_38 = IntegerRangeField()
+    normal_repeats = models.IntegerField(help_text="=< Maximum normal number of repeats", verbose_name="Normal")
+    pathogenic_repeats = models.IntegerField(help_text=">= Minimum fully penetrant pathogenic number of repeats",
+                                             verbose_name="Pathogenic")
 
     gene = JSONField(encoder=DjangoJSONEncoder, blank=True, null=True)  # copy data from Gene.dict_tr
     gene_core = models.ForeignKey(Gene, blank=True, null=True)  # reference to the original Gene
@@ -131,12 +139,12 @@ class STR(AbstractEntity, TimeStampedModel):
     def dict_tr(self):
         return {
             "name": self.name,
-            "position_37": self.position_37,
-            "position_38": self.position_38,
+            "chromosome": self.chromosome,
+            "position_37": (self.position_37.lower, self.position_37.upper),
+            "position_38": (self.position_38.lower, self.position_38.upper),
             "repeated_sequence": self.repeated_sequence,
-            "normal_range": (self.normal_range.lower, self.normal_range.upper),
-            "prepathogenic_range": (self.prepathogenic_range.lower, self.prepathogenic_range.upper),
-            "pathogenic_range": (self.pathogenic_range.lower, self.pathogenic_range.upper),
+            "normal_repeats": self.normal_repeats,
+            "pathogenic_repeats": self.pathogenic_repeats,
             "gene": self.gene,
             "evidence": [evidence.dict_tr() for evidence in self.evidence.all()],
             "evaluation": [evaluation.dict_tr() for evaluation in self.evaluation.all()],
@@ -156,12 +164,12 @@ class STR(AbstractEntity, TimeStampedModel):
 
         return {
             "name": self.name,
+            "chromosome": self.chromosome,
             "position_37": self.position_37,
             "position_38": self.position_38,
             "repeated_sequence": self.repeated_sequence,
-            "normal_range": self.normal_range,
-            "prepathogenic_range": self.prepathogenic_range,
-            "pathogenic_range": self.pathogenic_range,
+            "normal_repeats": self.normal_repeats,
+            "pathogenic_repeats": self.pathogenic_repeats,
             "gene": self.gene_core,
             "gene_json": self.gene,
             "gene_name": self.gene.get('gene_name') if self.gene else None,

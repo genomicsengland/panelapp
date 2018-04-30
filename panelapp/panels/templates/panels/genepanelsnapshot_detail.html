@@ -39,18 +39,12 @@
         <hr />
         <p class="lead">
             {% if entity.is_str %}
-                GRCh37 Position (Chr:Position): {{ entity.position_37 }}<br />
-                GRCh38 Position (Chr:Position): {{ entity.position_38 }}<br />
+                Chromosome: {{ entity.chromosome }}<br />
+                GRCh37 Position: {{ entity.position_37.lower }}-{{ entity.position_37.upper }}<br />
+                GRCh38 Position: {{ entity.position_38.lower }}-{{ entity.position_38.upper }}<br />
                 Repeated Sequence: {{ entity.repeated_sequence }}<br />
-                {% if entity.normal_range %}
-                    Normal Range: {{ entity.normal_range.lower }}-{{ entity.normal_range.upper }}<br />
-                {% endif %}
-                {% if entity.prepathogenic_range %}
-                    Pre-pathogenic Range: {{ entity.prepathogenic_range.lower }}-{{ entity.prepathogenic_range.upper }}<br />
-                {% endif %}
-                {% if entity.pathogenic_range %}
-                    Pathogenic Range: {{ entity.pathogenic_range.lower }}-{{ entity.pathogenic_range.upper }}<br />
-                {% endif %}
+                Normal Number of Repeats: {{ entity.normal_repeats }}<br />
+                Pathogenic Number of Repeats: {{ entity.pathogenic_repeats }}<br />
                 <br />
             {% endif %}
             {{ entity.gene.gene_name }}<br />

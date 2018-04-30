@@ -55,7 +55,7 @@ class Evaluation(TimeStampedModel):
     current_diagnostic = models.BooleanField(default=False, blank=True)
     clinically_relevant = models.NullBooleanField(
         default=False, blank=True, null=True,
-        help_text="Interruptions in the normal alleles are reported as part of standard diagnostic practice")
+        help_text="Interruptions in the repeated sequence are reported as part of standard diagnostic practise")
     version = models.CharField(null=True, blank=True, max_length=255)
     comments = models.ManyToManyField(Comment)
 
