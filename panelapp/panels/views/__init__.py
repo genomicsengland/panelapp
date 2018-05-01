@@ -9,6 +9,7 @@ from .panels import GenePanelView
 from .panels import PanelsIndexView
 from .panels import UpdatePanelView
 from .panels import PromotePanelView
+from .panels import OldCodeURLRedirect
 from .genes import GeneDetailView
 from .genes import GeneListView
 from .genes import DownloadPanelTSVView

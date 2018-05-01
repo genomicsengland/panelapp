@@ -8,8 +8,10 @@ from django.views.generic import DetailView
 from django.views.generic import UpdateView
 from django.views.generic import TemplateView
 from django.views.generic import FormView
+from django.views.generic import RedirectView
 from django.views.generic.base import View
 from django.shortcuts import redirect
+from django.shortcuts import get_object_or_404
 from django.utils.functional import cached_property
 from django.urls import reverse_lazy
 from django.urls import reverse
@@ -259,3 +261,13 @@ class DownloadAllPanels(GELReviewerRequiredMixin, View):
         response['Content-Disposition'] = attachment
         return response
 
+
+class OldCodeURLRedirect(RedirectView):
+    """Redirect old code URLs to the new pks"""
+
+    permanent = True
+
+    def dispatch(self, request, *args, **kwargs):
+        panel = get_object_or_404(GenePanel, old_pk=kwargs.get('pk'))
+        self.url = reverse('panels:detail', args=(panel.id,)) + kwargs.get('uri', '')
+        return super().dispatch(request, *args, **kwargs)

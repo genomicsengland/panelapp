@@ -28,6 +28,7 @@ from .views import DownloadAllPanels
 from .views import ActivityListView
 from .views import DownloadAllSTRs
 from .views import RedirectGenesToEntities
+from .views import OldCodeURLRedirect
 from .ajax_views import ClearPublicationsAjaxView
 from .ajax_views import ClearPhoenotypesAjaxView
 from .ajax_views import ClearModeOfPathogenicityAjaxView
@@ -116,6 +117,7 @@ urlpatterns = [
         DeleteEntityCommentAjaxView.as_view(), name="delete_comment_by_user"),
 
     url(r'^(?P<pk>[0-9]+)/mark_not_ready$'.format(entity_regex), PanelMarkNotReadyView.as_view(), name="mark_not_ready"),
+    url(r'^(?P<pk>[a-z0-9]{24})/(?P<uri>.*|$)', OldCodeURLRedirect.as_view(), name="old_code_url_redirect"),
     url(r'^create/', CreatePanelView.as_view(), name="create"),
 
     url(r'^genes/$', GeneListView.as_view(), name="gene_list"),
