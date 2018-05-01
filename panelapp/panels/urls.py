@@ -1,12 +1,13 @@
 from django.conf.urls import url
 
+from django.views.generic import RedirectView
 from .views import AdminView
 from .views import AdminUploadGenesView
 from .views import AdminUploadPanelsView
 from .views import AdminUploadReviewsView
-from .views import GeneListView
+from .views import EntitiesListView
 from .views import CreatePanelView
-from .views import GeneDetailView
+from .views import EntityDetailView
 from .views import GenePanelView
 from .views import PanelsIndexView
 from .views import UpdatePanelView
@@ -27,6 +28,7 @@ from .views import DownloadAllGenes
 from .views import DownloadAllPanels
 from .views import ActivityListView
 from .views import DownloadAllSTRs
+from .views import GeneDetailRedirectView
 from .views import RedirectGenesToEntities
 from .views import OldCodeURLRedirect
 from .ajax_views import ClearPublicationsAjaxView
@@ -120,8 +122,10 @@ urlpatterns = [
     url(r'^(?P<pk>[a-z0-9]{24})/(?P<uri>.*|$)', OldCodeURLRedirect.as_view(), name="old_code_url_redirect"),
     url(r'^create/', CreatePanelView.as_view(), name="create"),
 
-    url(r'^genes/$', GeneListView.as_view(), name="gene_list"),
-    url(r'^genes/(?P<slug>{})$'.format(entity_regex), GeneDetailView.as_view(), name="gene_detail"),
+    url(r'^entities/$', EntitiesListView.as_view(), name="entities_list"),
+    url(r'^genes/$', RedirectView.as_view(url='/panels/entities'), name="genes_list"),
+    url(r'^entities/(?P<slug>{})$'.format(entity_regex), EntityDetailView.as_view(), name="entity_detail"),
+    url(r'^genes/(?P<slug>{})$'.format(entity_regex), GeneDetailRedirectView.as_view()),
 
     url(r'^activity/$', ActivityListView.as_view(), name="activity"),
 

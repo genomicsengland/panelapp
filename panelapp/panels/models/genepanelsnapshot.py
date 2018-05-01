@@ -68,9 +68,23 @@ class GenePanelSnapshotManager(models.Manager):
         return self.get_active(all, deleted, internal)
 
     def get_gene_panels(self, gene_symbol, all=False, internal=False):
-        """Get all panels for a specific gene"""
+        """Get all panels for a specific gene in Gene entities"""
 
         return self.get_active_annotated(all=all, internal=internal).filter(genepanelentrysnapshot__gene__gene_symbol=gene_symbol)
+
+    def get_strs_panels(self, gene_symbol, all=False, internal=False):
+        """Get all panels for a specific gene in STR entities"""
+
+        return self.get_active_annotated(all=all, internal=internal).filter(strs_gene__gene_symbol=gene_symbol)
+
+    def get_shared_panels(self, gene_symbol, all=False, internal=False):
+        """Get all panels for a specific gene"""
+
+        return self.get_active_annotated(all=all, internal=internal)\
+                   .filter(
+                        Q(str__gene__gene_symbol=gene_symbol) |
+                        Q(genepanelentrysnapshot__gene__gene_symbol=gene_symbol)
+                   ).distinct('panel__name')
 
 
 class GenePanelSnapshot(TimeStampedModel):

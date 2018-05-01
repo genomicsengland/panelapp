@@ -8,16 +8,18 @@
 
 {% block content %}
 <ol class="breadcrumb">
-  <li><a href="{% url 'panels:gene_list' %}">Genes</a></li>
+  <li><a href="{% url 'panels:entities_list' %}">Genes</a></li>
   <li class="active">{{ gene_symbol }}</li>
 </ol>
 <h1>
   {% block title %}{{ gene_symbol }}{% endblock %}
 </h1>
 
+{% if gene.gene_name %}
 <p class="lead">
   {{ gene.gene_name }}<br />{% if gene.omim_gene|length > 0 %}<a href="http://omim.org/entry/{{ gene.omim_gene.0 }}" target="_blank">OMIM: {{ gene.omim_gene.0 }}</a>, {% endif %}<a href="https://www.ebi.ac.uk/gene2phenotype/search?panel=ALL&search_term={{ gene.gene_symbol }}" target="_blank">Gene2Phenotype</a>
 </p>
+{% endif %}
 
 {% if entries|length > 0 %}
   <h2>
@@ -87,9 +89,16 @@
                   <h4 class="remove-top-margin" title="Level 4 title">
                     <span style="font-size: 16px" class="gel-banner {{ entry|gene_list_class }}" title="{{ entry|gene_list_name }}">
                       {{ entry|gene_list_short_name }}
-                    </span> <a href="{% url 'panels:evaluation' entry.panel.panel.id 'gene' entry.gene.gene_symbol %}" class="link-inherit gel-text {{ entry|gene_list_class }} js-open-on-submit">{{ entry.gene.gene_symbol }}</a> in <a href="{% url 'panels:detail' entry.panel.panel.id %}" class="js-open-on-submit">
+                    </span>
+                    {% if entry.is_str %}
+                      <a href="{% url 'panels:evaluation' entry.panel.panel.id 'str' entry.name %}" class="link-inherit gel-text {{ entry|gene_list_class }} js-open-on-submit">{{ entry.name }}</a> <span class="gel-banner gel-added" style="font-size:16px;">STR</span> in <a href="{% url 'panels:detail' entry.panel.panel.id %}" class="js-open-on-submit">
+                        {{ entry.panel.level4title.name }}
+                      </a>
+                    {% else %}
+                    <a href="{% url 'panels:evaluation' entry.panel.panel.id 'gene' entry.gene.gene_symbol %}" class="link-inherit gel-text {{ entry|gene_list_class }} js-open-on-submit">{{ entry.gene.gene_symbol }}</a> in <a href="{% url 'panels:detail' entry.panel.panel.id %}" class="js-open-on-submit">
                       {{ entry.panel.level4title.name }}
                     </a>
+                    {% endif %}
                   </h4>
 
                   <p>

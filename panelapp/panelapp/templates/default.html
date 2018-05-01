@@ -28,7 +28,7 @@
     <div class="collapse navbar-collapse" id="navbar">
       <ul class="nav navbar-nav">
         <li><a href="{% url 'panels:index' %}">Panels</a></li>
-        <li><a href="{% url 'panels:gene_list' %}">Genes</a></li>
+        <li><a href="{% url 'panels:entities_list' %}">Entities</a></li>
         <li><a href="{% url 'panels:activity' %}">Activity</a></li>
         {% if request.user.is_authenticated and request.user.reviewer.is_GEL %}
         <li><a href="{% url 'panels:create' %}">Add panel</a></li>

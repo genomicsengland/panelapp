@@ -1,7 +1,10 @@
 import csv
 from datetime import datetime
+
 from django.contrib import messages
 from django.http import Http404
+from django.shortcuts import get_list_or_404
+from django.db.models import Q
 from django.views.generic.base import View
 from django.views.generic import FormView
 from django.views.generic import ListView
@@ -28,82 +31,16 @@ from panels.forms import GeneReviewForm
 from panels.forms import ComparePanelsForm
 from panels.forms import CopyReviewsForm
 from panels.models import Tag
-from panels.models import Gene
+from panels.models import STR
+
 from panels.models import GenePanel
 from panels.models import GenePanelSnapshot
 from panels.models import GenePanelEntrySnapshot
 from panels.models import ProcessingRunCode
+from panels.models import STR
 from panels.mixins import PanelMixin
 from panels.utils import remove_non_ascii
 from .entities import EchoWriter
-
-
-class GeneDetailView(DetailView):
-    """List panels current gene belongs to
-
-    URL: /panels/genes/:gene_symbol
-
-    Also lists # of reviews, MOI, sources, tags, and phenotypes for the gene
-    in that panel"""
-
-    model = Gene
-    slug_field = 'gene_symbol'
-    slug_field_kwarg = 'gene_symbol'
-    context_object_name = 'gene'
-
-    def get_context_data(self, *args, **kwargs):
-        """Context data for Gene Detail page"""
-
-        ctx = super().get_context_data(*args, **kwargs)
-        tag_filter = self.request.GET.get('tag_filter', None)
-        ctx['tag_filter'] = tag_filter
-        ctx['gene_symbol'] = self.kwargs['slug']
-
-        is_admin_user = self.request.user.is_authenticated and self.request.user.reviewer.is_GEL()
-        gps = GenePanelSnapshot.objects.get_active(all=is_admin_user, internal=is_admin_user).filter(
-            genepanelentrysnapshot__gene_core__gene_symbol=self.kwargs['slug']
-        ).values_list('pk', flat=True)
-
-        entries = GenePanelEntrySnapshot.objects.get_gene_panels(self.kwargs['slug'], pks=gps)
-        if not self.request.user.is_authenticated or not self.request.user.reviewer.is_GEL():
-            entries = entries.filter(panel__panel__status=GenePanel.STATUS.public)
-
-        if tag_filter:
-            entries = entries.filter(tag__name=tag_filter)
-
-        ctx['entries'] = entries
-        return ctx
-
-
-class GeneListView(ListView):
-    model = Gene
-    context_object_name = "genes"
-    template_name = "panels/gene_list.html"
-
-    def get_queryset(self, *args, **kwargs):
-        if self.request.user.is_authenticated and self.request.user.reviewer.is_GEL():
-            panel_ids = GenePanelSnapshot.objects.get_active(all=True, internal=True).values('pk')
-        else:
-            panel_ids = GenePanelSnapshot.objects.get_active().values('pk')
-
-        qs = GenePanelEntrySnapshot.objects.filter(
-            gene_core__active=True,
-            panel__in=panel_ids
-        )
-
-        tag_filter = self.request.GET.get('tag')
-        if tag_filter:
-            qs = qs.filter(tags__name=tag_filter)
-
-        genes = qs.order_by().distinct('gene_core__gene_symbol').values_list('gene_core__gene_symbol', flat=True)
-
-        return genes
-
-    def get_context_data(self, *args, **kwargs):
-        ctx = super().get_context_data(*args, **kwargs)
-        ctx['tags'] = Tag.objects.all().order_by('name')
-        ctx['tag_filter'] = self.request.GET.get('tag')
-        return ctx
 
 
 class DownloadPanelTSVMixin(PanelMixin, DetailView):

@@ -19,7 +19,7 @@ class RedirectGeneView(V1RedirectMixin):
     """Redirect to the list of panels for a specific gene"""
 
     def check(self):
-        self.url = reverse_lazy('panels:gene_detail', args=(self.kwargs['gene_symbol'],))
+        self.url = reverse_lazy('panels:entity_detail', args=(self.kwargs['gene_symbol'],))
 
 
 class RedirectPanelView(V1RedirectMixin):
