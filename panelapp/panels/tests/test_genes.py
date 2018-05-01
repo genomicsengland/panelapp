@@ -74,7 +74,7 @@ class GeneTest(LoginGELUser):
 
     def test_list_genes(self):
         GenePanelEntrySnapshotFactory.create_batch(3)
-        r = self.client.get(reverse_lazy('panels:gene_list'))
+        r = self.client.get(reverse_lazy('panels:entities_list'))
         self.assertEqual(r.status_code, 200)
 
     def test_gene_not_ready(self):
@@ -167,7 +167,7 @@ class GeneTest(LoginGELUser):
 
         assert GenePanelEntrySnapshot.objects.get_gene_panels(gene.gene_symbol).count() == 3
 
-        url = reverse_lazy('panels:gene_detail', kwargs={'slug': gene.gene_symbol})
+        url = reverse_lazy('panels:entity_detail', kwargs={'slug': gene.gene_symbol})
         res = self.client.get(url)
         assert len(res.context_data['entries']) == 3
 
@@ -189,6 +189,6 @@ class GeneTest(LoginGELUser):
         self.assertEqual(GenePanelSnapshot.objects.get_gene_panels(gene.gene_symbol).count(), 1)
         self.assertEqual(GenePanelSnapshot.objects.get_gene_panels(gene.gene_symbol, all=True, internal=True).count(), 2)
 
-        url = reverse_lazy('panels:gene_detail', kwargs={'slug': gene.gene_symbol})
+        url = reverse_lazy('panels:entity_detail', kwargs={'slug': gene.gene_symbol})
         res = self.client.get(url)
         self.assertEqual(len(res.context_data['entries']), 2)

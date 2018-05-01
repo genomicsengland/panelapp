@@ -8,16 +8,18 @@
 
 {% block content %}
 <ol class="breadcrumb">
-  <li><a href="{% url 'panels:gene_list' %}">Genes</a></li>
+  <li><a href="{% url 'panels:entities_list' %}">Genes</a></li>
   <li class="active">{{ gene_symbol }}</li>
 </ol>
 <h1>
   {% block title %}{{ gene_symbol }}{% endblock %}
 </h1>
 
+{% if gene.gene_name %}
 <p class="lead">
   {{ gene.gene_name }}<br />{% if gene.omim_gene|length > 0 %}<a href="http://omim.org/entry/{{ gene.omim_gene.0 }}" target="_blank">OMIM: {{ gene.omim_gene.0 }}</a>, {% endif %}<a href=" http://www.ebi.ac.uk/gene2phenotype/gene2phenotype-webcode/cgi-bin/handler.cgi?panel=ALL&search_term={{ gene.gene_symbol }}" target="_blank">Gene2Phenotype</a>
 </p>
+{% endif %}
 
 {% if entries|length > 0 %}
   <h2>

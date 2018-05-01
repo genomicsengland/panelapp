@@ -1,12 +1,15 @@
 from django.http import Http404
 from django.contrib import messages
-from django.views.generic import DetailView, RedirectView
+from django.views.generic import DetailView
+from django.views.generic import RedirectView
 from django.views.generic import CreateView
+from django.views.generic import ListView
 from django.utils.functional import cached_property
 from django.views.generic import UpdateView
 from django.urls import reverse_lazy
 from django.shortcuts import redirect
-from django.views.generic import TemplateView
+from django.shortcuts import get_list_or_404
+from django.db.models import Q
 from panelapp.mixins import GELReviewerRequiredMixin
 from panelapp.mixins import VerifiedReviewerRequiredMixin
 from panels.forms import GeneReviewForm
@@ -28,6 +31,9 @@ from panels.forms.ajax import UpdateSTRPublicationsForm
 from panels.forms.ajax import UpdateSTRRatingForm
 from panels.mixins import PanelMixin
 from panels.mixins import ActAndRedirectMixin
+from panels.models import STR
+from panels.models import Tag
+from panels.models import Gene
 from panels.models import GenePanel
 from panels.models import GenePanelSnapshot
 from panels.models import GenePanelEntrySnapshot
@@ -393,6 +399,118 @@ class EntityReviewView(VerifiedReviewerRequiredMixin, EntityMixin, UpdateView):
             'entity_type': self.kwargs['entity_type'],
             'entity_name': self.kwargs['entity_name']
         })
+
+
+class EntityDetailView(DetailView):
+    """List panels current gene belongs to
+
+    URL: /panels/entities/:entity_name
+
+    Also lists # of reviews, MOI, sources, tags, and phenotypes for the entity
+    in that panel"""
+
+    model = Gene
+    context_object_name = 'gene'
+    template_name = 'panels/gene_detail.html'
+
+    def get_object(self, queryset=None):
+        try:
+            return self.model.objects.get(gene_symbol=self.kwargs['slug'])
+        except self.model.DoesNotExist:
+            # try STR
+            return get_list_or_404(STR, name=self.kwargs['slug'])[0]
+
+    def get_context_data(self, *args, **kwargs):
+        """Context data for Gene Detail page"""
+
+        ctx = super().get_context_data(*args, **kwargs)
+        tag_filter = self.request.GET.get('tag_filter', None)
+        ctx['tag_filter'] = tag_filter
+        ctx['gene_symbol'] = self.kwargs['slug']
+
+        is_admin_user = self.request.user.is_authenticated and self.request.user.reviewer.is_GEL()
+        gps = GenePanelSnapshot.objects.get_active(all=is_admin_user, internal=is_admin_user).filter(
+            Q(genepanelentrysnapshot__gene_core__gene_symbol=self.kwargs['slug'])
+            | Q(str__gene_core__gene_symbol=self.kwargs['slug'])
+        ).values_list('pk', flat=True)
+
+        entries_genes = GenePanelEntrySnapshot.objects.get_gene_panels(self.kwargs['slug'], pks=gps)
+
+        if isinstance(self.object, STR):
+            # we couldn't find a gene linked to this STR, lookup by name
+            entries_strs = STR.objects.get_str_panels(name=self.kwargs['slug'], pks=gps)
+        else:
+            entries_strs = STR.objects.get_str_gene_panels(gene_symbol=self.kwargs['slug'], pks=gps)
+
+        if not self.request.user.is_authenticated or not self.request.user.reviewer.is_GEL():
+            entries_genes = entries_genes.filter(
+                Q(panel__panel__status=GenePanel.STATUS.public) |
+                Q(panel__panel__status=GenePanel.STATUS.promoted))
+            entries_strs = entries_strs.filter(
+                Q(panel__panel__status=GenePanel.STATUS.public) |
+                Q(panel__panel__status=GenePanel.STATUS.promoted))
+
+        if tag_filter:
+            entries_genes = entries_genes.filter(tag__name=tag_filter)
+            entries_strs = entries_strs.filter(tag__name=tag_filter)
+
+        ctx['entries_genes'] = entries_genes
+        ctx['entries_strs'] = entries_strs
+
+        ctx['entries'] = list(entries_genes) + list(entries_strs)
+
+        return ctx
+
+
+class EntitiesListView(ListView):
+    model = Gene
+    context_object_name = "entities"
+    template_name = "panels/gene_list.html"
+
+    def get_queryset(self, *args, **kwargs):
+        if self.request.user.is_authenticated and self.request.user.reviewer.is_GEL():
+            panel_ids = GenePanelSnapshot.objects.get_active(all=True, internal=True).values('pk')
+        else:
+            panel_ids = GenePanelSnapshot.objects.get_active().values('pk')
+
+        qs = GenePanelEntrySnapshot.objects.filter(
+            gene_core__active=True,
+            panel__in=panel_ids
+        )
+
+        strs_qs = STR.objects.filter(panel__in=panel_ids)
+
+        tag_filter = self.request.GET.get('tag')
+        if tag_filter:
+            qs = qs.filter(tags__name=tag_filter)
+            strs_qs = strs_qs.filter(tags__name=tag_filter)
+
+        entities = []
+        for gene in qs.order_by().distinct('gene_core__gene_symbol').values_list('gene_core__gene_symbol', flat=True):
+            entities.append(('gene', gene, gene))
+
+        for str_item in strs_qs.values_list('name', 'gene_core__gene_symbol'):
+            entities.append(('str', str_item[0], str_item[1]))
+
+        sorted_entities = sorted(entities, key=lambda i: i[1].lower())
+
+        return sorted_entities
+
+    def get_context_data(self, *args, **kwargs):
+        ctx = super().get_context_data(*args, **kwargs)
+        ctx['tags'] = Tag.objects.all().order_by('name')
+        ctx['tag_filter'] = self.request.GET.get('tag')
+        return ctx
+
+
+class GeneDetailRedirectView(RedirectView):
+    """Redirect /panels/genes/<gene> to /panels/entities/<entity>"""
+
+    def dispatch(self, request, *args, **kwargs):
+        self.url = reverse_lazy('panels:entity_detail', kwargs={
+            'slug': self.kwargs['slug']
+        })
+        return super().dispatch(request, *args, **kwargs)
 
 
 class RedirectGenesToEntities(RedirectView):

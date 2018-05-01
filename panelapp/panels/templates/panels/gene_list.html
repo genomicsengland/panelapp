@@ -7,17 +7,19 @@
 {% block content %}
   {% if tag_filter %}
     <ol class="breadcrumb">
-      <li><a href="?">Genes</a></li>
+      <li><a href="?">Entities</a></li>
       <li class="active">{{ tag_filter }}</li>
     </ol>
   {% endif %}
 
+  {% with entities|length as entities_length %}
+
   <h1 class="add-bottom-margin">
     {% if tag_filter %}
-      <div class="text-muted normal add-label-margin">{{ genes|length }} gene{{ genes|pluralize }} tagged</div>
+      <div class="text-muted normal add-label-margin"><span id="entities-filter-count" class="text-muted"></span>{{ entities_length }} entities tagged</div>
       “{{ tag_filter}}”
     {% else %}
-      {{ genes|length }} gene{{ genes|pluralize }}
+        <span id="entities-filter-count" class="text-muted"></span>{{ entities_length }} entities
     {% endif %}
   </h1>
     <div class="row">
@@ -25,28 +27,34 @@
         <div data-module="filterable-list">
           <div class="panel panel-default">
             <div class="panel-heading">
-              Find a gene
+              Find an entity
             </div>
-            <div class="panel-body">
+            <div class="panel-body" data-module="filter-entities-type" data-count="{{ entities_length }}">
               <form class="add-bottom-margin">
                 <label for="gene-filter">
-                  Gene symbol
-                  <br /><span class="text-muted normal">Enter a gene symbol or the beginning of one, eg “CD” or “CD19”</span>
+                  Entity name
+                  <br /><span class="text-muted normal">Enter a gene symbol, STR name or the beginning of one, eg “CD” or “CD19”</span>
                 </label><br />
                 <div class="input-group">
-                  <input id="gene-filter" type="text" autofocus class="form-control normal js-filter-list-input" placeholder="Filter genes">
-                  <span class="input-group-addon js-filter-list-count" data-singular="gene" data-plural="genes">
-                    {{ genes|length }} gene{{ genes|pluralize }}
+                  <input id="gene-filter" type="text" autofocus class="form-control normal js-filter-list-input" placeholder="Filter entities">
+                  <span class="input-group-addon js-filter-list-count" data-singular="entity" data-plural="entities">
+                    {{ entities_length }} entities
                   </span>
+                </div>
+                <div>
+                    Show <label for="show_genes"><input type="checkbox" id="show_genes" name="show_genes" checked /> Genes</label>
+                    <label for="show_strs"><input type="checkbox" id="show_strs" name="show_strs" checked /> STRS</label>
                 </div>
               </form>
               <hr />
-              <ul class="list-inline gene-filter-list js-filter-list">
+              <ul id="entities-list" class="list-inline gene-filter-list js-filter-list">
                 
-              {% for gene in genes %}
-                {% if gene %}
-                  <li data-text="{{ gene }}">
-                    <a href="{% url 'panels:gene_detail' gene %}{% if tag_filter %}?tag={{ tag_filter}}{% endif %}">{{ gene }}</a>
+              {% for type, entity, gene_symbol in entities %}
+                {% if entity %}
+                  <li data-text="{{ entity }}" data-type="{{ type }}">
+                      <a href="{% if gene_symbol %}{% url 'panels:entity_detail' gene_symbol %}{% else %}{% url 'panels:entity_detail' entity  %}{% endif %}{% if tag_filter %}?tag={{ tag_filter}}{% endif %}">
+                          {{ entity }}
+                      </a>
                   </li>
                 {% endif %}
               {% endfor %}
@@ -68,4 +76,5 @@
         {% endif %}
       </div>
     </div>
+  {% endwith %}
   {% endblock %}
