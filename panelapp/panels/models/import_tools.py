@@ -232,18 +232,22 @@ class UploadedPanelList(TimeStampedModel):
 
     def process_line(self, key, aline, user, active_panel=None, increment_version=False):
         gene_symbol = re.sub("[^0-9a-zA-Z~#_@-]", '', aline[0])
-        source = list(unique_everseen([a for a in aline[1].split(";") if a != '']))
-        level4 = aline[2].strip(" ")
-        level3 = aline[3]
-        level2 = aline[4]
-        model_of_inheritance = aline[5]
-        phenotype = list(unique_everseen([a for a in aline[6].split(";") if a != '']))
-        omim = [a for a in aline[7].split(";") if a != '']
-        oprahanet = [a for a in aline[8].split(";") if a != '']
-        hpo = [a for a in aline[9].split(";") if a != '']
-        publication = list(unique_everseen([a for a in aline[10].split(";") if a != '']))
-        description = aline[11]
-        flagged = True if aline[12] == 'TRUE' else False
+        if aline[1].lower() == 'str':
+            # we don't support STRs at the moment
+            return
+
+        source = list(unique_everseen([a for a in aline[2].split(";") if a != '']))
+        level4 = aline[3].strip(" ")
+        level3 = aline[4]
+        level2 = aline[5]
+        model_of_inheritance = aline[6]
+        phenotype = list(unique_everseen([a for a in aline[7].split(";") if a != '']))
+        omim = [a for a in aline[8].split(";") if a != '']
+        oprahanet = [a for a in aline[9].split(";") if a != '']
+        hpo = [a for a in aline[10].split(";") if a != '']
+        publication = list(unique_everseen([a for a in aline[11].split(";") if a != '']))
+        description = aline[12]
+        flagged = True if aline[13] == 'TRUE' else False
 
         if level4:
             fresh_panel = False

@@ -1795,11 +1795,17 @@ class GenePanelSnapshot(TimeStampedModel):
                     gene_name, self, new_gene.gene_symbol
                 ))
 
-                description = "Gene: {} was changed to {}. Panel: {}".format(
-                    str_item.gene_core.gene_symbol,
-                    new_gene.gene_symbol,
-                    self.panel.name
-                )
+                if str_item.gene_core:
+                    description = "Gene: {} was changed to {}. Panel: {}".format(
+                        str_item.gene_core.gene_symbol,
+                        new_gene.gene_symbol,
+                        self.panel.name
+                    )
+                else:
+                    description = "Gene was set to {}. Panel: {}".format(
+                        new_gene.gene_symbol,
+                        self.panel.name
+                    )
 
                 tracks.append((
                     TrackRecord.ISSUE_TYPES.AddedTag,

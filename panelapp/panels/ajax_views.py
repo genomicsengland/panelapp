@@ -218,7 +218,7 @@ class DeleteEntityAjaxView(EntityMixin, GELReviewerRequiredMixin, BaseAjaxGeneMi
         if self.is_gene():
             return "panels/genepanel_table.html"
         elif self.is_str():
-            return "panels/str_table.html"
+            return "panels/strs_table.html"
 
     def process(self):
         if self.is_gene():
