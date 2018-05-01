@@ -450,7 +450,7 @@ class AbstractEntity:
                 evaluation.moi = moi
 
             current_diagnostic = evaluation_data.get('current_diagnostic')
-            if moi and evaluation.current_diagnostic != current_diagnostic:
+            if current_diagnostic and evaluation.current_diagnostic != current_diagnostic:
                 changed = True
                 evaluation.current_diagnostic = current_diagnostic
 
@@ -500,7 +500,7 @@ class AbstractEntity:
                 )
                 evaluation.comments.add(comment)
 
-            str_label = self.name if self.gene.get('gene_symbol') != self.name else None
+            str_label = self.name if self.gene and self.gene.get('gene_symbol') != self.name else None
 
             if evaluation.is_comment_without_review():
                 activity_text = "commented on {}".format(self.label)

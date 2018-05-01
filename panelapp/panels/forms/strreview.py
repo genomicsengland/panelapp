@@ -29,6 +29,10 @@ class STRReviewForm(forms.ModelForm):
 
     rating = forms.ChoiceField(choices=[('', 'Provide rating')] + Evaluation.RATINGS, required=False)
     current_diagnostic = forms.BooleanField(required=False)
+    clinically_relevant = forms.BooleanField(
+        required=False,
+        help_text="Interruptions in the repeated sequence are reported as part of standard diagnostic practise"
+    )
     comments = forms.CharField(widget=forms.Textarea, required=False)
 
     def __init__(self, *args, **kwargs):
