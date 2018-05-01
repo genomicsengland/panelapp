@@ -124,7 +124,8 @@ class DownloadPanelTSVMixin(PanelMixin, DetailView):
         writer = csv.writer(response, delimiter='\t')
 
         writer.writerow((
-            "Gene_Symbol",
+            "Gene Entity Symbol",
+            "Entity type",
             "Sources(; separated)",
             "Level4",
             "Level3",
@@ -144,7 +145,15 @@ class DownloadPanelTSVMixin(PanelMixin, DetailView):
             "Mode of pathogenicity",
             "EnsemblId(GRch37)",
             "EnsemblId(GRch38)",
-            "HGNC"
+            "HGNC",
+            "STR Position Chromosome",
+            "STR Position GRCh37 Start",
+            "STR Position GRCh37 End",
+            "STR Position GRCh38 Start",
+            "STR Position GRCh38 End",
+            "STR Repeated Sequence",
+            "STR Normal Repeats",
+            "STR Pathogenic Repeats",
         ))
 
         categories = self.get_categories()
@@ -155,6 +164,7 @@ class DownloadPanelTSVMixin(PanelMixin, DetailView):
                 evidence = ";".join([evidence.name for evidence in gpentry.evidence.all()])
                 export_gpentry = (
                     gpentry.gene.get('gene_symbol'),
+                    'gene',
                     evidence,
                     panel_name,
                     self.object.level4title.level3title,
@@ -175,8 +185,56 @@ class DownloadPanelTSVMixin(PanelMixin, DetailView):
                     gpentry.gene.get('ensembl_genes', {}).get('GRch37', {}).get('82', {}).get('ensembl_id', '-'),
                     gpentry.gene.get('ensembl_genes', {}).get('GRch38', {}).get('90', {}).get('ensembl_id', '-'),
                     gpentry.gene.get('hgnc_id', '-'),
+                    '-',
+                    '-',
+                    '-',
+                    '-',
+                    '-',
+                    '-',
+                    '-',
+                    '-',
+                    '-',
                 )
                 writer.writerow(export_gpentry)
+
+        for strentry in self.object.get_all_strs_extra:
+            if not strentry.flagged and str(strentry.status) in categories:
+                amber_perc, green_perc, red_prec = strentry.aggregate_ratings()
+
+                evidence = ";".join([evidence.name for evidence in strentry.evidence.all()])
+                export_strentry = (
+                    strentry.name,
+                    'str',
+                    evidence,
+                    panel_name,
+                    self.object.level4title.level3title,
+                    self.object.level4title.level2title,
+                    strentry.moi,
+                    ";".join(map(remove_non_ascii, strentry.phenotypes)),
+                    ";".join(map(remove_non_ascii, self.object.level4title.omim)),
+                    ";".join(map(remove_non_ascii, self.object.level4title.orphanet)),
+                    ";".join(map(remove_non_ascii, self.object.level4title.hpo)),
+                    ";".join(map(remove_non_ascii, strentry.publications)),
+                    "",
+                    str(strentry.flagged),
+                    str(strentry.saved_gel_status),
+                    ";".join(map(str, [green_perc, amber_perc, red_prec])),
+                    str(version),
+                    strentry.ready,
+                    '-',
+                    strentry.gene.get('ensembl_genes', {}).get('GRch37', {}).get('82', {}).get('ensembl_id', '-') if strentry.gene else '',
+                    strentry.gene.get('ensembl_genes', {}).get('GRch38', {}).get('90', {}).get('ensembl_id', '-') if strentry.gene else '',
+                    strentry.gene.get('hgnc_id', '-') if strentry.gene else '',
+                    strentry.chromosome,
+                    strentry.position_37.lower,
+                    strentry.position_37.upper,
+                    strentry.position_38.lower,
+                    strentry.position_38.upper,
+                    strentry.repeated_sequence,
+                    strentry.normal_repeats,
+                    strentry.pathogenic_repeats,
+                )
+                writer.writerow(export_strentry)
 
         return response
 

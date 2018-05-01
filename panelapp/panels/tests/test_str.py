@@ -655,3 +655,12 @@ class STRTest(LoginGELUser):
 
         # test previous panel contains old gene
         assert old_gps.has_str(old_str_name) is True
+
+    def test_download_panel_contains_strs(self):
+        gpes = GenePanelEntrySnapshotFactory()
+        gps = gpes.panel
+        strs = STRFactory(repeated_sequence="ATATCGCGN", panel=gps)
+
+        res = self.client.get(reverse_lazy('panels:download_panel_tsv', args=(gps.panel.pk, '01234')))
+        self.assertEqual(res.status_code, 200)
+        self.assertTrue(res.content.find(strs.repeated_sequence.encode()) != 1)
