@@ -61,7 +61,7 @@
                 {% endif %}
             {% endif %}
             {% if entity.gene.omim_gene|length > 0 %}
-              <a href="http://omim.org/entry/{{ entity.gene.omim_gene.0 }}" target="_blank">OMIM: {{ entity.gene.omim_gene.0 }}</a>, <a href=" http://www.ebi.ac.uk/gene2phenotype/gene2phenotype-webcode/cgi-bin/handler.cgi?panel=ALL&search_term={{ entity.gene.gene_symbol }}" target="_blank">Gene2Phenotype</a><br />
+              <a href="http://omim.org/entry/{{ entity.gene.omim_gene.0 }}" target="_blank">OMIM: {{ entity.gene.omim_gene.0 }}</a>, <a href="https://www.ebi.ac.uk/gene2phenotype/search?panel=ALL&search_term={{ entity.gene.gene_symbol }}" target="_blank">Gene2Phenotype</a><br />
             {% endif %}
             {% if entity.is_gene %}
             {% with shared_panels=sharing_panels %}
