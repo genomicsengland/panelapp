@@ -62,7 +62,7 @@
                         <h3 class="remove-top-margin text-center">{{ panel_1_entry.evaluation.all|length }} review{{panel_1_entry.evaluation.all|pluralize}}</h3>
                         {% for ev in panel_1_entry.evaluation.all %}
                             <div class="panel panel-default">
-                                {% include "panels/genepanelentrysnapshot/gene_evaluation.html" %}
+                                {% include "panels/entity/entity_evaluation.html" %}
                             </div>
                         {% endfor %}
                     </td>
@@ -71,7 +71,7 @@
                         <h3 class="remove-top-margin text-center">{{ panel_2_entry.evaluation.all|length }} review{{panel_2_entry.evaluation.all|pluralize}}</h3>
                         {% for ev in panel_2_entry.evaluation.all %}
                             <div class="panel panel-default">
-                                {% include "panels/genepanelentrysnapshot/gene_evaluation.html" %}
+                                {% include "panels/entity/entity_evaluation.html" %}
                             </div>
                         {% endfor %}
                     </td>

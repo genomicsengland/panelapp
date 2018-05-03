@@ -102,7 +102,7 @@
     </h5>
 </td>
 <td>
-    {% with evaluation_count=entry.number_of_gene_evaluations %}
+    {% with evaluation_count=entry.number_of_evaluations %}
         <h5 class="normal gene-cell-title add-label-margin text-muted">{{ evaluation_count }} review{{evaluation_count|pluralize}}</h5>
         {% if request.user.is_authenticated %}
         {% if request.user.pk in entry.evaluators %}
@@ -114,14 +114,14 @@
         {% endif %}
         {% endif %}
         {% if evaluation_count > 0 %}
-        {% if entry.number_of_green_gene_evaluations > 0 %}
+        {% if entry.number_of_green_evaluations > 0 %}
         <span class="add-right-margin gel-text gel-green">
-            {{ entry.number_of_green_gene_evaluations }} green
+            {{ entry.number_of_green_evaluations }} green
         </span>
         {% endif %}
-        {% if entry.number_of_red_gene_evaluations > 0 %}
+        {% if entry.number_of_red_evaluations > 0 %}
         <span class="add-right-margin gel-text gel-red">
-            {{ entry.number_of_red_gene_evaluations }} red
+            {{ entry.number_of_red_evaluations }} red
         </span>
         {% endif %}
         {% endif %}

@@ -255,6 +255,11 @@ class GenePanelTest(LoginGELUser):
         res = self.client.post(reverse_lazy('panels:copy_reviews', args=(gps.panel.pk, gps2.panel.pk,)), data)
         self.assertEqual(res.status_code, 302)
 
+    def test_compare_genes(self):
+        gene, gps, gps2 = self.prepare_compare()
+        res = self.client.get(reverse_lazy('panels:compare_genes', args=(gps.panel.pk, gps2.panel.pk, gene.gene_symbol)))
+        self.assertEqual(res.status_code, 200)
+
     def test_promote_panel(self):
         gpes = GenePanelEntrySnapshotFactory()
 
