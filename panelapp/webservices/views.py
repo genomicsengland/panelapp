@@ -133,8 +133,8 @@ def get_panel(request, panel_name):
 
     instance = queryset[0]
     serializer = PanelSerializer(
-        filter_entity_list(instance.get_all_genes, **filters),
-        filter_entity_list(instance.get_all_strs, **filters),
+        filter_entity_list(instance.get_all_genes_extra, **filters),
+        filter_entity_list(instance.get_all_strs_extra, **filters),
         instance=instance,
         context={'request': request}
     )
@@ -195,7 +195,7 @@ def search_by_gene(request, gene):
 
     panels_ids_dict = {panel.panel.pk: (panel.panel.pk, panel) for panel in all_panels}
     filters.update({'panel__panel__pk__in': list(panels_ids_dict.keys())})
-    active_genes = GenePanelEntrySnapshot.objects.get_active()
+    active_genes = GenePanelEntrySnapshot.objects.get_active(pks=[s.pk for s in all_panels])
     genes = active_genes.filter(**filters)
 
     if genes_qs:
