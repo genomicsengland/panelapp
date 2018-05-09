@@ -83,6 +83,10 @@ class STRTest(LoginGELUser):
         assert res.status_code == 302
         assert number_of_strs + 1 == new_current_number
 
+        # make sure tags are added
+        new_str = GenePanel.objects.get(pk=gps.panel.pk).active_panel.get_str(gene_data['name'])
+        assert sorted(list(new_str.tags.all().values_list('pk', flat=True))) == sorted(gene_data['tags'])
+
     def test_add_str_to_panel_no_gene_data(self):
         """STRs can exist without genes"""
 

@@ -23,6 +23,7 @@ from .evidence import Evidence
 from .evaluation import Evaluation
 from .gene import Gene
 from .comment import Comment
+from .tag import Tag
 
 
 class GenePanelSnapshotManager(models.Manager):
@@ -80,11 +81,10 @@ class GenePanelSnapshotManager(models.Manager):
     def get_shared_panels(self, gene_symbol, all=False, internal=False):
         """Get all panels for a specific gene"""
 
-        return self.get_active_annotated(all=all, internal=internal)\
-                   .filter(
-                        Q(str__gene__gene_symbol=gene_symbol) |
-                        Q(genepanelentrysnapshot__gene__gene_symbol=gene_symbol)
-                   ).distinct('panel__name')
+        qs = self.get_active(all=all, internal=internal)
+        qs = qs.filter(genepanelentrysnapshot__gene_core__gene_symbol=gene_symbol)\
+            .union(qs.filter(str__gene_core__gene_symbol=gene_symbol))
+        return qs
 
 
 class GenePanelSnapshot(TimeStampedModel):
@@ -1263,6 +1263,7 @@ class GenePanelSnapshot(TimeStampedModel):
                 - current_diagnostic
                 - sources
                 - rating
+                - tags
 
         Returns:
             STR instance.
@@ -1337,6 +1338,28 @@ class GenePanelSnapshot(TimeStampedModel):
             issue_description=description
         )
         str_item.track.add(track_sources)
+
+        tags = Tag.objects.filter(pk__in=str_data.get('tags', []))
+        for tag in tags:
+            logging.debug("Adding new tag:{} for {} panel:{}".format(
+                tag, str_item.label, self
+            ))
+            str_item.tags.add(tag)
+
+            description = "{} was added to {}. Panel: {}".format(
+                tag,
+                str_item.label,
+                self.panel.name,
+            )
+
+            track_tags = TrackRecord.objects.create(
+                gel_status=evidence_status,
+                curator_status=0,
+                user=user,
+                issue_type=TrackRecord.ISSUE_TYPES.AddedTag,
+                issue_description=description
+            )
+            str_item.track.add(track_tags)
 
         if str_data.get('rating') or str_data.get('comment'):
             evaluation = Evaluation.objects.create(

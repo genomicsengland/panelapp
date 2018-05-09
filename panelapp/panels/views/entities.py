@@ -89,7 +89,7 @@ class GenePanelSpanshotView(EntityMixin, DetailView):
             request=self.request
         )
 
-        ctx['gene_ready_form'] = GeneReadyForm(
+        ctx['entity_ready_form'] = GeneReadyForm(
             instance=self.object,
             initial={},
             request=self.request,
@@ -167,6 +167,8 @@ class GenePanelSpanshotView(EntityMixin, DetailView):
         ctx['panel'] = self.panel
         ctx['entity_type'] = self.kwargs['entity_type']
         ctx['entity_name'] = self.kwargs['entity_name']
+        ctx['next_str'] = None
+        ctx['prev_str'] = None
 
         is_admin = self.request.user.is_authenticated and self.request.user.reviewer.is_GEL()
 
@@ -429,10 +431,11 @@ class EntityDetailView(DetailView):
         ctx['gene_symbol'] = self.kwargs['slug']
 
         is_admin_user = self.request.user.is_authenticated and self.request.user.reviewer.is_GEL()
-        gps = GenePanelSnapshot.objects.get_active(all=is_admin_user, internal=is_admin_user).filter(
-            Q(genepanelentrysnapshot__gene_core__gene_symbol=self.kwargs['slug'])
-            | Q(str__gene_core__gene_symbol=self.kwargs['slug'])
-        ).values_list('pk', flat=True)
+        gps = list(GenePanelSnapshot.objects.get_shared_panels(
+            self.kwargs['slug'],
+            all=is_admin_user,
+            internal=is_admin_user
+        ).values_list('pk', flat=True))
 
         entries_genes = GenePanelEntrySnapshot.objects.get_gene_panels(self.kwargs['slug'], pks=gps)
 
@@ -468,10 +471,9 @@ class EntitiesListView(ListView):
     template_name = "panels/gene_list.html"
 
     def get_queryset(self, *args, **kwargs):
-        if self.request.user.is_authenticated and self.request.user.reviewer.is_GEL():
-            panel_ids = GenePanelSnapshot.objects.get_active(all=True, internal=True).values('pk')
-        else:
-            panel_ids = GenePanelSnapshot.objects.get_active().values('pk')
+        is_admin_user = self.request.user.is_authenticated and self.request.user.reviewer.is_GEL()
+        panel_ids = GenePanelSnapshot.objects.get_active(all=is_admin_user, internal=is_admin_user)\
+            .values_list('pk', flat=True)
 
         qs = GenePanelEntrySnapshot.objects.filter(
             gene_core__active=True,

@@ -1,4 +1,4 @@
-{% for comment in gene.get_review_comments %}
+{% for comment in entity.get_review_comments %}
   <blockquote class="add-top-margin">
     {{ comment.comment }}
     <h6>{{ comment.user.get_reviewer_name }}, {{ comment.created|date }}</h6>

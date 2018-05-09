@@ -136,7 +136,7 @@
     <form action="{% url 'panels:mark_entity_as_ready' panel.panel_id entity_type entity_name %}#!review" method="post" class="form">
       {% csrf_token %}
       <fieldset>
-        {% for field in gene_ready_form %}
+        {% for field in entity_ready_form %}
           <div class="form-group">
             {% if field.errors %}
               {% for error in field.errors %}

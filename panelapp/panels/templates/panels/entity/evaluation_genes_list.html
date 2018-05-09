@@ -26,8 +26,8 @@
 <ul class="list-group" data-module="gene-nav" id="gene-nav">
   {% for entry in panel_genes %}
     <li
-        class="list-group-item {% if gene.gene.gene_symbol == entry.gene.gene_symbol %}list-group-item-active{% endif %}"
-        {% if gene.gene.gene_symbol == entry.gene.gene_symbol %}id="gene-nav-active-item"{% endif %}
+        class="list-group-item {% if entity.gene.gene_symbol == entry.gene.gene_symbol %}list-group-item-active{% endif %}"
+        {% if entity.gene.gene_symbol == entry.gene.gene_symbol %}id="gene-nav-active-item"{% endif %}
     >
       <a href="{{ entry.get_absolute_url }}{% if entry.gene.gene_symbol in panel.current_genes_duplicates %}?pk={{ entry.pk }}{% endif %}">
       {% if request.user.pk in entry.evaluators %}

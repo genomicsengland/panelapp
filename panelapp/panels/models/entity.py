@@ -173,7 +173,10 @@ class AbstractEntity:
             QuerySet: List of evaluation comments
         """
 
-        return Comment.objects.filter(evaluation__pk__in=self.evaluation.values_list('pk', flat=True))
+        return Comment.objects.filter(evaluation__pk__in=self.evaluation.values_list('pk', flat=True)).prefetch_related(
+            'user',
+            'user__reviewer'
+        )
 
     def clear_evidences(self, user, evidence=None):
         """Remove sources from this entity. If `evidence` argument provided, check only that source"""

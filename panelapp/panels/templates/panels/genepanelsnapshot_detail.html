@@ -122,6 +122,6 @@
 
 {% block js %}
 <script>
-    window.GeneTags = [{% for tag in gene.tags.all %}{% if tag %}'{{ tag }}'{% if not forloop.last %},{% endif %}{% endif %}{% endfor %}];
+    window.GeneTags = [{% for tag in entity.tags.all %}{% if tag %}'{{ tag }}'{% if not forloop.last %},{% endif %}{% endif %}{% endfor %}];
 </script>
 {% endblock %}
