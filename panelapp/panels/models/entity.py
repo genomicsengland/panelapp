@@ -5,14 +5,58 @@ Author: Oleg Gerasimenko
 (c) 2018 Genomics England
 """
 
+from django.db.models import Manager
+from django.db.models import Count
+from django.db.models import Subquery
 from model_utils import Choices
 
 from .evaluation import Evaluation
 from .comment import Comment
 from .trackrecord import TrackRecord
 from .evidence import Evidence
+from .genepanel import GenePanel
 from panels.templatetags.panel_helpers import get_gene_list_data
 from panels.templatetags.panel_helpers import GeneDataType
+
+
+class EntityManager(Manager):
+    """Entity Objects manager."""
+
+    def get_latest_ids(self, deleted=False):
+        """Get latest GenePanelSnapshot ids"""
+
+        qs = super().get_queryset()
+        if not deleted:
+            qs = qs.exclude(panel__panel__status=GenePanel.STATUS.deleted)
+
+        return qs.distinct('panel__panel__pk') \
+            .values_list('panel__pk', flat=True) \
+            .order_by('panel__panel__pk', '-panel__major_version', '-panel__minor_version')
+
+    def get_active(self, deleted=False, gene_symbol=None, name=None, pks=None):
+        """Get active STRs"""
+
+        if pks:
+            qs = super().get_queryset().filter(panel__pk__in=pks)
+        else:
+            qs = super().get_queryset().filter(panel__pk__in=Subquery(self.get_latest_ids(deleted)))
+        if name:
+            qs = qs.filter(name=name)
+        if gene_symbol:
+            qs = qs.filter(gene__gene_symbol=gene_symbol)
+
+        return qs.annotate(
+            number_of_reviewers=Count('evaluation__user', distinct=True),
+            number_of_evaluated_genes=Count('evaluation'),
+            number_of_genes=Count('pk'),
+        ) \
+            .prefetch_related('evaluation', 'tags', 'evidence', 'panel', 'panel__level4title', 'panel__panel') \
+            .order_by('panel__pk', '-panel__major_version', '-panel__minor_version')
+
+    def get_gene_panels(self, gene_symbol, deleted=False, pks=None):
+        """Get panels for the specified Gene"""
+
+        return self.get_active(deleted=deleted, gene_symbol=gene_symbol, pks=pks)
 
 
 class AbstractEntity:

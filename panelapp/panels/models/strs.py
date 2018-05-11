@@ -6,8 +6,6 @@ Author: Oleg Gerasimenko
 """
 
 from django.db import models
-from django.db.models import Count
-from django.db.models import Subquery
 from django.core.serializers.json import DjangoJSONEncoder
 from django.contrib.postgres.fields import JSONField
 from django.contrib.postgres.fields import ArrayField
@@ -16,6 +14,7 @@ from django.urls import reverse
 
 from model_utils.models import TimeStampedModel
 from .entity import AbstractEntity
+from .entity import EntityManager
 from .gene import Gene
 from .evidence import Evidence
 from .evaluation import Evaluation
@@ -23,52 +22,15 @@ from .trackrecord import TrackRecord
 from .comment import Comment
 from .tag import Tag
 from .genepanelsnapshot import GenePanelSnapshot
-from .genepanel import GenePanel
 
 
-class STRManager(models.Manager):
+class STRManager(EntityManager):
     """Objects manager for STR."""
-
-    def get_latest_ids(self, deleted=False):
-        """Get STR ids"""
-
-        qs = super().get_queryset()
-        if not deleted:
-            qs = qs.exclude(panel__panel__status=GenePanel.STATUS.deleted)
-
-        return qs.distinct('panel__panel__pk')\
-            .values_list('panel__pk', flat=True)\
-            .order_by('panel__panel__pk', '-panel__major_version', '-panel__minor_version')
-
-    def get_active(self, deleted=False, name=None, gene_symbol=None, pks=None):
-        """Get active STRs"""
-
-        if pks:
-            qs = super().get_queryset().filter(panel__pk__in=pks)
-        else:
-            qs = super().get_queryset().filter(panel__pk__in=Subquery(self.get_latest_ids(deleted)))
-        if name:
-            qs = qs.filter(name=name)
-        if gene_symbol:
-            qs = qs.filter(gene__gene_symbol=gene_symbol)
-
-        return qs.annotate(
-                number_of_reviewers=Count('evaluation__user', distinct=True),
-                number_of_evaluated_genes=Count('evaluation'),
-                number_of_genes=Count('pk'),
-            )\
-            .prefetch_related('evaluation', 'tags', 'evidence', 'panel', 'panel__level4title', 'panel__panel')\
-            .order_by('panel__pk', '-panel__major_version', '-panel__minor_version')
 
     def get_str_panels(self, name, deleted=False, pks=None):
         """Get panels for the specified STR name"""
 
         return self.get_active(deleted=deleted, name=name, pks=pks)
-
-    def get_str_gene_panels(self, gene_symbol, deleted=False, pks=None):
-        """Get panels for the specified STR name"""
-
-        return self.get_active(deleted=deleted, gene_symbol=gene_symbol, pks=pks)
 
 
 class STR(AbstractEntity, TimeStampedModel):

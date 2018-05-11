@@ -442,7 +442,7 @@ class EntityDetailView(DetailView):
             # we couldn't find a gene linked to this STR, lookup by name
             entries_strs = STR.objects.get_str_panels(name=self.kwargs['slug'], pks=gps)
         else:
-            entries_strs = STR.objects.get_str_gene_panels(gene_symbol=self.kwargs['slug'], pks=gps)
+            entries_strs = STR.objects.get_gene_panels(gene_symbol=self.kwargs['slug'], pks=gps)
 
         if not self.request.user.is_authenticated or not self.request.user.reviewer.is_GEL():
             entries_genes = entries_genes.filter(

@@ -322,7 +322,7 @@ class GenePanelSnapshot(TimeStampedModel):
         if panels_changed:
             self.child_panels.set(updated_child_panels)
 
-    def increment_version(self, major=False, user=None, comment=None, ignore_gene=None, ignore_str=None):
+    def increment_version(self, major=False, user=None, comment=None, ignore_gene=None, ignore_str=None, ignore_region=None):
         """Creates a new version of the panel.
 
         This script copies all genes, all information for these genes, and also
@@ -336,6 +336,7 @@ class GenePanelSnapshot(TimeStampedModel):
         with transaction.atomic():
             current_genes = deepcopy(self.get_all_genes)  # cache the results
             current_strs = deepcopy(self.get_all_strs)
+            current_regions = deepcopy(self.get_all_regions)
             child_panels = list(self.child_panels.values_list('pk', flat=True))
             super_panels = list(self.genepanelsnapshot_set.values_list('pk', flat=True))
 
@@ -359,8 +360,10 @@ class GenePanelSnapshot(TimeStampedModel):
                     }) for child_panel in child_panels
                 ])
             else:
-                self._increment_version_genes(current_genes, major, user, comment, ignore_gene)
-                self._increment_version_str(current_strs, major, user, comment, ignore_str)
+                self._increment_version_entities('genepanelentrysnapshot', current_genes, major, user, comment,
+                                                 ignore_gene)
+                self._increment_version_entities('str', current_strs, major, user, comment, ignore_str)
+                self._increment_version_entities('region', current_regions, major, user, comment, ignore_region)
 
                 if major:
                     email_panel_promoted.delay(self.panel.pk)
@@ -397,59 +400,65 @@ class GenePanelSnapshot(TimeStampedModel):
 
             return self.panel.active_panel
 
-    def _increment_version_genes(self, current_genes, major, user, comment, ignore_gene):
+    def _increment_version_entities(self, entity_type, current_entities, major, user, comment, ignore_entity):
+        assert entity_type in ['genepanelentrysnapshot', 'str', 'region']
+
+        entity_type_id = '{entity_type}_id'.format(entity_type=entity_type)
+
         evidences = []
         evaluations = []
         tracks = []
         tags = []
         comments = []
 
-        genes = {}
+        entities = {}
 
-        for gene in current_genes:
-            if ignore_gene and ignore_gene == gene.gene.get('gene_symbol'):
+        for entity in current_entities:
+            entity_name = entity.name if getattr(entity, 'name') else entity.gene.get('gene_symbol')
+
+            if ignore_entity and entity_name == ignore_entity:
                 continue
 
-            old_gene = deepcopy(gene)
-            gene.pk = None
-            gene.panel = self
+            old_entity = deepcopy(entity)
+            entity.pk = None
+            entity.panel = self
 
             if major:
-                gene.ready = False
-                gene.save()
+                entity.ready = False
+                entity.save()
 
-            genes[gene.gene.get('gene_symbol')] = {
-                'gene': gene,
-                'old_gene': old_gene,
+            entities[entity_name] = {
+                'entity': entity,
+                'old_entity': old_entity,
                 'evidences': [
                     {
                         'evidence_id': ev,
-                        'genepanelentrysnapshot_id': gene.pk
-                    } for ev in set(gene.evidences) if ev is not None
+                        entity_type_id: entity.pk
+                    } for ev in set(entity.evidences) if ev is not None
                 ],
                 'evaluations': [
                     {
                         'evaluation_id': ev,
-                        'genepanelentrysnapshot_id': gene.pk
-                    } for ev in set(gene.evaluations) if ev is not None
+                        entity_type_id: entity.pk
+                    } for ev in set(entity.evaluations) if ev is not None
                 ],
                 'tracks': [
                     {
                         'trackrecord_id': ev,
-                        'genepanelentrysnapshot_id': gene.pk
-                    } for ev in set(gene.tracks) if ev is not None
+                        entity_type_id: entity.pk
+                    } for ev in set(entity.tracks) if ev is not None
                 ],
                 'tags': [
                     {
                         'tag_id': ev,
-                        'genepanelentrysnapshot_id': gene.pk
-                    } for ev in set(gene.gene_tags) if ev is not None
+                        entity_type_id: entity.pk
+                    } for ev in set(entity.gene_tags) if ev is not None
                 ],
                 'comments': [
                     {
                         'comment_id': ev,
-                        'genepanelentrysnapshot_id': gene.pk
-                    } for ev in set(gene.comment_pks) if ev is not None
+                        entity_type_id: entity.pk
+                    } for ev in set(entity.comment_pks) if ev is not None
                 ]
             }
 
@@ -460,175 +469,61 @@ class GenePanelSnapshot(TimeStampedModel):
                 track_promoted = TrackRecord.objects.create(
                     curator_status=user.reviewer.is_GEL(),
                     issue_description=issue_description,
-                    gel_status=gene.status,
+                    gel_status=entity.status,
                     issue_type=issue_type,
                     user=user
                 )
-                gene.track.add(track_promoted)
+                entity.track.add(track_promoted)
+
+        entity_set = getattr(self, '{entity_type}_set'.format(entity_type=entity_type))
 
         # add in bulk
         if not major:
-            bulk_genes = [genes[gene]['gene'] for gene in genes]
-            new_genes = self.genepanelentrysnapshot_set.model.objects.bulk_create(bulk_genes)
+            bulk_entities = [entities[entity_key]['entity'] for entity_key in entities]
+            new_entities = entity_set.model.objects.bulk_create(bulk_entities)
         else:
-            new_genes = self.genepanelentrysnapshot_set.all()
+            new_entities = self.genepanelentrysnapshot_set.all()
 
         self.clear_cache()
 
-        for gene in new_genes:
-            gene_data = genes[gene.gene.get('gene_symbol')]
+        for entity in new_entities:
+            entity_name = entity.name if getattr(entity, 'name') else entity.gene.get('gene_symbol')
+            entity_data = entities[entity_name]
 
-            for i, _ in enumerate(gene_data['evidences']):
-                gene_data['evidences'][i]['genepanelentrysnapshot_id'] = gene_data['gene'].pk
-            evidences.extend(gene_data['evidences'])
+            for i, _ in enumerate(entity_data['evidences']):
+                entity_data['evidences'][i][entity_type_id] = entity_data['gene'].pk
+            evidences.extend(entity_data['evidences'])
 
-            for i, _ in enumerate(gene_data['evaluations']):
-                gene_data['evaluations'][i]['genepanelentrysnapshot_id'] = gene_data['gene'].pk
-            evaluations.extend(gene_data['evaluations'])
+            for i, _ in enumerate(entity_data['evaluations']):
+                entity_data['evaluations'][i][entity_type_id] = entity_data['gene'].pk
+            evaluations.extend(entity_data['evaluations'])
 
-            for i, _ in enumerate(gene_data['tracks']):
-                gene_data['tracks'][i]['genepanelentrysnapshot_id'] = gene_data['gene'].pk
-            tracks.extend(gene_data['tracks'])
+            for i, _ in enumerate(entity_data['tracks']):
+                entity_data['tracks'][i][entity_type_id] = entity_data['gene'].pk
+            tracks.extend(entity_data['tracks'])
 
-            for i, _ in enumerate(gene_data['tags']):
-                gene_data['tags'][i]['genepanelentrysnapshot_id'] = gene_data['gene'].pk
-            tags.extend(gene_data['tags'])
+            for i, _ in enumerate(entity_data['tags']):
+                entity_data['tags'][i][entity_type_id] = entity_data['gene'].pk
+            tags.extend(entity_data['tags'])
 
-            for i, _ in enumerate(gene_data['comments']):
-                gene_data['comments'][i]['genepanelentrysnapshot_id'] = gene_data['gene'].pk
-            comments.extend(gene_data['comments'])
+            for i, _ in enumerate(entity_data['comments']):
+                entity_data['comments'][i][entity_type_id] = entity_data['gene'].pk
+            comments.extend(entity_data['comments'])
 
-        self.genepanelentrysnapshot_set.model.evidence.through.objects.bulk_create([
-            self.genepanelentrysnapshot_set.model.evidence.through(**ev) for ev in evidences
+        self.entity_set.model.evidence.through.objects.bulk_create([
+            self.entity_set.model.evidence.through(**ev) for ev in evidences
         ])
-        self.genepanelentrysnapshot_set.model.evaluation.through.objects.bulk_create([
-            self.genepanelentrysnapshot_set.model.evaluation.through(**ev) for ev in evaluations
+        self.entity_set.model.evaluation.through.objects.bulk_create([
+            self.entity_set.model.evaluation.through(**ev) for ev in evaluations
         ])
-        self.genepanelentrysnapshot_set.model.track.through.objects.bulk_create([
-            self.genepanelentrysnapshot_set.model.track.through(**ev) for ev in tracks
+        self.entity_set.model.track.through.objects.bulk_create([
+            self.entity_set.model.track.through(**ev) for ev in tracks
         ])
-        self.genepanelentrysnapshot_set.model.tags.through.objects.bulk_create([
-            self.genepanelentrysnapshot_set.model.tags.through(**ev) for ev in tags
+        self.entity_set.model.tags.through.objects.bulk_create([
+            self.entity_set.model.tags.through(**ev) for ev in tags
         ])
-        self.genepanelentrysnapshot_set.model.comments.through.objects.bulk_create([
-            self.genepanelentrysnapshot_set.model.comments.through(**ev) for ev in comments
-        ])
-
-    def _increment_version_str(self, current_strs, major, user, comment, ignore_str):
-        evidences = []
-        evaluations = []
-        tracks = []
-        tags = []
-        comments = []
-
-        strs = {}
-
-        for str_entity in current_strs:
-            if ignore_str and ignore_str == str_entity.name:
-                continue
-
-            old_str = deepcopy(str_entity)
-            str_entity.pk = None
-            str_entity.panel = self
-
-            if major:
-                str_entity.ready = False
-                str_entity.save()
-
-            strs[str_entity.name] = {
-                'str': str_entity,
-                'old_str': old_str,
-                'evidences': [
-                    {
-                        'evidence_id': ev,
-                        'str_id': str_entity.pk
-                    } for ev in set(str_entity.evidences) if ev is not None
-                ],
-                'evaluations': [
-                    {
-                        'evaluation_id': ev,
-                        'str_id': str_entity.pk
-                    } for ev in set(str_entity.evaluations) if ev is not None
-                ],
-                'tracks': [
-                    {
-                        'trackrecord_id': ev,
-                        'str_id': str_entity.pk
-                    } for ev in set(str_entity.tracks) if ev is not None
-                ],
-                'tags': [
-                    {
-                        'tag_id': ev,
-                        'str_id': str_entity.pk
-                    } for ev in set(str_entity.gene_tags) if ev is not None
-                ],
-                'comments': [
-                    {
-                        'comment_id': ev,
-                        'str_id': str_entity.pk
-                    } for ev in set(str_entity.comment_pks) if ev is not None
-                ]
-            }
-
-            if major and user and comment:
-                issue_type = "Panel promoted to version {}".format(self.version)
-                issue_description = comment
-
-                track_promoted = TrackRecord.objects.create(
-                    curator_status=user.reviewer.is_GEL(),
-                    issue_description=issue_description,
-                    gel_status=str_entity.status,
-                    issue_type=issue_type,
-                    user=user
-                )
-                str_entity.track.add(track_promoted)
-
-        # add in bulk
-        if not major:
-            bulk_strs = [strs[str_entity]['str'] for str_entity in strs]
-            new_strs = self.str_set.model.objects.bulk_create(bulk_strs)
-        else:
-            new_strs = self.str_set.all()
-
-        self.clear_cache()
-
-        for str_entity in new_strs:
-            str_data = strs[str_entity.name]
-
-            for i, _ in enumerate(str_data['evidences']):
-                str_data['evidences'][i]['str_id'] = str_data['str'].pk
-            evidences.extend(str_data['evidences'])
-
-            for i, _ in enumerate(str_data['evaluations']):
-                str_data['evaluations'][i]['str_id'] = str_data['str'].pk
-            evaluations.extend(str_data['evaluations'])
-
-            for i, _ in enumerate(str_data['tracks']):
-                str_data['tracks'][i]['str_id'] = str_data['str'].pk
-            tracks.extend(str_data['tracks'])
-
-            for i, _ in enumerate(str_data['tags']):
-                str_data['tags'][i]['str_id'] = str_data['str'].pk
-            tags.extend(str_data['tags'])
-
-            for i, _ in enumerate(str_data['comments']):
-                str_data['comments'][i]['str_id'] = str_data['str'].pk
-            comments.extend(str_data['comments'])
-
-        self.str_set.model.evidence.through.objects.bulk_create([
-            self.str_set.model.evidence.through(**ev) for ev in evidences
-        ])
-        self.str_set.model.evaluation.through.objects.bulk_create([
-            self.str_set.model.evaluation.through(**ev) for ev in evaluations
-        ])
-        self.str_set.model.track.through.objects.bulk_create([
-            self.str_set.model.track.through(**ev) for ev in tracks
-        ])
-        self.str_set.model.tags.through.objects.bulk_create([
-            self.str_set.model.tags.through(**ev) for ev in tags
-        ])
-        self.str_set.model.comments.through.objects.bulk_create([
-            self.str_set.model.comments.through(**ev) for ev in comments
+        self.entity_set.model.comments.through.objects.bulk_create([
+            self.entity_set.model.comments.through(**ev) for ev in comments
         ])
 
     def update_saved_stats(self):

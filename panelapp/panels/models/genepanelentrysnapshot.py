@@ -16,48 +16,14 @@ from .trackrecord import TrackRecord
 from .comment import Comment
 from .tag import Tag
 from .genepanelsnapshot import GenePanelSnapshot
-from .genepanel import GenePanel
 from .entity import AbstractEntity
-from panels.templatetags.panel_helpers import get_gene_list_data
-from panels.templatetags.panel_helpers import GeneDataType
+from .entity import EntityManager
 
 
-class GenePanelEntrySnapshotManager(models.Manager):
+class GenePanelEntrySnapshotManager(EntityManager):
     """Objects manager for GenePanelEntrySnapshot."""
 
-    def get_latest_ids(self, deleted=False):
-        """Get GenePanelSnapshot ids"""
-
-        qs = super().get_queryset()
-        if not deleted:
-            qs = qs.exclude(panel__panel__status=GenePanel.STATUS.deleted)
-
-        return qs.distinct('panel__panel__pk')\
-            .values_list('panel__pk', flat=True)\
-            .order_by('panel__panel__pk', '-panel__major_version', '-panel__minor_version')
-
-    def get_active(self, deleted=False, gene_symbol=None, pks=None):
-        """Get active Gene Entry Snapshots"""
-
-        if pks:
-            qs = super().get_queryset().filter(panel__pk__in=pks)
-        else:
-            qs = super().get_queryset().filter(panel__pk__in=Subquery(self.get_latest_ids(deleted)))
-        if gene_symbol:
-            qs = qs.filter(gene_core__gene_symbol=gene_symbol)
-
-        return qs.annotate(
-                number_of_reviewers=Count('evaluation__user', distinct=True),
-                number_of_evaluated_genes=Count('evaluation'),
-                number_of_genes=Count('pk'),
-            )\
-            .prefetch_related('evaluation', 'tags', 'evidence', 'panel', 'panel__level4title', 'panel__panel')\
-            .order_by('panel__pk', '-panel__major_version', '-panel__minor_version')
-
-    def get_gene_panels(self, gene_symbol, deleted=False, pks=None):
-        """Get panels for the specified gene"""
-
-        return self.get_active(deleted=deleted, gene_symbol=gene_symbol, pks=pks)
+    pass
 
 
 class GenePanelEntrySnapshot(AbstractEntity, TimeStampedModel):
