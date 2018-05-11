@@ -43,8 +43,8 @@
                 GRCh37 Position: {{ entity.position_37.lower }}-{{ entity.position_37.upper }}<br />
                 GRCh38 Position: {{ entity.position_38.lower }}-{{ entity.position_38.upper }}<br />
                 Repeated Sequence: {{ entity.repeated_sequence }}<br />
-                Normal Number of Repeats: {{ entity.normal_repeats }}<br />
-                Pathogenic Number of Repeats: {{ entity.pathogenic_repeats }}<br />
+                Normal Number of Repeats: &lt; or = {{ entity.normal_repeats }}<br />
+                Pathogenic Number of Repeats: = or &gt; {{ entity.pathogenic_repeats }}<br />
                 <br />
             {% endif %}
             {% if entity.gene.gene_symbol %}

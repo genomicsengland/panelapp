@@ -81,9 +81,11 @@ class PanelSTRForm(forms.ModelForm):
         required=False
     )
     current_diagnostic = forms.BooleanField(required=False)
-    clinically_relevant = forms.BooleanField(required=False, help_text="Interruptions in the repeated sequence are " +
-                                                                       "reported as part of standard diagnostic " +
-                                                                       "practise")
+    clinically_relevant = forms.BooleanField(
+        label="Interruptions are clinically relevant",
+        required=False,
+        help_text="Interruptions in the repeated sequence are reported as part of standard diagnostic practice"
+    )
     comments = forms.CharField(widget=forms.Textarea, required=False)
 
     class Meta:
