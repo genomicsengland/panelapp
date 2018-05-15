@@ -34,7 +34,7 @@ class EntityManager(Manager):
             .order_by('panel__panel__pk', '-panel__major_version', '-panel__minor_version')
 
     def get_active(self, deleted=False, gene_symbol=None, name=None, pks=None):
-        """Get active STRs"""
+        """Get active Entities"""
 
         if pks:
             qs = super().get_queryset().filter(panel__pk__in=pks)
@@ -47,8 +47,8 @@ class EntityManager(Manager):
 
         return qs.annotate(
             number_of_reviewers=Count('evaluation__user', distinct=True),
-            number_of_evaluated_genes=Count('evaluation'),
-            number_of_genes=Count('pk'),
+            number_of_evaluated_entities=Count('evaluation'),
+            number_of_entities=Count('pk'),
         ) \
             .prefetch_related('evaluation', 'tags', 'evidence', 'panel', 'panel__level4title', 'panel__panel') \
             .order_by('panel__pk', '-panel__major_version', '-panel__minor_version')
@@ -554,7 +554,6 @@ class AbstractEntity:
                 activity_text = "reviewed {}".format(self.label)
 
             self.panel.add_activity(user, activity_text, self)
-
             return evaluation
 
     @property

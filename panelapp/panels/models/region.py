@@ -104,7 +104,7 @@ class Region(AbstractEntity, TimeStampedModel):
     position_37 = IntegerRangeField()
     position_38 = IntegerRangeField()
     type_of_variants = models.CharField(max_length=32, choices=VARIANT_TYPES)
-    type_of_effects = models.CharField(max_length=32, choices=EFFECT_TYPES)
+    type_of_effects = ArrayField(models.CharField(max_length=32, choices=EFFECT_TYPES))
 
     gene = JSONField(encoder=DjangoJSONEncoder, blank=True, null=True)  # copy data from Gene.dict_tr
     gene_core = models.ForeignKey(Gene, blank=True, null=True)  # reference to the original Gene

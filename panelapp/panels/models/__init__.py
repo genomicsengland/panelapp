@@ -45,3 +45,4 @@ from .import_tools import UploadedGeneList  # noqa
 from .import_tools import UploadedPanelList  # noqa
 from .import_tools import UploadedReviewsList  # noqa
 from .strs import STR  # noqa
+from .region import Region  # noqa

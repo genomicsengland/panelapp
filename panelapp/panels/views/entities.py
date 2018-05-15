@@ -169,6 +169,8 @@ class GenePanelSpanshotView(EntityMixin, DetailView):
         ctx['entity_name'] = self.kwargs['entity_name']
         ctx['next_str'] = None
         ctx['prev_str'] = None
+        ctx['next_gene'] = None
+        ctx['prev_gene'] = None
 
         is_admin = self.request.user.is_authenticated and self.request.user.reviewer.is_GEL()
 
