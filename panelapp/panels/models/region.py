@@ -13,6 +13,7 @@ from django.contrib.postgres.fields import IntegerRangeField
 from django.urls import reverse
 
 from model_utils.models import TimeStampedModel
+from array_field_select.fields import ArrayField as SelectArrayField
 from .entity import AbstractEntity
 from .entity import EntityManager
 from .gene import Gene
@@ -104,7 +105,7 @@ class Region(AbstractEntity, TimeStampedModel):
     position_37 = IntegerRangeField()
     position_38 = IntegerRangeField()
     type_of_variants = models.CharField(max_length=32, choices=VARIANT_TYPES)
-    type_of_effects = ArrayField(models.CharField(max_length=32, choices=EFFECT_TYPES))
+    type_of_effects = SelectArrayField(models.CharField(max_length=128, choices=EFFECT_TYPES), help_text="Press CTRL or CMD button to select multiple effects")
 
     gene = JSONField(encoder=DjangoJSONEncoder, blank=True, null=True)  # copy data from Gene.dict_tr
     gene_core = models.ForeignKey(Gene, blank=True, null=True)  # reference to the original Gene
@@ -146,7 +147,11 @@ class Region(AbstractEntity, TimeStampedModel):
     def get_absolute_url(self):
         """Returns absolute url for this STR in a panel"""
 
-        return reverse('panels:evaluation', args=(self.panel.panel.pk, 'str', self.name))
+        return reverse('panels:evaluation', args=(self.panel.panel.pk, 'region', self.name))
+
+    def human_type_of_effects(self):
+        effects_map = {v[0]: v[1] for v in self.EFFECT_TYPES}
+        return [effects_map[k] for k in self.type_of_effects]
 
     def dict_tr(self):
         return {

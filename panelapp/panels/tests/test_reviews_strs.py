@@ -199,6 +199,19 @@ class STRReviewTest(LoginGELUser):
         gene = GenePanel.objects.get(pk=str_item.panel.panel.pk).active_panel.get_str(str_item.name)
         assert gene.ready is True
 
+    def test_mark_as_ready_no_gene(self):
+        str_item = STRFactory(gene=None)
+        str_item.evaluation.all().delete()
+        url = reverse_lazy('panels:mark_entity_as_ready', kwargs={
+            'pk': str_item.panel.panel.pk,
+            'entity_type': 'str',
+            'entity_name': str_item.name
+        })
+
+        self.client.post(url, {'ready_comment': fake.sentence()})
+        gene = GenePanel.objects.get(pk=str_item.panel.panel.pk).active_panel.get_str(str_item.name)
+        assert gene.ready is True
+
     def test_update_tags(self):
         str_item = STRFactory()
         current_version = str_item.panel.version

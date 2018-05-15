@@ -12,6 +12,7 @@ from panels.models import Level4Title
 from panels.models import GenePanel
 from panels.models import GenePanelSnapshot
 from panels.models import STR
+from panels.models import Region
 from psycopg2.extras import NumericRange
 
 
@@ -193,3 +194,48 @@ class STRFactory(factory.django.DjangoModelFactory):
             return
 
         self.panel.update_saved_stats()
+
+
+class RegionFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Region
+        django_get_or_create = False
+
+    name = factory.Faker('word')
+    chromosome = factory.LazyAttribute(lambda s: choice(STR.CHROMOSOMES)[0])
+    position_37 = factory.LazyAttribute(lambda s: NumericRange(randint(1, 10), randint(11, 20)))
+    position_38 = factory.LazyAttribute(lambda s: NumericRange(randint(1, 10), randint(11, 20)))
+    type_of_effects = factory.LazyAttribute(lambda s: [choice(Region.EFFECT_TYPES)[0], ])
+    type_of_variants = factory.LazyAttribute(lambda s: choice(Region.VARIANT_TYPES))
+    panel = factory.SubFactory(GenePanelSnapshotFactory)
+    gene_core = factory.SubFactory(GeneFactory)
+    publications = factory.Faker('sentences', nb=3)
+    phenotypes = factory.Faker('sentences', nb=3)
+    moi = Evaluation.MODES_OF_INHERITANCE.Unknown
+    saved_gel_status = 0
+    gene = factory.LazyAttribute(lambda g: g.gene_core.dict_tr())
+
+    @factory.post_generation
+    def evaluation(self, create, evaluations, **kwargs):
+        if not create:
+            return
+
+        if not evaluations:
+            evaluations = EvaluationFactory.create_batch(4)
+
+        for evaluation in evaluations:
+            if evaluation:
+                self.evaluation.add(evaluation)
+
+    @factory.post_generation
+    def evidence(self, create, extracted, **kwargs):
+        if not create:
+            return
+
+        evidences = extracted
+        if not extracted:
+            evidences = EvidenceFactory.create_batch(4)
+
+        for evidence in evidences:
+            if evidence:
+                self.evidence.add(evidence)

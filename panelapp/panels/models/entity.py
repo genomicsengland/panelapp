@@ -120,6 +120,9 @@ class AbstractEntity:
         # TODO (Oleg) enum all the things
         return self._entity_type == 'gene'
 
+    def is_region(self):
+        return self.entity_type == 'region'
+
     @property
     def status(self):
         """Save gel_status in the gene panel snapshot if saved_gel_status isn't set"""

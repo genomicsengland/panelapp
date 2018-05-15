@@ -11,6 +11,11 @@ from .strs import UpdateSTRMOIForm
 from .strs import UpdateSTRPhenotypesForm
 from .strs import UpdateSTRPublicationsForm
 from .strs import UpdateSTRRatingForm
+from .region import UpdateRegionTagsForm
+from .region import UpdateRegionMOIForm
+from .region import UpdateRegionPhenotypesForm
+from .region import UpdateRegionPublicationsForm
+from .region import UpdateRegionRatingForm
 
 
 class EditCommentForm(forms.Form):

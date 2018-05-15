@@ -307,7 +307,7 @@ window.Modules = {};
     };
 
     /**
-     * Filter entities by type (gene, str). Right now only used on entities list page.
+     * Filter entities by type (gene, str, region). Right now only used on entities list page.
      *
      * It assumes it's used together with filter-list module.
      *
@@ -322,8 +322,9 @@ window.Modules = {};
 
             var displayGenesStatus = true;
             var displaySTRsStatus = true;
+            var displayRegionsStatus = true;
 
-            var filterItems = function(displayGenes, displaySTRs) {
+            var filterItems = function(displayGenes, displaySTRs, displayRegions) {
                 if (displayGenes) {
                     $element.find('li[data-type="gene"]').attr('data-filtered', false).show();
                 } else {
@@ -336,6 +337,12 @@ window.Modules = {};
                     $element.find('li[data-type="str"]').attr('data-filtered', true).hide();
                 }
 
+                if (displayRegions) {
+                    $element.find('li[data-type="region"]').attr('data-filtered', false).show();
+                } else {
+                    $element.find('li[data-type="region"]').attr('data-filtered', true).hide();
+                }
+
                 var visibleCount = $element.find('li:visible').length;
 
                 if (listCount) {
@@ -346,12 +353,17 @@ window.Modules = {};
 
             $('#show_genes').click(function() {
                 displayGenesStatus = $(this).prop('checked');
-                filterItems(displayGenesStatus, displaySTRsStatus);
+                filterItems(displayGenesStatus, displaySTRsStatus, displayRegionsStatus);
             });
 
             $('#show_strs').click(function() {
                 displaySTRsStatus = $(this).prop('checked');
-                filterItems(displayGenesStatus, displaySTRsStatus);
+                filterItems(displayGenesStatus, displaySTRsStatus, displayRegionsStatus);
+            });
+
+            $('#show_regions').click(function() {
+                displayRegionsStatus = $(this).prop('checked');
+                filterItems(displayGenesStatus, displaySTRsStatus, displayRegionsStatus);
             });
         }
     }

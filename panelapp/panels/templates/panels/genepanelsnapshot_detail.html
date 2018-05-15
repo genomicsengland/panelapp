@@ -31,13 +31,16 @@
         <div id="strs_list" class="panel panel-default">
             {% include "panels/entity/evaluation_strs_list.html" %}
         </div>
+        <div id="regions_list" class="panel panel-default">
+            {% include "panels/entity/evaluation_regions_list.html" %}
+        </div>
     </div>
     <div class="col-sm-10">
         <div id="gene_header">
             {% include "panels/entity/header.html" %}
         </div>
         <hr />
-        <p class="lead">
+        <div class="lead">
             {% if entity.is_str %}
                 Chromosome: {{ entity.chromosome }}<br />
                 GRCh37 Position: {{ entity.position_37.lower }}-{{ entity.position_37.upper }}<br />
@@ -45,6 +48,16 @@
                 Repeated Sequence: {{ entity.repeated_sequence }}<br />
                 Normal Number of Repeats: &lt; or = {{ entity.normal_repeats }}<br />
                 Pathogenic Number of Repeats: = or &gt; {{ entity.pathogenic_repeats }}<br />
+                <br />
+            {% elif entity.is_region %}
+                Chromosome: {{ entity.chromosome }}<br />
+                GRCh37 Position: {{ entity.position_37.lower }}-{{ entity.position_37.upper }}<br />
+                GRCh38 Position: {{ entity.position_38.lower }}-{{ entity.position_38.upper }}<br />
+                Type of variant: {{ entity.type_of_variant }}<br />
+                Type of effects:<br />
+                <ul>
+                    {% for effect in entity.human_type_of_effects %}<li>{{ effect }}</li>{% endfor %}
+                </ul>
                 <br />
             {% endif %}
             {% if entity.gene.gene_symbol %}
@@ -68,7 +81,7 @@
                 {{ entity.gene.gene_symbol }} is in <a href="{% url 'panels:entity_detail' entity.gene.gene_symbol %}">{{ shared_panels|length }} panel{{ shared_panels|pluralize }}</a>
             {% endwith %}
             {% endif %}
-        </p>
+        </div>
 
         <div data-module="tab-switcher" data-default-tab="evaluate">
             <ul class="nav nav-tabs" role="tablist">
@@ -93,10 +106,12 @@
                     {% include "panels/entity/evaluate.html" %}
                 </div>
                 <div role="tabpanel" class="tab-pane" id="details">
-                    {% if entity_type == 'gene' %}
+                    {% if entity.is_gene %}
                         {% include "panels/genepanelentrysnapshot/details.html" %}
-                    {% elif entity_type == 'str' %}
+                    {% elif entity.is_str %}
                         {% include "panels/strs/details.html" %}
+                    {% elif entity.is_region %}
+                        {% include "panels/region/details.html" %}
                     {% endif %}
                 </div>
                 <div role="tabpanel" class="tab-pane" id="history">

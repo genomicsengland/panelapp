@@ -882,6 +882,21 @@ class GenePanelSnapshot(TimeStampedModel):
         else:
             return False
 
+    def delete_region(self, region_name, increment=True):
+        """Removes Region from a panel, but leaves it in the previous versions of the same panel"""
+
+        if self.has_region(region_name):
+            if increment:
+                self = self.increment_version(ignore_region=region_name)
+            else:
+                self.cached_regions.get(name=region_name).delete()
+                self.clear_cache()
+
+            self.update_saved_stats()
+            return True
+        else:
+            return False
+
     def add_entity_info(self, entity, user, entity_name, entity_data):
         """Add entity common info to the database
 
@@ -1491,73 +1506,6 @@ class GenePanelSnapshot(TimeStampedModel):
         self.update_saved_stats()
         return str_item
 
-    def add_region(self, user, region_name, region_data, increment_version=True):
-        """Adds a new gene to the panel
-
-        Args:
-            user: User instance. It's the user who is adding a new gene, we need
-                this info to add to TrackRecord, Activities, Evidence, and Evaluation
-            str_name: STR name
-            str_data: A dict with the values:
-                - chromosome
-                - position_37
-                - position_38
-                - type_of_variants
-                - type_of_effects[]
-                - moi
-                - penetrance
-                - publications
-                - phenotypes
-                - comment
-                - current_diagnostic
-                - sources
-                - rating
-                - tags
-            increment_version: (optional) Boolean
-
-        Returns:
-            STR instance.
-            Or False in case the gene is already in the panel.
-        """
-
-        if self.has_region(region_name):
-            return False
-
-        if increment_version:
-            self = self.increment_version()
-
-        region = self.cached_strs.model(
-            name=region_name,
-            chromosome=region_data.get('chromosome'),
-            position_37=region_data.get('position_37'),
-            position_38=region_data.get('position_38'),
-            type_of_variants=region_data.get('type_of_variants'),
-            type_of_effects=region_data.get('type_of_effects'),
-            panel=self,
-            moi=region_data.get('moi'),
-            penetrance=region_data.get('penetrance'),
-            publications=region_data.get('publications'),
-            phenotypes=region_data.get('phenotypes'),
-            saved_gel_status=0,
-            flagged=False if user.reviewer.is_GEL() else True
-        )
-
-        if region_data.get('gene'):
-            gene_core = Gene.objects.get(gene_symbol=region_data['gene'].gene_symbol)
-            gene_info = gene_core.dict_tr()
-
-            region.gene_core = gene_core
-            region.gene = gene_info
-
-        region.save()
-        region = self.add_entity_info(region, user, region.label, region_data)
-
-        self.add_activity(user, gene_core.gene_symbol if region_data.get('gene') else None, "Added Region to panel", region.name)
-
-        region.evidence_status(update=True)
-        self.update_saved_stats()
-        return region
-
     def update_str(self, user, str_name, str_data, append_only=False, remove_gene=False):
         """Updates a STR if it exists in this panel
 
@@ -2033,6 +1981,529 @@ class GenePanelSnapshot(TimeStampedModel):
             self.clear_cache()
             self.update_saved_stats()
             return str_item
+        else:
+            return False
+
+    def add_region(self, user, region_name, region_data, increment_version=True):
+        """Adds a new gene to the panel
+
+        Args:
+            user: User instance. It's the user who is adding a new gene, we need
+                this info to add to TrackRecord, Activities, Evidence, and Evaluation
+            str_name: STR name
+            str_data: A dict with the values:
+                - chromosome
+                - position_37
+                - position_38
+                - type_of_variants
+                - type_of_effects[]
+                - moi
+                - penetrance
+                - publications
+                - phenotypes
+                - comment
+                - current_diagnostic
+                - sources
+                - rating
+                - tags
+            increment_version: (optional) Boolean
+
+        Returns:
+            STR instance.
+            Or False in case the gene is already in the panel.
+        """
+
+        if self.has_region(region_name):
+            return False
+
+        if increment_version:
+            self = self.increment_version()
+
+        region = self.cached_regions.model(
+            name=region_name,
+            chromosome=region_data.get('chromosome'),
+            position_37=region_data.get('position_37'),
+            position_38=region_data.get('position_38'),
+            type_of_variants=region_data.get('type_of_variants'),
+            type_of_effects=region_data.get('type_of_effects'),
+            panel=self,
+            moi=region_data.get('moi'),
+            penetrance=region_data.get('penetrance'),
+            publications=region_data.get('publications'),
+            phenotypes=region_data.get('phenotypes'),
+            saved_gel_status=0,
+            flagged=False if user.reviewer.is_GEL() else True
+        )
+
+        if region_data.get('gene'):
+            gene_core = Gene.objects.get(gene_symbol=region_data['gene'].gene_symbol)
+            gene_info = gene_core.dict_tr()
+
+            region.gene_core = gene_core
+            region.gene = gene_info
+
+        region.save()
+        region = self.add_entity_info(region, user, region.label, region_data)
+
+        self.add_activity(user, gene_core.gene_symbol if region_data.get('gene') else None, "Added Region to panel", region.name)
+
+        region.evidence_status(update=True)
+        self.update_saved_stats()
+        return region
+
+    def update_region(self, user, region_name, region_data, append_only=False, remove_gene=False):
+        """Updates a Region if it exists in this panel
+
+        Args:
+            user: User instance. It's the user who is updating a gene, we need
+                this info to add to TrackRecord, Activities, Evidence, and Evaluation
+            region_name: Region name
+            region_data: A dict with the values:
+                - name
+                - chromosome
+                - position_37
+                - position_38
+                - type_of_variants
+                - type_of_effects
+                - moi
+                - penetrance
+                - publications
+                - phenotypes
+                - comment
+                - current_diagnostic
+                - sources
+                - rating
+                - gene
+
+                if `gene` is in the gene_data and it's different to the stored gene
+                it will change the gene data, and remove the old gene from the panel.
+            append_only: bool If it's True we don't remove evidences, but only add them
+            remove_gene: bool Remove gene data from this region
+
+        Returns:
+            Region if the it was successfully updated, False otherwise
+        """
+
+        logging.debug("Updating Region:{} panel:{} region_data:{}".format(region_name, self, region_data))
+        has_region = self.has_region(region_name)
+        if has_region:
+            logging.debug("Found Region:{} in panel:{}. Incrementing version.".format(region_name, self))
+            region = self.get_region(region_name)
+
+            if region_data.get('flagged') is not None:
+                region.flagged = region_data.get('flagged')
+
+            tracks = []
+
+            if region_data.get('name') and region_data.get('name') != region_name:
+                if self.has_region(region_data.get('name')):
+                    logging.info("Can't change Region name as the new name already exist in panel:{}".format(self))
+                    return False
+
+                old_region_name = region.name
+
+                new_evidences = region.evidence.all()
+                for evidence in new_evidences:
+                    evidence.pk = None
+
+                new_evaluations = region.evaluation.all()
+                for evaluation in new_evaluations:
+                    evaluation.create_comments = []
+                    for comment in evaluation.comments.all():
+                        comment.pk = None
+                        evaluation.create_comments.append(comment)
+                    evaluation.pk = None
+
+                new_tracks = region.track.all()
+                for track in new_tracks:
+                    track.pk = None
+
+                tags = region.tags.all()
+
+                new_comments = region.comments.all()
+                for comment in new_comments:
+                    comment.pk = None
+
+                region.name = region_data.get('name')
+                region.pk = None
+                region.panel = self
+                region.save()
+
+                Evidence.objects.bulk_create(new_evidences)
+                region.evidence.through.objects.bulk_create([
+                    region.evidence.through(**{
+                        'evidence_id': ev.pk,
+                        'region_id': region.pk
+                    }) for ev in new_evidences
+                ])
+
+                Evaluation.objects.bulk_create(new_evaluations)
+                region.evaluation.through.objects.bulk_create([
+                    region.evaluation.through(**{
+                        'evaluation_id': ev.pk,
+                        'region_id': region.pk
+                    }) for ev in new_evaluations
+                ])
+
+                for evaluation in new_evaluations:
+                    Comment.objects.bulk_create(evaluation.create_comments)
+
+                evaluation_comments = []
+                for evaluation in new_evaluations:
+                    for comment in evaluation.create_comments:
+                        evaluation_comments.append(Evaluation.comments.through(**{
+                            'comment_id': comment.pk,
+                            'evaluation_id': evaluation.pk
+                        }))
+
+                Evaluation.comments.through.objects.bulk_create(evaluation_comments)
+
+                TrackRecord.objects.bulk_create(new_tracks)
+                region.track.through.objects.bulk_create([
+                    region.track.through(**{
+                        'trackrecord_id': track.pk,
+                        'region_id': region.pk
+                    }) for track in new_tracks
+                ])
+
+                region.tags.through.objects.bulk_create([
+                    region.tags.through(**{
+                        'tag_id': tag.pk,
+                        'region_id': region.pk
+                    }) for tag in tags
+                ])
+
+                Comment.objects.bulk_create(new_comments)
+                region.comments.through.objects.bulk_create([
+                    region.comments.through(**{
+                        'comment_id': comment.pk,
+                        'region_id': region.pk
+                    }) for comment in new_comments
+                ])
+
+                description = "{} was changed to {}".format(old_region_name, region.name)
+                track_gene = TrackRecord.objects.create(
+                    gel_status=region.status,
+                    curator_status=0,
+                    user=user,
+                    issue_type=TrackRecord.ISSUE_TYPES.ChangedName,
+                    issue_description=description
+                )
+                region.track.add(track_gene)
+                self.delete_region(old_region_name, increment=False)
+                logging.debug("Changed region name:{} to {} panel:{}".format(
+                    region_name, region_data.get('name'), self
+                ))
+
+            chromosome = region_data.get('chromosome')
+            if chromosome and chromosome != region.chromosome:
+                logging.debug("Chromosome for {} was changed from {} to {} panel:{}".format(
+                    region.label,
+                    region.chromosome,
+                    region_data.get('chromosome'),
+                    self
+                ))
+
+                description = "Chromosome for {} was changed from {} to {}. Panel: {}".format(
+                    region.name,
+                    region.chromosome,
+                    region_data.get('chromosome'),
+                    self.panel.name
+                )
+
+                tracks.append((
+                    TrackRecord.ISSUE_TYPES.ChangedChromosome,
+                    description
+                ))
+
+                region.chromosome = region_data.get('chromosome')
+
+            position_37 = region_data.get('position_37')
+            if position_37 and position_37 != region.position_37:
+                logging.debug("GRCh37 position for {} was changed from {}-{} to {}-{} panel:{}".format(
+                    region.label,
+                    region.position_37.lower,
+                    region.position_37.upper,
+                    region_data.get('position_37').lower,
+                    region_data.get('position_37').upper,
+                    self
+                ))
+
+                description = "GRCh37 position for {} was changed from {}-{} to {}-{}. Panel: {}".format(
+                    region.name,
+                    region.position_37.lower,
+                    region.position_37.upper,
+                    region_data.get('position_37').lower,
+                    region_data.get('position_37').upper,
+                    self.panel.name
+                )
+
+                tracks.append((
+                    TrackRecord.ISSUE_TYPES.ChangedPosition37,
+                    description
+                ))
+
+                region.position_37 = region_data.get('position_37')
+
+            position_38 = region_data.get('position_38')
+            if position_38 and position_38 != region.position_38:
+                logging.debug("GRCh38 position for {} was changed from {} to {} panel:{}".format(
+                    region.label, region.position_38, region_data.get('position_38'), self
+                ))
+
+                description = "GRCh38 position for {} was changed from {}-{} to {}-{}. Panel: {}".format(
+                    region.name,
+                    region.position_38.lower,
+                    region.position_38.upper,
+                    region_data.get('position_38').lower,
+                    region_data.get('position_38').upper,
+                    self.panel.name
+                )
+
+                tracks.append((
+                    TrackRecord.ISSUE_TYPES.ChangedPosition38,
+                    description
+                ))
+
+                region.position_38 = region_data.get('position_38')
+
+            type_of_variants = region_data.get('type_of_variants')
+            if type_of_variants and type_of_variants != region.type_of_variants:
+                logging.debug("Variant Type for {} was changed from {} to {} panel:{}".format(
+                    region.label, region.type_of_variants, region_data.get('type_of_variants'), self
+                ))
+
+                description = "Variant type for {} was changed from {} to {}. Panel: {}".format(
+                    region.name,
+                    region.type_of_variants,
+                    region_data.get('type_of_variants'),
+                    self.panel.name
+                )
+
+                tracks.append((
+                    TrackRecord.ISSUE_TYPES.ChangedVariantType,
+                    description
+                ))
+
+                region.type_of_variants = region_data.get('type_of_variants')
+
+            type_of_effects = sorted(region_data.get('type_of_effects', []))
+            if type_of_effects and type_of_effects != sorted(region.type_of_effects):
+                logging.debug("Variant effects for {} were changed from {} to {} panel:{}".format(
+                    region.label, region.type_of_effects, region_data.get('type_of_effects'), self
+                ))
+
+                description = "Type of effects for {} was changed from {} to {}. Panel: {}".format(
+                    region.name,
+                    '; '.join(region.type_of_effects),
+                    '; '.join(region_data.get('type_of_effects', [])),
+                    self.panel.name
+                )
+
+                tracks.append((
+                    TrackRecord.ISSUE_TYPES.ChangedEffectTypes,
+                    description
+                ))
+
+                region.normal_repeats = region_data.get('type_of_effects')
+
+
+            evidences_names = [ev.strip() for ev in region.evidence.values_list('name', flat=True)]
+
+            logging.debug("Updating evidences_names for {} in panel:{}".format(region.label, self))
+            if region_data.get('sources'):
+                add_evidences = [
+                    source.strip() for source in region_data.get('sources')
+                    if source not in evidences_names
+                ]
+                delete_evidences = [
+                    source for source in evidences_names
+                    if source not in Evidence.EXPERT_REVIEWS and not source in region_data.get('sources')
+                ]
+
+                if not append_only:
+                    for source in delete_evidences:
+                        ev = region.evidence.filter(name=source).first()
+                        region.evidence.remove(ev)
+
+                for source in add_evidences:
+                    logging.debug("Adding new evidence:{} for {} panel:{}".format(
+                        source, region.label, self
+                    ))
+                    evidence = Evidence.objects.create(
+                        name=source,
+                        rating=5,
+                        reviewer=user.reviewer
+                    )
+                    region.evidence.add(evidence)
+
+                    description = "{} was added to {}. Panel: {}".format(
+                        source,
+                        region.label,
+                        self.panel.name,
+                    )
+                    tracks.append((
+                        TrackRecord.ISSUE_TYPES.NewSource,
+                        description
+                    ))
+
+            moi = region_data.get('moi')
+            if moi and region.moi != moi:
+                logging.debug("Updating moi for {} in panel:{}".format(region.label, self))
+                region.moi = moi
+
+                description = "Model of inheritance for {} was set to {}".format(
+                    region.label,
+                    moi
+                )
+                tracks.append((
+                    TrackRecord.ISSUE_TYPES.SetModeofInheritance,
+                    description
+                ))
+
+            phenotypes = region_data.get('phenotypes')
+            if phenotypes:
+                logging.debug("Updating phenotypes for {} in panel:{}".format(region.label, self))
+                region.phenotypes = phenotypes
+
+            penetrance = region_data.get('penetrance')
+            if penetrance and region.penetrance != penetrance:
+                region.penetrance = penetrance
+                logging.debug("Updating penetrance for {} in panel:{}".format(region.label, self))
+                description = "Penetrance for gene {} was set to {}".format(
+                    region.name,
+                    penetrance
+                )
+                tracks.append((
+                    TrackRecord.ISSUE_TYPES.SetPenetrance,
+                    description
+                ))
+
+            publications = region_data.get('publications')
+            if publications and region.publications != publications:
+                region.publications = publications
+                logging.debug("Updating publications for {} in panel:{}".format(region.label, self))
+                description = "Publications for {} was set to {}".format(
+                    region.label,
+                    publications
+                )
+                tracks.append((
+                    TrackRecord.ISSUE_TYPES.SetPublications,
+                    description
+                ))
+
+            current_tags = [tag.pk for tag in region.tags.all()]
+            tags = region_data.get('tags')
+            if tags or current_tags:
+                if not tags:
+                    tags = []
+
+                new_tags = [tag.pk for tag in tags]
+                add_tags = [
+                    tag for tag in tags
+                    if tag.pk not in current_tags
+                ]
+                delete_tags = [
+                    tag for tag in current_tags
+                    if tag not in new_tags
+                ]
+
+                if not append_only:
+                    for tag in delete_tags:
+                        tag = region.tags.get(pk=tag)
+                        region.tags.remove(tag)
+                        logging.debug("Removing tag:{} for {} panel:{}".format(
+                            tag.name, region.label, self
+                        ))
+                        description = "{} was removed from {}. Panel: {}".format(
+                            tag,
+                            region.label,
+                            self.panel.name,
+                        )
+                        tracks.append((
+                            TrackRecord.ISSUE_TYPES.RemovedTag,
+                            description
+                        ))
+
+                for tag in add_tags:
+                    logging.debug("Adding new tag:{} for {} panel:{}".format(
+                        tag, region.label, self
+                    ))
+                    region.tags.add(tag)
+
+                    description = "{} was added to {}. Panel: {}".format(
+                        tag,
+                        region.label,
+                        self.panel.name,
+                    )
+                    tracks.append((
+                        TrackRecord.ISSUE_TYPES.AddedTag,
+                        description
+                    ))
+
+            new_gene = region_data.get('gene')
+            gene_name = region_data.get('gene_name')
+
+            if remove_gene and region.gene_core:
+                logging.debug("{} in panel:{} was removed".format(
+                    region.gene['gene_name'], self
+                ))
+
+                description = "Gene: {} was removed. Panel: {}".format(
+                    region.gene_core.gene_symbol,
+                    self.panel.name
+                )
+
+                tracks.append((
+                    TrackRecord.ISSUE_TYPES.RemovedGene,
+                    description
+                ))
+                region.gene_core = None
+                region.gene = None
+            elif new_gene and region.gene_core != new_gene:
+                logging.debug("{} in panel:{} has changed to gene:{}".format(
+                    gene_name, self, new_gene.gene_symbol
+                ))
+
+                if region.gene_core:
+                    description = "Gene: {} was changed to {}. Panel: {}".format(
+                        region.gene_core.gene_symbol,
+                        new_gene.gene_symbol,
+                        self.panel.name
+                    )
+                else:
+                    description = "Gene was set to {}. Panel: {}".format(
+                        new_gene.gene_symbol,
+                        self.panel.name
+                    )
+
+                tracks.append((
+                    TrackRecord.ISSUE_TYPES.AddedTag,
+                    description
+                ))
+
+                region.gene_core = new_gene
+                region.gene = new_gene.dict_tr()
+            elif gene_name and region.gene.get('gene_name') != gene_name:
+                logging.debug("Updating gene_name for {} in panel:{}".format(region.label, self))
+                region.gene['gene_name'] = gene_name
+
+            if tracks:
+                logging.debug("Adding tracks for {} in panel:{}".format(region.label, self))
+                status = region.evidence_status(True)
+                track = TrackRecord.objects.create(
+                    gel_status=status,
+                    curator_status=0,
+                    user=user,
+                    issue_type=",".join([t[0] for t in tracks]),
+                    issue_description="\n".join([t[1] for t in tracks])
+                )
+                region.track.add(track)
+
+            region.save()
+            self.clear_cache()
+            self.update_saved_stats()
+            return region
         else:
             return False
 
