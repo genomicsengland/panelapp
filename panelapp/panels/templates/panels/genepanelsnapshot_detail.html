@@ -53,8 +53,8 @@
                 Chromosome: {{ entity.chromosome }}<br />
                 GRCh37 Position: {{ entity.position_37.lower }}-{{ entity.position_37.upper }}<br />
                 GRCh38 Position: {{ entity.position_38.lower }}-{{ entity.position_38.upper }}<br />
-                Type of variant: {{ entity.type_of_variant }}<br />
-                Type of effects:<br />
+                Type of variant: {{ entity.type_of_variants }}<br />
+                Consequence Types:<br />
                 <ul>
                     {% for effect in entity.human_type_of_effects %}<li>{{ effect }}</li>{% endfor %}
                 </ul>

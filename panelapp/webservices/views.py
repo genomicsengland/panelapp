@@ -135,6 +135,7 @@ def get_panel(request, panel_name):
     serializer = PanelSerializer(
         filter_entity_list(instance.get_all_genes_extra, **filters),
         filter_entity_list(instance.get_all_strs_extra, **filters),
+        filter_entity_list(instance.get_all_regions_extra, **filters),
         instance=instance,
         context={'request': request}
     )

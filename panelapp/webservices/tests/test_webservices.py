@@ -6,6 +6,7 @@ from panels.models import Evaluation
 from panels.tests.factories import GenePanelSnapshotFactory
 from panels.tests.factories import GenePanelEntrySnapshotFactory
 from panels.tests.factories import STRFactory
+from panels.tests.factories import RegionFactory
 from webservices.utils import convert_mop
 
 
@@ -20,6 +21,7 @@ class TestWebservices(TransactionTestCase):
         self.gpes_deleted = GenePanelEntrySnapshotFactory(panel__panel__status=GenePanel.STATUS.deleted)
         self.genes = GenePanelEntrySnapshotFactory.create_batch(4, panel=self.gps)
         self.str = STRFactory(panel__panel__status=GenePanel.STATUS.public)
+        self.region = RegionFactory(panel__panel__status=GenePanel.STATUS.public)
 
     def test_list_panels(self):
         r = self.client.get(reverse_lazy('webservices:list_panels'))
@@ -28,7 +30,7 @@ class TestWebservices(TransactionTestCase):
     def test_list_panels_name(self):
         url = reverse_lazy('webservices:list_panels')
         r = self.client.get(url)
-        self.assertEqual(len(r.json()['result']), 3)
+        self.assertEqual(len(r.json()['result']), 4)
         self.assertEqual(r.status_code, 200)
 
     def test_retired_panels(self):
@@ -188,3 +190,13 @@ class TestWebservices(TransactionTestCase):
         r = self.client.get("{}?ModeOfPathogenicity={}".format(url, 'no_loss_of_function'))
         self.assertEqual(len(r.json()['results']), 1)
         self.assertEqual(r.json()['results'][0]['GeneSymbol'], self.gpes.gene.get('gene_symbol'))
+
+    def test_region_in_panel(self):
+        r = self.client.get(reverse_lazy('webservices:get_panel', args=(self.region.panel.panel.pk,)))
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.json()['result']['Regions'][0]['Name'], self.region.name)
+        self.assertEqual(r.json()['result']['Regions'][0]['GRCh37Coordinates'],
+                         [self.region.position_37.lower, self.region.position_37.upper])
+        self.assertEqual(r.json()['result']['Regions'][0]['GRCh38Coordinates'],
+                         [self.region.position_38.lower, self.region.position_38.upper])
+        self.assertEqual(sorted(r.json()['result']['Regions'][0]['ConsequenceSOTerms']), sorted(self.region.type_of_effect_impact))

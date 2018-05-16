@@ -427,6 +427,8 @@ class EntityReviewView(VerifiedReviewerRequiredMixin, EntityMixin, UpdateView):
             return GeneReviewForm
         elif self.is_str():
             return STRReviewForm
+        elif self.is_region():
+            return RegionReviewForm
 
     def get_template_names(self):
         return "panels/entity/evaluation_create.html"
@@ -436,6 +438,8 @@ class EntityReviewView(VerifiedReviewerRequiredMixin, EntityMixin, UpdateView):
             return self.panel.get_gene(self.kwargs['entity_name'], prefetch_extra=True)
         elif self.is_str():
             return self.panel.get_str(self.kwargs['entity_name'], prefetch_extra=True)
+        elif self.is_region():
+            return self.panel.get_region(self.kwargs['entity_name'], prefetch_extra=True)
 
     @cached_property
     def panel(self):
@@ -450,7 +454,7 @@ class EntityReviewView(VerifiedReviewerRequiredMixin, EntityMixin, UpdateView):
             kwargs['gene'] = self.object
         elif self.is_str():
             kwargs['str_item'] = self.object
-        elif self.is_str():
+        elif self.is_region():
             kwargs['region'] = self.object
 
         if not kwargs['initial']:
@@ -476,7 +480,7 @@ class EntityReviewView(VerifiedReviewerRequiredMixin, EntityMixin, UpdateView):
             msg = "Successfully reviewed gene {}".format(self.kwargs['entity_name'])
         elif self.is_str():
             msg = "Successfully reviewed STR {}".format(self.kwargs['entity_name'])
-        elif self.is_str():
+        elif self.is_region():
             msg = "Successfully reviewed region {}".format(self.kwargs['entity_name'])
         messages.success(self.request, msg)
         return ret

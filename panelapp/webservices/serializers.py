@@ -45,16 +45,18 @@ class NotAcceptedValue(APIException):
 
 
 class PanelSerializer(EnsembleIdMixin, serializers.BaseSerializer):
-    def __init__(self, list_of_genes, list_of_strs, **kwargs):
+    def __init__(self, list_of_genes, list_of_strs, list_of_regions, **kwargs):
         super(PanelSerializer, self).__init__(**kwargs)
         self.list_of_genes = list_of_genes
         self.list_of_strs = list_of_strs
+        self.list_of_regions = list_of_regions
 
     def to_representation(self, panel):
         result = {
             "result": {
                 "Genes": [],
                 "STRs": [],
+                "Regions": [],
                 "SpecificDiseaseName": panel.panel.name,
                 "version": panel.version,
                 "Created": panel.created,
@@ -95,6 +97,25 @@ class PanelSerializer(EnsembleIdMixin, serializers.BaseSerializer):
                 "LevelOfConfidence": convert_gel_status(str_item.saved_gel_status),
                 "Evidences": [ev.name for ev in str_item.evidence.all()],
             })
+
+        for region in self.list_of_regions:
+            result["result"]["Regions"].append({
+                "Name": region.name,
+                "Chromosome": region.chromosome,
+                "GRCh37Coordinates": [region.position_37.lower, region.position_37.upper],
+                "GRCh38Coordinates": [region.position_38.lower, region.position_38.upper],
+                "VariantType": region.type_of_variants,
+                "ConsequenceSOTerms": region.type_of_effect_impact,
+                "GeneSymbol": region.gene.get('gene_symbol') if region.gene else None,
+                "EnsembleGeneIds": self.get_ensemblId(region),
+                "ModeOfInheritance": make_null(convert_moi(region.moi)),
+                "Penetrance": make_null(region.penetrance),
+                "Publications": make_null(region.publications),
+                "Phenotypes": make_null(region.phenotypes),
+                "LevelOfConfidence": convert_gel_status(region.saved_gel_status),
+                "Evidences": [ev.name for ev in region.evidence.all()],
+            })
+
         return result
 
     def update(self, instance, validated_data):
@@ -187,6 +208,8 @@ class ListPanelSerializer(serializers.BaseSerializer):
                 "CurrentVersion": panel.version,
                 "CurrentCreated": panel.created,
                 "Number_of_Genes": panel.stats.get('number_of_genes'),
+                "Number_of_STRs": panel.stats.get('number_of_strs'),
+                "Number_of_Regions": panel.stats.get('number_of_regions'),
                 "Panel_Id": panel.panel.old_pk if panel.panel.old_pk else str(panel.panel.pk),
                 "Relevant_disorders": filter(filter_empty, panel.old_panels),
                 "Status": panel.panel.status

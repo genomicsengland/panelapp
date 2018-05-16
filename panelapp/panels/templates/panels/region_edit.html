@@ -13,22 +13,17 @@
             {{ view.panel.level4title.name }}
         </a>
     </li>
-    <li>
-        <a href="{% url 'panels:evaluation' view.panel.panel.id entity_type entity_name %}">
-            {{ entity_name }}
-        </a>
-    </li>
     <li class="active">
-        Add review
+        Edit Region
     </li>
 </ol>
 
 <h1>
-    {% block title %}Review {% if entity_type == 'gene' %}gene{% elif entity_type == 'str' %}STR{% elif entity_type == 'region' %}Region{% endif %}{% endblock %}
+    {% block title %}Edit Region {{ object.name }} in panel {{ view.panel.level4title.name }}{% endblock %}
 </h1>
 
-{% if request.user.is_authenticated and request.user.reviewer.is_verified %}
-    <form class="row add-top-margin remove-empty-array-val" id="evaluation-create" method="post">
+{% if request.user.is_authenticated and request.user.reviewer.is_GEL %}
+    <form class="row add-top-margin" method="post">
         {% csrf_token %}
         <div class="col-md-8">
             <div class="well">
@@ -47,8 +42,8 @@
                                 {{ field.label_tag }} <a data-toggle="modal" data-target="#moi" ><i class="fa fa-question-circle"></i></a>
                             {% elif field.name == "rating" %}
                                 <hr />
-                                <h4 class="add-label-margin">Review gene</h4>
-                                <p class="text-muted">You can optionally include a review of this gene when you add it.</p>
+                                <h4 class="add-label-margin">Review Region</h4>
+                                <p class="text-muted">You can optionally include a review of this Region when you add it.</p>
                                 {{ field.label_tag }}
                             {% elif field.name == "current_diagnostic" %}
                                 {{ field.label_tag }} <a data-toggle="modal" data-target="#diagostic" ><i class="fa fa-question-circle"></i></a>
@@ -56,10 +51,14 @@
                                 {{ field.label_tag }}
                             {% endif %}
 
-                            {% bootstrap_field field show_label=False %}
+                            {% if field.help_text %}
+                                <div class="text-muted">{{ field.help_text }}</div>
+                            {% endif %}
+
+                            {% bootstrap_field field show_label=False show_help=False %}
                         </div>
                     {% endfor %}
-                    <button type="submit" class="btn btn-primary">Add review</button>
+                    <button type="submit" class="btn btn-primary">Update Region</button>
                 </fieldset>
             </div>
         </div>
