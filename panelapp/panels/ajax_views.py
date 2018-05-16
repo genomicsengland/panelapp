@@ -166,7 +166,17 @@ class ClearSourcesAjaxView(GELReviewerRequiredMixin, GeneClearDataAjaxMixin, AJA
         return self.return_data()
 
 
-class ClearSingleSourceAjaxView(EntityMixin, GELReviewerRequiredMixin, BaseAjaxGeneMixin, AJAXMixin, View):
+class TableIDMixin:
+    def get_table_id(self):
+        if self.is_gene():
+            return '#genes_table'
+        elif self.is_str():
+            return '#strs_table'
+        elif self.is_region():
+            return '#regions_table'
+
+
+class ClearSingleSourceAjaxView(EntityMixin, TableIDMixin, GELReviewerRequiredMixin, BaseAjaxGeneMixin, AJAXMixin, View):
     def get_template_names(self):
         if self.is_gene():
             return "panels/genepanel_table.html"
@@ -196,7 +206,7 @@ class ClearSingleSourceAjaxView(EntityMixin, GELReviewerRequiredMixin, BaseAjaxG
         table = render(self.request, self.get_template_names(), ctx)
         return {
             'inner-fragments': {
-                '#genes_table': table
+                self.get_table_id(): table
             }
         }
 
@@ -242,7 +252,7 @@ class ApprovePanelAjaxView(GELReviewerRequiredMixin, PanelAjaxMixin, AJAXMixin, 
         return self.return_data()
 
 
-class DeleteEntityAjaxView(EntityMixin, GELReviewerRequiredMixin, BaseAjaxGeneMixin, AJAXMixin, View):
+class DeleteEntityAjaxView(EntityMixin, TableIDMixin, GELReviewerRequiredMixin, BaseAjaxGeneMixin, AJAXMixin, View):
     def get_template_names(self):
         if self.is_gene():
             return "panels/genepanel_table.html"
@@ -257,7 +267,7 @@ class DeleteEntityAjaxView(EntityMixin, GELReviewerRequiredMixin, BaseAjaxGeneMi
         elif self.is_str():
             self.panel.delete_str(self.kwargs['entity_name'], True, self.request.user)
         elif self.is_region():
-            self.panel.delete_str(self.kwargs['entity_name'], True, self.request.user)
+            self.panel.delete_region(self.kwargs['entity_name'], True, self.request.user)
 
         del self.panel
         return self.return_data()
@@ -269,7 +279,7 @@ class DeleteEntityAjaxView(EntityMixin, GELReviewerRequiredMixin, BaseAjaxGeneMi
         table = render(self.request, self.get_template_names(), ctx)
         return {
             'inner-fragments': {
-                '#genes_table' if self.is_gene() else '#strs_table': table  # TODO(Oleg) refactor
+                self.get_table_id(): table
             }
         }
 
@@ -413,6 +423,8 @@ class UpdateEvaluationsMixin(VerifiedReviewerRequiredMixin, BaseAjaxGeneMixin, E
         evaluations = render(self.request, 'panels/entity/evaluate.html', ctx)
         reviews = render(self.request, 'panels/entity/review/review_evaluations.html', ctx)
         genes_list = render(self.request, 'panels/entity/evaluation_genes_list.html', ctx)
+        strs_list = render(self.request, 'panels/entity/evaluation_strs_list.html', ctx)
+        regions_list = render(self.request, 'panels/entity/evaluation_regions_list.html', ctx)
         history = render(self.request, 'panels/entity/history.html', ctx)
         header = render(self.request, 'panels/entity/header.html', ctx)
 
@@ -429,6 +441,8 @@ class UpdateEvaluationsMixin(VerifiedReviewerRequiredMixin, BaseAjaxGeneMixin, E
                 '#review-evaluations': reviews,
                 '#details': details,
                 '#genes_list': genes_list,
+                '#strs_list': strs_list,
+                '#regions_list': regions_list,
                 '#history': history,
                 '#gene_header': header
             }

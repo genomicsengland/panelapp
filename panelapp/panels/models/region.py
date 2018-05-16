@@ -143,8 +143,8 @@ class Region(AbstractEntity, TimeStampedModel):
     chromosome = models.CharField(max_length=8, choices=CHROMOSOMES)
     position_37 = IntegerRangeField()
     position_38 = IntegerRangeField()
-    type_of_variants = models.CharField(max_length=32, choices=VARIANT_TYPES)
-    type_of_effects = SelectArrayField(models.CharField(max_length=128, choices=EFFECT_TYPES), help_text="Press CTRL or CMD button to select multiple effects")
+    type_of_variants = models.CharField(max_length=32, choices=VARIANT_TYPES, verbose_name="Variant type")
+    type_of_effects = SelectArrayField(models.CharField(max_length=128, choices=EFFECT_TYPES), verbose_name="Consequence Types", help_text="Press CTRL or CMD button to select multiple effects")
 
     gene = JSONField(encoder=DjangoJSONEncoder, blank=True, null=True)  # copy data from Gene.dict_tr
     gene_core = models.ForeignKey(Gene, blank=True, null=True)  # reference to the original Gene

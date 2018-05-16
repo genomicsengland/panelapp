@@ -28,6 +28,7 @@ from .views import DownloadAllGenes
 from .views import DownloadAllPanels
 from .views import ActivityListView
 from .views import DownloadAllSTRs
+from .views import DownloadAllRegions
 from .views import GeneDetailRedirectView
 from .views import RedirectGenesToEntities
 from .views import OldCodeURLRedirect
@@ -136,6 +137,7 @@ urlpatterns = [
     url(r'^upload_genes/', AdminUploadGenesView.as_view(), name="upload_genes"),
     url(r'^download_genes/', DownloadAllGenes.as_view(), name="download_genes"),
     url(r'^download_strs/', DownloadAllSTRs.as_view(), name="download_strs"),
+    url(r'^download_regions/', DownloadAllRegions.as_view(), name="download_regions"),
     url(r'^upload_panel/', AdminUploadPanelsView.as_view(), name="upload_panels"),
     url(r'^download_panel/', DownloadAllPanels.as_view(), name="download_panels"),
     url(r'^upload_reviews/', AdminUploadReviewsView.as_view(), name="upload_reviews"),
