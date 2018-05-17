@@ -231,3 +231,11 @@ CORS_ALLOW_METHODS = ('GET',)
 CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', 'amqp://localhost/panelapp')
 
 PACKAGE_VERSION = panelapp.__version__
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'pa-cache-1',
+        'TIMEOUT': None
+    }
+}

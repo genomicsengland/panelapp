@@ -1,5 +1,6 @@
 import logging
 from copy import deepcopy
+from django.core.cache import cache
 from django.db import models
 from django.db import transaction
 from django.db.models import Count
@@ -840,6 +841,11 @@ class GenePanelSnapshot(TimeStampedModel):
             if self.__dict__.get(item):
                 del self.__dict__[item]
 
+    @staticmethod
+    def clear_django_cache():
+        cache.delete('entities')
+        cache.delete('entities_admin')
+
     def delete_gene(self, gene_symbol, increment=True, user=None):
         """Removes gene from a panel, but leaves it in the previous versions of the same panel"""
 
@@ -852,6 +858,7 @@ class GenePanelSnapshot(TimeStampedModel):
             else:
                 self.get_all_genes.get(gene__gene_symbol=gene_symbol).delete()
                 self.clear_cache()
+                self.clear_django_cache()
 
             if user:
                 self.add_activity(user, "removed gene:{} from the panel".format(gene_symbol))
@@ -873,6 +880,7 @@ class GenePanelSnapshot(TimeStampedModel):
             else:
                 self.cached_strs.get(name=str_name).delete()
                 self.clear_cache()
+                self.clear_django_cache()
 
             if user:
                 self.add_activity(user, "removed STR:{} from the panel".format(str_name))
@@ -891,6 +899,7 @@ class GenePanelSnapshot(TimeStampedModel):
             else:
                 self.cached_regions.get(name=region_name).delete()
                 self.clear_cache()
+                self.clear_django_cache()
 
             self.update_saved_stats()
             return True
@@ -984,6 +993,7 @@ class GenePanelSnapshot(TimeStampedModel):
                 evaluation.comments.add(comment)
             entity.evaluation.add(evaluation)
         self.clear_cache()
+        self.clear_django_cache()
         return entity
 
     def add_gene(self, user, gene_symbol, gene_data, increment_version=True):
@@ -1424,6 +1434,7 @@ class GenePanelSnapshot(TimeStampedModel):
 
                 self.delete_gene(old_gene_symbol, increment=False)
                 self.clear_cache()
+                self.clear_django_cache()
                 self.update_saved_stats()
                 return gene
             elif gene_name and gene.gene.get('gene_name') != gene_name:
@@ -1934,7 +1945,7 @@ class GenePanelSnapshot(TimeStampedModel):
                 ))
                 str_item.gene_core = None
                 str_item.gene = None
-
+                self.clear_django_cache()
             elif new_gene and str_item.gene_core != new_gene:
                 logging.debug("{} in panel:{} has changed to gene:{}".format(
                     gene_name, self, new_gene.gene_symbol
@@ -1959,6 +1970,7 @@ class GenePanelSnapshot(TimeStampedModel):
 
                 str_item.gene_core = new_gene
                 str_item.gene = new_gene.dict_tr()
+                self.clear_django_cache()
             elif gene_name and str_item.gene.get('gene_name') != gene_name:
                 logging.debug("Updating gene_name for {} in panel:{}".format(str_item.label, self))
                 str_item.gene['gene_name'] = gene_name
@@ -2460,6 +2472,7 @@ class GenePanelSnapshot(TimeStampedModel):
                 ))
                 region.gene_core = None
                 region.gene = None
+                self.clear_django_cache()
             elif new_gene and region.gene_core != new_gene:
                 logging.debug("{} in panel:{} has changed to gene:{}".format(
                     gene_name, self, new_gene.gene_symbol
@@ -2484,6 +2497,7 @@ class GenePanelSnapshot(TimeStampedModel):
 
                 region.gene_core = new_gene
                 region.gene = new_gene.dict_tr()
+                self.clear_django_cache()
             elif gene_name and region.gene.get('gene_name') != gene_name:
                 logging.debug("Updating gene_name for {} in panel:{}".format(region.label, self))
                 region.gene['gene_name'] = gene_name

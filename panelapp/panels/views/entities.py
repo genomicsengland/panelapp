@@ -1,5 +1,6 @@
 from django.http import Http404
 from django.contrib import messages
+from django.core.cache import cache
 from django.views.generic import DetailView
 from django.views.generic import RedirectView
 from django.views.generic import CreateView
@@ -577,35 +578,42 @@ class EntitiesListView(ListView):
 
     def get_queryset(self, *args, **kwargs):
         is_admin_user = self.request.user.is_authenticated and self.request.user.reviewer.is_GEL()
-        panel_ids = GenePanelSnapshot.objects.get_active(all=is_admin_user, internal=is_admin_user)\
-            .values_list('pk', flat=True)
 
-        qs = GenePanelEntrySnapshot.objects.filter(
-            gene_core__active=True,
-            panel__in=panel_ids
-        )
+        cache_key = 'entities_admin' if is_admin_user else 'entities'
 
-        strs_qs = STR.objects.filter(panel__in=panel_ids)
-        regions_qs = Region.objects.filter(panel__in=panel_ids)
+        cached_entities = cache.get(cache_key)
+        if cached_entities:
+            return cached_entities
+        else:
+            panel_ids = GenePanelSnapshot.objects.get_active(all=is_admin_user, internal=is_admin_user)\
+                .values_list('pk', flat=True)
 
-        tag_filter = self.request.GET.get('tag')
-        if tag_filter:
-            qs = qs.filter(tags__name=tag_filter)
-            strs_qs = strs_qs.filter(tags__name=tag_filter)
-            regions_qs = regions_qs.filter(tags__name=tag_filter)
+            qs = GenePanelEntrySnapshot.objects.filter(
+                gene_core__active=True,
+                panel__in=panel_ids
+            )
 
-        entities = []
-        for gene in qs.order_by().distinct('gene_core__gene_symbol').values_list('gene_core__gene_symbol', flat=True):
-            entities.append(('gene', gene, gene))
+            strs_qs = STR.objects.filter(panel__in=panel_ids)
+            regions_qs = Region.objects.filter(panel__in=panel_ids)
 
-        for str_item in strs_qs.values_list('name', 'gene_core__gene_symbol'):
-            entities.append(('str', str_item[0], str_item[1]))
+            tag_filter = self.request.GET.get('tag')
+            if tag_filter:
+                qs = qs.filter(tags__name=tag_filter)
+                strs_qs = strs_qs.filter(tags__name=tag_filter)
+                regions_qs = regions_qs.filter(tags__name=tag_filter)
 
-        for region in regions_qs.values_list('name', 'gene_core__gene_symbol'):
-            entities.append(('region', region[0], region[1]))
+            entities = []
+            for gene in qs.order_by().distinct('gene_core__gene_symbol').values_list('gene_core__gene_symbol', flat=True):
+                entities.append(('gene', gene, gene))
 
-        sorted_entities = sorted(entities, key=lambda i: i[1].lower())
+            for str_item in strs_qs.values_list('name', 'gene_core__gene_symbol'):
+                entities.append(('str', str_item[0], str_item[1]))
 
+            for region in regions_qs.values_list('name', 'gene_core__gene_symbol'):
+                entities.append(('region', region[0], region[1]))
+
+            sorted_entities = sorted(entities, key=lambda i: i[1].lower())
+            cache.set(cache_key, sorted_entities)
         return sorted_entities
 
     def get_context_data(self, *args, **kwargs):
