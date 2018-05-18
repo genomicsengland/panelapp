@@ -83,7 +83,7 @@
 {% endwith %}
 
 
-  <h2 class="add-label-margin">{{ panel.get_all_strs_extra|length }} Region{{ panel.get_all_regions_extra|length|pluralize}}</h2>
+  <h2 class="add-label-margin">{{ panel.get_all_regions_extra|length }} Region{{ panel.get_all_regions_extra|length|pluralize}}</h2>
   <h3 class="text-muted normal remove-top-margin add-bottom-margin">{{ panel.stats.number_of_evaluated_regions }} reviewed{% if request.user.is_authenticated and request.user.reviewer.is_GEL %}, {{ panel.stats.number_of_ready_regions }} ready{% endif %}, {{ panel.stats.number_of_green_regions }} green</h3>
 
   <div data-module="sortable-table" data-default-key="region">
