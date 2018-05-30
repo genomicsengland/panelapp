@@ -36,7 +36,7 @@ urlpatterns = [
     url(r'^autocomplete/gene/$', GeneAutocomplete.as_view(), name="autocomplete-gene"),
     url(r'^autocomplete/source/$', SourceAutocomplete.as_view(), name="autocomplete-source"),
     url(r'^autocomplete/tags/$', TagsAutocomplete.as_view(), name="autocomplete-tags"),
-    url(r'^health/$', HealthCheckView.as_view(), name="health_check"),
+    url(r'^health_check/$', HealthCheckView.as_view(), name="health_check"),
     url(r'^version/$', VersionView.as_view(), name="version")
 ]
 
