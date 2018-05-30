@@ -16,14 +16,14 @@ class V1RedirectMixin(RedirectView):
 
 
 class RedirectGeneView(V1RedirectMixin):
-    "Redirect to the list of panels for a specific gene"
+    """Redirect to the list of panels for a specific gene"""
 
     def check(self):
-        self.url = reverse_lazy('panels:gene_detail', args=(self.kwargs['gene_symbol'],))
+        self.url = reverse_lazy('panels:entity_detail', args=(self.kwargs['gene_symbol'],))
 
 
 class RedirectPanelView(V1RedirectMixin):
-    "Check if we have an id for the old panel and redirect to the new id"
+    """Check if we have an id for the old panel and redirect to the new id"""
 
     def check(self):
         try:
@@ -34,18 +34,18 @@ class RedirectPanelView(V1RedirectMixin):
 
 
 class RedirectGenePanelView(V1RedirectMixin):
-    "Redirect to a gene in a panel"
+    """Redirect to a gene in a panel"""
 
     def check(self):
         try:
             gp = GenePanel.objects.get(old_pk=self.kwargs.get('old_pk'))
-            self.url = reverse_lazy('panels:evaluation', args=(gp.pk, self.kwargs.get('gene_symbol')))
+            self.url = reverse_lazy('panels:evaluation', args=(gp.pk, 'gene', self.kwargs.get('gene_symbol')))
         except GenePanel.DoesNotExist:
             self.url = '/panels/'
 
 
 class RedirectWebServices(V1RedirectMixin):
-    "Redirect webservices"
+    """Redirect webservices"""
 
     def check(self):
         self.url = "/WebServices/{}".format(self.kwargs['ws'])

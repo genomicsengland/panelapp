@@ -49,7 +49,6 @@ window.Modules = {};
         that.start = function(element) {
 
             var listInput = element.find('.js-filter-list-input'),
-                rows = element.find('li'),
                 listCount = element.find('.js-filter-list-count'),
                 filterForm;
 
@@ -62,6 +61,7 @@ window.Modules = {};
             function filterListBasedOnInput() {
                 var searchString = $.trim(listInput.val()),
                     regExp = new RegExp("^" + escapeStringForRegexp(searchString), 'i'),
+                    rows = element.find('li[data-filtered!="true"]'),
                     count = 0,
                     countText;
 
@@ -305,6 +305,56 @@ window.Modules = {};
         });
       }
     };
+
+    /**
+     * Filter entities by type (gene, str). Right now only used on entities list page.
+     *
+     * It assumes it's used together with filter-list module.
+     *
+     * @TODO (Oleg, someday) refactor this module, so it can be used in other places,
+     * At the moment it's only used on a single page, so no point in refactoring it.
+     */
+    Modules['filter-entities-type'] = function() {
+        this.start = function(element) {
+            var $element = $(element);
+            $element.find('li').attr('data-filtered', false);
+            var listCount = $element.find('.js-filter-list-count');
+
+            var displayGenesStatus = true;
+            var displaySTRsStatus = true;
+
+            var filterItems = function(displayGenes, displaySTRs) {
+                if (displayGenes) {
+                    $element.find('li[data-type="gene"]').attr('data-filtered', false).show();
+                } else {
+                    $element.find('li[data-type="gene"]').attr('data-filtered', true).hide();
+                }
+
+                if (displaySTRs) {
+                    $element.find('li[data-type="str"]').attr('data-filtered', false).show();
+                } else {
+                    $element.find('li[data-type="str"]').attr('data-filtered', true).hide();
+                }
+
+                var visibleCount = $element.find('li:visible').length;
+
+                if (listCount) {
+                    var countText = visibleCount == 1 ? listCount.data('singular') : listCount.data('plural');
+                    listCount.text(visibleCount + ' ' + countText);
+                }
+            };
+
+            $('#show_genes').click(function() {
+                displayGenesStatus = $(this).prop('checked');
+                filterItems(displayGenesStatus, displaySTRsStatus);
+            });
+
+            $('#show_strs').click(function() {
+                displaySTRsStatus = $(this).prop('checked');
+                filterItems(displayGenesStatus, displaySTRsStatus);
+            });
+        }
+    }
 
 })(window.Modules);
 

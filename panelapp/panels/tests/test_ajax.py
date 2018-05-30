@@ -20,7 +20,8 @@ class AjaxGenePanelEntrySnapshotTest(LoginGELUser):
     def helper_clear(self, content_type, additional_kwargs=None):
         kwargs = {
             'pk': self.gpes.panel.panel.pk,
-            'gene_symbol': self.gpes.gene.get('gene_symbol')
+            'entity_type': 'gene',
+            'entity_name': self.gpes.gene.get('gene_symbol')
         }
 
         if additional_kwargs:
@@ -36,19 +37,19 @@ class AjaxGenePanelEntrySnapshotTest(LoginGELUser):
         return res, gene
 
     def test_clear_phenotypes(self):
-        res, gene = self.helper_clear('clear_gene_phenotypes')
+        res, gene = self.helper_clear('clear_entity_phenotypes')
         assert gene.phenotypes == []
 
     def test_clear_gene_publications(self):
-        res, gene = self.helper_clear('clear_gene_publications')
+        res, gene = self.helper_clear('clear_entity_publications')
         assert gene.publications == []
 
     def test_clear_gene_mode_of_pathogenicity(self):
-        res, gene = self.helper_clear('clear_gene_mode_of_pathogenicity')
+        res, gene = self.helper_clear('clear_entity_mode_of_pathogenicity')
         assert gene.mode_of_pathogenicity == ""
 
     def test_clear_sources(self):
-        res, gene = self.helper_clear('clear_gene_sources')
+        res, gene = self.helper_clear('clear_entity_sources')
         assert gene.evidence.count() == 3
 
         self.assertTrue(gene.track.filter(issue_type=TrackRecord.ISSUE_TYPES.ClearSources).count() > 0)
@@ -73,7 +74,9 @@ class AjaxGenePanelEntrySnapshotTest(LoginGELUser):
 
         before_count = self.gpes.evidence.count()
         evidence_count = self.gpes.evidence.filter(name='UKGTN').count()
-        res, gene = self.helper_clear('clear_gene_source', additional_kwargs={'source': 'UKGTN'})
+        res, gene = self.helper_clear('clear_entity_source', additional_kwargs={
+            'source': 'UKGTN'
+        })
         assert gene.evidence.count() == before_count - evidence_count
         assert res.content.find(str.encode('UKGTN')) == -1
 
@@ -99,11 +102,14 @@ class AjaxGenePanelEntrySnapshotTest(LoginGELUser):
         evidence = [ev for ev in self.gpes.evidence.all() if ev.is_GEL and not ev.name.startswith('Expert Review')][0]
         before_count = self.gpes.evidence.count()
         evidence_count = self.gpes.evidence.filter(name='UKGTN').count()
-        res, gene = self.helper_clear('clear_gene_source', additional_kwargs={'source': 'UKGTN'})
+        res, gene = self.helper_clear('clear_entity_source', additional_kwargs={
+            'source': 'UKGTN'
+        })
         assert gene.evidence.count() == before_count - evidence_count
         assert res.content.find(str.encode('UKGTN')) == -1
 
         self.assertEqual(gene.status, Evidence.EXPERT_REVIEWS['Expert Review Green'])
+
 
 class AjaxGenePanelEntryTest(LoginGELUser):
     gpes = None

@@ -4,6 +4,7 @@ from panels.models import GenePanel
 from panels.models import GenePanelSnapshot
 from panels.tests.factories import GenePanelSnapshotFactory
 from panels.tests.factories import GenePanelEntrySnapshotFactory
+from panels.tests.factories import STRFactory
 
 
 class TestWebservices(TransactionTestCase):
@@ -16,6 +17,7 @@ class TestWebservices(TransactionTestCase):
         self.gpes_retired = GenePanelEntrySnapshotFactory(panel__panel__status=GenePanel.STATUS.retired)
         self.gpes_deleted = GenePanelEntrySnapshotFactory(panel__panel__status=GenePanel.STATUS.deleted)
         self.genes = GenePanelEntrySnapshotFactory.create_batch(4, panel=self.gps)
+        self.str = STRFactory(panel__panel__status=GenePanel.STATUS.public)
 
     def test_list_panels(self):
         r = self.client.get(reverse_lazy('webservices:list_panels'))
@@ -24,12 +26,13 @@ class TestWebservices(TransactionTestCase):
     def test_list_panels_name(self):
         url = reverse_lazy('webservices:list_panels')
         r = self.client.get(url)
-        self.assertEqual(len(r.json()['result']), 2)
+        self.assertEqual(len(r.json()['result']), 3)
         self.assertEqual(r.status_code, 200)
 
     def test_retired_panels(self):
         url = reverse_lazy('webservices:list_panels')
 
+        self.str.panel.panel.delete()
         self.gps.panel.status = GenePanel.STATUS.deleted
         self.gps.panel.save()
 
@@ -138,3 +141,13 @@ class TestWebservices(TransactionTestCase):
         multi_genes_url = reverse_lazy('webservices:search_genes', args=(multi_genes_arg,))
         r = self.client.get(multi_genes_url)
         self.assertEqual(r.status_code, 200)
+
+    def test_strs_in_panel(self):
+        r = self.client.get(reverse_lazy('webservices:get_panel', args=(self.str.panel.panel.pk,)))
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.json()['result']['STRs'][0]['Name'], self.str.name)
+        self.assertEqual(r.json()['result']['STRs'][0]['GRCh37Coordinates'],
+                         [self.str.position_37.lower, self.str.position_37.upper])
+        self.assertEqual(r.json()['result']['STRs'][0]['GRCh38Coordinates'],
+                         [self.str.position_38.lower, self.str.position_38.upper])
+        self.assertEqual(r.json()['result']['STRs'][0]['PathogenicRepeats'], self.str.pathogenic_repeats)

@@ -1,0 +1,76 @@
+{% extends "default.html" %}
+{% load static %}
+{% load staticfiles %}
+{% load bootstrap3 %}
+
+{% block content %}
+<ol class="breadcrumb">
+    <li>
+        <a href="{% url 'panels:index' %}">Panels</a>
+    </li>
+    <li>
+        <a href="{{ panel.get_absolute_url }}">
+            {{ panel.level4title.name }}
+        </a>
+    </li>
+    <li class="active">
+        Add STR
+    </li>
+</ol>
+
+<h1>
+    {% block title %}Add STR to panel{% endblock %}
+</h1>
+
+{% if request.user.is_authenticated and request.user.reviewer.is_verified %}
+    <form class="row add-top-margin" method="post">
+        {% csrf_token %}
+        <div class="col-md-8">
+            <div class="well">
+                <fieldset>
+                    {% for field in form %}
+                        <div class="form-group">
+                            {% if field.errors %}
+                                {% for error in field.errors %}
+                                    <span class="label label-danger">{{ error|escape }}</span>
+                                {% endfor %}
+                            {% endif %}
+
+                            {% if field.name == "mode_of_pathogenicity" %}
+                                {{ field.label_tag }} <a data-toggle="modal" data-target="#model_of_path" ><i class="fa fa-question-circle"></i></a>
+                            {% elif field.name == "rating" %}
+                                {{ field.label_tag }} <a data-toggle="modal" data-target="#rating_help" ><i class="fa fa-question-circle"></i></a>
+                            {% elif field.name == "moi" %}
+                                {{ field.label_tag }} <a data-toggle="modal" data-target="#moi" ><i class="fa fa-question-circle"></i></a>
+                            {% elif field.name == "rating" %}
+                                <hr />
+                                <h4 class="add-label-margin">Review STR</h4>
+                                <p class="text-muted">You can optionally include a review of this STR when you add it.</p>
+                                {{ field.label_tag }}
+                            {% elif field.name == "current_diagnostic" %}
+                                {{ field.label_tag }} <a data-toggle="modal" data-target="#diagostic" ><i class="fa fa-question-circle"></i></a>
+                            {% else %}
+                                {{ field.label_tag }}
+                            {% endif %}
+
+                            {% if field.help_text %}
+                                <div class="text-muted">{{ field.help_text }}</div>
+                            {% endif %}
+
+                            {% bootstrap_field field show_label=False show_help=False %}
+                        </div>
+                    {% endfor %}
+                    <button type="submit" class="btn btn-primary">Add STR</button>
+                </fieldset>
+            </div>
+        </div>
+    </form>
+    {{ form.media }}
+    {% block modals %}
+        {% include "panels/modals/rating.html" %}
+        {% include "panels/modals/mode_of_path.html" %}
+        {% include "panels/modals/diagnostic.html" %}
+        {% include "panels/modals/mode_of_inheritance.html" %}
+    {% endblock %}
+{% endif %}
+{% endblock %}

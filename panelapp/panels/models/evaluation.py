@@ -53,14 +53,20 @@ class Evaluation(TimeStampedModel):
     phenotypes = ArrayField(models.TextField(), blank=True, null=True)
     moi = models.CharField("Mode of Inheritance", choices=MODES_OF_INHERITANCE, null=True,  blank=True, max_length=255)
     current_diagnostic = models.BooleanField(default=False, blank=True)
+    clinically_relevant = models.NullBooleanField(
+        default=False, blank=True, null=True,
+        help_text="Interruptions in the repeated sequence are reported as part of standard diagnostic practise")
     version = models.CharField(null=True, blank=True, max_length=255)
     comments = models.ManyToManyField(Comment)
 
     def __str__(self):
-        gene_symbol = None
-        if self.genepanelentrysnapshot_set.first():
-            gene_symbol = self.genepanelentrysnapshot_set.first().gene.get('gene_symbol')
-        return "{} review by {}".format(gene_symbol, self.user.get_full_name())
+        label = None
+        # first check if it's STR, then GPES
+        if self.str_set.first():
+            label = self.str_set.first().label
+        elif self.genepanelentrysnapshot_set.first():
+            label = self.genepanelentrysnapshot_set.first().label
+        return "{} review by {}".format(label, self.user.get_full_name())
 
     def is_comment_without_review(self):
         if (self.rating
@@ -68,6 +74,7 @@ class Evaluation(TimeStampedModel):
                 or self.moi
                 or self.mode_of_pathogenicity
                 or self.current_diagnostic
+                or self.clinically_relevant
                 or self.publications
                 or self.phenotypes):
             return False
@@ -83,6 +90,7 @@ class Evaluation(TimeStampedModel):
             "phenotypes": self.phenotypes,
             "publications": self.publications,
             "current_diagnostic": self.current_diagnostic,
+            "clinically_relevant": self.clinically_relevant,
             "version": self.version,
             "date": self.created
         }
