@@ -7,12 +7,15 @@ from faker import Factory
 from accounts.tests.setup import LoginGELUser
 from panels.models.import_tools import update_gene_collection
 from panels.models import Gene
+
 from panels.models import GenePanel
 from panels.models import GenePanelSnapshot
+from panels.models import STR
 from panels.models import GenePanelEntrySnapshot
 from panels.tests.factories import GeneFactory
 from panels.tests.factories import GenePanelSnapshotFactory
 from panels.tests.factories import GenePanelEntrySnapshotFactory
+from panels.tests.factories import STRFactory
 
 
 fake = Factory.create()
@@ -71,12 +74,12 @@ class GeneTest(LoginGELUser):
 
     def test_list_genes(self):
         GenePanelEntrySnapshotFactory.create_batch(3)
-        r = self.client.get(reverse_lazy('panels:gene_list'))
+        r = self.client.get(reverse_lazy('panels:entities_list'))
         self.assertEqual(r.status_code, 200)
 
     def test_gene_not_ready(self):
         gpes = GenePanelEntrySnapshotFactory()
-        url = reverse_lazy('panels:mark_gene_as_not_ready', args=(gpes.panel.panel.pk, gpes.gene.get('gene_symbol')))
+        url = reverse_lazy('panels:mark_entity_as_not_ready', args=(gpes.panel.panel.pk, 'gene', gpes.gene.get('gene_symbol')))
         r = self.client.post(url, {})
         self.assertEqual(r.status_code, 302)
 
@@ -88,10 +91,14 @@ class GeneTest(LoginGELUser):
         gps = GenePanelSnapshotFactory()
         GenePanelEntrySnapshotFactory.create_batch(2, panel=gps)  # random genes
         GenePanelEntrySnapshotFactory.create(gene_core=gene_to_update, panel=gps)
+        STRFactory.create_batch(2, panel=gps)  # random STRs
+        STRFactory.create(gene_core=gene_to_update, panel=gps)
 
         gps = GenePanelSnapshotFactory()
         GenePanelEntrySnapshotFactory.create_batch(2, panel=gps)  # random genes
+        STRFactory.create_batch(2, panel=gps)  # random STRs
         GenePanelEntrySnapshotFactory.create(gene_core=gene_to_update_symbol, panel=gps)
+        STRFactory.create(gene_core=gene_to_update_symbol, panel=gps)
 
         to_insert = [
             Gene(gene_symbol='A', ensembl_genes={'inserted': True}).dict_tr(),
@@ -119,15 +126,25 @@ class GeneTest(LoginGELUser):
         update_gene_collection(migration)
         self.assertTrue(GenePanelEntrySnapshot.objects.get_active().get(
             gene_core__gene_symbol=gene_to_update.gene_symbol).gene.get('ensembl_genes')['updated'])
+        self.assertTrue(STR.objects.get_active().get(
+            gene_core__gene_symbol=gene_to_update.gene_symbol).gene.get('ensembl_genes')['updated'])
+
         updated_not_updated = [gpes.gene['ensembl_genes'] for gpes in GenePanelEntrySnapshot.objects.filter(
             gene_core__gene_symbol=gene_to_update.gene_symbol)]
         self.assertNotEqual(updated_not_updated[0], updated_not_updated[1])
+        updated_not_updated = [str_item.gene['ensembl_genes'] for str_item in STR.objects.filter(
+            gene_core__gene_symbol=gene_to_update.gene_symbol)]
+        self.assertNotEqual(updated_not_updated[0], updated_not_updated[1])
         self.assertFalse(GenePanelEntrySnapshot.objects.get(
+            gene_core__gene_symbol=gene_to_update_symbol.gene_symbol).gene_core.active)
+        self.assertFalse(STR.objects.get(
             gene_core__gene_symbol=gene_to_update_symbol.gene_symbol).gene_core.active)
         self.assertFalse(Gene.objects.get(gene_symbol=gene_to_update_symbol.gene_symbol).active)
         self.assertFalse(Gene.objects.get(gene_symbol=gene_to_delete.gene_symbol).active)
         self.assertTrue(Gene.objects.get(gene_symbol='A').active)
         self.assertTrue(GenePanelEntrySnapshot.objects.get(
+            gene_core__gene_symbol='C').gene.get('ensembl_genes')['updated'])
+        self.assertTrue(STR.objects.get(
             gene_core__gene_symbol='C').gene.get('ensembl_genes')['updated'])
 
     def test_get_panels_for_a_gene(self):
@@ -150,7 +167,7 @@ class GeneTest(LoginGELUser):
 
         assert GenePanelEntrySnapshot.objects.get_gene_panels(gene.gene_symbol).count() == 3
 
-        url = reverse_lazy('panels:gene_detail', kwargs={'slug': gene.gene_symbol})
+        url = reverse_lazy('panels:entity_detail', kwargs={'slug': gene.gene_symbol})
         res = self.client.get(url)
         assert len(res.context_data['entries']) == 3
 
@@ -172,6 +189,6 @@ class GeneTest(LoginGELUser):
         self.assertEqual(GenePanelSnapshot.objects.get_gene_panels(gene.gene_symbol).count(), 1)
         self.assertEqual(GenePanelSnapshot.objects.get_gene_panels(gene.gene_symbol, all=True, internal=True).count(), 2)
 
-        url = reverse_lazy('panels:gene_detail', kwargs={'slug': gene.gene_symbol})
+        url = reverse_lazy('panels:entity_detail', kwargs={'slug': gene.gene_symbol})
         res = self.client.get(url)
         self.assertEqual(len(res.context_data['entries']), 2)

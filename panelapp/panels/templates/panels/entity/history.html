@@ -1,0 +1,16 @@
+{% load panel_helpers %}
+<h3>History</h3>
+{% for track in entity.track.all %}
+  <div class="panel panel-default">
+    <div class="panel-body">
+      <span class="text-muted">{{ track.created|date }}, Gel status: {{ track.gel_status }}</span>
+      <h4 class="remove-top-margin">{{ track.issue_type|human_issue_type }}</h4>
+      {% with user=track.user %}
+      <strong>{{ user.first_name }} {{ user.last_name }} ({{ user.reviewer.affiliation }})</strong>
+      {% endwith %}
+      <p>
+        {{ track.issue_description }}
+      </p>
+    </div>
+  </div>
+{% endfor %}

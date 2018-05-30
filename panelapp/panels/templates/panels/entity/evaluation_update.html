@@ -1,0 +1,32 @@
+{% extends "default.html" %}
+{% load static %}
+{% load staticfiles %}
+
+{% block content %}
+<ol class="breadcrumb">
+    <li>
+        <a href="{% url 'panels:index' %}">Panels</a>
+    </li>
+    <li>
+        <a href="{% url 'panels:detail' panel.pk  %}">
+            {{ panel.level4title.name }}
+        </a>
+    </li>
+    <li>
+        <a href="{% url 'panels:evaluation' panel.pk entity_type entity_name  %}">
+            {{ entity.name }}
+        </a>
+    </li>
+    <li class="active">
+        Review {{ entity.label }}
+    </li>
+</ol>
+
+<h1>
+    {% block title %}Review {{ entity.label }} in panel {{ panel.level4title.name }}{% endblock %}
+</h1>
+
+{% if request.user.is_authenticated and request.user.reviewer.is_verified %}
+{% include "panels/entity/evaluation_form.html" %}
+{% endif %}
+{% endblock %}

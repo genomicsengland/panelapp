@@ -8,6 +8,7 @@ from panels.models import GenePanel
 from panels.models import GenePanelEntrySnapshot
 from panels.tasks import email_panel_promoted
 from panels.tests.factories import GeneFactory
+from panels.tests.factories import EvidenceFactory
 from panels.tests.factories import GenePanelSnapshotFactory
 from panels.tests.factories import GenePanelEntrySnapshotFactory
 
@@ -61,12 +62,12 @@ class GenePanelTest(LoginGELUser):
 
     def test_view_add_gene_to_panel(self):
         gpes = GenePanelEntrySnapshotFactory()
-        r = self.client.get(reverse_lazy('panels:add_gene', args=(gpes.panel.panel.pk,)))
+        r = self.client.get(reverse_lazy('panels:add_entity', args=(gpes.panel.panel.pk, 'gene')))
         self.assertEqual(r.status_code, 200)
 
     def test_view_edit_gene_in_panel(self):
         gpes = GenePanelEntrySnapshotFactory()
-        url = reverse_lazy('panels:edit_gene', args=(gpes.panel.panel.pk, gpes.gene.get('gene_symbol'),))
+        url = reverse_lazy('panels:edit_entity', args=(gpes.panel.panel.pk, 'gene', gpes.gene.get('gene_symbol'),))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
 
@@ -117,7 +118,7 @@ class GenePanelTest(LoginGELUser):
         assert active_snapshot.major_version == 0
         assert active_snapshot.minor_version == 1
         assert gp.name == data['level4']
-        assert active_snapshot.get_all_entries.count() == 1
+        assert active_snapshot.get_all_genes.count() == 1
 
     def test_mark_all_genes_not_ready(self):
         gps = GenePanelSnapshotFactory()
@@ -163,9 +164,10 @@ class GenePanelTest(LoginGELUser):
 
         number_of_genes = gps.number_of_genes
 
-        url = reverse_lazy('panels:delete_gene', kwargs={
+        url = reverse_lazy('panels:delete_entity', kwargs={
             'pk': gps.panel.pk,
-            'gene_symbol': gene_symbol
+            'entity_type': 'gene',
+            'entity_name': gene_symbol
         })
         res = self.client.get(url, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
 
@@ -203,7 +205,7 @@ class GenePanelTest(LoginGELUser):
     def prepare_compare(self):
         gene = GeneFactory()
 
-        gps = GenePanelSnapshotFactory(panel__status=GenePanel.STATUS.public)
+        gps = GenePanelSnapshotFactory(panel__status=GenePanel.STATUS.internal)
         GenePanelEntrySnapshotFactory.create_batch(2, panel=gps)  # random genes
         GenePanelEntrySnapshotFactory.create(gene_core=gene, panel=gps)
 
@@ -253,6 +255,11 @@ class GenePanelTest(LoginGELUser):
         res = self.client.post(reverse_lazy('panels:copy_reviews', args=(gps.panel.pk, gps2.panel.pk,)), data)
         self.assertEqual(res.status_code, 302)
 
+    def test_compare_genes(self):
+        gene, gps, gps2 = self.prepare_compare()
+        res = self.client.get(reverse_lazy('panels:compare_genes', args=(gps.panel.pk, gps2.panel.pk, gene.gene_symbol)))
+        self.assertEqual(res.status_code, 200)
+
     def test_promote_panel(self):
         gpes = GenePanelEntrySnapshotFactory()
 
@@ -280,8 +287,28 @@ class GenePanelTest(LoginGELUser):
 
         gp = GenePanel.objects.get(name="Panel One")
         active_panel = gp.active_panel
-        entries = active_panel.get_all_entries
+        entries = active_panel.get_all_genes
         assert entries.count() == 2
+
+    def test_import_panel_sources(self):
+        gene = GeneFactory(gene_symbol="ABCC5-AS1")
+        GeneFactory(gene_symbol="A1CF")
+
+        gps = GenePanelSnapshotFactory()
+        gps.panel.name = "Panel One"
+        gps.panel.save()
+        evidence = EvidenceFactory.create(name="Expert Review Amber")
+        GenePanelEntrySnapshotFactory.create(gene_core=gene, panel=gps, evaluation=(None,), evidence=(evidence,))
+
+        file_path = os.path.join(os.path.dirname(__file__), 'import_panel_data.tsv')
+        test_panel_file = os.path.abspath(file_path)
+
+        with open(test_panel_file) as f:
+            url = reverse_lazy('panels:upload_panels')
+            self.client.post(url, {'panel_list': f})
+
+        ap = GenePanel.objects.get(name="Panel One").active_panel
+        assert ap.get_gene(gene.gene_symbol).evidence.first().name == "Expert Review Green"
 
     def test_import_wrong_panel(self):
         file_path = os.path.join(os.path.dirname(__file__), 'import_panel_data.tsv')
@@ -331,3 +358,18 @@ class GenePanelTest(LoginGELUser):
         gpes = GenePanelEntrySnapshotFactory()
         email_panel_promoted(gpes.panel.panel.pk)
         self.assertEqual(len(mail.outbox), 4)
+
+    def test_old_pk_redirect(self):
+        gpes = GenePanelEntrySnapshotFactory()
+        gpes.panel.panel.old_pk = fake.password(length=24, special_chars=False, upper_case=False)
+        gpes.panel.panel.save()
+
+        res = self.client.get(reverse_lazy('panels:old_code_url_redirect', args=(gpes.panel.panel.old_pk, '',)))
+        self.assertEqual(res.status_code, 301)
+        self.assertEqual(res.url, reverse_lazy('panels:detail', args=(gpes.panel.panel.pk,)))
+
+        res = self.client.get(reverse_lazy('panels:old_code_url_redirect', args=(
+            gpes.panel.panel.old_pk, 'gene/' + gpes.gene.get('gene_symbol'))))
+        self.assertEqual(res.status_code, 301)
+        self.assertEqual(res.url + '/', reverse_lazy('panels:evaluation', args=(
+            gpes.panel.panel.id, 'gene', gpes.gene.get('gene_symbol'))))

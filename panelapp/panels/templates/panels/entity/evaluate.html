@@ -1,0 +1,24 @@
+{% load bootstrap3 %}
+{% if request.user.is_authenticated and request.user.reviewer.is_verified %}
+{% include "panels/entity/evaluation_form.html" %}
+{% endif %}
+
+<div id="evaluations">
+  <h3>{{ entity.evaluation.all|length }} review{{entity.evaluation.all|pluralize}}</h3>
+
+  {% for ev in entity.evaluation.all %}
+    <div class="panel panel-default {% if request.user == ev.user %}panel-highlight{% endif %}">
+      {% if request.user == ev.user %}
+      <div class="panel-heading" id="your-review">
+        {% if request.user == ev.user %}
+          <a href="{% url "panels:delete_evaluation_by_user" panel.panel_id entity_type entity_name ev.pk %}" class="pull-right btn btn-default btn-xs" data-ajax="true" data-success="djangoAjaxHandler">Delete</a>
+        {% endif %}
+        <div class="panel-title">
+          Your review
+        </div>
+      </div>
+      {% endif %}
+      {% include "panels/entity/entity_evaluation.html" with ev=ev %}
+    </div>
+  {% endfor %}
+</div>

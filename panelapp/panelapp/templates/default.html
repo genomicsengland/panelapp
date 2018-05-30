@@ -28,7 +28,7 @@
     <div class="collapse navbar-collapse" id="navbar">
       <ul class="nav navbar-nav">
         <li><a href="{% url 'panels:index' %}">Panels</a></li>
-        <li><a href="{% url 'panels:gene_list' %}">Genes</a></li>
+        <li><a href="{% url 'panels:entities_list' %}">Entities</a></li>
         <li><a href="{% url 'panels:activity' %}">Activity</a></li>
         {% if request.user.is_authenticated and request.user.reviewer.is_GEL %}
         <li><a href="{% url 'panels:create' %}">Add panel</a></li>
@@ -37,6 +37,7 @@
           <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">Resources <span class="caret"></span></a>
           <ul class="dropdown-menu" role="menu">
             <li><a href="{% url 'panels:download_genes' %}">Download all genes</a></li>
+            <li><a href="{% url 'panels:download_strs' %}">Download all STRs</a></li>
             <li><a href="{% url 'panels:download_panels' %}">Download all panels</a></li>
           </ul>
         </li>
@@ -50,7 +51,7 @@
       </ul>
       {% else %}
       <ul class="nav navbar-nav navbar-right">
-        <li><a href="{% url 'accounts:login' %}">Log in</a></li>
+        <li><a href="{% url 'accounts:login' %}?next={{ request.get_full_path }}">Log in</a></li>
         <li><a href="{% url 'accounts:register' %}">Register</a></li>
       </ul>
       {% endif %}

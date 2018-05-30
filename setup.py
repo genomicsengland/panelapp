@@ -37,6 +37,7 @@ setup(
         'flake8==3.4.1',
         'faker==0.7.18',
         'factory_boy==2.9.2',
+        'pytest-cov==2.5.1'
     ],
     install_requires=[
         'django==1.11.6',

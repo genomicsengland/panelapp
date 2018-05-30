@@ -2,7 +2,7 @@
 {% load static %}
 {% load staticfiles %}
 {% load panel_helpers %}
-{% block title %}{{ gene.gene.gene_symbol }} ({{ panel.level4title.name }}){% endblock %}
+{% block title %}{{ entity.label|capfirst }} ({{ panel.level4title.name }}){% endblock %}
 {% block header %}
   <script src="{% static 'django_ajax/js/jquery.ajax.min.js' %}"></script>
   <script src="{% static 'django_ajax/js/jquery.ajax-plugin.min.js' %}"></script>
@@ -19,47 +19,61 @@
         </a>
     </li>
     <li class="active">
-        {{ gene.gene.gene_symbol }}
+        {{ entity.name }}
     </li>
 </ol>
 
 <div class="row">
     <div class="col-sm-2">
         <div id="genes_list" class="panel panel-default">
-            {% include "panels/genepanelentrysnapshot/evaluation_genes_list.html" %}
+            {% include "panels/entity/evaluation_genes_list.html" %}
+        </div>
+        <div id="strs_list" class="panel panel-default">
+            {% include "panels/entity/evaluation_strs_list.html" %}
         </div>
     </div>
     <div class="col-sm-10">
         <div id="gene_header">
-            {% include "panels/genepanelentrysnapshot/header.html" %}
+            {% include "panels/entity/header.html" %}
         </div>
         <hr />
         <p class="lead">
-            {{ gene.gene.gene_name }}<br />
-            {% if gene.gene.ensembl_genes %}
-                {% if gene.gene.ensembl_genes.GRch38.90  %}
+            {% if entity.is_str %}
+                Chromosome: {{ entity.chromosome }}<br />
+                GRCh37 Position: {{ entity.position_37.lower }}-{{ entity.position_37.upper }}<br />
+                GRCh38 Position: {{ entity.position_38.lower }}-{{ entity.position_38.upper }}<br />
+                Repeated Sequence: {{ entity.repeated_sequence }}<br />
+                Normal Number of Repeats: &lt; or = {{ entity.normal_repeats }}<br />
+                Pathogenic Number of Repeats: = or &gt; {{ entity.pathogenic_repeats }}<br />
+                <br />
+            {% endif %}
+            {% if entity.gene.gene_symbol %}
+            {{ entity.gene.gene_symbol }} ({{ entity.gene.gene_name }})<br />
+            {% if entity.gene.ensembl_genes %}
+                {% if entity.gene.ensembl_genes.GRch38.90  %}
                     EnsemblGeneIds (GRCh38):
-                    <a href="http://www.ensembl.org/Homo_sapiens/Gene/Summary?db=core;g={{ gene.gene.ensembl_genes.GRch38.90.ensembl_id }}" target="_blank">{{ gene.gene.ensembl_genes.GRch38.90.ensembl_id }}</a>
+                    <a href="http://www.ensembl.org/Homo_sapiens/Gene/Summary?db=core;g={{ entity.gene.ensembl_genes.GRch38.90.ensembl_id }}" target="_blank">{{ entity.gene.ensembl_genes.GRch38.90.ensembl_id }}</a>
                     <br />
                 {% endif %}
-                {% if gene.gene.ensembl_genes.GRch37.82 %}
+                {% if entity.gene.ensembl_genes.GRch37.82 %}
                     EnsemblGeneIds (GRCh37):
-                    <a href="http://Dec2016.archive.ensembl.org/Homo_sapiens/Gene/Summary?db=core;g={{ gene.gene.ensembl_genes.GRch37.82.ensembl_id }}" target="_blank">{{ gene.gene.ensembl_genes.GRch37.82.ensembl_id }}</a>
+                    <a href="http://Dec2016.archive.ensembl.org/Homo_sapiens/Gene/Summary?db=core;g={{ entity.gene.ensembl_genes.GRch37.82.ensembl_id }}" target="_blank">{{ entity.gene.ensembl_genes.GRch37.82.ensembl_id }}</a>
                     <br />
                 {% endif %}
             {% endif %}
-            {% if gene.gene.omim_gene|length > 0 %}
-              <a href="http://omim.org/entry/{{ gene.gene.omim_gene.0 }}" target="_blank">OMIM: {{ gene.gene.omim_gene.0 }}</a>, <a href=" http://www.ebi.ac.uk/gene2phenotype/gene2phenotype-webcode/cgi-bin/handler.cgi?panel=ALL&search_term={{ gene.gene.gene_symbol }}" target="_blank">Gene2Phenotype</a><br />
+            {% if entity.gene.omim_gene|length > 0 %}
+              <a href="http://omim.org/entry/{{ entity.gene.omim_gene.0 }}" target="_blank">OMIM: {{ entity.gene.omim_gene.0 }}</a>, <a href="https://www.ebi.ac.uk/gene2phenotype/search?panel=ALL&search_term={{ entity.gene.gene_symbol }}" target="_blank">Gene2Phenotype</a><br />
             {% endif %}
             {% with shared_panels=sharing_panels %}
-            {{ gene.gene.gene_symbol }} is in <a href="{% url 'panels:gene_detail' gene.gene.gene_symbol %}">{{ shared_panels|length }} panel{{ shared_panels|pluralize }}</a>
+                {{ entity.gene.gene_symbol }} is in <a href="{% url 'panels:entity_detail' entity.gene.gene_symbol %}">{{ shared_panels|length }} panel{{ shared_panels|pluralize }}</a>
             {% endwith %}
+            {% endif %}
         </p>
 
         <div data-module="tab-switcher" data-default-tab="evaluate">
             <ul class="nav nav-tabs" role="tablist">
                 <li role="presentation" class="active">
-                    <a href="#evaluate" aria-controls="evaluate" role="tab" data-toggle="tab">Reviews ({{ gene.number_of_evaluations }})</a>
+                    <a href="#evaluate" aria-controls="evaluate" role="tab" data-toggle="tab">Reviews ({{ entity.number_of_evaluations }})</a>
                 </li>
                 <li role="presentation">
                     <a href="#details" aria-controls="details" role="tab" data-toggle="tab">Details</a>
@@ -76,17 +90,21 @@
 
             <div class="tab-content">
                 <div role="tabpanel" class="tab-pane active" id="evaluate">
-                    {% include "panels/genepanelentrysnapshot/evaluate.html" %}
+                    {% include "panels/entity/evaluate.html" %}
                 </div>
                 <div role="tabpanel" class="tab-pane" id="details">
-                    {% include "panels/genepanelentrysnapshot/details.html" %}
+                    {% if entity_type == 'gene' %}
+                        {% include "panels/genepanelentrysnapshot/details.html" %}
+                    {% elif entity_type == 'str' %}
+                        {% include "panels/strs/details.html" %}
+                    {% endif %}
                 </div>
                 <div role="tabpanel" class="tab-pane" id="history">
-                    {% include "panels/genepanelentrysnapshot/history.html" %}
+                    {% include "panels/entity/history.html" %}
                 </div>
                 {% if request.user.is_authenticated and request.user.reviewer.is_GEL %}
                 <div role="tabpanel" class="tab-pane" id="review">
-                    {% include "panels/genepanelentrysnapshot/review.html" %}
+                    {% include "panels/entity/review.html" %}
                 </div>
                 {% endif %}
             </div>
@@ -104,6 +122,6 @@
 
 {% block js %}
 <script>
-    window.GeneTags = [{% for tag in gene.tags.all %}{% if tag %}'{{ tag }}'{% if not forloop.last %},{% endif %}{% endif %}{% endfor %}];
+    window.GeneTags = [{% for tag in entity.tags.all %}{% if tag %}'{{ tag }}'{% if not forloop.last %},{% endif %}{% endif %}{% endfor %}];
 </script>
 {% endblock %}

@@ -10,7 +10,7 @@
       <tr class="table-header">
         <th style="width: 10%">Date</th>
         <th style="width: 25%">Panel</th>
-        <th style="width: 8%">Gene</th>
+        <th style="width: 8%">Item</th>
         <th>Activity</th>
       </tr>
       <tr class="if-no-js-hide table-header-secondary">
@@ -39,8 +39,10 @@
             {% endif %}
           </td>
           <td>
-            {% if activity.gene_symbol %}
-              <a href="{% url 'panels:evaluation' activity.panel.pk activity.gene_symbol %}">{{ activity.gene_symbol }}</a>
+            {% if activity.str_name %}
+              <a href="{% url 'panels:evaluation' activity.panel.pk 'str' activity.str_name %}">STR: {{ activity.str_name }}</a>
+            {% elif activity.gene_symbol %}
+              <a href="{% url 'panels:evaluation' activity.panel.pk 'gene' activity.gene_symbol %}">Gene: {{ activity.gene_symbol }}</a>
             {% endif %}
           </td>
           <td>

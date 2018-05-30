@@ -18,6 +18,14 @@ class Gene(models.Model):
     hgnc_id = models.CharField(max_length=255, null=True)
     active = models.BooleanField(default=True, db_index=True)
 
+    class Meta:
+        indexes = [
+            models.Index(fields=[
+                'gene_symbol',
+                'active'
+            ]),
+        ]
+
     def __str__(self):
         return "{symbol} (HGNC:  {hgnc_symbol}), {gene_name}".format(
             symbol=self.gene_symbol,
