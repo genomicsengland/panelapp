@@ -76,6 +76,38 @@ class GeneEvaluationTest(LoginGELUser):
         assert v01gene.evaluation.get(user=self.gel_user).comments.count() == 2
         assert current_version == gpes.panel.panel.active_panel.version
 
+    def test_add_evaluation_error(self):
+        """Add comments"""
+
+        gpes = GenePanelEntrySnapshotFactory()
+        current_version = gpes.panel.version
+        gpes.evaluation.all().delete()
+        url = reverse_lazy('panels:review_entity', kwargs={
+            'pk': gpes.panel.panel.pk,
+            'entity_type': 'gene',
+            'entity_name': gpes.gene.get('gene_symbol')
+        })
+
+        gene_data = {
+            "comments": fake.sentence(),
+            "publications": "1;",
+            "phenotypes": "2;",
+        }
+        res = self.client.post(url, gene_data)
+        assert res.status_code == 200
+        assert b'Item 1 in the array did not validate: This field is required.' in res.content
+
+        gene_data = {
+            "comments": fake.sentence(),
+            "publications": "1",
+            "phenotypes": "2",
+        }
+        res = self.client.post(url, gene_data)
+        assert res.status_code == 302
+
+        v01gene = gpes.panel.panel.active_panel.get_gene(gpes.gene.get('gene_symbol'))
+        assert v01gene.evaluation.get(user=self.gel_user).comments.count() == 1
+
     def test_user_reviews(self):
         gps = GenePanelSnapshotFactory()
         gpes = GenePanelEntrySnapshotFactory.create_batch(10, panel=gps)
