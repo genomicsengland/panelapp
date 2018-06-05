@@ -1,6 +1,6 @@
 from collections import OrderedDict
 from django import forms
-from django.contrib.postgres.forms import SimpleArrayField
+from .helpers import GELSimpleArrayField
 from panels.models import Evaluation
 
 
@@ -14,13 +14,13 @@ class GeneReviewForm(forms.ModelForm):
             'clinically_relevant'
         )
 
-    publications = SimpleArrayField(
+    publications = GELSimpleArrayField(
         forms.CharField(),
         label="Publications (PMID: 1234;4321)",
         delimiter=";",
         required=False
     )
-    phenotypes = SimpleArrayField(
+    phenotypes = GELSimpleArrayField(
         forms.CharField(),
         label="Phenotypes (separate using a semi-colon - ;)",
         delimiter=";",

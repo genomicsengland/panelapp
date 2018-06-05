@@ -33,4 +33,10 @@
       <button type="submit" class="btn btn-info">Submit review</button>
     </fieldset>
   </form>
+<script type="text/javascript">
+    $('#add-review').submit(function() {
+        $('#id_publications').val($('#id_publications').val().replace(/[; ]+$/g, ''));
+        $('#id_phenotypes').val($('#id_phenotypes').val().replace(/[; ]+$/g, ''));
+    });
+</script>
 </div>
