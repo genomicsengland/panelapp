@@ -1,3 +1,4 @@
+import os
 import logging
 from django.conf import settings
 from django.core.exceptions import PermissionDenied
@@ -5,7 +6,7 @@ from django.views.generic import View
 from django.views.generic import ListView
 from django.http import JsonResponse
 from django.core import mail
-from django.core.mail.backends.smtp import EmailBackend
+from celery.task.control import inspect
 from kombu import Connection
 from .models import HomeText
 
@@ -32,6 +33,14 @@ class HealthCheckView(View):
                     status = 500
 
         return JsonResponse(out, status=status)
+
+    @staticmethod
+    def _check_maintenance():
+        status = "OK"
+        if settings.HEALTH_MAINTENANCE_LOCATION and os.path.isfile(settings.HEALTH_MAINTENANCE_LOCATION):
+            status = "Maintenance"
+
+        return status
 
     @staticmethod
     def _check_database():
@@ -68,7 +77,6 @@ class HealthCheckView(View):
             # should be fixed in celery==4.3.0 https://github.com/celery/celery/issues/2689
             # haproxy returns 503 for any request longer than 60 seconds
 
-            from celery.task.control import inspect
             insp = inspect()
             stats = insp.stats()
             if not stats:

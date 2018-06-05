@@ -215,11 +215,13 @@ CELL_BASE_CONNECTOR_REST = os.getenv(
 
 HEALTH_ACCESS_TOKEN_LOCATION = os.getenv('HEALTH_ACCESS_TOKEN_LOCATION', None)
 HEALTH_CHECK_TOKEN = None
-if HEALTH_ACCESS_TOKEN_LOCATION:
+if HEALTH_ACCESS_TOKEN_LOCATION and os.path.isfile(HEALTH_ACCESS_TOKEN_LOCATION):
     with open(HEALTH_ACCESS_TOKEN_LOCATION, 'r') as f:
         HEALTH_CHECK_TOKEN = f.readline().strip()
 
-HEALTH_CHECK_SERVICES = os.getenv('HEALTH_CHECK_SERVICES', 'database,rabbitmq,email,celery').split(',')
+HEALTH_MAINTENANCE_LOCATION = os.getenv('HEALTH_MAINTENANCE_LOCATION', None)
+
+HEALTH_CHECK_SERVICES = os.getenv('HEALTH_CHECK_SERVICES', 'database,rabbitmq,email,celery,maintenance').split(',')
 
 # CORS headers support
 CORS_ORIGIN_ALLOW_ALL = True
