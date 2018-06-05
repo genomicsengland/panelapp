@@ -346,10 +346,7 @@ class EntityReviewView(VerifiedReviewerRequiredMixin, EntityMixin, UpdateView):
             return STRReviewForm
 
     def get_template_names(self):
-        if self.is_gene():
-            return "panels/gene_edit.html"
-        elif self.is_str():
-            return "panels/str_edit.html"
+        return "panels/entity/evaluation_create.html"
 
     def get_object(self):
         if self.is_gene():
@@ -384,6 +381,8 @@ class EntityReviewView(VerifiedReviewerRequiredMixin, EntityMixin, UpdateView):
     def get_context_data(self, *args, **kwargs):
         ctx = super().get_context_data(*args, **kwargs)
         ctx['panel'] = self.panel.panel
+        ctx['entity_name'] = self.kwargs['entity_name']
+        ctx['entity_type'] = self.kwargs['entity_type']
         return ctx
 
     def form_valid(self, form):
