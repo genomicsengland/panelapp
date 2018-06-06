@@ -95,7 +95,7 @@ class GeneEvaluationTest(LoginGELUser):
         }
         res = self.client.post(url, gene_data)
         assert res.status_code == 200
-        assert b'Make sure there is no ; as the last character: 1 item: This field is required.' in res.content
+        assert b'Make sure there is no ; if no value after: 1 item: This field is required.' in res.content
 
         gene_data = {
             "comments": fake.sentence(),
