@@ -1,7 +1,7 @@
 {% load bootstrap3 %}
 <h3>Review {% if entity_type == 'gene' %}gene{% elif entity_type == 'str' %}STR{% endif %}</h3>
 <div class="well">
-  <form class="form" id="add-review" action="{% url 'panels:review_entity' panel.panel_id entity_type entity_name %}#your-review" method="post">{% csrf_token %}
+  <form class="form remove-empty-array-val" id="add-review" action="{% url 'panels:review_entity' panel.panel_id entity_type entity_name %}#your-review" method="post">{% csrf_token %}
     <fieldset>
       {% for field in form %}
         <div class="form-group">
@@ -33,10 +33,4 @@
       <button type="submit" class="btn btn-info">Submit review</button>
     </fieldset>
   </form>
-<script type="text/javascript">
-    $('#add-review').submit(function() {
-        $('#id_publications').val($('#id_publications').val().replace(/[; ]+$/g, ''));
-        $('#id_phenotypes').val($('#id_phenotypes').val().replace(/[; ]+$/g, ''));
-    });
-</script>
 </div>

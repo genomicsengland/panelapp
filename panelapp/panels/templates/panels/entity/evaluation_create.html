@@ -28,7 +28,7 @@
 </h1>
 
 {% if request.user.is_authenticated and request.user.reviewer.is_verified %}
-    <form class="row add-top-margin" id="evaluation-create" method="post">
+    <form class="row add-top-margin remove-empty-array-val" id="evaluation-create" method="post">
         {% csrf_token %}
         <div class="col-md-8">
             <div class="well">
@@ -71,12 +71,5 @@
         {% include "panels/modals/diagnostic.html" %}
         {% include "panels/modals/mode_of_inheritance.html" %}
     {% endblock %}
-
-    <script type="text/javascript">
-        $('#evaluation-create').submit(function() {
-            $('#id_publications').val($('#id_publications').val().replace(/[; ]+$/g, ''));
-            $('#id_phenotypes').val($('#id_phenotypes').val().replace(/[; ]+$/g, ''));
-        });
-    </script>
 {% endif %}
 {% endblock %}

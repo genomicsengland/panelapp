@@ -404,6 +404,11 @@ $(function(){
     app.startApp();
 
     $('[data-toggle="tooltip"]').tooltip();
+
+    $('.remove-empty-array-val').submit(function() {
+        $('#id_publications').val($('#id_publications').val().replace(/[; ]+$/g, ''));
+        $('#id_phenotypes').val($('#id_phenotypes').val().replace(/[; ]+$/g, ''));
+    });
 });
 
 function djangoAjaxHandler(fragments) {
