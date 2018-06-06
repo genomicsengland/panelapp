@@ -56,6 +56,7 @@ class PanelSerializer(EnsembleIdMixin, serializers.BaseSerializer):
                 "STRs": [],
                 "SpecificDiseaseName": panel.panel.name,
                 "version": panel.version,
+                "Created": panel.created,
                 "DiseaseGroup": panel.level4title.level2title,
                 "DiseaseSubGroup": panel.level4title.level3title,
                 "Status": panel.panel.status
@@ -152,6 +153,7 @@ class ListPanelSerializer(serializers.BaseSerializer):
                 "DiseaseSubGroup": panel.level4title.level3title,
                 "DiseaseGroup": panel.level4title.level2title,
                 "CurrentVersion": panel.version,
+                "CurrentCreated": panel.created,
                 "Number_of_Genes": panel.number_of_genes,
                 "Panel_Id": panel.panel.old_pk if panel.panel.old_pk else str(panel.panel.pk),
                 "Relevant_disorders": filter(filter_empty, panel.old_panels),

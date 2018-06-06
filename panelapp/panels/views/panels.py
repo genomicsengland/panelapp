@@ -209,6 +209,7 @@ class DownloadAllPanels(GELReviewerRequiredMixin, View):
             "Level 2 title",
             "URL",
             "Current Version",
+            "Version time stamp",
             "# rated genes/total genes",
             "#reviewers",
             "Reviewer name and affiliation (;)",
@@ -224,6 +225,9 @@ class DownloadAllPanels(GELReviewerRequiredMixin, View):
                 'genepanelentrysnapshot_set__evaluation',
                 'genepanelentrysnapshot_set__evaluation__user',
                 'genepanelentrysnapshot_set__evaluation__user__reviewer',
+                'str_set__evaluation',
+                'str_set__evaluation__user',
+                'str_set__evaluation__user__reviewer',
             )\
             .all()
 
@@ -242,6 +246,7 @@ class DownloadAllPanels(GELReviewerRequiredMixin, View):
                 panel.level4title.level2title,
                 request.build_absolute_uri(reverse('panels:detail', args=(panel.panel.id,))),
                 panel.version,
+                panel.created,
                 rate,
                 len(reviewers),
                 ";".join(contributors),  # aff

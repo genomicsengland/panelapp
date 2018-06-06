@@ -109,6 +109,19 @@ class TestWebservices(TransactionTestCase):
         self.assertEqual(r.status_code, 200)
         self.assertTrue(b'Query Error' not in r.content)
 
+    def test_panel_created_timestamp(self):
+        self.gpes.panel.increment_version()
+        url = reverse_lazy('webservices:list_panels')
+        res = self.client.get(url)
+        # find gps panel
+        title = self.gps_public.panel.name
+        current_time = str(self.gps_public.created).replace('+00:00', 'Z').replace(' ', 'T')
+        gps_panel = [r for r in res.json()['result'] if r['Name'] == title][0]
+        self.assertEqual(gps_panel['CurrentCreated'], current_time)
+
+        r = self.client.get(reverse_lazy('webservices:get_panel', args=(self.gps_public.panel.name,))).json()
+        self.assertEqual(r['result']['Created'], current_time)
+
     def test_get_search_gene(self):
         url = reverse_lazy('webservices:search_genes', args=(self.gpes.gene_core.gene_symbol,))
         r = self.client.get(url)
