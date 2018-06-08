@@ -99,7 +99,7 @@ class GenePanelEntrySnapshotFactory(factory.django.DjangoModelFactory):
     publications = factory.Faker('sentences', nb=3)
     phenotypes = factory.Faker('sentences', nb=3)
     moi = Evaluation.MODES_OF_INHERITANCE.Unknown
-    mode_of_pathogenicity = Evaluation.MODES_OF_PATHOGENICITY['Other - please provide details in the comments']
+    mode_of_pathogenicity = Evaluation.MODES_OF_PATHOGENICITY.Other
     saved_gel_status = 0
     gene = factory.LazyAttribute(lambda g: g.gene_core.dict_tr())
 

@@ -35,18 +35,16 @@
           </td>
           <td>
             {% if activity.panel %}
-              <a href="{{ activity.panel.get_absolute_url }}">{{ activity.panel.name }}</a>
+              <a href="{{ activity.panel.get_absolute_url }}">{{ activity.panel.name }}{% if activity.panel_version %} v{{ activity.panel_version }}{% endif %}</a>
             {% endif %}
           </td>
           <td>
-            {% if activity.str_name %}
-              <a href="{% url 'panels:evaluation' activity.panel.pk 'str' activity.str_name %}">STR: {{ activity.str_name }}</a>
-            {% elif activity.gene_symbol %}
-              <a href="{% url 'panels:evaluation' activity.panel.pk 'gene' activity.gene_symbol %}">Gene: {{ activity.gene_symbol }}</a>
+            {% if activity.entity_type %}
+              <a href="{% url 'panels:evaluation' activity.panel_id activity.entity_type activity.entity_name %}">{{ activity.entity_name }}</a>
             {% endif %}
           </td>
           <td>
-            {{ activity.user.get_full_name }} {{ activity.text }}
+            {{ activity.user.get_full_name }} {{ activity.text|linebreaksbr }}
           </td>
         </tr>
       {% endfor %}
