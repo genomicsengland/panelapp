@@ -51,6 +51,9 @@ class GenePanel(TimeStampedModel):
     def is_public(self):
         return self.status in [GenePanel.STATUS.public, GenePanel.STATUS.promoted]
 
+    def is_deleted(self):
+        return self.status == GenePanel.STATUS.deleted
+
     def reject(self):
         self.status = GenePanel.STATUS.internal
         self.save()

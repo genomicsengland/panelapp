@@ -262,7 +262,7 @@ class GenePanelSnapshot(TimeStampedModel):
                 email_panel_promoted.delay(self.panel.pk)
 
                 activity = "promoted panel to version {}".format(self.version)
-                self.add_activity(user, None, activity)
+                self.add_activity(user, activity)
 
                 self.version_comment = "{} {} promoted panel to {}\n{}\n\n{}".format(
                     timezone.now().strftime('%Y-%m-%d %H:%M'),
@@ -740,7 +740,7 @@ class GenePanelSnapshot(TimeStampedModel):
         if self.__dict__.get('get_all_strs_extra'):
             del self.__dict__['get_all_strs_extra']
 
-    def delete_gene(self, gene_symbol, increment=True):
+    def delete_gene(self, gene_symbol, increment=True, user=None):
         """Removes gene from a panel, but leaves it in the previous versions of the same panel"""
 
         if self.has_gene(gene_symbol):
@@ -750,12 +750,15 @@ class GenePanelSnapshot(TimeStampedModel):
                 self.get_all_genes.get(gene__gene_symbol=gene_symbol).delete()
                 self.clear_cache()
 
+            if user:
+                self.add_activity(user, "removed gene:{} from the panel".format(gene_symbol))
+
             self.update_saved_stats()
             return True
         else:
             return False
 
-    def delete_str(self, str_name, increment=True):
+    def delete_str(self, str_name, increment=True, user=None):
         """Removes STR from a panel, but leaves it in the previous versions of the same panel"""
 
         if self.has_str(str_name):
@@ -764,6 +767,9 @@ class GenePanelSnapshot(TimeStampedModel):
             else:
                 self.cached_strs.get(name=str_name).delete()
                 self.clear_cache()
+
+            if user:
+                self.add_activity(user, "removed STR:{} from the panel".format(str_name))
 
             self.update_saved_stats()
             return True
@@ -787,6 +793,7 @@ class GenePanelSnapshot(TimeStampedModel):
                 - current_diagnostic
                 - sources
                 - rating
+                - tags
 
         Returns:
             GenePanelEntrySnapshot instance of a freshly created Gene in a Panel.
@@ -830,28 +837,45 @@ class GenePanelSnapshot(TimeStampedModel):
             )
             gene.evidence.add(evidence)
 
+        tracks = []
         evidence_status = gene.evidence_status()
-        track_created = TrackRecord.objects.create(
-            gel_status=evidence_status,
-            curator_status=0,
-            user=user,
-            issue_type=TrackRecord.ISSUE_TYPES.Created,
-            issue_description="{} was created by {}".format(gene_core.gene_symbol, user.get_full_name())
-        )
-        gene.track.add(track_created)
-        description = "{} was added to {} panel. Sources: {}".format(
+        tracks.append((
+            TrackRecord.ISSUE_TYPES.Created,
+            "{} was added by {}".format(gene_core.gene_symbol, user.get_full_name())
+        ))
+
+        for tag in gene_data.get('tags', []):
+            gene.tags.add(tag)
+
+            description = "{} was added to {}.".format(
+                tag,
+                gene_symbol
+            )
+            tracks.append((
+                TrackRecord.ISSUE_TYPES.AddedTag,
+                description
+            ))
+
+        description = "{} was added. Sources: {}".format(
             gene_core.gene_symbol,
             self.panel.name,
             ",".join(gene_data.get('sources'))
         )
-        track_sources = TrackRecord.objects.create(
-            gel_status=evidence_status,
-            curator_status=0,
-            user=user,
-            issue_type=TrackRecord.ISSUE_TYPES.NewSource,
-            issue_description=description
-        )
-        gene.track.add(track_sources)
+        tracks.append((
+            TrackRecord.ISSUE_TYPES.NewSource,
+            description
+        ))
+
+        if gene_symbol.startswith("MT-"):
+            gene.moi = "MITOCHONDRIAL"
+            description = "Model of inheritance for gene {} was set to {}".format(
+                gene_symbol,
+                "MITOCHONDRIAL"
+            )
+            tracks.append((
+                TrackRecord.ISSUE_TYPES.SetModeofInheritance,
+                description
+            ))
 
         if gene_data.get('rating') or gene_data.get('comment'):
             evaluation = Evaluation.objects.create(
@@ -869,7 +893,17 @@ class GenePanelSnapshot(TimeStampedModel):
             gene.evaluation.add(evaluation)
         self.clear_cache()
 
-        self.add_activity(user, gene_symbol, "Added gene to panel")
+        if tracks:
+            description = "\n".join([t[1] for t in tracks])
+            track = TrackRecord.objects.create(
+                gel_status=evidence_status,
+                curator_status=0,
+                user=user,
+                issue_type=",".join([t[0] for t in tracks]),
+                issue_description=description
+            )
+            gene.track.add(track)
+            self.add_activity(user, description, gene)
 
         gene.evidence_status(update=True)
         self.update_saved_stats()
@@ -973,7 +1007,7 @@ class GenePanelSnapshot(TimeStampedModel):
                     ))
 
             moi = gene_data.get('moi')
-            if moi and gene.moi != moi:
+            if moi and gene.moi != moi and not gene_symbol.startswith("MT-"):
                 logging.debug("Updating moi for gene:{} in panel:{}".format(gene_symbol, self))
                 gene.moi = moi
 
@@ -985,7 +1019,7 @@ class GenePanelSnapshot(TimeStampedModel):
                     TrackRecord.ISSUE_TYPES.SetModeofInheritance,
                     description
                 ))
-            elif gene_symbol.startswith("MT-"):
+            elif gene_symbol.startswith("MT-") and gene.moi != 'MITOCHONDRIAL':
                 logging.debug("Updating moi for gene:{} in panel:{}".format(gene_symbol, self))
                 gene.moi = "MITOCHONDRIAL"
                 description = "Model of inheritance for gene {} was set to {}".format(
@@ -1123,14 +1157,16 @@ class GenePanelSnapshot(TimeStampedModel):
             if tracks:
                 logging.debug("Adding tracks for gene:{} in panel:{}".format(gene_symbol, self))
                 status = gene.evidence_status(True)
+                description = "\n".join([t[1] for t in tracks])
                 track = TrackRecord.objects.create(
                     gel_status=status,
                     curator_status=0,
                     user=user,
                     issue_type=",".join([t[0] for t in tracks]),
-                    issue_description="\n".join([t[1] for t in tracks])
+                    issue_description=description
                 )
                 gene.track.add(track)
+                self.add_activity(user, description, gene)
 
             new_gene = gene_data.get('gene')
             gene_name = gene_data.get('gene_name')
@@ -1231,6 +1267,24 @@ class GenePanelSnapshot(TimeStampedModel):
                     issue_description=description
                 )
                 new_gpes.track.add(track_gene)
+                self.add_activity(user, description, gene)
+
+                if gene_symbol.startswith("MT-"):
+                    new_gpes.moi = "MITOCHONDRIAL"
+                    description = "Model of inheritance for gene {} was set to {}".format(
+                        gene_symbol,
+                        "MITOCHONDRIAL"
+                    )
+                    track_moi = TrackRecord.objects.create(
+                        gel_status=new_gpes.status,
+                        curator_status=0,
+                        user=user,
+                        issue_type=TrackRecord.ISSUE_TYPES.SetModeofInheritance,
+                        issue_description=description
+                    )
+                    new_gpes.track.add(track_moi)
+                    self.add_activity(user, description, gene)
+
                 self.delete_gene(old_gene_symbol, increment=False)
                 self.clear_cache()
                 self.update_saved_stats()
@@ -1301,6 +1355,9 @@ class GenePanelSnapshot(TimeStampedModel):
             str_item.gene = gene_info
 
         str_item.save()
+
+        self.add_activity(user, "Added STR to panel", str_item)
+
         if str_data.get('comment'):
             comment = Comment.objects.create(
                 user=user,
@@ -1317,14 +1374,16 @@ class GenePanelSnapshot(TimeStampedModel):
             str_item.evidence.add(evidence)
 
         evidence_status = str_item.evidence_status()
+        description = "{} was added by {}".format(str_item.label, user.get_full_name())
         track_created = TrackRecord.objects.create(
             gel_status=evidence_status,
             curator_status=0,
             user=user,
             issue_type=TrackRecord.ISSUE_TYPES.Created,
-            issue_description="{} was created by {}".format(str_item.label, user.get_full_name())
+            issue_description=description
         )
         str_item.track.add(track_created)
+        self.add_activity(user, description, str_item)
         description = "{} was added to {} panel. Sources: {}".format(
             str_item.label,
             self.panel.name,
@@ -1338,6 +1397,7 @@ class GenePanelSnapshot(TimeStampedModel):
             issue_description=description
         )
         str_item.track.add(track_sources)
+        self.add_activity(user, description, str_item)
 
         tags = Tag.objects.filter(pk__in=str_data.get('tags', []))
         for tag in tags:
@@ -1360,6 +1420,7 @@ class GenePanelSnapshot(TimeStampedModel):
                 issue_description=description
             )
             str_item.track.add(track_tags)
+            self.add_activity(user, description, str_item)
 
         if str_data.get('rating') or str_data.get('comment'):
             evaluation = Evaluation.objects.create(
@@ -1377,8 +1438,6 @@ class GenePanelSnapshot(TimeStampedModel):
                 evaluation.comments.add(comment)
             str_item.evaluation.add(evaluation)
         self.clear_cache()
-
-        self.add_activity(user, gene_core.gene_symbol if str_data.get('gene') else None, "Added STR to panel", str_item.name)
 
         str_item.evidence_status(update=True)
         self.update_saved_stats()
@@ -1516,14 +1575,10 @@ class GenePanelSnapshot(TimeStampedModel):
                 ])
 
                 description = "{} was changed to {}".format(old_str_name, str_item.name)
-                track_gene = TrackRecord.objects.create(
-                    gel_status=str_item.status,
-                    curator_status=0,
-                    user=user,
-                    issue_type=TrackRecord.ISSUE_TYPES.ChangedSTRName,
-                    issue_description=description
-                )
-                str_item.track.add(track_gene)
+                tracks.append((
+                    TrackRecord.ISSUE_TYPES.ChangedSTRName,
+                    description
+                ))
                 self.delete_str(old_str_name, increment=False)
                 logging.debug("Changed STR name:{} to {} panel:{}".format(
                     str_name, str_data.get('name'), self
@@ -1813,6 +1868,7 @@ class GenePanelSnapshot(TimeStampedModel):
                 ))
                 str_item.gene_core = None
                 str_item.gene = None
+
             elif new_gene and str_item.gene_core != new_gene:
                 logging.debug("{} in panel:{} has changed to gene:{}".format(
                     gene_name, self, new_gene.gene_symbol
@@ -1844,14 +1900,16 @@ class GenePanelSnapshot(TimeStampedModel):
             if tracks:
                 logging.debug("Adding tracks for {} in panel:{}".format(str_item.label, self))
                 status = str_item.evidence_status(True)
+                description = "\n".join([t[1] for t in tracks])
                 track = TrackRecord.objects.create(
                     gel_status=status,
                     curator_status=0,
                     user=user,
                     issue_type=",".join([t[0] for t in tracks]),
-                    issue_description="\n".join([t[1] for t in tracks])
+                    issue_description=description
                 )
                 str_item.track.add(track)
+                self.add_activity(user, description, str_item)
 
             str_item.save()
             self.clear_cache()
@@ -1965,13 +2023,19 @@ class GenePanelSnapshot(TimeStampedModel):
             self.update_saved_stats()
             return len(evaluations)
 
-    def add_activity(self, user, gene_symbol, text, str_name=None):
+    def add_activity(self, user, text, entity=None):
         """Adds activity for this panel"""
 
-        Activity.objects.create(
+        extra_info = {}
+        if entity:
+            extra_info = {
+                'entity_name': entity.name,
+                'entity_type': entity.entity_type
+            }
+
+        Activity.log(
             user=user,
-            panel=self.panel,
-            gene_symbol=gene_symbol,
-            str_name=str_name,
-            text=text
+            panel_snapshot=self,
+            text=text,
+            extra_info=extra_info
         )

@@ -199,7 +199,7 @@ class STRTest(LoginGELUser):
             "tags": [TagFactory().pk, ] + [tag.name for tag in str_item.tags.all()],
             "publications": ";".join([publication, fake.sentence()]),
             "phenotypes": ";".join([phenotype, fake.sentence(), fake.sentence()]),
-            "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)],
+            "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)][0],
             "penetrance": GenePanelEntrySnapshot.PENETRANCE.Incomplete,
         }
         res = self.client.post(url, str_data)
@@ -246,7 +246,7 @@ class STRTest(LoginGELUser):
             "tags": [TagFactory().pk, ] + [tag.name for tag in str_item.tags.all()],
             "publications": ";".join([publication, fake.sentence()]),
             "phenotypes": ";".join([phenotype, fake.sentence(), fake.sentence()]),
-            "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)],
+            "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)][0],
             "penetrance": GenePanelEntrySnapshot.PENETRANCE.Incomplete,
         }
         res = self.client.post(url, str_data)
@@ -290,7 +290,7 @@ class STRTest(LoginGELUser):
             "tags": [TagFactory().pk, ] + [tag.name for tag in str_item.tags.all()],
             "publications": ";".join([publication, fake.sentence()]),
             "phenotypes": ";".join([phenotype, fake.sentence(), fake.sentence()]),
-            "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)],
+            "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)][0],
             "penetrance": GenePanelEntrySnapshot.PENETRANCE.Incomplete,
         }
         res = self.client.post(url, str_data)
@@ -334,7 +334,7 @@ class STRTest(LoginGELUser):
             "tags": [TagFactory().pk, ] + [tag.name for tag in str_item.tags.all()],
             "publications": ";".join([publication, fake.sentence()]),
             "phenotypes": ";".join([phenotype, fake.sentence(), fake.sentence()]),
-            "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)],
+            "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)][0],
             "penetrance": GenePanelEntrySnapshot.PENETRANCE.Incomplete,
         }
         res = self.client.post(url, str_data)
@@ -645,7 +645,7 @@ class STRTest(LoginGELUser):
             "tags": [TagFactory().pk, ] + [tag.name for tag in str_item.tags.all()],
             "publications": ";".join([publication, fake.sentence()]),
             "phenotypes": ";".join([phenotype, fake.sentence(), fake.sentence()]),
-            "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)],
+            "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)][0],
             "penetrance": GenePanelEntrySnapshot.PENETRANCE.Incomplete,
         }
         res = self.client.post(url, gene_data)

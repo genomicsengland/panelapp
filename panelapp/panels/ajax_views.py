@@ -222,9 +222,9 @@ class DeleteEntityAjaxView(EntityMixin, GELReviewerRequiredMixin, BaseAjaxGeneMi
 
     def process(self):
         if self.is_gene():
-            self.panel.delete_gene(self.kwargs['entity_name'], True)
+            self.panel.delete_gene(self.kwargs['entity_name'], True, self.request.user)
         elif self.is_str():
-            self.panel.delete_str(self.kwargs['entity_name'], True)
+            self.panel.delete_str(self.kwargs['entity_name'], True, self.request.user)
 
         del self.panel
         return self.return_data()
@@ -236,7 +236,7 @@ class DeleteEntityAjaxView(EntityMixin, GELReviewerRequiredMixin, BaseAjaxGeneMi
         table = render(self.request, self.get_template_names(), ctx)
         return {
             'inner-fragments': {
-                '#genes_table' if self.is_gene() else '#strs_table': table
+                '#genes_table' if self.is_gene() else '#strs_table': table  # TODO(Oleg) refactor
             }
         }
 
@@ -245,7 +245,7 @@ class ApproveGeneAjaxView(GELReviewerRequiredMixin, BaseAjaxGeneMixin, AJAXMixin
     template_name = "panels/genepanel_table.html"
 
     def process(self):
-        self.panel.get_gene(self.kwargs['gene_symbol']).approve_gene()
+        self.panel.get_gene(self.kwargs['gene_symbol']).approve_gene()  # TODO(Oleg) refactor
         return self.return_data()
 
     def return_data(self):
@@ -255,7 +255,7 @@ class ApproveGeneAjaxView(GELReviewerRequiredMixin, BaseAjaxGeneMixin, AJAXMixin
         table = render(self.request, self.template_name, ctx)
         return {
             'inner-fragments': {
-                '#genes_table': table
+                '#genes_table': table  # TODO(Oleg) refactor
             }
         }
 
@@ -570,7 +570,7 @@ class UpdateEntityRatingAjaxView(GELReviewerRequiredMixin, UpdateEvaluationsMixi
 class DeleteEntityEvaluationAjaxView(UpdateEvaluationsMixin):
     def process(self):
         evaluation_pk = self.kwargs['evaluation_pk']
-        self.object.delete_evaluation(evaluation_pk)
+        self.object.delete_evaluation(evaluation_pk, self.request.user)
         del self.object
         del self.panel
         return self.return_data()
@@ -579,7 +579,7 @@ class DeleteEntityEvaluationAjaxView(UpdateEvaluationsMixin):
 class DeleteEntityCommentAjaxView(UpdateEvaluationsMixin):
     def process(self):
         comment_pk = self.kwargs['comment_pk']
-        self.object.delete_comment(comment_pk)
+        self.object.delete_comment(comment_pk, self.request.user)
         del self.object
         del self.panel
         return self.return_data()

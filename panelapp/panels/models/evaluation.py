@@ -37,13 +37,13 @@ class Evaluation(TimeStampedModel):
         ("X-LINKED: hemizygous mutation in males, monoallelic mutations in females may cause disease (may be less severe, later onset than males)", "X-LINKED: hemizygous mutation in males, monoallelic mutations in females may cause disease (may be less severe, later onset than males)"),  # noqa
         ("MITOCHONDRIAL", "MITOCHONDRIAL"),
         ("Unknown", "Unknown"),
-        ("Other - please specifiy in evaluation comments", "Other - please specifiy in evaluation comments"),
+        ("Other", "Other - please specifiy in evaluation comments"),
     )
 
     MODES_OF_PATHOGENICITY = Choices(
         ("", "Provide exceptions to loss-of-function"),
         ("Loss-of-function variants (as defined in pop up message) DO NOT cause this phenotype - please provide details in the comments", "Loss-of-function variants (as defined in pop up message) DO NOT cause this phenotype - please provide details in the comments"),  # noqa
-        ("Other - please provide details in the comments", "Other - please provide details in the comments"),
+        ("Other", "Other - please provide details in the comments"),
     )
 
     user = models.ForeignKey(User)

@@ -126,19 +126,27 @@ class AbstractEntity:
             )
             self.evaluation.add(evaluation)
         evaluation.comments.add(comment)
+        self.panel.add_activity(user, 'added comment: {}'.format(comment.comment), self)
 
-    def delete_evaluation(self, evaluation_pk):
+    def delete_evaluation(self, evaluation_pk, user=None):
         self.evaluation.get(pk=evaluation_pk).delete()
+        if user:
+            self.panel.add_activity(user, 'deleted their review', self)
 
-    def delete_comment(self, comment_pk):
+    def delete_comment(self, comment_pk, user=None):
         evaluation = self.evaluation.get(comments__pk=comment_pk)
         evaluation.comments.get(pk=comment_pk).delete()
+        if user:
+            self.panel.add_activity(user, 'deleted their comment', self)
 
-    def edit_comment(self, comment_pk, new_comment):
+    def edit_comment(self, comment_pk, new_comment, user=None):
         evaluation = self.evaluation.get(comments__pk=comment_pk)
         comment = evaluation.comments.get(pk=comment_pk)
+        old_comment = comment.comment
         comment.comment = new_comment
         comment.save()
+        if user:
+            self.panel.add_activity(user, 'changed review comment from: {}; to: {}'.format(old_comment, new_comment), self)
 
     def aggregate_ratings(self):
         """Gets stats about the gene, i.e. % of green, red, amber evaluations"""
@@ -216,6 +224,7 @@ class AbstractEntity:
                 issue_description=description
             )
             self.track.add(track_sources)
+            self.panel.add_activity(user, description, self)
 
         return True
 
@@ -261,6 +270,7 @@ class AbstractEntity:
             issue_description=issue_description
         )
         self.track.add(track)
+        self.panel.add_activity(user, issue_description, self)
         self.saved_gel_status = status
         self.save()
         return True
@@ -279,11 +289,7 @@ class AbstractEntity:
                 "Comment when marking as ready: {}".format(ready_comment)
             )
 
-        gene = self.gene.get('gene_symbol')
-        args = [user, self.gene.get('gene_symbol'), "marked {} as ready".format(self.label)]
-        if gene != self.name:
-            args.append(self.name)
-        self.panel.add_activity(*args)
+        self.panel.add_activity(user, "marked {} as ready".format(self.label), self)
         self.save()
 
     def update_moi(self, moi, user, moi_comment=None):
@@ -304,6 +310,7 @@ class AbstractEntity:
             issue_description=description
         )
         self.track.add(track)
+        self.panel.add_activity(user, description, self)
 
         if moi_comment:
             self.add_review_comment(
@@ -324,6 +331,7 @@ class AbstractEntity:
             issue_description=description
         )
         self.track.add(track)
+        self.panel.add_activity(user, description, self)
 
         if mop_comment:
             self.add_review_comment(
@@ -344,6 +352,7 @@ class AbstractEntity:
             issue_description=description
         )
         self.track.add(track)
+        self.panel.add_activity(user, description, self)
 
         if phenotypes_comment:
             self.add_review_comment(
@@ -364,6 +373,7 @@ class AbstractEntity:
             issue_description=description
         )
         self.track.add(track)
+        self.panel.add_activity(user, description, self)
 
         if publications_comment:
             self.add_review_comment(
@@ -384,13 +394,7 @@ class AbstractEntity:
 
         human_status = get_gene_list_data(self, GeneDataType.LONG.value)
 
-        gene = self.gene.get('gene_symbol')
-        args = [user, gene, "classified {} as {}".format(gene, human_status)]
-        if gene != self.name:
-            # in case the name isn't gene symbol consider it to be STR
-            # we'd need to refactor it once we have other entities
-            args.append(self.name)
-        self.panel.add_activity(*args)
+        self.panel.add_activity(user, "classified {} as {}".format(self.label, human_status), self)
 
     def update_evaluation(self, user, evaluation_data):
         """
@@ -464,20 +468,15 @@ class AbstractEntity:
 
             evaluation.version = self.panel.version
 
-            is_str = self.gene.get('gene_symbol') != self.name if self.gene else True  # STRs might not have genes
             activity_text = None
 
-            args = [user, self.gene.get('gene_symbol') if self.gene else None]
             if changed:
                 activity_text = "edited their review of {}".format(self.label)
             elif evaluation_data.get('comment'):
                 activity_text = "commented on {}".format(self.label)
 
             if activity_text:
-                args.append(activity_text)
-                if is_str:
-                    args.append(self.name)
-                self.panel.add_activity(*args)
+                self.panel.add_activity(user, activity_text, self)
 
             evaluation.save()
             return evaluation
@@ -503,13 +502,11 @@ class AbstractEntity:
                 )
                 evaluation.comments.add(comment)
 
-            str_label = self.name if self.gene and self.gene.get('gene_symbol') != self.name else None
-
             if evaluation.is_comment_without_review():
                 activity_text = "commented on {}".format(self.label)
             else:
                 activity_text = "reviewed {}".format(self.label)
 
-            self.panel.add_activity(user, self.gene.get('gene_symbol'), activity_text, str_label)
+            self.panel.add_activity(user, activity_text, self)
 
             return evaluation
