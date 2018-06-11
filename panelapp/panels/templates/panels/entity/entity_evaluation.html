@@ -18,7 +18,7 @@
 
   {% for comment in ev.comments.all %}
     <blockquote class="add-top-margin" id="comment_{{ comment.pk }}">
-      {{ comment.comment }}
+      {{ comment.comment|linebreaksbr }}
       <h6>{{ comment.created|date:'DATETIME_FORMAT' }}</h6>
       {% if request.user == user and panel and entity %}
         <a href="{% url "panels:edit_comment_by_user" panel.panel_id entity_type entity_name comment.pk %}" class="btn btn-default btn-xs" data-ajax="true" data-success="djangoAjaxHandler">Edit your comment</a>

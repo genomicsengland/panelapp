@@ -822,12 +822,6 @@ class GenePanelSnapshot(TimeStampedModel):
             flagged=False if user.reviewer.is_GEL() else True
         )
         gene.save()
-        if gene_data.get('comment'):
-            comment = Comment.objects.create(
-                user=user,
-                comment=gene_data.get('comment')
-            )
-            gene.comments.add(comment)
 
         for source in gene_data.get('sources'):
             evidence = Evidence.objects.create(
@@ -856,7 +850,7 @@ class GenePanelSnapshot(TimeStampedModel):
                 description
             ))
 
-        description = "{} was added. Sources: {}".format(
+        description = "{} was added to {}. Sources: {}".format(
             gene_core.gene_symbol,
             self.panel.name,
             ",".join(gene_data.get('sources'))
@@ -877,7 +871,7 @@ class GenePanelSnapshot(TimeStampedModel):
                 description
             ))
 
-        if gene_data.get('rating') or gene_data.get('comment'):
+        if gene_data.get('rating') or gene_data.get('comment') or gene_data.get('source'):
             evaluation = Evaluation.objects.create(
                 user=user,
                 rating=gene_data.get('rating'),
@@ -888,7 +882,17 @@ class GenePanelSnapshot(TimeStampedModel):
                 current_diagnostic=gene_data.get('current_diagnostic'),
                 version=self.version
             )
-            if gene_data.get('comment'):
+            comment_text = gene_data.get('comment', '')
+            sources = ', '.join(gene_data.get('sources', []))
+            if sources and comment_text:
+                comment_text = comment_text + ' \nSources: ' + sources
+            else:
+                comment_text = 'Sources: ' + sources
+            comment = Comment.objects.create(
+                user=user,
+                comment=comment_text
+            )
+            if gene_data.get('comment') or gene_data.get('sources', []):
                 evaluation.comments.add(comment)
             gene.evaluation.add(evaluation)
         self.clear_cache()
@@ -1358,13 +1362,6 @@ class GenePanelSnapshot(TimeStampedModel):
 
         self.add_activity(user, "Added STR to panel", str_item)
 
-        if str_data.get('comment'):
-            comment = Comment.objects.create(
-                user=user,
-                comment=str_data.get('comment')
-            )
-            str_item.comments.add(comment)
-
         for source in str_data.get('sources'):
             evidence = Evidence.objects.create(
                 rating=5,
@@ -1434,7 +1431,17 @@ class GenePanelSnapshot(TimeStampedModel):
                 clinically_relevant=str_data.get('clinically_relevant'),
                 version=self.version
             )
-            if str_data.get('comment'):
+            comment_text = str_data.get('comment', '')
+            sources = ', '.join(str_data.get('sources', []))
+            if sources and comment_text:
+                comment_text = comment_text + ' \nSources: ' + sources
+            else:
+                comment_text = 'Sources: ' + sources
+            comment = Comment.objects.create(
+                user=user,
+                comment=comment_text
+            )
+            if str_data.get('comment') or str_data.get('sources', []):
                 evaluation.comments.add(comment)
             str_item.evaluation.add(evaluation)
         self.clear_cache()
