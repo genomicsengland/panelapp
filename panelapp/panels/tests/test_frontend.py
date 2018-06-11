@@ -38,3 +38,22 @@ class TestActivities(LoginReviewerUser):
         req = self.client.post(url, gene_data)
 
         self.assertEqual(Activity.objects.count(), 1)
+
+    def test_adding_gene_save_source(self):
+        gps = GenePanelSnapshotFactory()
+        GenePanelEntrySnapshotFactory.create_batch(4, panel=gps)
+        gene = GeneFactory()
+
+        url = reverse_lazy('panels:add_entity', kwargs={'pk': gps.panel.pk, 'entity_type': 'gene'})
+        gene_data = {
+            "gene": gene.pk,
+            "source": Evidence.OTHER_SOURCES[0],
+            "phenotypes": "{};{};{}".format(*fake.sentences(nb=3)),
+            "rating": Evaluation.RATINGS.AMBER,
+            "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)][0],
+            "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][randint(1, 2)][0],
+            "penetrance": GenePanelEntrySnapshot.PENETRANCE.Incomplete,
+        }
+        req = self.client.post(url, gene_data)
+        gpes = gps.panel.active_panel.get_gene(gene.gene_symbol)
+        self.assertTrue(gene_data['source'] in gpes.evaluation.get(user=self.verified_user).comments.first().comment)
