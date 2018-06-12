@@ -74,6 +74,11 @@ class UserAdmin(DjangoObjectActions, BaseUserAdmin):
     fieldsets = (
         (None, {'fields': ('email', 'password')}),
         ('Personal info', {'fields': ('first_name', 'last_name',)}),
+        ('Permissions', {'fields': ('is_staff', 'is_active', 'groups',)}),
+    )
+    superuser_fieldsets = (
+        (None, {'fields': ('email', 'password')}),
+        ('Personal info', {'fields': ('first_name', 'last_name',)}),
         ('Permissions', {'fields': ('is_staff', 'is_superuser', 'is_active', 'groups',)}),
     )
     add_fieldsets = (
@@ -89,6 +94,16 @@ class UserAdmin(DjangoObjectActions, BaseUserAdmin):
     inlines = [
         ReviewerInline,
     ]
+
+    def get_fieldsets(self, request, obj=None):
+        """
+        Hook for specifying fieldsets.
+        """
+
+        if request.user.is_superuser:
+            return self.superuser_fieldsets
+        else:
+            return self.fieldsets
 
     def is_reviewer(self, obj):
         try:
