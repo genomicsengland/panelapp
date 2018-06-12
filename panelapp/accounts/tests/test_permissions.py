@@ -10,3 +10,4 @@ class PermissionsTest(TestMigrations):
     def test_groups(self):
         self.assertEqual(Group.objects.filter(name='Site Editor').count(), 1)
         self.assertEqual(Group.objects.filter(name='User Support').count(), 1)
+        self.assertEqual(Group.objects.filter(name='File Upload Curation').count(), 1)
