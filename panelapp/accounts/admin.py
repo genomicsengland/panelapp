@@ -74,7 +74,7 @@ class UserAdmin(DjangoObjectActions, BaseUserAdmin):
     fieldsets = (
         (None, {'fields': ('email', 'password')}),
         ('Personal info', {'fields': ('first_name', 'last_name',)}),
-        ('Permissions', {'fields': ('is_staff', 'is_superuser', 'is_active',)}),
+        ('Permissions', {'fields': ('is_staff', 'is_superuser', 'is_active', 'groups',)}),
     )
     add_fieldsets = (
         (None, {
@@ -131,4 +131,3 @@ class ReviewerAdmin(admin.ModelAdmin):
 
 admin.site.register(Reviewer, ReviewerAdmin)
 admin.site.register(User, UserAdmin)
-admin.site.unregister(Group)
