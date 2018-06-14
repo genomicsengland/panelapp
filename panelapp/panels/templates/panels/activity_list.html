@@ -1,9 +1,25 @@
 {% extends "default.html" %}
 {% load staticfiles %}
 {% load panel_helpers %}
+{% load bootstrap3 %}
 
 {% block content %}
-  <h1 class="add-bottom-margin">{% block title %}Activity{% endblock %}</h1>
+  <h1 class="add-bottom-margin">
+      {% block title %}Activity{% endblock %}
+      <a href="#" data-module="showhide" data-show=".form.activity-filter"><span class="fa fa-filter{% if filter_active %} text-primary{% else %} text-muted small{% endif %}"></span></a>
+  </h1>
+
+  <form class="form activity-filter add-bottom-margin{% if not filter_active %} hidden{% endif %}">
+    <h4>Filter</h4>
+    {% bootstrap_form filter_form %}
+    <div>
+      <button type="reset" class="btn btn-default">Cancel</button>
+      <button type="submit" class="btn btn-primary">Filter</button>
+        {% if request.user.is_authenticated and request.user.reviewer.is_GEL %}
+        <button type="submit" value="csv" name="format" class="btn btn-default">CSV Export</button>
+        {% endif %}
+    </div>
+  </form>
   
   <table class="table table-bordered" data-module="filterable-table">
     <thead>

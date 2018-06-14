@@ -6,6 +6,8 @@ from django.db.models import Count
 from django.db.models import Case
 from django.db.models import When
 from django.db.models import Subquery
+from django.db.models import CharField, Value as V
+from django.db.models.functions import Concat
 from django.db.models import Q
 from django.urls import reverse
 from django.utils import timezone
@@ -85,6 +87,48 @@ class GenePanelSnapshotManager(models.Manager):
         qs = qs.filter(genepanelentrysnapshot__gene_core__gene_symbol=gene_symbol)\
             .union(qs.filter(str__gene_core__gene_symbol=gene_symbol))
         return qs
+
+    def get_panels_active_panels(self, all=False, deleted=False, internal=False):
+        return self.get_active(all=all, deleted=deleted, internal=internal)\
+            .annotate(version=Concat('major_version', V('.'), 'minor_version', output_field=CharField()))\
+            .values_list('panel_id', 'panel__name')
+
+    def get_panel_versions(self, panel_id, all=False, deleted=False, internal=False):
+        qs = self.filter(panel_id=panel_id)
+
+        if not all:
+            qs = qs.filter(Q(panel__status=GenePanel.STATUS.public) | Q(panel__status=GenePanel.STATUS.promoted))
+
+        if not internal:
+            qs = qs.exclude(panel__status=GenePanel.STATUS.internal)
+
+        if not deleted:
+            qs = qs.exclude(panel__status=GenePanel.STATUS.deleted)
+
+        return qs.annotate(version=Concat('major_version', V('.'), 'minor_version', output_field=CharField()))\
+                 .order_by('-major_version', '-minor_version')\
+                 .values_list('version', 'version')
+
+    def get_panel_entities(self, panel_id, major_version, minor_version, all=False, deleted=False, internal=False):
+        qs = self.filter(panel_id=panel_id, major_version=major_version, minor_version=minor_version)
+
+        if not all:
+            qs = qs.filter(Q(panel__status=GenePanel.STATUS.public) | Q(panel__status=GenePanel.STATUS.promoted))
+
+        if not internal:
+            qs = qs.exclude(panel__status=GenePanel.STATUS.internal)
+
+        if not deleted:
+            qs = qs.exclude(panel__status=GenePanel.STATUS.deleted)
+
+        gps = qs.first()
+        if not gps:
+            return []
+
+        genes = [(g.get('gene_symbol'), g.get('gene_symbol')) for g in gps.cached_genes.values_list('gene', flat=True)]
+        strs = [(n, n) for n in gps.cached_strs.values_list('name', flat=True)]
+
+        return list(genes) + list(strs)
 
 
 class GenePanelSnapshot(TimeStampedModel):
@@ -576,11 +620,11 @@ class GenePanelSnapshot(TimeStampedModel):
 
     @cached_property
     def cached_genes(self):
-        return self.genepanelentrysnapshot_set.all()
+        return self.genepanelentrysnapshot_set.all().order_by('gene_core__gene_symbol')
 
     @cached_property
     def cached_strs(self):
-        return self.str_set.all()
+        return self.str_set.all().order_by('name')
 
     @cached_property
     def current_genes(self):

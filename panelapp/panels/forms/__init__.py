@@ -12,6 +12,7 @@ from .genereview import GeneReviewForm  # noqa
 from .geneready import GeneReadyForm  # noqa
 from .strreview import STRReviewForm  # noqa
 from .str_ready import STRReadyForm  # noqa
+from .activity import ActivityFilterForm
 from panels.models import ProcessingRunCode
 from panels.exceptions import UserDoesNotExist
 from panels.exceptions import GeneDoesNotExist

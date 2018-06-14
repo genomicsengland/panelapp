@@ -102,7 +102,7 @@ class GenePanelSpanshotView(EntityMixin, DetailView):
         ctx['edit_entity_publications_form'] = UpdateGenePublicationsForm(instance=self.object)
         ctx['edit_entity_rating_form'] = UpdateGeneRatingForm(instance=self.object)
 
-        cgi = ctx['panel_genes'].index(self.object)
+        cgi = [g.get('pk') for g in ctx['panel_genes']].index(self.object.pk)
         ctx['next_gene'] = None if cgi == len(ctx['panel_genes']) - 1 else ctx['panel_genes'][cgi + 1]
         ctx['prev_gene'] = None if cgi == 0 else ctx['panel_genes'][cgi - 1]
 
@@ -149,7 +149,7 @@ class GenePanelSpanshotView(EntityMixin, DetailView):
         ctx['edit_entity_publications_form'] = UpdateSTRPublicationsForm(instance=self.object)
         ctx['edit_entity_rating_form'] = UpdateSTRRatingForm(instance=self.object)
 
-        cgi = ctx['panel_strs'].index(self.object)
+        cgi = [g.get('pk') for g in ctx['panel_strs']].index(self.object.pk)
         ctx['next_str'] = None if cgi == len(ctx['panel_strs']) - 1 else ctx['panel_strs'][cgi + 1]
         ctx['prev_str'] = None if cgi == 0 else ctx['panel_strs'][cgi - 1]
 
@@ -182,8 +182,8 @@ class GenePanelSpanshotView(EntityMixin, DetailView):
         else:
             ctx['sharing_panels'] = []
 
-        ctx['panel_genes'] = list(self.panel.get_all_genes_extra)
-        ctx['panel_strs'] = list(self.panel.get_all_strs_extra)
+        ctx['panel_genes'] = list(self.panel.get_all_genes_extra.values('pk', 'gene', 'evaluators', 'number_of_evaluations', 'saved_gel_status'))
+        ctx['panel_strs'] = list(self.panel.get_all_strs_extra.values('pk', 'gene', 'name', 'evaluators', 'number_of_evaluations', 'saved_gel_status'))
 
         if self.is_gene():
             ctx = self.get_context_data_gene(ctx)
