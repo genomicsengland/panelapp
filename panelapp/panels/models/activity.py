@@ -47,6 +47,7 @@ class Activity(TimeStampedModel):
         extra_data['user_name'] = user.get_full_name()
         extra_data['panel_name'] = panel_snapshot.panel.name
         extra_data['panel_id'] = panel_snapshot.panel_id
+        extra_data['panel_version'] = panel_snapshot.version
 
         if 'entity_type' in extra_info:
             extra_data['item_type'] = 'entity'

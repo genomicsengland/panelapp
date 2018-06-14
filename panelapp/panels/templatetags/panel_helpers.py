@@ -29,11 +29,12 @@ class GeneDataType(Enum):
 
 
 def get_gene_list_data(gene, list_type):
-    if gene.status > 2:
+    value = gene.get('saved_gel_status') if isinstance(gene, dict) else gene.status
+    if value > 2:
         return gene_list_data[GeneStatus.GREEN.value][list_type]
-    elif gene.status == 2:
+    elif value == 2:
         return gene_list_data[GeneStatus.AMBER.value][list_type]
-    elif gene.status == 1:
+    elif value == 1:
         return gene_list_data[GeneStatus.RED.value][list_type]
     else:
         return gene_list_data[GeneStatus.NOLIST.value][list_type]
