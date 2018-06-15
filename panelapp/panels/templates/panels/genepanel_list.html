@@ -17,7 +17,7 @@
         <button type="button" class="btn btn-default text-right" data-toggle="modal" data-target="#compare-modal">
           Compare two panels
         </button>
-        <div id="table">
+        <div id="panels_table">
           {% include "panels/genepanel_list_table.html" with view_panels=view_panels %}
         </div>
         {% include 'panels/compare/compare_panels_form.html' with form=view.compare_panels_form %}

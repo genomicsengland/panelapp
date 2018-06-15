@@ -46,7 +46,7 @@ class Evaluation(TimeStampedModel):
         ("Other", "Other - please provide details in the comments"),
     )
 
-    user = models.ForeignKey(User)
+    user = models.ForeignKey(User, on_delete=models.PROTECT)
     rating = models.CharField(max_length=255, choices=RATINGS, blank=True)
     mode_of_pathogenicity = models.CharField(choices=MODES_OF_PATHOGENICITY, null=True, blank=True, max_length=255)
     publications = ArrayField(models.TextField(), blank=True, null=True)

@@ -7,6 +7,7 @@ from .views import RedirectPanelView
 from .views import RedirectWebServices
 from .views import RedirectGenePanelView
 
+app_name = 'v1rewrites'
 urlpatterns = [
     url(r'^$', RedirectView.as_view(url="/", permanent=True)),
     url(r'^PanelApp/$', RedirectView.as_view(url="/", permanent=True)),

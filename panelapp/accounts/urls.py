@@ -10,6 +10,7 @@ from .views import UpdatePasswordView
 from .views import UserView
 from .views import UserRegistrationView
 
+app_name = 'accounts'
 urlpatterns = [
     url(r'^profile/$', UserView.as_view(), name="profile"),
     url(r'^registration/$', UserRegistrationView.as_view(), name="register"),

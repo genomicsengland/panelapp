@@ -4,7 +4,7 @@ from accounts.models import User
 
 
 class Comment(TimeStampedModel):
-    user = models.ForeignKey(User)
+    user = models.ForeignKey(User, on_delete=models.PROTECT, null=True)
     comment = models.TextField()
     flagged = models.BooleanField(default=False)
 

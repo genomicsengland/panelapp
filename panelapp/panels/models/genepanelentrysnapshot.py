@@ -69,9 +69,9 @@ class GenePanelEntrySnapshot(AbstractEntity, TimeStampedModel):
             models.Index(fields=['gene_core_id'])
         ]
 
-    panel = models.ForeignKey(GenePanelSnapshot)
+    panel = models.ForeignKey(GenePanelSnapshot, on_delete=models.PROTECT)
     gene = JSONField(encoder=DjangoJSONEncoder)  # copy data from Gene.dict_tr
-    gene_core = models.ForeignKey(Gene)  # reference to the original Gene
+    gene_core = models.ForeignKey(Gene, on_delete=models.PROTECT)  # reference to the original Gene
     evidence = models.ManyToManyField(Evidence)
     evaluation = models.ManyToManyField(Evaluation, db_index=True)
     moi = models.CharField("Mode of inheritance", choices=Evaluation.MODES_OF_INHERITANCE, max_length=255)
