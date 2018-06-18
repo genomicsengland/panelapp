@@ -131,7 +131,8 @@ class AjaxGenePanelEntryTest(LoginGELUser):
     def test_delete_panel(self):
         pk = self.gpes.panel.panel.pk
         res = self.helper_panel('delete_panel')
-        assert GenePanel.objects.filter(pk=pk).count() == 0
+        assert GenePanel.objects.filter(pk=pk).count() == 1
+        self.assertEqual(GenePanel.objects.get(pk=pk).status, GenePanel.STATUS.deleted)
         assert res.content.find(str.encode(self.gpes2.panel.panel.name))
 
     def test_approve_panel(self):

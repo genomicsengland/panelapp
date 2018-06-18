@@ -4,6 +4,7 @@ from . import views
 
 # Wire up our API using automatic URL routing.
 # Additionally, we include login URLs for the browsable API.
+app_name = 'webservices'
 urlpatterns = [
     url(r'^get_panel/(.+)/', views.get_panel, name="get_panel"),
     url(r'^search_genes/(.+)/', views.search_by_gene, name="search_genes"),

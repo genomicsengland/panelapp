@@ -34,7 +34,7 @@ class Evidence(TimeStampedModel):
     rating = models.IntegerField()
     comment = models.CharField(max_length=255)
 
-    reviewer = models.ForeignKey(Reviewer, null=True)
+    reviewer = models.ForeignKey(Reviewer, null=True, on_delete=models.PROTECT)
     legacy_type = models.CharField(max_length=255, null=True)
 
     def __str__(self):

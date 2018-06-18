@@ -106,7 +106,7 @@ class Reviewer(models.Model):
         "Other",
     )
 
-    user = models.OneToOneField(User)
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
     user_type = models.CharField(max_length=255, choices=TYPES, default=TYPES.EXTERNAL)
     affiliation = models.CharField(max_length=1024)
     workplace = models.CharField(max_length=255, choices=WORKPLACES)

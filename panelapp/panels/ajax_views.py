@@ -179,7 +179,7 @@ class PanelAjaxMixin(BaseAjaxGeneMixin):
 
     def return_data(self):
         if self.request.user.is_authenticated and self.request.user.reviewer.is_GEL():
-            panels = GenePanelSnapshot.objects.get_active(True)
+            panels = GenePanelSnapshot.objects.get_active(all=True, internal=True)
         else:
             panels = GenePanelSnapshot.objects.get_active()
         ctx = {
@@ -189,7 +189,7 @@ class PanelAjaxMixin(BaseAjaxGeneMixin):
         table = render(self.request, self.template_name, ctx)
         return {
             'inner-fragments': {
-                '#genes_table': table,
+                '#panels_table': table,
                 '#panels_count': len(panels)
             }
         }
@@ -197,7 +197,9 @@ class PanelAjaxMixin(BaseAjaxGeneMixin):
 
 class DeletePanelAjaxView(GELReviewerRequiredMixin, PanelAjaxMixin, AJAXMixin, View):
     def process(self):
-        GenePanel.objects.get(pk=self.kwargs['pk']).delete()
+        panel = GenePanel.objects.get(pk=self.kwargs['pk'])
+        panel.status = GenePanel.STATUS.deleted
+        panel.save()
         return self.return_data()
 
 

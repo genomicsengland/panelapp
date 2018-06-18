@@ -150,8 +150,8 @@ class GenePanelSnapshot(TimeStampedModel):
 
     objects = GenePanelSnapshotManager()
 
-    level4title = models.ForeignKey(Level4Title)
-    panel = models.ForeignKey(GenePanel)
+    level4title = models.ForeignKey(Level4Title, on_delete=models.PROTECT)
+    panel = models.ForeignKey(GenePanel, on_delete=models.PROTECT)
     major_version = models.IntegerField(default=0, db_index=True)
     minor_version = models.IntegerField(default=0, db_index=True)
     version_comment = models.TextField(null=True)

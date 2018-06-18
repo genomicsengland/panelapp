@@ -70,7 +70,6 @@ PROJECT_APPS = [
     'accounts',
     'panels',
     'webservices',
-    'v2import',
     'v1rewrites',
 ]
 

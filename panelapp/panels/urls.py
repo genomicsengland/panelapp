@@ -53,6 +53,8 @@ from .ajax_views import SubmitEntityCommentFormAjaxView
 from .ajax_views import ApproveGeneAjaxView
 
 
+app_name = 'panels'
+
 entity_regex = '[\w\-\.\$\~\@\#\ ]+'
 
 urlpatterns = [

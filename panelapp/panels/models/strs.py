@@ -90,7 +90,7 @@ class STR(AbstractEntity, TimeStampedModel):
             models.Index(fields=['name'])
         ]
 
-    panel = models.ForeignKey(GenePanelSnapshot)
+    panel = models.ForeignKey(GenePanelSnapshot, on_delete=models.PROTECT)
 
     name = models.CharField(max_length=128)
     repeated_sequence = models.CharField(max_length=128)
@@ -102,7 +102,7 @@ class STR(AbstractEntity, TimeStampedModel):
                                              verbose_name="Pathogenic")
 
     gene = JSONField(encoder=DjangoJSONEncoder, blank=True, null=True)  # copy data from Gene.dict_tr
-    gene_core = models.ForeignKey(Gene, blank=True, null=True)  # reference to the original Gene
+    gene_core = models.ForeignKey(Gene, blank=True, null=True, on_delete=models.PROTECT)  # reference to the original Gene
     evidence = models.ManyToManyField(Evidence)
     evaluation = models.ManyToManyField(Evaluation, db_index=True)
     moi = models.CharField("Mode of inheritance", choices=Evaluation.MODES_OF_INHERITANCE, max_length=255)
