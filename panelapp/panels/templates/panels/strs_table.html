@@ -45,7 +45,7 @@
                 <label for="gene-filter" class="rm">Filter STRs</label>
                 <div class="input-group">
                     <input id="gene-filter" type="text" class="form-control normal js-filter-table-input" placeholder="Filter STRs">
-                    <span class="input-group-addon js-filter-table-count" data-singular="gene" data-plural="genes">
+                    <span class="input-group-addon js-filter-table-count" data-singular="STR" data-plural="STRs">
                         {{ panel.get_all_strs_extra|length }} STRs{{panel.get_all_strs_extra|length|pluralize}}
                     </span>
                 </div>
@@ -173,7 +173,7 @@
 </tr>
 {% endfor %}
 </tbody>
-{% if request.user.is_authenticated and request.user.reviewer.is_verified %}
+{% if not panel.is_super_panel and request.user.is_authenticated and request.user.reviewer.is_verified %}
 <tfoot>
     <tr class="table-header">
         <td colspan="100">

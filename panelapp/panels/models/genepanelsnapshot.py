@@ -8,7 +8,7 @@ from django.db.models import When
 from django.db.models import Subquery
 from django.db.models import CharField, Value as V
 from django.db.models.functions import Concat
-from django.db.models import Q
+from django.db.models import Q, Value
 from django.urls import reverse
 from django.utils import timezone
 from django.contrib.postgres.fields import ArrayField
@@ -17,6 +17,7 @@ from django.utils.functional import cached_property
 from model_utils.models import TimeStampedModel
 
 from panels.tasks import email_panel_promoted
+from panels.exceptions import IsSuperPanelException
 from .activity import Activity
 from .genepanel import GenePanel
 from .Level4Title import Level4Title
@@ -68,7 +69,21 @@ class GenePanelSnapshotManager(models.Manager):
     def get_active_annotated(self, all=False, deleted=False, internal=False):
         """This method adds additional values to the queryset, such as number_of_genes, etc and returns active panels"""
 
-        return self.get_active(all, deleted, internal)
+        return self.get_active(all, deleted, internal)\
+            .annotate(child_panels_count=Count('child_panels')) \
+            .annotate(superpanels_count=Count('genepanelsnapshot')) \
+            .annotate(
+                is_super_panel=Case(
+                    When(child_panels_count__gt=0, then=Value(True)),
+                    default=Value(False),
+                    output_field=models.BooleanField()
+                ),
+                is_child_panel=Case(
+                    When(superpanels_count__gt=0, then=Value(True)),
+                    default=Value(False),
+                    output_field=models.BooleanField()
+                ),
+            )
 
     def get_gene_panels(self, gene_symbol, all=False, internal=False):
         """Get all panels for a specific gene in Gene entities"""
@@ -145,7 +160,7 @@ class GenePanelSnapshot(TimeStampedModel):
         get_latest_by = "created"
         ordering = ['-major_version', '-minor_version', ]
         indexes = [
-            models.Index(fields=['panel_id']),
+            models.Index(fields=['panel_id', ]),
         ]
 
     objects = GenePanelSnapshotManager()
@@ -157,11 +172,14 @@ class GenePanelSnapshot(TimeStampedModel):
     version_comment = models.TextField(null=True)
     old_panels = ArrayField(models.CharField(max_length=255), blank=True, null=True)
 
+    # refactor this madness and save it a single JSON field
     current_number_of_reviewers = models.IntegerField(null=True, blank=True)
     current_number_of_evaluated_genes = models.IntegerField(null=True, blank=True)
     current_number_of_genes = models.IntegerField(null=True, blank=True)
     current_number_of_evaluated_strs = models.IntegerField(null=True, blank=True)
     current_number_of_strs = models.IntegerField(null=True, blank=True)
+
+    child_panels = models.ManyToManyField('self', symmetrical=False)
 
     def __str__(self):
         return "{} v{}.{}".format(self.level4title.name, self.major_version, self.minor_version)
@@ -170,65 +188,112 @@ class GenePanelSnapshot(TimeStampedModel):
         return reverse('panels:detail', args=(self.panel.pk,))
 
     @cached_property
+    def is_child_panel(self):
+        return bool(self.genepanelsnapshot_set.count())
+
+    @cached_property
+    def is_super_panel(self):
+        """Check if panel is super panel
+
+        Useful as we need to check in gene evaluations, updates, rendering, imports.
+
+        We don't store any information about entities in this panel. This panel is only for the referencing
+        other panels.
+
+        :return: bool if panel is super panel
+        """
+        return bool(self.child_panels.count())
+
+    @cached_property
     def stats(self):
         """Get stats for a panel, i.e. number of reviewers, genes, evaluated genes, etc"""
 
-        return GenePanelSnapshot.objects.filter(pk=self.pk).aggregate(
-            number_of_gene_reviewers=Count('genepanelentrysnapshot__evaluation__user__pk', distinct=True),
-            number_of_str_reviewers=Count('str__evaluation__user__pk', distinct=True),
-            number_of_evaluated_genes=Count(Case(
-                # Count unique genes if that gene has more than 1 evaluation
-                When(
-                    genepanelentrysnapshot__evaluation__isnull=False,
-                    then=models.F('genepanelentrysnapshot__pk')
+        pks = [self.pk, ]
+        if self.is_super_panel:
+            pks = self.child_panels.values_list('pk', flat=True)
+
+        keys = [
+            'number_of_gene_reviewers',
+            'number_of_evaluated_genes',
+            'number_of_genes',
+            'number_of_ready_genes',
+            'number_of_green_genes',
+            'number_of_str_reviewers',
+            'number_of_evaluated_strs',
+            'number_of_strs',
+            'number_of_ready_strs',
+            'number_of_green_strs'
+        ]
+
+        out = {}
+
+        for pk in pks:
+            # This is ~ 3000x faster than `.filter(pk__in=pks)`. Not a typo: 24 seconds vs 4ms per pk
+            info = GenePanelSnapshot.objects.filter(pk=pk)\
+                .prefetch_related('str', 'str__evaluation', 'genepanelentrysnapshot',
+                                  'genepanelentrysnapshot__evaluation',
+                                  'genepanelentrysnapshot__evaluation__user')\
+                .aggregate(
+                    number_of_gene_reviewers=Count('genepanelentrysnapshot__evaluation__user__pk', distinct=True),
+                    number_of_evaluated_genes=Count(Case(
+                        # Count unique genes if that gene has more than 1 evaluation
+                        When(
+                            genepanelentrysnapshot__evaluation__isnull=False,
+                            then=models.F('genepanelentrysnapshot__pk')
+                        )
+                    ), distinct=True),
+                    number_of_genes=Count('genepanelentrysnapshot__pk', distinct=True),
+                    number_of_ready_genes=Count(
+                        Case(
+                            When(
+                                genepanelentrysnapshot__ready=True,
+                                then=models.F('genepanelentrysnapshot__pk')
+                            )
+                        ),
+                        distinct=True
+                    ),
+                    number_of_green_genes=Count(
+                        Case(
+                            When(
+                                genepanelentrysnapshot__saved_gel_status__gte=3,
+                                then=models.F('genepanelentrysnapshot__pk')
+                            )
+                        ),
+                        distinct=True
+                    ),
+                    number_of_str_reviewers=Count('str__evaluation__user__pk', distinct=True),
+                    number_of_evaluated_strs=Count(Case(
+                        # Count unique genes if that gene has more than 1 evaluation
+                        When(
+                            str__evaluation__isnull=False,
+                            then=models.F('str__pk')
+                        )
+                    ), distinct=True),
+                    number_of_strs=Count('str__pk', distinct=True),
+                    number_of_ready_strs=Count(
+                        Case(
+                            When(
+                                str__ready=True,
+                                then=models.F('str__pk')
+                            )
+                        ),
+                        distinct=True
+                    ),
+                    number_of_green_strs=Count(
+                        Case(
+                            When(
+                                str__saved_gel_status__gte=3,
+                                then=models.F('str__pk')
+                            )
+                        ),
+                        distinct=True
+                    ),
                 )
-            ), distinct=True),
-            number_of_genes=Count('genepanelentrysnapshot__pk', distinct=True),
-            number_of_ready_genes=Count(
-                Case(
-                    When(
-                        genepanelentrysnapshot__ready=True,
-                        then=models.F('genepanelentrysnapshot__pk')
-                    )
-                ),
-                distinct=True
-            ),
-            number_of_green_genes=Count(
-                Case(
-                    When(
-                        genepanelentrysnapshot__saved_gel_status__gte=3,
-                        then=models.F('genepanelentrysnapshot__pk')
-                    )
-                ),
-                distinct=True
-            ),
-            number_of_evaluated_strs=Count(Case(
-                # Count unique genes if that gene has more than 1 evaluation
-                When(
-                    str__evaluation__isnull=False,
-                    then=models.F('str__pk')
-                )
-            ), distinct=True),
-            number_of_strs=Count('str__pk', distinct=True),
-            number_of_ready_strs=Count(
-                Case(
-                    When(
-                        str__ready=True,
-                        then=models.F('str__pk')
-                    )
-                ),
-                distinct=True
-            ),
-            number_of_green_strs=Count(
-                Case(
-                    When(
-                        str__saved_gel_status__gte=3,
-                        then=models.F('str__pk')
-                    )
-                ),
-                distinct=True
-            ),
-        )
+
+            for key in keys:
+                out[key] = out.get(key, 0) + info.get(key, 0)
+
+        return out
 
     @property
     def number_of_reviewers(self):
@@ -284,6 +349,9 @@ class GenePanelSnapshot(TimeStampedModel):
         This has weird behaviour as self references still goes to the previous
         snapshot and not the new one.
         """
+
+        if self.is_super_panel:
+            raise IsSuperPanelException
 
         with transaction.atomic():
             current_genes = deepcopy(self.get_all_genes)  # cache the results
@@ -598,6 +666,10 @@ class GenePanelSnapshot(TimeStampedModel):
         Returns:
              None
         """
+
+        if self.is_super_panel:
+            raise IsSuperPanelException
+
         for gene in self.cached_genes.all():
             gene.ready = False
             gene.save()
@@ -620,10 +692,12 @@ class GenePanelSnapshot(TimeStampedModel):
 
     @cached_property
     def cached_genes(self):
+        # TODO (Oleg) Adopt for super panels, chain queryset
         return self.genepanelentrysnapshot_set.all().order_by('gene_core__gene_symbol')
 
     @cached_property
     def cached_strs(self):
+        # TODO (Oleg) Adopt for super panels, chain queryset
         return self.str_set.all().order_by('name')
 
     @cached_property
@@ -743,12 +817,18 @@ class GenePanelSnapshot(TimeStampedModel):
     def has_gene(self, gene_symbol):
         """Check if the panel has a gene with the provided gene symbol"""
 
+        if self.is_super_panel:
+            raise IsSuperPanelException
+
         return gene_symbol in [
             symbol.get('gene_symbol') for symbol in self.genepanelentrysnapshot_set.values_list('gene', flat=True)
         ]
 
     def get_str(self, name, prefetch_extra=False):
         """Get a STR."""
+
+        if self.is_super_panel:
+            raise IsSuperPanelException
 
         if prefetch_extra:
             return self.get_all_strs_extra.prefetch_related(
@@ -762,6 +842,9 @@ class GenePanelSnapshot(TimeStampedModel):
             return self.get_all_strs.get(name=name)
 
     def has_str(self, str_name):
+        if self.is_super_panel:
+            raise IsSuperPanelException
+
         return self.str_set.filter(name=str_name).count() > 0
 
     def clear_cache(self):
@@ -787,6 +870,9 @@ class GenePanelSnapshot(TimeStampedModel):
     def delete_gene(self, gene_symbol, increment=True, user=None):
         """Removes gene from a panel, but leaves it in the previous versions of the same panel"""
 
+        if self.is_super_panel:
+            raise IsSuperPanelException
+
         if self.has_gene(gene_symbol):
             if increment:
                 self = self.increment_version(ignore_gene=gene_symbol)
@@ -804,6 +890,9 @@ class GenePanelSnapshot(TimeStampedModel):
 
     def delete_str(self, str_name, increment=True, user=None):
         """Removes STR from a panel, but leaves it in the previous versions of the same panel"""
+
+        if self.is_super_panel:
+            raise IsSuperPanelException
 
         if self.has_str(str_name):
             if increment:
@@ -843,6 +932,10 @@ class GenePanelSnapshot(TimeStampedModel):
             GenePanelEntrySnapshot instance of a freshly created Gene in a Panel.
             Or False in case the gene is already in the panel.
         """
+
+        if self.is_super_panel:
+            raise IsSuperPanelException
+
 
         if self.has_gene(gene_symbol):
             return False
@@ -982,6 +1075,9 @@ class GenePanelSnapshot(TimeStampedModel):
         Returns:
             GenePanelEntrySnapshot if the gene was successfully updated, False otherwise
         """
+        if self.is_super_panel:
+            raise IsSuperPanelException
+
 
         logging.debug("Updating gene:{} panel:{} gene_data:{}".format(gene_symbol, self, gene_data))
         has_gene = self.has_gene(gene_symbol=gene_symbol)
@@ -1527,6 +1623,9 @@ class GenePanelSnapshot(TimeStampedModel):
         Returns:
             STR if the gene was successfully updated, False otherwise
         """
+        if self.is_super_panel:
+            raise IsSuperPanelException
+
 
         logging.debug("Updating STR:{} panel:{} str_data:{}".format(str_name, self, str_data))
         has_str = self.has_str(str_name)
@@ -1971,6 +2070,8 @@ class GenePanelSnapshot(TimeStampedModel):
 
     def copy_gene_reviews_from(self, genes, copy_from_panel):
         """Copy gene reviews from specified panel"""
+        if self.is_super_panel:
+            raise IsSuperPanelException
 
         with transaction.atomic():
             current_genes = {gpes.gene.get('gene_symbol'): gpes for gpes in self.get_all_genes_extra.prefetch_related(
@@ -2076,6 +2177,8 @@ class GenePanelSnapshot(TimeStampedModel):
 
     def add_activity(self, user, text, entity=None):
         """Adds activity for this panel"""
+        if self.is_super_panel:
+            raise IsSuperPanelException
 
         extra_info = {}
         if entity:

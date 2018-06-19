@@ -69,9 +69,11 @@ class AbstractEntity:
         return gel_status
 
     def is_str(self):
+        # TODO (Oleg) enums... we need enums
         return self.entity_type == 'str'
 
     def is_gene(self):
+        # TODO (Oleg) enum all the things
         return self.entity_type == 'gene'
 
     @property

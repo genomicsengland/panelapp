@@ -12,6 +12,7 @@ from .views import VersionView
 from .autocomplete import GeneAutocomplete
 from .autocomplete import SourceAutocomplete
 from .autocomplete import TagsAutocomplete
+from .autocomplete import SimplePanelsAutocomplete
 
 
 urlpatterns = [
@@ -25,6 +26,7 @@ urlpatterns = [
     path('autocomplete/gene/', GeneAutocomplete.as_view(), name="autocomplete-gene"),
     path('autocomplete/source/', SourceAutocomplete.as_view(), name="autocomplete-source"),
     path('autocomplete/tags/', TagsAutocomplete.as_view(), name="autocomplete-tags"),
+    path('autocomplete/panels/simple/', SimplePanelsAutocomplete.as_view(), name="autocomplete-simple-panels"),
     path('health_check/', HealthCheckView.as_view(), name="health_check"),
     path('version/', VersionView.as_view(), name="version")
 ]

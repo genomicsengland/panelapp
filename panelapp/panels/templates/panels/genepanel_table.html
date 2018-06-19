@@ -173,7 +173,7 @@
 </tr>
 {% endfor %}
 </tbody>
-{% if request.user.is_authenticated and request.user.reviewer.is_verified %}
+{% if not panel.is_super_panel and request.user.is_authenticated and request.user.reviewer.is_verified %}
 <tfoot>
     <tr class="table-header">
         <td colspan="100">

@@ -74,6 +74,11 @@ class CreatePanelView(GELReviewerRequiredMixin, CreateView):
     template_name = "panels/genepanel_create.html"
     form_class = PanelForm
 
+    def get_form_kwargs(self, *args, **kwargs):
+        res = super().get_form_kwargs(*args, **kwargs)
+        res['gel_curator'] = self.request.user.is_authenticated and self.request.user.reviewer.is_GEL()
+        return res
+
     def form_valid(self, form):
         self.instance = form.instance
         ret = super().form_valid(form)
@@ -89,6 +94,11 @@ class UpdatePanelView(GELReviewerRequiredMixin, PanelMixin, UpdateView):
 
     template_name = "panels/genepanel_create.html"
     form_class = PanelForm
+
+    def get_form_kwargs(self, *args, **kwargs):
+        res = super().get_form_kwargs(*args, **kwargs)
+        res['gel_curator'] = self.request.user.is_authenticated and self.request.user.reviewer.is_GEL()
+        return res
 
     def form_valid(self, form):
         self.instance = form.instance
@@ -114,7 +124,8 @@ class GenePanelView(DetailView):
         ctx['panel'] = self.object.active_panel
         ctx['edit'] = PanelForm(
             initial=ctx['panel'].get_form_initial(),
-            instance=ctx['panel']
+            instance=ctx['panel'],
+            gel_curator=self.request.user.is_authenticated and self.request.user.reviewer.is_GEL()
         )
         ctx['contributors'] = User.objects.panel_contributors(ctx['panel'].pk)
         ctx['promote_panel_form'] = PromotePanelForm(

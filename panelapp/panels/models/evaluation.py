@@ -15,6 +15,7 @@ class Evaluation(TimeStampedModel):
     class Meta:
         indexes = [
             models.Index(fields=['user_id']),
+            models.Index(fields=['rating'])
         ]
         ordering = ['-created',]
 

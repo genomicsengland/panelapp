@@ -36,6 +36,10 @@
               <br/>Relevant disorders: {{ panel.old_panels|join:", " }}
           {% endif %}
           <br />Previous code: {% if panel.panel.old_pk %}{{ panel.panel.old_pk }}{% else %}{{ panel.panel.pk }}{% endif %}
+          {% if panel.is_super_panel %}
+              <br />Super Panel
+              {% for child_panel in panel.child_panels.all %}<br /><a href="{% url 'panels:detail' child_panel.panel.pk %}">{{ child_panel }}</a> {% endfor %}
+          {% endif %}
       </p>
   </div>
 
@@ -65,7 +69,7 @@
   </div>
 
   <h2 class="add-label-margin">{{ panel.get_all_genes_extra|length }} gene{{ panel.get_all_genes_extra|length|pluralize}}</h2>
-  <h3 class="text-muted normal remove-top-margin add-bottom-margin">{{ panel.stats.number_of_evaluated_genes }} reviewed{% if request.user.is_authenticated and request.user.reviewer.is_GEL %}, {{ panel.stats.number_of_ready_genes }} ready{% endif %}, {{ panel.stats.number_of_green_genes }} green</h3>
+  <h3 class="text-muted normal remove-top-margin add-bottom-margin">{{ panel.current_number_of_evaluated_genes }} reviewed{% if request.user.is_authenticated and request.user.reviewer.is_GEL %}, {{ panel.stats.number_of_ready_genes }} ready{% endif %}, {{ panel.stats.number_of_green_genes }} green</h3>
 
   <div data-module="sortable-table" data-default-key="gene">
       <div class="table-responsive" data-module="filterable-table">
@@ -76,7 +80,7 @@
   </div>
 
   <h2 class="add-label-margin">{{ panel.get_all_strs_extra|length }} STR{{ panel.get_all_strs_extra|length|pluralize}}</h2>
-  <h3 class="text-muted normal remove-top-margin add-bottom-margin">{{ panel.stats.number_of_evaluated_strs }} reviewed{% if request.user.is_authenticated and request.user.reviewer.is_GEL %}, {{ panel.stats.number_of_ready_strs }} ready{% endif %}, {{ panel.stats.number_of_green_strs }} green</h3>
+  <h3 class="text-muted normal remove-top-margin add-bottom-margin">{{ panel.current_number_of_evaluated_strs }} reviewed{% if request.user.is_authenticated and request.user.reviewer.is_GEL %}, {{ panel.stats.number_of_ready_strs }} ready{% endif %}, {{ panel.stats.number_of_green_strs }} green</h3>
 
   <div data-module="sortable-table" data-default-key="str">
       <div class="table-responsive" data-module="filterable-table">
@@ -95,7 +99,7 @@
       </ul>
   {% endif %}
 
-  {% if request.user.is_authenticated and request.user.reviewer.is_GEL %}
+  {% if not panel.is_super_panel and request.user.is_authenticated and request.user.reviewer.is_GEL %}
       <h3 class="add-top-margin">Promote to version {{ panel.major_version|add:"1" }}</h3>
       <div class="well">
           <p>Promoting a panel will:</p>
