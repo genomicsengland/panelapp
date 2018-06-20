@@ -14,7 +14,7 @@ class TrackRecord(TimeStampedModel):
         ("RemovedSource", "Removed Source"),
         ("ChangedGeneName", "Changed Gene Name"),
         ("SetPhenotypes", "Set Phenotypes"),
-        ("SetModelofInheritance", "Set Model of Inheritance"),
+        ("SetModelofInheritance", "Set Mode of Inheritance"),
         ("ClearSources", "Clear Sources"),
         ("SetModeofPathogenicity", "Set mode of pathogenicity"),
         ("GeneClassifiedbyGenomicsEnglandCurator", "Gene classified by Genomics England curator"),

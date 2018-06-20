@@ -193,6 +193,8 @@ def search_by_gene(request, gene):
     else:
         all_panels = GenePanelSnapshot.objects.get_active()
 
+    # TODO (Oleg) check if any of panels are super panels, and get these super panels here
+
     panels_ids_dict = {panel.panel.pk: (panel.panel.pk, panel) for panel in all_panels}
     filters.update({'panel__panel__pk__in': list(panels_ids_dict.keys())})
     active_genes = GenePanelEntrySnapshot.objects.get_active(pks=[s.pk for s in all_panels])

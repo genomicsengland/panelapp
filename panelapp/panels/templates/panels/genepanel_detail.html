@@ -35,11 +35,12 @@
           {% if panel.old_panels and panel.old_panels.0 %}
               <br/>Relevant disorders: {{ panel.old_panels|join:", " }}
           {% endif %}
-          <br />Previous code: {% if panel.panel.old_pk %}{{ panel.panel.old_pk }}{% else %}{{ panel.panel.pk }}{% endif %}
           {% if panel.is_super_panel %}
-              <br />Super Panel
+              <br />This panel is combined of these {{ panel.child_panels.all|length }} panels:
               {% for child_panel in panel.child_panels.all %}<br /><a href="{% url 'panels:detail' child_panel.panel.pk %}">{{ child_panel }}</a> {% endfor %}
           {% endif %}
+
+          {% if panel.panel.old_pk %}<br />Previous code: {{ panel.panel.old_pk }}{% endif %}
       </p>
   </div>
 
@@ -48,7 +49,7 @@
           {% include "panels/genepanel_info.html" %}
       </div>
       <div class="col-md-4">
-          {% if panel.contributors %}
+          {% if not panel.is_super_panel and panel.contributors %}
               <h3 class="remove-top-margin add-bottom-margin">{{ contributors|length }} reviewer{{contributors|pluralize}}</h3>
               <ul class="list-group remove-bottom-margin">
               {% for contributor in contributors %}
@@ -68,27 +69,18 @@
       </div>
   </div>
 
-  <h2 class="add-label-margin">{{ panel.get_all_genes_extra|length }} gene{{ panel.get_all_genes_extra|length|pluralize}}</h2>
-  <h3 class="text-muted normal remove-top-margin add-bottom-margin">{{ panel.current_number_of_evaluated_genes }} reviewed{% if request.user.is_authenticated and request.user.reviewer.is_GEL %}, {{ panel.stats.number_of_ready_genes }} ready{% endif %}, {{ panel.stats.number_of_green_genes }} green</h3>
+{% with entities=panel.get_all_entities_extra %}
+  <h2 class="add-label-margin">{{ entities|length }} Entities</h2>
+  <h3 class="text-muted normal remove-top-margin add-bottom-margin">{{ panel.stats.number_of_evaluated_entities }} reviewed{% if request.user.is_authenticated and request.user.reviewer.is_GEL %}, {{ panel.stats.number_of_ready_entities }} ready{% endif %}, {{ panel.stats.number_of_green_entities }} green</h3>
 
-  <div data-module="sortable-table" data-default-key="gene">
+  <div data-module="sortable-table" data-default-key="entity">
       <div class="table-responsive" data-module="filterable-table">
-          <table class="table table-bordered table-hover" id="genes_table">
-            {% include "panels/genepanel_table.html" %}
+          <table class="table table-bordered table-hover" id="entities_table">
+            {% include "panels/entities_list_table.html" %}
           </table>
       </div>
   </div>
-
-  <h2 class="add-label-margin">{{ panel.get_all_strs_extra|length }} STR{{ panel.get_all_strs_extra|length|pluralize}}</h2>
-  <h3 class="text-muted normal remove-top-margin add-bottom-margin">{{ panel.current_number_of_evaluated_strs }} reviewed{% if request.user.is_authenticated and request.user.reviewer.is_GEL %}, {{ panel.stats.number_of_ready_strs }} ready{% endif %}, {{ panel.stats.number_of_green_strs }} green</h3>
-
-  <div data-module="sortable-table" data-default-key="str">
-      <div class="table-responsive" data-module="filterable-table">
-          <table class="table table-bordered table-hover" id="strs_table">
-            {% include "panels/strs_table.html" %}
-          </table>
-      </div>
-  </div>
+{% endwith %}
 
   {% if panel.version_comment and panel.major_version %}
      <h2>Major version comments</h2>

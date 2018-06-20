@@ -23,6 +23,7 @@ class GeneEvaluationTest(LoginGELUser):
 
         gpes = GenePanelEntrySnapshotFactory()
         gpes.evaluation.all().delete()
+        gpes.panel.update_saved_stats()
         url = reverse_lazy('panels:review_entity', kwargs={
             'pk': gpes.panel.panel.pk,
             'entity_type': 'gene',
@@ -31,7 +32,7 @@ class GeneEvaluationTest(LoginGELUser):
 
         current_version = gpes.panel.version
 
-        number_of_evaluated_genes = gpes.panel.number_of_evaluated_genes
+        number_of_evaluated_genes = gpes.panel.stats.get('number_of_evaluated_genes')
 
         gene_data = {
             "rating": Evaluation.RATINGS.AMBER,
@@ -44,7 +45,7 @@ class GeneEvaluationTest(LoginGELUser):
         }
         res = self.client.post(url, gene_data)
         assert res.status_code == 302
-        assert number_of_evaluated_genes + 1 == gpes.panel.panel.active_panel.number_of_evaluated_genes
+        assert number_of_evaluated_genes + 1 == gpes.panel.panel.active_panel.stats.get('number_of_evaluated_genes')
         assert current_version == gpes.panel.panel.active_panel.version
 
     def test_add_evaluation_comments_only(self):

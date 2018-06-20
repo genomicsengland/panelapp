@@ -117,7 +117,7 @@ class GenesSerializer(EnsembleIdMixin, serializers.BaseSerializer):
     def to_representation(self, panels):
         result = []
         for gene in self.list_of_genes:
-            panel = panels[gene.panel.panel.pk][1]
+            panel = panels[gene.panel.panel.pk][1]  # TODO (Oleg) add a check for superpanels, and append it twice with different panel names
             ensemblId = self.get_ensemblId(gene)
             result.append({
                 "GeneSymbol": gene.gene.get('gene_symbol'),
@@ -154,7 +154,7 @@ class ListPanelSerializer(serializers.BaseSerializer):
                 "DiseaseGroup": panel.level4title.level2title,
                 "CurrentVersion": panel.version,
                 "CurrentCreated": panel.created,
-                "Number_of_Genes": panel.number_of_genes,
+                "Number_of_Genes": panel.stats.get('number_of_genes'),
                 "Panel_Id": panel.panel.old_pk if panel.panel.old_pk else str(panel.panel.pk),
                 "Relevant_disorders": filter(filter_empty, panel.old_panels),
                 "Status": panel.panel.status

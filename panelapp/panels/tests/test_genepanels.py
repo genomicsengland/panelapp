@@ -135,12 +135,12 @@ class GenePanelTest(LoginGELUser):
         genes = GenePanelEntrySnapshotFactory.create_batch(5, panel=gps)
         gene_symbol = genes[2].gene['gene_symbol']
 
-        number_of_genes = gps.number_of_genes
+        number_of_genes = gps.stats.get('number_of_genes')
 
         assert gps.has_gene(gene_symbol) is True
         gps.delete_gene(gene_symbol)
         assert gps.panel.active_panel.has_gene(gene_symbol) is False
-        assert number_of_genes - 1 == gps.panel.active_panel.number_of_genes  # 4 is due to create_batch
+        assert number_of_genes - 1 == gps.panel.active_panel.stats.get('number_of_genes')  # 4 is due to create_batch
 
         old_gps = GenePanel.objects.get(pk=gps.panel.pk).genepanelsnapshot_set.last()
         assert old_gps.version != gps.version
@@ -162,7 +162,7 @@ class GenePanelTest(LoginGELUser):
         genes = GenePanelEntrySnapshotFactory.create_batch(5, panel=gps)
         gene_symbol = genes[2].gene['gene_symbol']
 
-        number_of_genes = gps.number_of_genes
+        number_of_genes = gps.stats.get('number_of_genes')
 
         url = reverse_lazy('panels:delete_entity', kwargs={
             'pk': gps.panel.pk,
@@ -173,7 +173,7 @@ class GenePanelTest(LoginGELUser):
 
         new_gps = GenePanel.objects.get(pk=gps.panel.pk).active_panel
         assert new_gps.has_gene(gene_symbol) is False
-        assert number_of_genes - 1 == new_gps.number_of_genes  # 4 is due to create_batch
+        assert number_of_genes - 1 == new_gps.stats.get('number_of_genes')  # 4 is due to create_batch
         assert res.json().get('status') == 200
         assert res.json().get('content').get('inner-fragments')
 

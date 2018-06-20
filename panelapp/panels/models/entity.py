@@ -70,11 +70,11 @@ class AbstractEntity:
 
     def is_str(self):
         # TODO (Oleg) enums... we need enums
-        return self.entity_type == 'str'
+        return self._entity_type == 'str'
 
     def is_gene(self):
         # TODO (Oleg) enum all the things
-        return self.entity_type == 'gene'
+        return self._entity_type == 'gene'
 
     @property
     def status(self):
@@ -512,3 +512,15 @@ class AbstractEntity:
             self.panel.add_activity(user, activity_text, self)
 
             return evaluation
+
+    @property
+    def gene_list_class(self):
+        return get_gene_list_data(None, GeneDataType.CLASS.value, self.saved_gel_status)
+
+    @property
+    def gene_list_name(self):
+        return get_gene_list_data(None, GeneDataType.LONG.value, self.saved_gel_status)
+
+    @property
+    def gene_list_short_name(self):
+        return get_gene_list_data(None, GeneDataType.SHORT.value, self.saved_gel_status)

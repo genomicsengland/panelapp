@@ -28,8 +28,11 @@ class GeneDataType(Enum):
     SHORT = 2
 
 
-def get_gene_list_data(gene, list_type):
-    value = gene.get('saved_gel_status') if isinstance(gene, dict) else gene.status
+def get_gene_list_data(gene, list_type, saved_gel_status=None):
+    if saved_gel_status is not None:
+        value = saved_gel_status
+    else:
+        value = gene.get('saved_gel_status') if isinstance(gene, dict) else gene.status
     if value > 2:
         return gene_list_data[GeneStatus.GREEN.value][list_type]
     elif value == 2:
