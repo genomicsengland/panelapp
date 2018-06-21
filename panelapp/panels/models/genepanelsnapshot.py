@@ -39,9 +39,9 @@ class GenePanelSnapshotManager(models.Manager):
             qs = qs.exclude(panel__status=GenePanel.STATUS.deleted)
 
         return qs\
-            .distinct('panel__pk')\
+            .distinct('panel_id')\
             .values('pk')\
-            .order_by('panel__pk', '-major_version', '-minor_version')
+            .order_by('panel_id', '-major_version', '-minor_version')
 
     def get_active(self, all=False, deleted=False, internal=False):
         """Get active panels
@@ -204,7 +204,7 @@ class GenePanelSnapshot(TimeStampedModel):
 
         pks = [self.pk, ]
         if self.is_super_panel:
-            pks = self.child_panels.values_list('pk', flat=True)
+            pks = list(self.child_panels.values_list('pk', flat=True))
 
         keys = [
             'gene_reviewers',
@@ -293,8 +293,8 @@ class GenePanelSnapshot(TimeStampedModel):
             for key in keys:
                 out[key] = out.get(key, 0) + info.get(key, 0)
 
-        out['gene_reviewers'] = [r for r in out['gene_reviewers'] if r]  #  remove None
-        out['str_reviewers'] = [r for r in out['str_reviewers'] if r]  # remove None
+        out['gene_reviewers'] = list(set([r for r in out['gene_reviewers'] if r]))  #  remove None
+        out['str_reviewers'] = list(set([r for r in out['str_reviewers'] if r]))  # remove None
         out['entity_reviewers'] = list(set(out['gene_reviewers'] + out['str_reviewers']))
 
         return out
@@ -302,6 +302,25 @@ class GenePanelSnapshot(TimeStampedModel):
     @property
     def version(self):
         return "{}.{}".format(self.major_version, self.minor_version)
+
+    def update_child_panels(self):
+        if not self.is_super_panel:
+            return
+
+        self.increment_version()
+
+        panels_changed = False
+        updated_child_panels = []
+        for child_panel in self.child_panels.all():
+            active_child_panel = child_panel.panel.active_panel
+            if child_panel != active_child_panel:
+                panels_changed = True
+                updated_child_panels.append(active_child_panel.pk)
+            else:
+                updated_child_panels.append(child_panel.pk)
+
+        if panels_changed:
+            self.child_panels.set(updated_child_panels)
 
     def increment_version(self, major=False, user=None, comment=None, ignore_gene=None, ignore_str=None):
         """Creates a new version of the panel.
@@ -314,13 +333,13 @@ class GenePanelSnapshot(TimeStampedModel):
         snapshot and not the new one.
         """
 
-        if self.is_super_panel:
-            raise IsSuperPanelException
-
         with transaction.atomic():
             current_genes = deepcopy(self.get_all_genes)  # cache the results
             current_strs = deepcopy(self.get_all_strs)
+            child_panels = list(self.child_panels.values_list('pk', flat=True))
+            super_panels = list(self.genepanelsnapshot_set.values_list('pk', flat=True))
 
+            old_pk = self.pk
             self.pk = None
 
             if major:
@@ -331,23 +350,50 @@ class GenePanelSnapshot(TimeStampedModel):
 
             self.save()
 
-            self._increment_version_genes(current_genes, major, user, comment, ignore_gene)
-            self._increment_version_str(current_strs, major, user, comment, ignore_str)
+            if self.is_super_panel:
+                # copy child panels
+                self.child_panels.through.objects.bulk_create([
+                    self.child_panels.through(**{
+                        'to_genepanelsnapshot_id': child_panel,
+                        'from_genepanelsnapshot_id': self.pk
+                    }) for child_panel in child_panels
+                ])
+            else:
+                self._increment_version_genes(current_genes, major, user, comment, ignore_gene)
+                self._increment_version_str(current_strs, major, user, comment, ignore_str)
 
-            if major:
-                email_panel_promoted.delay(self.panel.pk)
+                if major:
+                    email_panel_promoted.delay(self.panel.pk)
 
-                activity = "promoted panel to version {}".format(self.version)
-                self.add_activity(user, activity)
+                    activity = "promoted panel to version {}".format(self.version)
+                    self.add_activity(user, activity)
 
-                self.version_comment = "{} {} promoted panel to {}\n{}\n\n{}".format(
-                    timezone.now().strftime('%Y-%m-%d %H:%M'),
-                    user.get_reviewer_name(),
-                    self.version,
-                    comment,
-                    self.version_comment if self.version_comment else ''
-                )
-                self.save()
+                    self.version_comment = "{} {} promoted panel to {}\n{}\n\n{}".format(
+                        timezone.now().strftime('%Y-%m-%d %H:%M'),
+                        user.get_reviewer_name(),
+                        self.version,
+                        comment,
+                        self.version_comment if self.version_comment else ''
+                    )
+                    self.save()
+
+                # check if there are any parent panels
+                if super_panels:
+                    new_super_panels = []
+                    for panel in GenePanelSnapshot.objects.filter(pk__in=super_panels):
+                        panel.increment_version()
+                        panel.child_panels.remove(old_pk)
+                        new_super_panels.append(panel.pk)
+
+                    self.child_panels.through.objects.bulk_create([
+                        self.child_panels.through(**{
+                            'to_genepanelsnapshot_id': self.pk,
+                            'from_genepanelsnapshot_id': super_panel
+                        }) for super_panel in new_super_panels
+                    ])
+
+                    for panel in self.genepanelsnapshot_set.all():
+                        panel.update_saved_stats()
 
             return self.panel.active_panel
 
@@ -589,7 +635,7 @@ class GenePanelSnapshot(TimeStampedModel):
         """Get the new values from the database"""
 
         out = self._get_stats()
-        out['number_of_reviewers'] = list(set(out['gene_reviewers'] + out['str_reviewers']))
+        out['number_of_reviewers'] = len(out['entity_reviewers'])
         out['number_of_evaluated_entities'] = out['number_of_evaluated_genes'] + out['number_of_evaluated_strs']
         out['number_of_entities'] = out['number_of_genes'] + out['number_of_strs']
         out['number_of_ready_entities'] = out['number_of_ready_genes'] + out['number_of_ready_strs']
@@ -2164,8 +2210,6 @@ class GenePanelSnapshot(TimeStampedModel):
 
     def add_activity(self, user, text, entity=None):
         """Adds activity for this panel"""
-        if self.is_super_panel:
-            raise IsSuperPanelException
 
         extra_info = {}
         if entity:

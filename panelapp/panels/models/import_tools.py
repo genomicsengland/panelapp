@@ -17,6 +17,7 @@ from panels.exceptions import GeneDoesNotExist
 from panels.exceptions import UsersDoNotExist
 from panels.exceptions import GenesDoNotExist
 from panels.exceptions import IncorrectGeneRating
+from panels.exceptions import IsSuperPanelException
 from .gene import Gene
 from .genepanel import GenePanel
 from .genepanelsnapshot import GenePanelSnapshot
@@ -317,7 +318,10 @@ class UploadedPanelList(TimeStampedModel):
 
                 # check the number of genes in a panel
                 gp = GenePanel.objects.filter(name=lines[0][2].strip(" ")).first()
-                number_of_genes = gp.active_panel.number_of_genes if gp else 0
+                if gp and gp.active_panel.is_super_panel:
+                    raise IsSuperPanelException
+
+                number_of_genes = gp.active_panel.stats.get('number_of_genes') if gp else 0
 
                 if not background and (len(lines) > 200 or number_of_genes > 200):  # panel is too big, process in the background
                     import_panel.delay(user.pk, self.pk)
@@ -454,6 +458,8 @@ class UploadedReviewsList(TimeStampedModel):
                 panel_names = set([line[2] for line in lines])
                 self.panels = {panel.name: panel for panel in GenePanel.objects.filter(name__in=panel_names)}
                 for panel in self.panels.values():
+                    if panel.active_panel.is_super_panel:
+                        raise IsSuperPanelException
                     panel = panel.active_panel.increment_version().panel
 
                 if not background and len(lines) > 20:  # panel is too big, process in the background

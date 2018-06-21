@@ -1,3 +1,4 @@
+import logging
 from rest_framework import serializers
 from rest_framework.exceptions import APIException
 
@@ -116,8 +117,11 @@ class GenesSerializer(EnsembleIdMixin, serializers.BaseSerializer):
 
     def to_representation(self, panels):
         result = []
+        super_panels = {  # used to remove duplicated super panels
+            # panel_id : []  #  same gene can be in the same super panel
+        }
         for gene in self.list_of_genes:
-            panel = panels[gene.panel.panel.pk][1]  # TODO (Oleg) add a check for superpanels, and append it twice with different panel names
+            panel = panels[gene.panel.panel.pk][1]
             ensemblId = self.get_ensemblId(gene)
             result.append({
                 "GeneSymbol": gene.gene.get('gene_symbol'),
@@ -134,6 +138,36 @@ class GenesSerializer(EnsembleIdMixin, serializers.BaseSerializer):
                 "DiseaseSubGroup": panel.level4title.level3title,
                 "Evidences": [ev.name for ev in gene.evidence.all()],
             })
+
+            if panel.is_child_panel:
+                # the same child panel can be linked in multiple super panel versions, this is normal, we need
+                # to normalize data and only display the latest version
+                for parent_panel in panel.genepanelsnapshot_set.all()\
+                        .distinct('panel_id').order_by('panel_id', '-major_version', '-minor_version')\
+                        .prefetch_related('level4title'):
+                    if super_panels.get(parent_panel.panel_id) is None:
+                        super_panels[parent_panel.panel_id] = []
+
+                    super_panels[parent_panel.panel_id].append({
+                        "GeneSymbol": gene.gene.get('gene_symbol'),
+                        "EnsembleGeneIds": ensemblId,
+                        "ModeOfInheritance": make_null(convert_moi(gene.moi)),
+                        "Penetrance": make_null(gene.penetrance),
+                        "Publications": make_null(gene.publications),
+                        "Phenotypes": make_null(gene.phenotypes),
+                        "ModeOfPathogenicity": make_null(gene.mode_of_pathogenicity),
+                        "LevelOfConfidence": convert_gel_status(gene.saved_gel_status),
+                        "version": parent_panel.version,
+                        "SpecificDiseaseName": parent_panel.level4title.name,
+                        "DiseaseGroup": parent_panel.level4title.level2title,
+                        "DiseaseSubGroup": parent_panel.level4title.level3title,
+                        "Evidences": [ev.name for ev in gene.evidence.all()],
+                    })
+
+        for genes in super_panels.values():
+            for gene in genes:
+                result.append(gene)
+
         return result
 
     def create(self, validated_data):

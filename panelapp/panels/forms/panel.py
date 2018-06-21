@@ -95,7 +95,6 @@ class PanelForm(forms.ModelForm):
                 self.instance.panel.name = new_level4.name
 
             if 'old_panels' in self.changed_data:
-                data_changed = True
                 self.instance.old_panels = self.cleaned_data['old_panels']
             
             if 'status' in self.changed_data:
@@ -104,7 +103,7 @@ class PanelForm(forms.ModelForm):
             if 'child_panels' in self.changed_data:
                 self.instance.child_panels.set(self.cleaned_data['child_panels'])
 
-            if data_changed:
+            if data_changed or self.changed_data:
                 self.instance.increment_version()
                 self.instance.panel.save()
                 self.instance.update_saved_stats()
