@@ -125,6 +125,8 @@ class PanelForm(forms.ModelForm):
                 self.instance.child_panels.set(self.cleaned_data['child_panels'])
                 self.instance.major_version = max(self.instance.child_panels.values_list('major_version', flat=True))
                 self.instance.save(update_fields=['major_version', ])
+                self.instance.update_saved_stats()
 
-    def _clean_array(self, data, separator=","):
+    @staticmethod
+    def _clean_array(data, separator=","):
         return [x.strip() for x in data.split(separator) if x.strip()]

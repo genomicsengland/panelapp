@@ -163,3 +163,15 @@ class TestWebservices(TransactionTestCase):
         self.assertEqual(r.json()['result']['STRs'][0]['GRCh38Coordinates'],
                          [self.str.position_38.lower, self.str.position_38.upper])
         self.assertEqual(r.json()['result']['STRs'][0]['PathogenicRepeats'], self.str.pathogenic_repeats)
+
+    def test_super_panel(self):
+        super_panel = GenePanelSnapshotFactory(panel__status=GenePanel.STATUS.public)
+        super_panel.child_panels.set([self.gps_public, ])
+
+        r_direct = self.client.get(reverse_lazy('webservices:get_panel', args=(self.gps_public.panel.pk,)))
+        result_genes = list(sorted(r_direct.json()['result']['Genes'], key=lambda x: x.get('GeneSymbol')))
+
+        r = self.client.get(reverse_lazy('webservices:get_panel', args=(super_panel.panel.pk,)))
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(result_genes, list(sorted(r.json()['result']['Genes'], key=lambda x: x.get('GeneSymbol'))))
+

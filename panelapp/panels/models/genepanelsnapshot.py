@@ -651,15 +651,27 @@ class GenePanelSnapshot(TimeStampedModel):
             A tuple with the user first and last name, email, and reviewer affiliation
         """
 
-        return self.cached_genes\
-            .distinct('evaluation__user')\
-            .values_list(
-                'evaluation__user__first_name',
-                'evaluation__user__last_name',
-                'evaluation__user__email',
-                'evaluation__user__reviewer__affiliation',
-                'evaluation__user__username'
-            ).order_by('evaluation__user')
+        genes_contributors = list(self.cached_genes
+                                      .distinct('evaluation__user')
+                                      .values_list(
+                                        'evaluation__user__first_name',
+                                        'evaluation__user__last_name',
+                                        'evaluation__user__email',
+                                        'evaluation__user__reviewer__affiliation',
+                                        'evaluation__user__username'
+                                      ).order_by('evaluation__user'))
+
+        strs_contributors = list(self.cached_strs
+                                     .distinct('evaluation__user')
+                                     .values_list(
+                                        'evaluation__user__first_name',
+                                        'evaluation__user__last_name',
+                                        'evaluation__user__email',
+                                        'evaluation__user__reviewer__affiliation',
+                                        'evaluation__user__username'
+                                     ).order_by('evaluation__user'))
+
+        return list(set(strs_contributors + genes_contributors))
 
     def mark_entities_not_ready(self):
         """Mark entities (genes, STRs) as not ready

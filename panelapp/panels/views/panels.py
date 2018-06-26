@@ -332,11 +332,10 @@ class DownloadAllPanels(GELReviewerRequiredMixin, View):
                 'str_set__evaluation',
                 'str_set__evaluation__user',
                 'str_set__evaluation__user__reviewer',
-            )\
-            .all()
+            ).all()
 
         for panel in panels:
-            rate = "{} of {} genes reviewed".format(panel.number_of_evaluated_genes, panel.number_of_genes)
+            rate = "{} of {} genes reviewed".format(panel.stats.get('number_of_evaluated_genes'), panel.stats.get('number_of_genes'))
             reviewers = panel.contributors
             contributors = [
                 "{} {} ({})".format(user[0], user[1], user[3]) if user[0] else user[4]
