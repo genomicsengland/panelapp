@@ -121,8 +121,10 @@ class PanelForm(forms.ModelForm):
             self.instance.level4title = new_level4
             self.instance.old_panels = self.cleaned_data['old_panels']
             self.instance.save()
-            if 'child_panels' in self.cleaned_data['child_panels']:
+            if self.cleaned_data.get('child_panels'):
                 self.instance.child_panels.set(self.cleaned_data['child_panels'])
+                self.instance.major_version = max(self.instance.child_panels.values_list('major_version', flat=True))
+                self.instance.save(update_fields=['major_version', ])
 
     def _clean_array(self, data, separator=","):
         return [x.strip() for x in data.split(separator) if x.strip()]

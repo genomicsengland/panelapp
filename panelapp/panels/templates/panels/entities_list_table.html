@@ -104,6 +104,9 @@
     {% if entry.entity_type == 'str' %}
         <span class="label label-default">STR</span>
     {% endif %}
+    {% if is_super_panel %}
+        <div><a class="text-muted small" href="{{ entry.panel.get_absolute_url }}">{{ entry.panel }}</a></div>
+    {% endif %}
 </td>
 <td>
     {% with evaluation_count=entry.number_of_evaluations %}

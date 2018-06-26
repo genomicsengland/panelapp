@@ -381,7 +381,7 @@ class GenePanelSnapshot(TimeStampedModel):
                 if super_panels:
                     new_super_panels = []
                     for panel in GenePanelSnapshot.objects.filter(pk__in=super_panels):
-                        panel.increment_version()
+                        panel.increment_version(major=major)
                         panel.child_panels.remove(old_pk)
                         new_super_panels.append(panel.pk)
 

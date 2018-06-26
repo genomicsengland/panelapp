@@ -372,7 +372,7 @@ class UploadedReviewsList(TimeStampedModel):
         if len(aline) < 21:
             raise TSVIncorrectFormat(str(key + 2))
 
-        gene_symbol = re.sub("[^0-9a-zA-Z~#_@-]", '', aline[0])
+        gene_symbol = re.sub("[^0-9a-zA-Z~#_@-]", '', aline[0])  # TODO (Oleg) should be unifed (in settings?)
         # source = aline[1].split(";")
         level4 = aline[2].rstrip(" ")
         # level3 = aline[3]

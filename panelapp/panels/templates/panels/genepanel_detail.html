@@ -36,7 +36,7 @@
               <br/>Relevant disorders: {{ panel.old_panels|join:", " }}
           {% endif %}
           {% if panel.is_super_panel %}
-              <br />This panel is combined of these {{ panel.child_panels.all|length }} panels:
+              <br />This panel contains these {{ panel.child_panels.all|length }} panels:
               {% for child_panel in panel.child_panels.all %}<br /><a href="{% url 'panels:detail' child_panel.panel.pk %}">{{ child_panel }}</a> {% endfor %}
           {% endif %}
 
@@ -76,7 +76,7 @@
   <div data-module="sortable-table" data-default-key="entity">
       <div class="table-responsive" data-module="filterable-table">
           <table class="table table-bordered table-hover" id="entities_table">
-            {% include "panels/entities_list_table.html" %}
+            {% include "panels/entities_list_table.html" with is_super_panel=panel.is_super_panel %}
           </table>
       </div>
   </div>
