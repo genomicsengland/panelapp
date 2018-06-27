@@ -117,9 +117,7 @@ class GenesSerializer(EnsembleIdMixin, serializers.BaseSerializer):
 
     def to_representation(self, panels):
         result = []
-        super_panels = {  # used to remove duplicated super panels
-            # panel_id : []  #  same gene can be in the same super panel
-        }
+        super_panels = {}  # used to remove duplicated super panels
         for gene in self.list_of_genes:
             panel = panels[gene.panel.panel.pk][1]
             ensemblId = self.get_ensemblId(gene)
