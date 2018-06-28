@@ -131,7 +131,7 @@ class STR(AbstractEntity, TimeStampedModel):
         )
 
     @property
-    def entity_type(self):
+    def _entity_type(self):
         return 'str'
 
     @property

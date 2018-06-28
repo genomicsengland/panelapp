@@ -24,6 +24,7 @@ class EvaluationSTRTest(LoginGELUser):
 
         str_item = STRFactory()
         str_item.evaluation.all().delete()
+        str_item.panel.update_saved_stats()
         url = reverse_lazy('panels:review_entity', kwargs={
             'pk': str_item.panel.panel.pk,
             'entity_type': 'str',
@@ -32,7 +33,7 @@ class EvaluationSTRTest(LoginGELUser):
 
         current_version = str_item.panel.version
 
-        number_of_evaluated_genes = str_item.panel.number_of_evaluated_strs
+        number_of_evaluated_genes = str_item.panel.stats.get('number_of_evaluated_strs')
 
         str_data = {
             "rating": Evaluation.RATINGS.AMBER,
@@ -45,7 +46,7 @@ class EvaluationSTRTest(LoginGELUser):
         }
         res = self.client.post(url, str_data)
         assert res.status_code == 302
-        assert number_of_evaluated_genes + 1 == str_item.panel.panel.active_panel.number_of_evaluated_strs
+        assert number_of_evaluated_genes + 1 == str_item.panel.panel.active_panel.stats.get('number_of_evaluated_strs')
         assert current_version == str_item.panel.panel.active_panel.version
 
     def test_add_evaluation_comments_only(self):

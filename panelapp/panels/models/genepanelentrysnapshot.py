@@ -66,7 +66,9 @@ class GenePanelEntrySnapshot(AbstractEntity, TimeStampedModel):
         ordering = ['-saved_gel_status', ]
         indexes = [
             models.Index(fields=['panel_id']),
-            models.Index(fields=['gene_core_id'])
+            models.Index(fields=['gene_core_id']),
+            models.Index(fields=['ready']),
+            models.Index(fields=['saved_gel_status']),
         ]
 
     panel = models.ForeignKey(GenePanelSnapshot, on_delete=models.PROTECT)
@@ -97,7 +99,7 @@ class GenePanelEntrySnapshot(AbstractEntity, TimeStampedModel):
         return "Panel: {} Gene: {}".format(self.panel.panel.name, self.gene.get('gene_symbol'))
 
     @property
-    def entity_type(self):
+    def _entity_type(self):
         return 'gene'
 
     @property

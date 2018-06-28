@@ -11,6 +11,7 @@ from panels.exceptions import GenesDoNotExist
 from panels.exceptions import UserDoesNotExist
 from panels.exceptions import TSVIncorrectFormat
 from panels.exceptions import IncorrectGeneRating
+from panels.exceptions import IsSuperPanelException
 
 
 @shared_task
@@ -52,6 +53,8 @@ def import_panel(user_pk, upload_pk):
     except GenesDoNotExist as genes_error:
         message = "Following lines have genes which do not exist in the"\
             "database, please check it and try again:\n\n{}".format(genes_error)
+    except IsSuperPanelException as e:
+        message = "One of the panels contains child panels"
     except Exception as e:
         print(e)
         message = "Unhandled error occured, please forward it to the dev team:\n\n{}".format(e)
@@ -95,6 +98,8 @@ def import_reviews(user_pk, review_pk):
     except GenesDoNotExist as genes_error:
         message = "Following lines have genes which do not exist in the"\
             "database, please check it and try again:\n\n{}".format(genes_error)
+    except IsSuperPanelException as e:
+        message = "One of the panels contains child panels"
     except Exception as e:
         print(e)
         message = "There was an error importing reviews"

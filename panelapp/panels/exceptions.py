@@ -24,3 +24,7 @@ class GeneDoesNotExist(ImportException):
 
 class IncorrectGeneRating(ImportException):
     pass
+
+
+class IsSuperPanelException(Exception):
+    pass

@@ -1,4 +1,5 @@
 {% load panel_helpers %}
+
 <thead>
     <tr class="table-header">
         <th class="js-sortable-header sorted-column sorted-desc"
@@ -12,10 +13,10 @@
         </th>
         <th class="js-sortable-header"
             style="width: 12%"
-            data-sort-key="name"
+            data-sort-key="entity_name"
             data-sort-type="name"
         >
-            STR
+            Entity
             <i class="fa fa-arrow-down"></i>
             <i class="fa fa-arrow-up"></i>
         </th>
@@ -42,11 +43,11 @@
     <tr class="if-no-js-hide table-header-secondary">
         <td colspan="100">
             <form>
-                <label for="gene-filter" class="rm">Filter STRs</label>
+                <label for="gene-filter" class="rm">Filter Entities</label>
                 <div class="input-group">
-                    <input id="gene-filter" type="text" class="form-control normal js-filter-table-input" placeholder="Filter STRs">
-                    <span class="input-group-addon js-filter-table-count" data-singular="STR" data-plural="STRs">
-                        {{ panel.get_all_strs_extra|length }} STRs{{panel.get_all_strs_extra|length|pluralize}}
+                    <input id="gene-filter" type="text" class="form-control normal js-filter-table-input" placeholder="Filter Entities">
+                    <span class="input-group-addon js-filter-table-count" data-singular="Entity" data-plural="Entities">
+                        {{ entities|length }} Entities{{entities|length|pluralize}}
                     </span>
                 </div>
             </form>
@@ -54,7 +55,7 @@
     </tr>
 </thead>
 <tbody>
-{% for entry in panel.get_all_strs_extra %}
+{% for entry in entities %}
 <tr
     data-gene="{{ entry.name }}"
     data-list-index="{{ entry.status }}"
@@ -62,21 +63,21 @@
     data-reviews="{{ entry.number_of_evaluations }}"
 >
 <td class="text-right">
-    <span class="gel-banner gel-banner-block {{ entry|gene_list_class }}" title="{{ entry|gene_list_name }}">
-        {{ entry|gene_list_short_name }}{% if entry.ready and request.user.is_authenticated and request.user.reviewer.is_GEL %}<br /><span class="gene-cell-ready">Ready</span>{% endif %}
+    <span class="gel-banner gel-banner-block {{ entry.gene_list_class }}" title="{{ entry.gene_list_name }}">
+        {{ entry.gene_list_short_name }}{% if entry.ready and request.user.is_authenticated and request.user.reviewer.is_GEL %}<br /><span class="gene-cell-ready">Ready</span>{% endif %}
     </span>
     {% if not entry.ready and request.user.is_authenticated and request.user.reviewer.is_GEL %}
         <span class="rm">Not ready</span>
     {% endif %}
-    <span class="rm">{{ entry|gene_list_name }}</span>
-    {% if request.user.is_authenticated and request.user.reviewer.is_GEL %}
+    <span class="rm">{{ entry.gene_list_name }}</span>
+    {% if not panel.is_super_panel and request.user.is_authenticated and request.user.reviewer.is_GEL %}
       <div class="add-top-margin">
         <a
             href="#lock_{{ entry.name|remove_special }}"
             class="hidden lock_{{ entry.name|remove_special }}"
             data-module="showhide"
             data-show="a.btn.unlock_{{ entry.name|remove_special }}"
-            data-hide="a.lock_{{ entry.name|remove_special }}, a.btn.delete_str_{{ entry.name|remove_special }}, a.btn.delete_source_{{ entry.name|remove_special }}"
+            data-hide="a.lock_{{ entry.name|remove_special }}, a.btn.delete_entity_{{ entry.name|remove_special }}, a.btn.delete_source_{{ entry.name|remove_special }}"
         >
             <i class="fa fa-lock fa-lg"></i>
         </a>
@@ -84,22 +85,28 @@
             href="#unlock_{{ entry.name|remove_special }}"
             class="unlock_{{ entry.name|remove_special }}"
             data-module="showhide"
-            data-show="a.btn.lock_{{ entry.name|remove_special }}, a.delete_str_{{ entry.name|remove_special }}, a.delete_source_{{ entry.name|remove_special }}"
-            data-hide="a.btn.unlock_{{ entry.name|remove_special }}" onClick="alert('{{ 'STR '|add:entry.name|add:' is now unlocked, and you can delete it.' }}')"
+            data-show="a.btn.lock_{{ entry.name|remove_special }}, a.delete_entity_{{ entry.name|remove_special }}, a.delete_source_{{ entry.name|remove_special }}"
+            data-hide="a.btn.unlock_{{ entry.name|remove_special }}" onClick="alert('{{ 'Entitiy '|add:entry.name|add:' is now unlocked, and you can delete it.' }}')"
         >
             <i class="fa fa-unlock fa-lg"></i>
         </a>
-        <a href="{% url 'panels:delete_entity' panel.panel_id 'str' entry.name %}" class="hidden delete_str_{{ entry.name|remove_special }}" data-ajax="true" data-success="djangoAjaxHandler"> <i class="fa fa-trash fa-lg"></i></a>
+        <a href="{% url 'panels:delete_entity' panel.panel_id entry.entity_type entry.name %}" class="hidden delete_entity_{{ entry.name|remove_special }}" data-ajax="true" data-success="djangoAjaxHandler"> <i class="fa fa-trash fa-lg"></i></a>
         {% if entry.flagged %}
-        <a href="{% url 'panels:approve_entity' panel.panel_id 'str' entry.name %}" data-ajax="true" data-success="djangoAjaxHandler"> <i class="fa fa-plus fa-lg"></i></a>
+        <a href="{% url 'panels:approve_entity' panel.panel_id entry.entity_type entry.name %}" data-ajax="true" data-success="djangoAjaxHandler"> <i class="fa fa-plus fa-lg"></i></a>
         {% endif %}
       </div>
     {% endif %}
 </td>
 <td>
     <h5 class="gene-cell-title">
-        <a href="{{ entry.get_absolute_url }}" class="link-inherit gel-text {{ entry|gene_list_class }} js-open-on-submit">{{ entry.name }}</a>
+        <a href="{{ entry.get_absolute_url }}" class="link-inherit gel-text {{ entry.gene_list_class }} js-open-on-submit">{{ entry.name }}</a>
     </h5>
+    {% if entry.entity_type == 'str' %}
+        <span class="label label-default">STR</span>
+    {% endif %}
+    {% if is_super_panel %}
+        <div><a class="text-muted small" href="{{ entry.panel.get_absolute_url }}">{{ entry.panel }}</a></div>
+    {% endif %}
 </td>
 <td>
     {% with evaluation_count=entry.number_of_evaluations %}
@@ -144,8 +151,8 @@
             <li>
                 {{ ev.name }}
 
-                {% if request.user.is_authenticated and request.user.reviewer.is_GEL %}
-                <a type="url" href="{% url 'panels:clear_entity_source' panel.panel_id 'str' entry.name ev.name %}" class="hidden delete_source_{{ entry.name }}" data-ajax="true"> <i class="fa fa-times-circle-o"></i></a>
+                {% if not panel.is_super_panel and request.user.is_authenticated and request.user.reviewer.is_GEL %}
+                <a type="url" href="{% url 'panels:clear_entity_source' panel.panel_id entry.entity_type entry.name ev.name %}" class="hidden delete_source_{{ entry.name }}" data-ajax="true"> <i class="fa fa-times-circle-o"></i></a>
                 {% endif %}
             </li>
           {% endif %}
@@ -177,6 +184,10 @@
 <tfoot>
     <tr class="table-header">
         <td colspan="100">
+            <a href="{% url 'panels:add_entity' panel.panel_id 'gene' %}" class="btn btn-default btn-large">
+                <i class="fa fa-plus add-right-margin"></i> Add a Gene to this panel
+            </a>
+
             <a href="{% url 'panels:add_entity' panel.panel_id 'str' %}" class="btn btn-default btn-large">
                 <i class="fa fa-plus add-right-margin"></i> Add a STR to this panel
             </a>

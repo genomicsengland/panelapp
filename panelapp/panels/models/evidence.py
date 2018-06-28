@@ -5,6 +5,13 @@ from accounts.models import Reviewer
 
 
 class Evidence(TimeStampedModel):
+    class Meta:
+        indexes = [
+            models.Index(fields=['name']),
+            models.Index(fields=['rating']),
+            models.Index(fields=['reviewer_id'])
+        ]
+
     HIGH_CONFIDENCE_SOURCES = [
         "Radboud University Medical Center, Nijmegen",
         "Illumina TruGenome Clinical Sequencing Services",

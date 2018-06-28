@@ -276,7 +276,8 @@ class UpdateEvaluationsMixin(VerifiedReviewerRequiredMixin, BaseAjaxGeneMixin, E
             'entity_type': self.kwargs['entity_type'],
             'entity_name': self.kwargs['entity_name'],
             'entity': self.object,
-            'panel_genes': list(self.panel.get_all_genes_extra)
+            'panel_genes': list(self.panel.get_all_genes_extra),
+            'panel_strs': list(self.panel.get_all_strs_extra)
         }
 
         if self.is_gene() or (self.object.gene and self.object.gene.get('gene_symbol')):

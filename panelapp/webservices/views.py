@@ -189,9 +189,9 @@ def search_by_gene(request, gene):
         panel_names = None
 
     if panel_names:
-        all_panels = GenePanelSnapshot.objects.get_active().filter(panel__name__in=panel_names)
+        all_panels = GenePanelSnapshot.objects.get_active_annotated().filter(panel__name__in=panel_names)
     else:
-        all_panels = GenePanelSnapshot.objects.get_active()
+        all_panels = GenePanelSnapshot.objects.get_active_annotated()
 
     panels_ids_dict = {panel.panel.pk: (panel.panel.pk, panel) for panel in all_panels}
     filters.update({'panel__panel__pk__in': list(panels_ids_dict.keys())})

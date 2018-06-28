@@ -69,7 +69,7 @@ class GenePanelSnapshotTest(LoginGELUser):
         gene = GeneFactory()
         gps = GenePanelSnapshotFactory()
 
-        number_of_genes = gps.number_of_genes
+        number_of_genes = gps.stats.get('number_of_genes', 0)
 
         url = reverse_lazy('panels:add_entity', kwargs={'pk': gps.panel.pk, 'entity_type': 'gene'})
         gene_data = {
@@ -87,7 +87,7 @@ class GenePanelSnapshotTest(LoginGELUser):
         }
         res = self.client.post(url, gene_data)
 
-        new_current_number = gps.panel.active_panel.number_of_genes
+        new_current_number = gps.panel.active_panel.stats.get('number_of_genes', 0)
 
         assert gps.panel.active_panel.version != gps.version
 
@@ -132,7 +132,7 @@ class GenePanelSnapshotTest(LoginGELUser):
             'entity_name': gpes.gene.get('gene_symbol')
         })
 
-        number_of_genes = gpes.panel.number_of_genes
+        number_of_genes = gpes.panel.stats.get('number_of_genes')
 
         # make sure new data has at least 1 of the same items
         source = gpes.evidence.last().name
@@ -159,7 +159,7 @@ class GenePanelSnapshotTest(LoginGELUser):
         assert res.status_code == 302
         gene = GenePanel.objects.get(pk=gpes.panel.panel.pk).active_panel.get_gene(gpes.gene_core.gene_symbol)
         assert gpes.panel.panel.active_panel.version != gpes.panel.version
-        new_current_number = gpes.panel.panel.active_panel.number_of_genes
+        new_current_number = gpes.panel.panel.active_panel.stats.get('number_of_genes', 0)
         assert number_of_genes == new_current_number
 
     def test_remove_sources(self):

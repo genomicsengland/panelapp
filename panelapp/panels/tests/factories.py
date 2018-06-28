@@ -128,6 +128,13 @@ class GenePanelEntrySnapshotFactory(factory.django.DjangoModelFactory):
             if evidence:
                 self.evidence.add(evidence)
 
+    @factory.post_generation
+    def stats(self, create, stats, **kwargs):
+        if not create:
+            return
+
+        self.panel.update_saved_stats()
+
 
 class FakeRange:
     def __init__(self):
@@ -179,3 +186,10 @@ class STRFactory(factory.django.DjangoModelFactory):
         for evidence in evidences:
             if evidence:
                 self.evidence.add(evidence)
+
+    @factory.post_generation
+    def stats(self, create, stats, **kwargs):
+        if not create:
+            return
+
+        self.panel.update_saved_stats()
