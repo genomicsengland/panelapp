@@ -1,5 +1,6 @@
 import random
 from django.core import mail
+from django.contrib.messages import get_messages
 from django.urls import reverse_lazy
 from faker import Factory
 from accounts.tests.setup import SetupUsers
@@ -33,13 +34,50 @@ class TestUsers(SetupUsers):
         }
 
         res = self.client.post(reverse_lazy('accounts:register'), data)
-        assert res.status_code == 302
+        self.assertEqual(res.status_code, 302)
 
-        assert User.objects.filter(username=username).count() == 1
+        users = User.objects.filter(username=username)
+        self.assertEqual(users.count(), 1)
+        user = users.first()
+
+        self.assertFalse(user.is_active)
 
     def test_registration_email(self):
         registration_email(self.external_user.pk)
         self.assertEqual(len(mail.outbox), 1)
+
+    def test_get_email_by_b64_hash(self):
+        self.assertEqual(User.objects.get_by_base64_email(self.external_user.base64_email), self.external_user)
+
+    def test_hmac_id(self):
+        user = self.external_user
+
+        payload = user.get_crypto_id()
+        self.assertTrue(user.verify_crypto_id(payload))
+
+    def test_registration_email_contains_validation_url(self):
+        registration_email(self.external_user.pk)
+        self.assertIn('/'.join(self.external_user.get_email_verification_url().split('/')[:-2]), mail.outbox[0].body)
+
+    def test_email_validation(self):
+        user = self.external_user
+
+        user.is_active = False
+        user.save()
+
+        res = self.client.get(user.get_email_verification_url())
+        self.assertNotEqual(res.status_code, 404)
+
+    def test_email_validation_link_expired(self):
+        user = self.external_user
+        user.is_active = False
+        user.save()
+
+        with self.settings(ACCOUNT_EMAIL_VERIFICATION_PERIOD=0):
+            res = self.client.get(user.get_email_verification_url())
+            self.assertEqual(res.status_code, 302)
+            message = list(get_messages(res.wsgi_request))[0]
+            self.assertEqual(message.message, 'The link has expired. We have sent a new link to your email address.')
 
     def test_promote_to_reviewer(self):
         self.external_user.promote_to_reviewer()
