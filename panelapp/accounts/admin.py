@@ -125,7 +125,7 @@ class UserAdmin(DjangoObjectActions, BaseUserAdmin):
 
         try:
             obj = self.model.objects.get(pk=object_id)
-            if obj.reviewer.is_REVIEWER():
+            if obj.reviewer.is_REVIEWER() or obj.reviewer.is_GEL():
                 return []
         except Reviewer.DoesNotExist:
             return []

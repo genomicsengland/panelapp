@@ -9,6 +9,7 @@ from django.urls import reverse_lazy
 from .views import UpdatePasswordView
 from .views import UserView
 from .views import UserRegistrationView
+from .views import VerifyEmailAddressView
 
 app_name = 'accounts'
 urlpatterns = [
@@ -35,4 +36,6 @@ urlpatterns = [
             template_name="registration/custom_password_change_complete.html",
         ), name="password_reset_complete"),
     url('^', include('django.contrib.auth.urls')),
+    url(r'^verify_email/(?P<b64_email>[a-zA-Z0-9/+]*={0,2})/(?P<crypto_id>[:_\-a-zA-Z0-9/+]*={0,2})/$',
+        VerifyEmailAddressView.as_view(), name="verify_email"),
 ]
