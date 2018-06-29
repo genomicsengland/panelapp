@@ -73,5 +73,8 @@ setup(
         'gunicorn==19.9.0',
         'pytz==2018.4'
         'django-array-field-select==0.2.0'
+        'drf-yasg==1.9.0',
+        'flex==6.13.2',
+        'swagger-spec-validator==2.3.1',
     ]
 )

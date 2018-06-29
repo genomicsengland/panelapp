@@ -62,7 +62,9 @@ CUSTOM_APPS = [
     'mathfilters',
     'django_ajax',
     'rest_framework',
-    'django_admin_listfilter_dropdown'
+    'rest_framework.authtoken',
+    'django_admin_listfilter_dropdown',
+    'drf_yasg'
 ]
 
 PROJECT_APPS = [
@@ -71,6 +73,7 @@ PROJECT_APPS = [
     'panels',
     'webservices',
     'v1rewrites',
+    'api'
 ]
 
 INSTALLED_APPS = DJANGO_APPS + CUSTOM_APPS + PROJECT_APPS
@@ -225,7 +228,7 @@ HEALTH_CHECK_SERVICES = os.getenv('HEALTH_CHECK_SERVICES', 'database,rabbitmq,em
 
 # CORS headers support
 CORS_ORIGIN_ALLOW_ALL = True
-CORS_URLS_REGEX = r'^/WebServices/.*$'
+CORS_URLS_REGEX = r'^/(WebServices|api/v1)/.*$'
 CORS_ALLOW_METHODS = ('GET',)
 
 CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', 'pyamqp://localhost:5672/')
@@ -238,4 +241,24 @@ CACHES = {
         'LOCATION': 'pa-cache-1',
         'TIMEOUT': None
     }
+}
+
+REST_FRAMEWORK = {
+    'DEFAULT_VERSIONING_CLASS': 'rest_framework.versioning.NamespaceVersioning',
+    'DEFAULT_VERSION': 'v1',
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.TokenAuthentication',
+    )
+}
+
+SWAGGER_SETTINGS = {
+    'SECURITY_DEFINITIONS': {
+        'api_key': {
+            'type': 'apiKey',
+            'in': 'header',
+            'name': 'Authorization',
+            'description': 'Format: "Token <strong>your token</strong>". You can find API token in your <a href="/accounts/profile/">profile page</a>'
+        }
+    },
 }

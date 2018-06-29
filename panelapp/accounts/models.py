@@ -5,6 +5,9 @@ from django.contrib.auth.models import BaseUserManager
 from django.core import signing
 from django.conf import settings
 from django.urls import reverse
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from rest_framework.authtoken.models import Token
 
 from model_utils import Choices
 from model_utils.models import TimeStampedModel
@@ -175,3 +178,9 @@ class Reviewer(models.Model):
 
     def is_verified(self):
         return True if self.is_GEL() or self.is_REVIEWER() else False
+
+
+@receiver(post_save, sender=settings.AUTH_USER_MODEL)
+def create_auth_token(sender, instance=None, created=False, **kwargs):
+    if created:
+        Token.objects.create(user=instance)

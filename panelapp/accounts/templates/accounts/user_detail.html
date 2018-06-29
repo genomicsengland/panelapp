@@ -51,6 +51,27 @@
         </div>
 
         <a href="{% url 'accounts:change_password' %}" class="btn btn-primary">Change password</a>
+
+          <div>
+              <h3>API Token</h3>
+              <div>
+                  <p>
+                      You can use your API token to use PanelApp API v1.
+                  </p>
+                  <p>
+                      To use the token add 'Authorization' header with 'Token :your token:' value.
+                  </p>
+                  <a href="#display-token" id="display_token">Display token</a>
+                  <div id="auth_token" style="display:none;"><pre>Authorization: Token {{ user.auth_token }}</pre></div>
+              </div>
+              <script>
+                  $('#display_token').on('click', function(e) {
+                      e.preventDefault();
+                      $('#auth_token').show();
+                      $('#display_token').hide();
+                  });
+              </script>
+          </div>
       </div>
     </div>
     <div class="col-md-6">
