@@ -333,7 +333,7 @@ class STRReviewTest(LoginGELUser):
         res = self.client.post(url, data, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
         gene = GenePanel.objects.get(pk=str_item.panel.panel.pk).active_panel.get_str(str_item.name)
         assert res.json().get('status') == 200
-        assert Comment.objects.count() == 2
+        assert Comment.objects.count() == 3
         assert gene.saved_gel_status == new_status
 
         new_status = 2
@@ -342,7 +342,7 @@ class STRReviewTest(LoginGELUser):
         res = self.client.post(url, data, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
         gene = GenePanel.objects.get(pk=str_item.panel.panel.pk).active_panel.get_str(str_item.name)
         assert res.json().get('status') == 200
-        assert Comment.objects.count() == 3
+        assert Comment.objects.count() == 6
         assert gene.saved_gel_status == new_status
 
         new_status = 3
@@ -351,7 +351,7 @@ class STRReviewTest(LoginGELUser):
         res = self.client.post(url, data, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
         gene = GenePanel.objects.get(pk=str_item.panel.panel.pk).active_panel.get_str(str_item.name)
         assert res.json().get('status') == 200
-        assert Comment.objects.count() == 4
+        assert Comment.objects.count() == 10
         assert gene.saved_gel_status == new_status
         assert gene.panel.version != str_item.panel.version
 

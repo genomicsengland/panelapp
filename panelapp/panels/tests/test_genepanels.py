@@ -373,3 +373,34 @@ class GenePanelTest(LoginGELUser):
         self.assertEqual(res.status_code, 301)
         self.assertEqual(res.url + '/', reverse_lazy('panels:evaluation', args=(
             gpes.panel.panel.id, 'gene', gpes.gene.get('gene_symbol'))))
+
+    def test_evaluation_stays(self):
+        gps = GenePanelSnapshotFactory()
+        gpes = GenePanelEntrySnapshotFactory(panel=gps)
+        evaluations = gpes.evaluation.all()
+        gpes2 = GenePanelEntrySnapshotFactory(panel=gps)
+        evaluations2 = sorted(gpes2.evaluation.all().values_list('pk', flat=True))
+
+        gps = gps.increment_version()
+        gps.update_gene(self.gel_user, gpes.gene_core.gene_symbol, {'phenotypes': 'abra'})
+        current_ev2 = sorted(gps.panel.active_panel.get_gene(gpes2.gene_core.gene_symbol).evaluation.all().values_list('pk', flat=True))
+
+        self.assertNotEqual(evaluations2, current_ev2)
+
+    def test_evaluation_single_panel(self):
+        gps = GenePanelSnapshotFactory()
+        gpes = GenePanelEntrySnapshotFactory(panel=gps)
+        gps = gps.increment_version()
+        gps = gps.increment_version()
+
+        gene_symbol = gpes.gene_core.gene_symbol
+
+        # check we copy evaluation rather than assign it
+        self.assertEqual(gps.panel.active_panel.get_all_genes[0].evaluation.first().genepanelentrysnapshot_set.count(),
+                         1)
+
+        # check if deleting gene preserves it in the previous versions
+        gp = gps.panel
+        gps.delete_gene(gene_symbol)
+        v1 = gp.genepanelsnapshot_set.get(major_version=0, minor_version=1)
+        self.assertTrue(v1.has_gene(gene_symbol))

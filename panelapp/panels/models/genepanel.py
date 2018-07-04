@@ -41,6 +41,10 @@ class GenePanel(TimeStampedModel):
         ap = self.active_panel
         return "{} version {}.{}".format(self.name, ap.major_version, ap.minor_version)
 
+    @property
+    def unique_id(self):
+        return self.old_pk if self.old_pk else str(self.pk)
+
     def approve(self):
         self.status = GenePanel.STATUS.public
         self.save()

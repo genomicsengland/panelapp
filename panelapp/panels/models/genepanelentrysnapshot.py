@@ -102,7 +102,7 @@ class GenePanelEntrySnapshot(AbstractEntity, TimeStampedModel):
         null=True,
         blank=True
     )
-    saved_gel_status = models.IntegerField(null=True, db_index=True)
+    saved_gel_status = models.IntegerField(null=True, db_index=True)  # this should be enum red, green, etc
 
     objects = GenePanelEntrySnapshotManager()
 

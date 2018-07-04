@@ -44,7 +44,7 @@ class GenePanelSnapshotManager(models.Manager):
             .values('pk')\
             .order_by('panel_id', '-major_version', '-minor_version')
 
-    def get_active(self, all=False, deleted=False, internal=False):
+    def get_active(self, all=False, deleted=False, internal=False, name=None):
         """Get active panels
 
         Parameters:
@@ -64,14 +64,23 @@ class GenePanelSnapshotManager(models.Manager):
         if not internal:
             qs = qs.exclude(panel__status=GenePanel.STATUS.internal)
 
-        return qs.filter(pk__in=Subquery(self.get_latest_ids(deleted)))\
-            .prefetch_related('panel', 'level4title')\
+        qs = qs.filter(pk__in=Subquery(self.get_latest_ids(deleted)))
+
+        if name:
+            if name.isdigit():
+                filters = Q(panel__pk=name)
+            else:
+                filters = Q(panel__old_pk=name) | Q(panel__name=name) | Q(old_panels__contains=[name])\
+                          | Q(panel__name__icontains=name)
+            qs = qs.filter(filters)
+
+        return qs.prefetch_related('panel', 'level4title')\
             .order_by('panel__name', '-major_version', '-minor_version')
 
-    def get_active_annotated(self, all=False, deleted=False, internal=False):
+    def get_active_annotated(self, all=False, deleted=False, internal=False, name=None):
         """This method adds additional values to the queryset, such as number_of_genes, etc and returns active panels"""
 
-        return self.get_active(all, deleted, internal)\
+        return self.get_active(all, deleted, internal, name)\
             .annotate(child_panels_count=Count('child_panels')) \
             .annotate(superpanels_count=Count('genepanelsnapshot')) \
             .annotate(
@@ -85,6 +94,11 @@ class GenePanelSnapshotManager(models.Manager):
                     default=Value(False),
                     output_field=models.BooleanField()
                 ),
+                unique_id=Case(
+                    When(panel__old_pk__isnull=False, then=(Value('panel__old_pk'))),
+                    default=Value('panel_id'),
+                    output_field=models.CharField()
+                )
             )
 
     def get_gene_panels(self, gene_symbol, all=False, internal=False):
@@ -115,6 +129,11 @@ class GenePanelSnapshotManager(models.Manager):
         return self.get_active(all=all, deleted=deleted, internal=internal)\
             .annotate(version=Concat('major_version', V('.'), 'minor_version', output_field=CharField()))\
             .values_list('panel_id', 'panel__name')
+
+    def get_panel_snapshots(self, panel_id):
+        return super().get_queryset().filter(panel_id=panel_id)\
+            .prefetch_related('panel', 'level4title')\
+            .order_by('-major_version', '-minor_version')
 
     def get_panel_versions(self, panel_id, all=False, deleted=False, internal=False):
         qs = self.filter(panel_id=panel_id)
@@ -584,6 +603,19 @@ class GenePanelSnapshot(TimeStampedModel):
         entity_set.model.comments.through.objects.bulk_create([
             entity_set.model.comments.through(**ev) for ev in comments
         ])
+        self.clear_cache()
+
+    def update_saved_stats(self):
+        """Get the new values from the database"""
+
+        out = self._get_stats()
+        out['number_of_reviewers'] = len(out['entity_reviewers'])
+        out['number_of_evaluated_entities'] = out['number_of_evaluated_genes'] + out['number_of_evaluated_strs']
+        out['number_of_entities'] = out['number_of_genes'] + out['number_of_strs']
+        out['number_of_ready_entities'] = out['number_of_ready_genes'] + out['number_of_ready_strs']
+        out['number_of_green_entities'] = out['number_of_green_genes'] + out['number_of_green_strs']
+        self.stats = out
+        self.save(update_fields=['stats', ])
 
     @property
     def contributors(self):
@@ -735,6 +767,14 @@ class GenePanelSnapshot(TimeStampedModel):
 
         return self.get_all(self.cached_strs)
 
+    @property
+    def all_evaluations(self):
+        gene_evaluations = self.get_all_genes.aggregate(evaluations=ArrayAgg('evaluations', distinct=True))
+        str_evaluations = self.get_all_strs.aggregate(evaluations=ArrayAgg('evaluations', distinct=True))
+
+
+
+
     @cached_property
     def get_all_entities_extra(self):
         """Get all genes and annotated info, speeds up loading time"""
@@ -757,6 +797,8 @@ class GenePanelSnapshot(TimeStampedModel):
                 'tags'
             )\
             .annotate(
+                entity_type=V('gene', output_field=models.CharField()),
+                entity_name=models.F('gene_core__gene_symbol'),
                 number_of_green_evaluations=Count(Case(When(
                     evaluation__rating="GREEN", then=models.F('evaluation__pk'))
                 ), distinct=True),

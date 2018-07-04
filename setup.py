@@ -76,5 +76,7 @@ setup(
         'drf-yasg==1.9.0',
         'flex==6.13.2',
         'swagger-spec-validator==2.3.1',
+        'djangorestframework-jsonapi==2.4.0',
+        'drf-nested-routers==0.90.2'
     ]
 )
