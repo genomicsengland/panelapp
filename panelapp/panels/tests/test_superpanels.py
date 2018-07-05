@@ -59,6 +59,7 @@ class SuperPanelsTest(LoginGELUser):
 
         parent.child_panels.set([child1, child2])
         parent.update_saved_stats()
+        del parent.is_super_panel
 
         self.assertEqual(len(parent.get_all_entities_extra), 3)
         self.assertTrue(parent.is_super_panel)

@@ -9,24 +9,20 @@
                 <dt>GEL status</dt>
                 <dd>{{ entity.status }}</dd>
             {% endif %}
-            <dt>Name</dt>
+            <dt>ISCA ID</dt>
             <dd>{{ entity.name }}</dd>
+            <dt>ISCA Region Name</dt>
+            <dd>{{ entity.verbose_name }}</dd>
             <dt>Chromosome</dt>
             <dd>{{ entity.chromosome }}</dd>
             <dt>GRCh37 Coordinates</dt>
             <dd>{{ entity.position_37.lower }}-{{ entity.position_37.upper }}</dd>
             <dt>GRCh38 Coordinates</dt>
             <dd>{{ entity.position_38.lower }}-{{ entity.position_38.upper }}</dd>
-            <dt>Type of variant</dt>
-            <dd>{{ entity.type_of_variants }}</dd>
-            <dt>Consequence Types</dt>
-            <dd>
-                <ul>
-                    {% for effect in entity.human_type_of_effects %}
-                    <li>{{ effect }}</li>
-                    {% endfor %}
-                </ul>
-            </dd>
+            <dt>Haploinsufficiency Score</dt>
+            <dd>{{ entity.human_haploinsufficiency_score }}</dd>
+            <dt>Triplosensitivity Score</dt>
+            <dd>{{ entity.human_triplosensitivity_score }}</dd>
             {% if entity.moi %}
             <dt>Mode of Inheritance</dt>
             <dd>{{ entity.moi }}</dd>

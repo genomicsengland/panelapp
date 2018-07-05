@@ -23,6 +23,7 @@ class EvaluationRegionTest(LoginGELUser):
 
         region = RegionFactory()
         region.evaluation.all().delete()
+        region.panel.update_saved_stats()
         url = reverse_lazy('panels:review_entity', kwargs={
             'pk': region.panel.panel.pk,
             'entity_type': 'region',
@@ -31,7 +32,7 @@ class EvaluationRegionTest(LoginGELUser):
 
         current_version = region.panel.version
 
-        number_of_evaluated_genes = region.panel.number_of_evaluated_regions
+        number_of_evaluated_genes = region.panel.stats.get('number_of_evaluated_regions')
 
         region_data = {
             "rating": Evaluation.RATINGS.AMBER,
@@ -44,7 +45,7 @@ class EvaluationRegionTest(LoginGELUser):
         }
         res = self.client.post(url, region_data)
         assert res.status_code == 302
-        assert number_of_evaluated_genes + 1 == region.panel.panel.active_panel.number_of_evaluated_regions
+        assert number_of_evaluated_genes + 1 == region.panel.panel.active_panel.stats.get('number_of_evaluated_regions')
         assert current_version == region.panel.panel.active_panel.version
 
     def test_add_evaluation_comments_only(self):

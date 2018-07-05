@@ -11,13 +11,14 @@ class DownloadAllRegions(GELReviewerRequiredMixin, View):
     def regions_iterator(self):
         yield (
             "Name",
+            "Verbose Name",
             "Chromosome",
             "Position GRCh37 start",
             "Position GRCh37 end",
             "Position GRCh38 start",
             "Position GRCh38 end",
-            "Variant type",
-            "Consequences terms",
+            "Haploinsufficiency Score",
+            "Triplosensitivity Score",
             "Symbol",
             "Panel Id",
             "Panel Name",
@@ -53,13 +54,14 @@ class DownloadAllRegions(GELReviewerRequiredMixin, View):
 
                 row = [
                     entry.name,
+                    entry.verbose_name,
                     entry.chromosome,
                     entry.position_37.lower,
                     entry.position_37.upper,
                     entry.position_38.lower,
                     entry.position_38.upper,
-                    entry.type_of_variants,
-                    '; '.join(entry.type_of_effects),
+                    entry.haploinsufficiency_score,
+                    entry.triplosensitivity_score,
                     entry.gene.get('gene_symbol') if entry.gene else '-',
                     entry.panel.panel.pk,
                     entry.panel.level4title.name,

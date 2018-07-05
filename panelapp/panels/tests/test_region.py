@@ -29,8 +29,8 @@ class RegionTest(LoginGELUser):
             'chromosome': '1',
             'position_37': (12345, 12346),
             'position_38': (12345, 12346),
-            'type_of_variants': choice(Region.VARIANT_TYPES),
-            'type_of_effects': [choice(Region.EFFECT_TYPES)[0], ],
+            'haploinsufficiency_score': choice(Region.DOSAGE_SENSITIVITY_SCORES)[0],
+            'triplosensitivity_score': choice(Region.DOSAGE_SENSITIVITY_SCORES)[0],
             'panel': active_panel,
             'moi': 'X-LINKED: hemizygous mutation in males, biallelic mutations in females',
             'penetrance': 'Incomplete',
@@ -47,7 +47,7 @@ class RegionTest(LoginGELUser):
         gene = GeneFactory()
         gps = GenePanelSnapshotFactory()
 
-        number_of_regions = gps.number_of_regions
+        number_of_regions = gps.stats.get('number_of_regions')
 
         url = reverse_lazy('panels:add_entity', kwargs={'pk': gps.panel.pk, 'entity_type': 'region'})
         region_data = {
@@ -57,8 +57,8 @@ class RegionTest(LoginGELUser):
             'position_37_1': '12346',
             'position_38_0': '12345',
             'position_38_1': '123456',
-            'type_of_variants': choice(Region.VARIANT_TYPES),
-            'type_of_effects': [choice(Region.EFFECT_TYPES)[0], ],
+            'haploinsufficiency_score': choice(Region.DOSAGE_SENSITIVITY_SCORES)[0],
+            'triplosensitivity_score': choice(Region.DOSAGE_SENSITIVITY_SCORES)[0],
             "gene": gene.pk,
             "source": Evidence.ALL_SOURCES[randint(0, 9)],
             "tags": [TagFactory().pk, ],
@@ -72,7 +72,7 @@ class RegionTest(LoginGELUser):
         }
         res = self.client.post(url, region_data)
 
-        new_current_number = gps.panel.active_panel.number_of_regions
+        new_current_number = gps.panel.active_panel.stats.get('number_of_regions')
 
         assert gps.panel.active_panel.version != gps.version
 
@@ -88,7 +88,7 @@ class RegionTest(LoginGELUser):
 
         gps = GenePanelSnapshotFactory()
 
-        number_of_regions = gps.number_of_regions
+        number_of_regions = gps.stats.get('number_of_regions')
 
         url = reverse_lazy('panels:add_entity', kwargs={'pk': gps.panel.pk, 'entity_type': 'region'})
         region_data = {
@@ -98,8 +98,8 @@ class RegionTest(LoginGELUser):
             'position_37_1': '12346',
             'position_38_0': '12345',
             'position_38_1': '123456',
-            'type_of_variants': choice(Region.VARIANT_TYPES),
-            'type_of_effects': [choice(Region.EFFECT_TYPES)[0], ],
+            'haploinsufficiency_score': choice(Region.DOSAGE_SENSITIVITY_SCORES)[0],
+            'triplosensitivity_score': choice(Region.DOSAGE_SENSITIVITY_SCORES)[0],
             "source": Evidence.ALL_SOURCES[randint(0, 9)],
             "tags": [TagFactory().pk, ],
             "publications": "{};{};{}".format(*fake.sentences(nb=3)),
@@ -112,7 +112,7 @@ class RegionTest(LoginGELUser):
         }
         res = self.client.post(url, region_data)
 
-        new_current_number = gps.panel.active_panel.number_of_regions
+        new_current_number = gps.panel.active_panel.stats.get('number_of_regions')
 
         assert gps.panel.active_panel.version != gps.version
 
@@ -132,8 +132,8 @@ class RegionTest(LoginGELUser):
             'position_37_1': '12346',
             'position_38_0': '12345',
             'position_38_1': '123456',
-            'type_of_variants': choice(Region.VARIANT_TYPES),
-            'type_of_effects': [choice(Region.EFFECT_TYPES)[0], ],
+            'haploinsufficiency_score': choice(Region.DOSAGE_SENSITIVITY_SCORES)[0],
+            'triplosensitivity_score': choice(Region.DOSAGE_SENSITIVITY_SCORES)[0],
             "gene": gene.pk,
             "source": Evidence.OTHER_SOURCES[0],
             "phenotypes": "{};{};{}".format(*fake.sentences(nb=3)),
@@ -165,7 +165,7 @@ class RegionTest(LoginGELUser):
             'entity_name': region.name
         })
 
-        number_of_regions = region.panel.number_of_regions
+        number_of_regions = region.panel.stats.get('number_of_regions')
 
         # make sure new data has at least 1 of the same items
         source = region.evidence.last().name
@@ -184,8 +184,8 @@ class RegionTest(LoginGELUser):
             'position_37_1': '12346',
             'position_38_0': '12345',
             'position_38_1': '123456',
-            'type_of_variants': choice(Region.VARIANT_TYPES),
-            'type_of_effects': [choice(Region.EFFECT_TYPES)[0], ],
+            'haploinsufficiency_score': choice(Region.DOSAGE_SENSITIVITY_SCORES)[0],
+            'triplosensitivity_score': choice(Region.DOSAGE_SENSITIVITY_SCORES)[0],
             "gene": region.gene_core.pk,
             "gene_name": "Gene name",
             "source": set([source, new_evidence]),
@@ -199,7 +199,7 @@ class RegionTest(LoginGELUser):
         assert res.status_code == 302
         new_region = GenePanel.objects.get(pk=region.panel.panel.pk).active_panel.get_region(region.name)
         assert region.panel.panel.active_panel.version != region.panel.version
-        new_current_number = new_region.panel.panel.active_panel.number_of_regions
+        new_current_number = new_region.panel.panel.active_panel.stats.get('number_of_regions')
         assert number_of_regions == new_current_number
         self.assertEqual(int(region_data['position_37_1']), new_region.position_37.upper)
 
@@ -213,7 +213,7 @@ class RegionTest(LoginGELUser):
             'entity_name': region.name
         })
 
-        number_of_regions = region.panel.number_of_regions
+        number_of_regions = region.panel.stats.get('number_of_regions')
 
         # make sure new data has at least 1 of the same items
         source = region.evidence.last().name
@@ -232,8 +232,8 @@ class RegionTest(LoginGELUser):
             'position_37_1': '12346',
             'position_38_0': '12345',
             'position_38_1': '123456',
-            'type_of_variants': choice(Region.VARIANT_TYPES),
-            'type_of_effects': [choice(Region.EFFECT_TYPES)[0], ],
+            'haploinsufficiency_score': choice(Region.DOSAGE_SENSITIVITY_SCORES)[0],
+            'triplosensitivity_score': choice(Region.DOSAGE_SENSITIVITY_SCORES)[0],
             "gene_name": "Gene name",
             "source": set([source, new_evidence]),
             "tags": [TagFactory().pk, ] + [tag.name for tag in region.tags.all()],
@@ -248,7 +248,7 @@ class RegionTest(LoginGELUser):
         assert not new_region.gene_core
         assert not new_region.gene
         assert region.panel.panel.active_panel.version != region.panel.version
-        new_current_number = new_region.panel.panel.active_panel.number_of_regions
+        new_current_number = new_region.panel.panel.active_panel.stats.get('number_of_regions')
         assert number_of_regions == new_current_number
 
     def test_remove_sources(self):
@@ -270,8 +270,8 @@ class RegionTest(LoginGELUser):
             'position_37_1': '12346',
             'position_38_0': '12345',
             'position_38_1': '123456',
-            'type_of_variants': choice(Region.VARIANT_TYPES),
-            'type_of_effects': [choice(Region.EFFECT_TYPES)[0], ],
+            'haploinsufficiency_score': choice(Region.DOSAGE_SENSITIVITY_SCORES)[0],
+            'triplosensitivity_score': choice(Region.DOSAGE_SENSITIVITY_SCORES)[0],
             "gene": region.gene_core.pk,
             "gene_name": "Gene name",
             "source": set([ev.name for ev in region.evidence.all()[1:]]),
@@ -307,8 +307,8 @@ class RegionTest(LoginGELUser):
             'position_37_1': '12346',
             'position_38_0': '12345',
             'position_38_1': '123456',
-            'type_of_variants': choice(Region.VARIANT_TYPES),
-            'type_of_effects': [choice(Region.EFFECT_TYPES)[0], ],
+            'haploinsufficiency_score': choice(Region.DOSAGE_SENSITIVITY_SCORES)[0],
+            'triplosensitivity_score': choice(Region.DOSAGE_SENSITIVITY_SCORES)[0],
             "gene": region.gene_core.pk,
             "gene_name": "Gene name",
             "source": set([ev.name for ev in region.evidence.all()]),
@@ -346,8 +346,8 @@ class RegionTest(LoginGELUser):
             'position_37_1': '12346',
             'position_38_0': '12345',
             'position_38_1': '123456',
-            'type_of_variants': choice(Region.VARIANT_TYPES),
-            'type_of_effects': [choice(Region.EFFECT_TYPES)[0], ],
+            'haploinsufficiency_score': choice(Region.DOSAGE_SENSITIVITY_SCORES)[0],
+            'triplosensitivity_score': choice(Region.DOSAGE_SENSITIVITY_SCORES)[0],
             "gene": region.gene_core.pk,
             "gene_name": "Gene name",
             "source": set([ev.name for ev in region.evidence.all()]),
@@ -381,8 +381,8 @@ class RegionTest(LoginGELUser):
             'position_37_1': '12346',
             'position_38_0': '12345',
             'position_38_1': '123456',
-            'type_of_variants': choice(Region.VARIANT_TYPES),
-            'type_of_effects': [choice(Region.EFFECT_TYPES)[0], ],
+            'haploinsufficiency_score': choice(Region.DOSAGE_SENSITIVITY_SCORES)[0],
+            'triplosensitivity_score': choice(Region.DOSAGE_SENSITIVITY_SCORES)[0],
             "gene": region.gene_core.pk,
             "gene_name": "Gene name",
             "source": set([ev.name for ev in region.evidence.all()]),
@@ -419,8 +419,8 @@ class RegionTest(LoginGELUser):
             'position_37_1': '12346',
             'position_38_0': '12345',
             'position_38_1': '123456',
-            'type_of_variants': choice(Region.VARIANT_TYPES),
-            'type_of_effects': [choice(Region.EFFECT_TYPES)[0], ],
+            'haploinsufficiency_score': choice(Region.DOSAGE_SENSITIVITY_SCORES)[0],
+            'triplosensitivity_score': choice(Region.DOSAGE_SENSITIVITY_SCORES)[0],
             "gene": region.gene_core.pk,
             "gene_name": "Gene name",
             "source": set([ev.name for ev in region.evidence.all()]),
@@ -458,8 +458,8 @@ class RegionTest(LoginGELUser):
             'position_37_1': '12346',
             'position_38_0': '12345',
             'position_38_1': '123456',
-            'type_of_variants': choice(Region.VARIANT_TYPES),
-            'type_of_effects': [choice(Region.EFFECT_TYPES)[0], ],
+            'haploinsufficiency_score': choice(Region.DOSAGE_SENSITIVITY_SCORES)[0],
+            'triplosensitivity_score': choice(Region.DOSAGE_SENSITIVITY_SCORES)[0],
             "gene": region.gene_core.pk,
             "gene_name": "Gene name",
             "source": set([ev.name for ev in region.evidence.all()]),
@@ -536,8 +536,8 @@ class RegionTest(LoginGELUser):
             'position_37_1': '12346',
             'position_38_0': '12345',
             'position_38_1': '123456',
-            'type_of_variants': choice(Region.VARIANT_TYPES),
-            'type_of_effects': [choice(Region.EFFECT_TYPES)[0], ],
+            'haploinsufficiency_score': choice(Region.DOSAGE_SENSITIVITY_SCORES)[0],
+            'triplosensitivity_score': choice(Region.DOSAGE_SENSITIVITY_SCORES)[0],
             "gene": region.gene_core.pk,
             "gene_name": "Other name",
             "source": set([source, Evidence.ALL_SOURCES[randint(0, 9)]]),

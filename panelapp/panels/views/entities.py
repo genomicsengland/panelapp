@@ -210,7 +210,7 @@ class GenePanelSpanshotView(EntityMixin, DetailView):
         ctx['edit_entity_publications_form'] = UpdateRegionPublicationsForm(instance=self.object)
         ctx['edit_entity_rating_form'] = UpdateRegionRatingForm(instance=self.object)
 
-        cgi = ctx['panel_regions'].index(self.object)
+        cgi = [g.get('pk') for g in ctx['panel_regions']].index(self.object.pk)
         ctx['next_region'] = None if cgi == len(ctx['panel_regions']) - 1 else ctx['panel_regions'][cgi + 1]
         ctx['prev_region'] = None if cgi == 0 else ctx['panel_regions'][cgi - 1]
 
@@ -513,7 +513,7 @@ class EntityDetailView(DetailView):
             # try STR
             try:
                 return get_list_or_404(STR, name=self.kwargs['slug'])[0]
-            except self.model.DoesNotExist:
+            except Http404:
                 # try region
                 return get_list_or_404(Region, name=self.kwargs['slug'])[0]
 

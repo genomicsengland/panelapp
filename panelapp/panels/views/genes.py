@@ -41,7 +41,7 @@ class DownloadPanelTSVMixin(PanelMixin, DetailView):
         writer = csv.writer(response, delimiter='\t')
 
         writer.writerow((
-            "Gene Entity Symbol",
+            "Entity Symbol",
             "Entity type",
             "Sources(; separated)",
             "Level4",
@@ -71,8 +71,8 @@ class DownloadPanelTSVMixin(PanelMixin, DetailView):
             "STR Repeated Sequence",
             "STR Normal Repeats",
             "STR Pathogenic Repeats",
-            "Region Type of Variant",
-            "Region Type of Effect",
+            "Region Haploinsufficiency Score",
+            "Region Triplosensitivity Score",
         ))
 
         categories = self.get_categories()
@@ -194,8 +194,8 @@ class DownloadPanelTSVMixin(PanelMixin, DetailView):
                     '-',
                     '-',
                     '-',
-                    region.type_of_variants,
-                    '; '.join(region.type_of_effects)
+                    region.haploinsufficiency_score,
+                    region.triplosensitivity_score
                 )
                 writer.writerow(export_region)
 

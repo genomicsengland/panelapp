@@ -89,11 +89,12 @@ class PanelRegionForm(forms.ModelForm):
         model = Region
         fields = (
             'name',
+            'verbose_name',
             'chromosome',
             'position_37',
             'position_38',
-            'type_of_variants',
-            'type_of_effects',
+            'haploinsufficiency_score',
+            'triplosensitivity_score',
             'moi',
             'penetrance',
             'publications',
@@ -109,6 +110,7 @@ class PanelRegionForm(forms.ModelForm):
 
         self.fields = OrderedDict()
         self.fields['name'] = original_fields.get('name')
+        self.fields['verbose_name'] = original_fields.get('verbose_name')
         self.fields['chromosome'] = original_fields.get('chromosome')
         self.fields['position_37'] = original_fields.get('position_37')
         self.fields['position_37'].widget.widgets[0].attrs = {'placeholder': 'Position start (GRCh37)'}
@@ -116,8 +118,8 @@ class PanelRegionForm(forms.ModelForm):
         self.fields['position_38'] = original_fields.get('position_38')
         self.fields['position_38'].widget.widgets[0].attrs = {'placeholder': 'Position start (GRCh38)'}
         self.fields['position_38'].widget.widgets[1].attrs = {'placeholder': 'Position end (GRCh38)'}
-        self.fields['type_of_variants'] = original_fields.get('type_of_variants')
-        self.fields['type_of_effects'] = original_fields.get('type_of_effects')
+        self.fields['haploinsufficiency_score'] = original_fields.get('haploinsufficiency_score')
+        self.fields['triplosensitivity_score'] = original_fields.get('triplosensitivity_score')
         self.fields['gene'] = original_fields.get('gene')
         if self.instance.pk:
             self.fields['gene_name'] = original_fields.get('gene_name')

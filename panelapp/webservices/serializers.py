@@ -101,11 +101,12 @@ class PanelSerializer(EnsembleIdMixin, serializers.BaseSerializer):
         for region in self.list_of_regions:
             result["result"]["Regions"].append({
                 "Name": region.name,
+                "VerboseName": region.verbose_name,
                 "Chromosome": region.chromosome,
                 "GRCh37Coordinates": [region.position_37.lower, region.position_37.upper],
                 "GRCh38Coordinates": [region.position_38.lower, region.position_38.upper],
-                "VariantType": region.type_of_variants,
-                "ConsequenceSOTerms": region.type_of_effect_impact,
+                "HaploinsufficiencyScore": region.haploinsufficiency_score,
+                "TriplosensitivityScore": region.triplosensitivity_score,
                 "GeneSymbol": region.gene.get('gene_symbol') if region.gene else None,
                 "EnsembleGeneIds": self.get_ensemblId(region),
                 "ModeOfInheritance": make_null(convert_moi(region.moi)),

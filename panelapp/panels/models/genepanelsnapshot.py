@@ -226,12 +226,18 @@ class GenePanelSnapshot(TimeStampedModel):
             'number_of_evaluated_strs',
             'number_of_strs',
             'number_of_ready_strs',
-            'number_of_green_strs'
+            'number_of_green_strs',
+            'region_reviewers',
+            'number_of_evaluated_regions',
+            'number_of_regions',
+            'number_of_ready_regions',
+            'number_of_green_regions',
         ]
 
         out = {
             'gene_reviewers': [],
-            'str_reviewers': []
+            'str_reviewers': [],
+            'region_reviewers': []
         }
 
         for pk in pks:
@@ -298,6 +304,34 @@ class GenePanelSnapshot(TimeStampedModel):
                         ),
                         distinct=True
                     ),
+
+                    region_reviewers=ArrayAgg('region__evaluation__user__pk', distinct=True),
+                    number_of_evaluated_regions=Count(Case(
+                        # Count unique genes if that gene has more than 1 evaluation
+                        When(
+                            region__evaluation__isnull=False,
+                            then=models.F('region__pk')
+                        )
+                    ), distinct=True),
+                    number_of_regions=Count('region__pk', distinct=True),
+                    number_of_ready_regions=Count(
+                        Case(
+                            When(
+                                region__ready=True,
+                                then=models.F('region__pk')
+                            )
+                        ),
+                        distinct=True
+                    ),
+                    number_of_green_region=Count(
+                        Case(
+                            When(
+                                region__saved_gel_status__gte=3,
+                                then=models.F('region__pk')
+                            )
+                        ),
+                        distinct=True
+                    ),
                 )
 
             for key in keys:
@@ -305,25 +339,24 @@ class GenePanelSnapshot(TimeStampedModel):
 
         out['gene_reviewers'] = list(set([r for r in out['gene_reviewers'] if r]))  #  remove None
         out['str_reviewers'] = list(set([r for r in out['str_reviewers'] if r]))  # remove None
-        out['entity_reviewers'] = list(set(out['gene_reviewers'] + out['str_reviewers']))
+        out['region_reviewers'] = list(set([r for r in out['str_reviewers'] if r]))  # remove None
+        out['entity_reviewers'] = list(set(out['gene_reviewers'] + out['str_reviewers'] + out['region_reviewers']))
+        out['number_of_reviewers'] = len(out['entity_reviewers'])
+        out['number_of_evaluated_entities'] = out['number_of_evaluated_genes'] + out['number_of_evaluated_strs'] +\
+                                              out['number_of_evaluated_regions']
+        out['number_of_entities'] = out['number_of_genes'] + out['number_of_strs'] + out['number_of_regions']
+        out['number_of_ready_entities'] = out['number_of_ready_genes'] + out['number_of_ready_strs'] +\
+                                          out['number_of_ready_regions']
+        out['number_of_green_entities'] = out['number_of_green_genes'] + out['number_of_green_strs'] +\
+                                          out['number_of_green_regions']
 
         return out
 
-    @property
-    def number_of_evaluated_regions(self):
-        """Get number of evaluated genes or set it if it's None"""
+    def update_saved_stats(self):
+        """Get the new values from the database"""
 
-        if self.current_number_of_evaluated_regions is None:
-            self.update_saved_stats()
-        return self.current_number_of_evaluated_regions
-
-    @property
-    def number_of_regions(self):
-        """Get number of genes or set it if it's None"""
-
-        if self.current_number_of_regions is None:
-            self.update_saved_stats()
-        return self.current_number_of_regions
+        self.stats = self._get_stats()
+        self.save(update_fields=['stats', ])
 
     @property
     def version(self):
@@ -552,18 +585,6 @@ class GenePanelSnapshot(TimeStampedModel):
             entity_set.model.comments.through(**ev) for ev in comments
         ])
 
-    def update_saved_stats(self):
-        """Get the new values from the database"""
-
-        out = self._get_stats()
-        out['number_of_reviewers'] = len(out['entity_reviewers'])
-        out['number_of_evaluated_entities'] = out['number_of_evaluated_genes'] + out['number_of_evaluated_strs']
-        out['number_of_entities'] = out['number_of_genes'] + out['number_of_strs']
-        out['number_of_ready_entities'] = out['number_of_ready_genes'] + out['number_of_ready_strs']
-        out['number_of_green_entities'] = out['number_of_green_genes'] + out['number_of_green_strs']
-        self.stats = out
-        self.save(update_fields=['stats', ])
-
     @property
     def contributors(self):
         """Returns a tuple with user data
@@ -592,7 +613,17 @@ class GenePanelSnapshot(TimeStampedModel):
                                         'evaluation__user__username'
                                      ).order_by('evaluation__user'))
 
-        return list(set(strs_contributors + genes_contributors))
+        region_contributors = list(self.cached_regions
+                                       .distinct('evaluation__user')
+                                       .values_list(
+                                           'evaluation__user__first_name',
+                                           'evaluation__user__last_name',
+                                           'evaluation__user__email',
+                                           'evaluation__user__reviewer__affiliation',
+                                           'evaluation__user__username'
+                                       ).order_by('evaluation__user'))
+
+        return list(set(strs_contributors + genes_contributors + region_contributors))
 
     def mark_entities_not_ready(self):
         """Mark entities (genes, STRs, regions) as not ready
@@ -654,7 +685,19 @@ class GenePanelSnapshot(TimeStampedModel):
 
     @cached_property
     def cached_regions(self):
-        return self.region_set.all()
+        if self.is_super_panel:
+            child_panels = self.child_panels.values_list('pk', flat=True)
+            qs = self.region_set.model.objects.filter(panel__pk__in=child_panels) \
+                .all() \
+                .prefetch_related('panel', 'panel__level4title', 'panel__panel', 'evidence',
+                                  'evaluation', 'tags', 'evaluation__user__reviewer')
+        else:
+            qs = self.region_set.all()
+
+        return qs.annotate(
+            entity_type=V('str', output_field=models.CharField()),
+            entity_name=models.F('name')
+        ).order_by('entity_name')
 
     @cached_property
     def current_genes(self):
@@ -695,9 +738,10 @@ class GenePanelSnapshot(TimeStampedModel):
     @cached_property
     def get_all_entities_extra(self):
         """Get all genes and annotated info, speeds up loading time"""
-        res = list(self.get_all_genes_extra) + list(self.get_all_strs_extra)
+        res = list(self.get_all_genes_extra) + list(self.get_all_strs_extra) + list(self.get_all_regions_extra)
         return sorted(res, key=lambda x: (x.saved_gel_status * -1, x.entity_name.lower()))
 
+    @cached_property
     def get_all_regions(self):
         """Returns all Regions for this panel"""
         return self.get_all(self.cached_regions)
@@ -931,53 +975,49 @@ class GenePanelSnapshot(TimeStampedModel):
             )
             entity.evidence.add(evidence)
 
-
         evidence_status = entity.evidence_status()
-        track_created = TrackRecord.objects.create(
-            gel_status=evidence_status,
-            curator_status=0,
-            user=user,
-            issue_type=TrackRecord.ISSUE_TYPES.Created,
-            issue_description="{} was created by {}".format(entity_name, user.get_full_name())
-        )
-        entity.track.add(track_created)
-        description = "{} was added to {} panel. Sources: {}".format(
+        tracks = []
+
+        tracks.append((
+            TrackRecord.ISSUE_TYPES.Created,
+            "{} was added by {}".format(entity_name, user.get_full_name())
+        ))
+
+        description = "{} was added to {}. Sources: {}".format(
             entity_name,
             self.panel.name,
             ",".join(entity_data.get('sources'))
         )
-        track_sources = TrackRecord.objects.create(
-            gel_status=evidence_status,
-            curator_status=0,
-            user=user,
-            issue_type=TrackRecord.ISSUE_TYPES.NewSource,
-            issue_description=description
-        )
-        entity.track.add(track_sources)
+        tracks.append((
+            TrackRecord.ISSUE_TYPES.NewSource,
+            description
+        ))
 
         tags = Tag.objects.filter(pk__in=entity_data.get('tags', []))
-        for tag in tags:
-            logging.debug("Adding new tag:{} for {} panel:{}".format(
-                tag, entity_name, self
-            ))
-            entity.tags.add(tag)
+        entity.tags.add(*entity_data.get('tags', []))
 
-            description = "{} was added to {}. Panel: {}".format(
-                tag,
+        description = "{} tags were added to {}.".format(
+            ', '.join([str(tag) for tag in tags]),
+            entity_name
+        )
+        tracks.append((
+            TrackRecord.ISSUE_TYPES.AddedTag,
+            description
+        ))
+
+        if entity.gene and entity.gene.get('gene_symbol', '').startswith("MT-"):
+            entity.moi = "MITOCHONDRIAL"
+            description = "Mode of inheritance for gene {} was set to {}".format(
                 entity_name,
-                self.panel.name,
+                "MITOCHONDRIAL"
             )
+            tracks.append((
+                TrackRecord.ISSUE_TYPES.SetModeofInheritance,
+                description
+            ))
 
-            track_tags = TrackRecord.objects.create(
-                gel_status=evidence_status,
-                curator_status=0,
-                user=user,
-                issue_type=TrackRecord.ISSUE_TYPES.AddedTag,
-                issue_description=description
-            )
-            entity.track.add(track_tags)
-
-        if entity_data.get('rating') or entity_data.get('comment'):
+        comment_text = entity_data.get('comment', '')
+        if entity_data.get('rating') or entity_data.get('comment') or entity_data.get('source'):
             evaluation = Evaluation.objects.create(
                 user=user,
                 rating=entity_data.get('rating'),
@@ -989,9 +1029,35 @@ class GenePanelSnapshot(TimeStampedModel):
                 clinically_relevant=entity_data.get('clinically_relevant'),
                 version=self.version
             )
-            if entity_data.get('comment'):
+            comment_text = entity_data.get('comment', '')
+            sources = ', '.join(entity_data.get('sources', []))
+            if sources and comment_text:
+                comment_text = comment_text + ' \nSources: ' + sources
+            else:
+                comment_text = 'Sources: ' + sources
+            comment = Comment.objects.create(
+                user=user,
+                comment=comment_text
+            )
+            if entity_data.get('comment') or entity_data.get('sources', []):
                 evaluation.comments.add(comment)
             entity.evaluation.add(evaluation)
+
+        if tracks:
+            description = "\n".join([t[1] for t in tracks])
+            track = TrackRecord.objects.create(
+                gel_status=evidence_status,
+                curator_status=0,
+                user=user,
+                issue_type=",".join([t[0] for t in tracks]),
+                issue_description=description
+            )
+            entity.track.add(track)
+
+            if comment_text:
+                description = description + '\nAdded comment: ' + comment_text
+            self.add_activity(user, description, entity)
+
         self.clear_cache()
         self.clear_django_cache()
         return entity
@@ -1022,7 +1088,6 @@ class GenePanelSnapshot(TimeStampedModel):
 
         if self.is_super_panel:
             raise IsSuperPanelException
-
 
         if self.has_gene(gene_symbol):
             return False
@@ -1510,7 +1575,6 @@ class GenePanelSnapshot(TimeStampedModel):
             str_item.gene = gene_info
 
         str_item.save()
-        self.add_activity(user, "Added STR to panel", str_item)
         str_item = self.add_entity_info(str_item, user, str_item.label, str_data)
 
         str_item.evidence_status(update=True)
@@ -2033,11 +2097,12 @@ class GenePanelSnapshot(TimeStampedModel):
 
         region = self.cached_regions.model(
             name=region_name,
+            verbose_name=region_data.get('verbose_name'),
             chromosome=region_data.get('chromosome'),
             position_37=region_data.get('position_37'),
             position_38=region_data.get('position_38'),
-            type_of_variants=region_data.get('type_of_variants'),
-            type_of_effects=region_data.get('type_of_effects'),
+            haploinsufficiency_score=region_data.get('haploinsufficiency_score'),
+            triplosensitivity_score=region_data.get('triplosensitivity_score'),
             panel=self,
             moi=region_data.get('moi'),
             penetrance=region_data.get('penetrance'),
@@ -2056,8 +2121,6 @@ class GenePanelSnapshot(TimeStampedModel):
 
         region.save()
         region = self.add_entity_info(region, user, region.label, region_data)
-
-        self.add_activity(user, gene_core.gene_symbol if region_data.get('gene') else None, "Added Region to panel", region.name)
 
         region.evidence_status(update=True)
         self.update_saved_stats()

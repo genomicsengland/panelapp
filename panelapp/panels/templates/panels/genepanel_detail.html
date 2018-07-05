@@ -82,18 +82,6 @@
   </div>
 {% endwith %}
 
-
-  <h2 class="add-label-margin">{{ panel.get_all_regions_extra|length }} Region{{ panel.get_all_regions_extra|length|pluralize}}</h2>
-  <h3 class="text-muted normal remove-top-margin add-bottom-margin">{{ panel.stats.number_of_evaluated_regions }} reviewed{% if request.user.is_authenticated and request.user.reviewer.is_GEL %}, {{ panel.stats.number_of_ready_regions }} ready{% endif %}, {{ panel.stats.number_of_green_regions }} green</h3>
-
-  <div data-module="sortable-table" data-default-key="region">
-      <div class="table-responsive" data-module="filterable-table">
-          <table class="table table-bordered table-hover" id="regions_table">
-            {% include "panels/regions_table.html" %}
-          </table>
-      </div>
-  </div>
-
   {% if panel.version_comment and panel.major_version %}
      <h2>Major version comments</h2>
       <ul class="list-group remove-bottom-margin">

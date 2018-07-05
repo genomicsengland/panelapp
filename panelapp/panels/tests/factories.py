@@ -39,6 +39,13 @@ class GenePanelSnapshotFactory(factory.django.DjangoModelFactory):
     minor_version = 0
     old_panels = factory.Faker('sentences', nb=3)
 
+    @factory.post_generation
+    def stats(self, create, stats, **kwargs):
+        if not create:
+            return
+
+        self.update_saved_stats()
+
 
 class GenePanelFactory(factory.django.DjangoModelFactory):
     class Meta:
@@ -202,11 +209,12 @@ class RegionFactory(factory.django.DjangoModelFactory):
         django_get_or_create = False
 
     name = factory.Faker('word')
+    verbose_name = factory.Faker('word')
     chromosome = factory.LazyAttribute(lambda s: choice(STR.CHROMOSOMES)[0])
     position_37 = factory.LazyAttribute(lambda s: NumericRange(randint(1, 10), randint(11, 20)))
     position_38 = factory.LazyAttribute(lambda s: NumericRange(randint(1, 10), randint(11, 20)))
-    type_of_effects = factory.LazyAttribute(lambda s: [choice(Region.EFFECT_TYPES)[0], ])
-    type_of_variants = factory.LazyAttribute(lambda s: choice(Region.VARIANT_TYPES))
+    haploinsufficiency_score = factory.LazyAttribute(lambda s: choice(Region.DOSAGE_SENSITIVITY_SCORES)[0])
+    triplosensitivity_score = factory.LazyAttribute(lambda s: choice(Region.DOSAGE_SENSITIVITY_SCORES)[0],)
     panel = factory.SubFactory(GenePanelSnapshotFactory)
     gene_core = factory.SubFactory(GeneFactory)
     publications = factory.Faker('sentences', nb=3)
@@ -239,3 +247,10 @@ class RegionFactory(factory.django.DjangoModelFactory):
         for evidence in evidences:
             if evidence:
                 self.evidence.add(evidence)
+
+    @factory.post_generation
+    def stats(self, create, stats, **kwargs):
+        if not create:
+            return
+
+        self.panel.update_saved_stats()

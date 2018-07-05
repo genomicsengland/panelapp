@@ -121,7 +121,7 @@ class AbstractEntity:
         return self._entity_type == 'gene'
 
     def is_region(self):
-        return self.entity_type == 'region'
+        return self._entity_type == 'region'
 
     @property
     def status(self):
@@ -175,18 +175,18 @@ class AbstractEntity:
             )
             self.evaluation.add(evaluation)
         evaluation.comments.add(comment)
-        self.panel.add_activity(user, 'added comment: {}'.format(comment.comment), self)
+        self.panel.add_activity(user, 'Added comment: {}'.format(comment.comment), self)
 
     def delete_evaluation(self, evaluation_pk, user=None):
         self.evaluation.get(pk=evaluation_pk).delete()
         if user:
-            self.panel.add_activity(user, 'deleted their review', self)
+            self.panel.add_activity(user, 'Deleted their review', self)
 
     def delete_comment(self, comment_pk, user=None):
         evaluation = self.evaluation.get(comments__pk=comment_pk)
         evaluation.comments.get(pk=comment_pk).delete()
         if user:
-            self.panel.add_activity(user, 'deleted their comment', self)
+            self.panel.add_activity(user, 'Deleted their comment', self)
 
     def edit_comment(self, comment_pk, new_comment, user=None):
         evaluation = self.evaluation.get(comments__pk=comment_pk)
@@ -338,7 +338,7 @@ class AbstractEntity:
                 "Comment when marking as ready: {}".format(ready_comment)
             )
 
-        self.panel.add_activity(user, "marked {} as ready".format(self.label), self)
+        self.panel.add_activity(user, "Marked {} as ready".format(self.label), self)
         self.save()
 
     def update_moi(self, moi, user, moi_comment=None):
@@ -443,7 +443,7 @@ class AbstractEntity:
 
         human_status = get_gene_list_data(self, GeneDataType.LONG.value)
 
-        self.panel.add_activity(user, "classified {} as {}".format(self.label, human_status), self)
+        self.panel.add_activity(user, "Classified {} as {}".format(self.label, human_status), self)
 
     def update_evaluation(self, user, evaluation_data):
         """
@@ -468,6 +468,8 @@ class AbstractEntity:
             Evaluation: new or updated evaluation
         """
 
+        activities = []
+
         try:
             evaluation = self.evaluation.get(user=user)
 
@@ -479,50 +481,58 @@ class AbstractEntity:
                     comment=evaluation_data.get('comment')
                 )
                 evaluation.comments.add(comment)
+                activities.append("Added comment: {}".format(evaluation_data.get('comment')))
 
             rating = evaluation_data.get('rating')
             if rating and evaluation.rating != rating:
                 changed = True
                 evaluation.rating = rating
+                activities.append("Changed rating: {}".format(rating))
 
             mop = evaluation_data.get('mode_of_pathogenicity')
             if mop and evaluation.mode_of_pathogenicity != mop:
                 changed = True
                 evaluation.mode_of_pathogenicity = mop
+                activities.append("Changed mode of pathogenicity: {}".format(mop))
 
             publications = evaluation_data.get('publications')
             if publications and evaluation.publications != publications:
                 changed = True
                 evaluation.publications = publications
+                activities.append("Changed publications: {}".format(', '.join(publications)))
 
             phenotypes = evaluation_data.get('phenotypes')
             if phenotypes and evaluation.phenotypes != phenotypes:
                 changed = True
                 evaluation.phenotypes = phenotypes
+                activities.append("Changed phenotypes: {}".format(', '.join(phenotypes)))
 
             moi = evaluation_data.get('moi')
             if moi and evaluation.moi != moi:
                 changed = True
                 evaluation.moi = moi
+                activities.append("Changed mode of inheritance: {}".format(moi))
 
             current_diagnostic = evaluation_data.get('current_diagnostic')
             if current_diagnostic and evaluation.current_diagnostic != current_diagnostic:
                 changed = True
                 evaluation.current_diagnostic = current_diagnostic
+                activities.append("Set current diagnostic: {}".format('yes' if current_diagnostic else 'no'))
 
             clinically_relevant = evaluation_data.get('clinically_relevant')
             if self.is_str() and evaluation.clinically_relevant != clinically_relevant:
                 changed = True
                 evaluation.clinically_relevant = clinically_relevant
+                activities.append("Set clinically relevant: {}".format('yes' if clinically_relevant else 'no'))
 
             evaluation.version = self.panel.version
 
             activity_text = None
 
             if changed:
-                activity_text = "edited their review of {}".format(self.label)
+                activity_text = "edited their review of {}: {}".format(self.label, "; ".join(activities))
             elif evaluation_data.get('comment'):
-                activity_text = "commented on {}".format(self.label)
+                activity_text = "commented on {}: {}".format(self.label, evaluation_data.get('comment'))
 
             if activity_text:
                 self.panel.add_activity(user, activity_text, self)
@@ -554,7 +564,18 @@ class AbstractEntity:
             if evaluation.is_comment_without_review():
                 activity_text = "commented on {}".format(self.label)
             else:
-                activity_text = "reviewed {}".format(self.label)
+                activities = [
+                    "Rating: {}".format(evaluation_data.get('rating')),
+                    "Mode of pathogenicity: {}".format(evaluation_data.get('mode_of_pathogenicity')),
+                    "Publications: {}".format(', '.join(evaluation_data.get('publications'))),
+                    "Phenotypes: {}".format(', '.join(evaluation_data.get('phenotypes'))),
+                    "Mode of inheritance: {}".format(evaluation_data.get('moi')),
+                ]
+                if evaluation_data.get('current_diagnostic'):
+                    activities.append("Current diagnostic: {}".format('yes' if evaluation_data.get('current_diagnostic') else 'no'))
+                if evaluation_data.get('clinically_relevant'):
+                    activities.append("Clinically relevant: {}".format('yes' if evaluation_data.get('clinically_relevant') else 'no'))
+                activity_text = "reviewed {}: {}".format(self.label, '; '.join(activities))
 
             self.panel.add_activity(user, activity_text, self)
             return evaluation
