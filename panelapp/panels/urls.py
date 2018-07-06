@@ -51,7 +51,7 @@ from .ajax_views import DeleteEntityEvaluationAjaxView
 from .ajax_views import GetEntityCommentFormAjaxView
 from .ajax_views import DeleteEntityCommentAjaxView
 from .ajax_views import SubmitEntityCommentFormAjaxView
-from .ajax_views import ApproveGeneAjaxView
+from .ajax_views import ApproveEntityAjaxView
 
 
 app_name = 'panels'
@@ -88,7 +88,7 @@ urlpatterns = [
 
     # AJAX endpoints
     url(r'^(?P<pk>[0-9]+)/(?P<entity_type>({types}))/(?P<entity_name>{regex})/delete$'.format(types=entity_types, regex=entity_regex), DeleteEntityAjaxView.as_view(), name="delete_entity"),
-    url(r'^(?P<pk>[0-9]+)/(?P<entity_type>({types}))/(?P<entity_name>{regex})/approve$'.format(types=entity_types, regex=entity_regex), ApproveGeneAjaxView.as_view(), name="approve_entity"),
+    url(r'^(?P<pk>[0-9]+)/(?P<entity_type>({types}))/(?P<entity_name>{regex})/approve$'.format(types=entity_types, regex=entity_regex), ApproveEntityAjaxView.as_view(), name="approve_entity"),
     url(r'^(?P<pk>[0-9]+)/(?P<entity_type>({types}))/(?P<entity_name>{regex})/clear_entity_sources$'.format(types=entity_types, regex=entity_regex),
         ClearSourcesAjaxView.as_view(), name="clear_entity_sources"),
     url(r'^(?P<pk>[0-9]+)/(?P<entity_type>({types}))/(?P<entity_name>{regex})/clear_entity_source/(?P<source>(.*))/$'.format(types=entity_types, regex=entity_regex),

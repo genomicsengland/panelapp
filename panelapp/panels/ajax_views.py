@@ -121,7 +121,7 @@ class GeneClearDataAjaxMixin(BaseAjaxGeneMixin, EntityMixin):
                     request=self.request
                 )
             })
-            details = render(self.request, 'panels/strs/details.html', ctx)
+            details = render(self.request, 'panels/region/details.html', ctx)
 
         return {
             'inner-fragments': {
@@ -166,24 +166,10 @@ class ClearSourcesAjaxView(GELReviewerRequiredMixin, GeneClearDataAjaxMixin, AJA
         return self.return_data()
 
 
-class TableIDMixin:
-    def get_table_id(self):
-        if self.is_gene():
-            return '#genes_table'
-        elif self.is_str():
-            return '#strs_table'
-        elif self.is_region():
-            return '#regions_table'
-
-
-class ClearSingleSourceAjaxView(EntityMixin, TableIDMixin, GELReviewerRequiredMixin, BaseAjaxGeneMixin, AJAXMixin, View):
+class ClearSingleSourceAjaxView(EntityMixin, GELReviewerRequiredMixin, BaseAjaxGeneMixin, AJAXMixin, View):
     def get_template_names(self):
         if self.is_gene():
-            return "panels/genepanel_table.html"
-        elif self.is_str():
-            return "panels/strs_table.html"
-        elif self.is_region():
-            return "panels/regions_table.html"
+            return "panels/entities_list_table.html"
 
     def process(self):
         self.panel.increment_version()
@@ -201,12 +187,13 @@ class ClearSingleSourceAjaxView(EntityMixin, TableIDMixin, GELReviewerRequiredMi
 
     def return_data(self):
         ctx = {
-            'panel': self.panel
+            'panel': self.panel,
+            'entities': self.panel.get_all_entities_extra
         }
         table = render(self.request, self.get_template_names(), ctx)
         return {
             'inner-fragments': {
-                self.get_table_id(): table
+                '#entities_table': table
             }
         }
 
@@ -252,14 +239,10 @@ class ApprovePanelAjaxView(GELReviewerRequiredMixin, PanelAjaxMixin, AJAXMixin, 
         return self.return_data()
 
 
-class DeleteEntityAjaxView(EntityMixin, TableIDMixin, GELReviewerRequiredMixin, BaseAjaxGeneMixin, AJAXMixin, View):
+class DeleteEntityAjaxView(EntityMixin, GELReviewerRequiredMixin, BaseAjaxGeneMixin, AJAXMixin, View):
     def get_template_names(self):
         if self.is_gene():
-            return "panels/genepanel_table.html"
-        elif self.is_str():
-            return "panels/strs_table.html"
-        elif self.is_region():
-            return "panels/regions_table.html"
+            return "panels/entities_list_table.html"
 
     def process(self):
         if self.is_gene():
@@ -274,31 +257,40 @@ class DeleteEntityAjaxView(EntityMixin, TableIDMixin, GELReviewerRequiredMixin, 
 
     def return_data(self):
         ctx = {
-            'panel': self.panel
+            'panel': self.panel,
+            'entities': self.panel.get_all_entities_extra
         }
         table = render(self.request, self.get_template_names(), ctx)
         return {
             'inner-fragments': {
-                self.get_table_id(): table
+                '#entities_table': table
             }
         }
 
 
-class ApproveGeneAjaxView(GELReviewerRequiredMixin, BaseAjaxGeneMixin, AJAXMixin, View):
-    template_name = "panels/genepanel_table.html"
+class ApproveEntityAjaxView(GELReviewerRequiredMixin, BaseAjaxGeneMixin, AJAXMixin, View):
+    template_name = "panels/entities_list_table.html"
 
     def process(self):
-        self.panel.get_gene(self.kwargs['gene_symbol']).approve_gene()  # TODO(Oleg) refactor
+        if self.is_gene():
+            self.panel.get_gene(self.kwargs['entity_symbol']).approve_entity()
+        if self.is_str():
+            self.panel.get_str(self.kwargs['entity_symbol']).approve_entity()
+        if self.is_region():
+            self.panel.get_region(self.kwargs['entity_symbol']).approve_entity()
+        del self.panel
+
         return self.return_data()
 
     def return_data(self):
         ctx = {
-            'panel': self.panel
+            'panel': self.panel,
+            'entities': self.panel.get_all_entities_extra
         }
         table = render(self.request, self.template_name, ctx)
         return {
             'inner-fragments': {
-                '#genes_table': table  # TODO(Oleg) refactor
+                '#entities_table': table  # TODO(Oleg) refactor
             }
         }
 
