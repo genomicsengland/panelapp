@@ -215,6 +215,7 @@ class RegionFactory(factory.django.DjangoModelFactory):
     position_38 = factory.LazyAttribute(lambda s: NumericRange(randint(1, 10), randint(11, 20)))
     haploinsufficiency_score = factory.LazyAttribute(lambda s: choice(Region.DOSAGE_SENSITIVITY_SCORES)[0])
     triplosensitivity_score = factory.LazyAttribute(lambda s: choice(Region.DOSAGE_SENSITIVITY_SCORES)[0],)
+    required_overlap_percentage = factory.LazyAttribute(lambda s: randint(0, 100))
     panel = factory.SubFactory(GenePanelSnapshotFactory)
     gene_core = factory.SubFactory(GeneFactory)
     publications = factory.Faker('sentences', nb=3)

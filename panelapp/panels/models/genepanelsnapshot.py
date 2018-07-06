@@ -2103,6 +2103,7 @@ class GenePanelSnapshot(TimeStampedModel):
             position_38=region_data.get('position_38'),
             haploinsufficiency_score=region_data.get('haploinsufficiency_score'),
             triplosensitivity_score=region_data.get('triplosensitivity_score'),
+            required_overlap_percentage=region_data.get('required_overlap_percentage'),
             panel=self,
             moi=region_data.get('moi'),
             penetrance=region_data.get('penetrance'),

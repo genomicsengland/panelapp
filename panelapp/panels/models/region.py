@@ -10,6 +10,7 @@ from django.core.serializers.json import DjangoJSONEncoder
 from django.contrib.postgres.fields import JSONField
 from django.contrib.postgres.fields import ArrayField
 from django.contrib.postgres.fields import IntegerRangeField
+from django.core import validators
 from django.urls import reverse
 
 from model_utils.models import TimeStampedModel
@@ -77,6 +78,9 @@ class Region(AbstractEntity, TimeStampedModel):
     position_38 = IntegerRangeField()
     haploinsufficiency_score = models.CharField(max_length=2, choices=DOSAGE_SENSITIVITY_SCORES)
     triplosensitivity_score = models.CharField(max_length=2, choices=DOSAGE_SENSITIVITY_SCORES)
+    required_overlap_percentage = models.IntegerField(help_text='Required percent of overlap',
+                                                      validators=[validators.MinValueValidator(0),
+                                                                  validators.MaxValueValidator(100)])
 
     gene = JSONField(encoder=DjangoJSONEncoder, blank=True, null=True)  # copy data from Gene.dict_tr
     gene_core = models.ForeignKey(Gene, blank=True, null=True, on_delete=models.PROTECT)  # reference to the original Gene

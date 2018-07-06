@@ -107,6 +107,7 @@ class PanelSerializer(EnsembleIdMixin, serializers.BaseSerializer):
                 "GRCh38Coordinates": [region.position_38.lower, region.position_38.upper],
                 "HaploinsufficiencyScore": region.haploinsufficiency_score,
                 "TriplosensitivityScore": region.triplosensitivity_score,
+                "RequiredOverlapPercentage": region.required_overlap_percentage,
                 "GeneSymbol": region.gene.get('gene_symbol') if region.gene else None,
                 "EnsembleGeneIds": self.get_ensemblId(region),
                 "ModeOfInheritance": make_null(convert_moi(region.moi)),

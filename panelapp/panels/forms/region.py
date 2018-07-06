@@ -95,6 +95,7 @@ class PanelRegionForm(forms.ModelForm):
             'position_38',
             'haploinsufficiency_score',
             'triplosensitivity_score',
+            'required_overlap_percentage',
             'moi',
             'penetrance',
             'publications',
@@ -120,6 +121,7 @@ class PanelRegionForm(forms.ModelForm):
         self.fields['position_38'].widget.widgets[1].attrs = {'placeholder': 'Position end (GRCh38)'}
         self.fields['haploinsufficiency_score'] = original_fields.get('haploinsufficiency_score')
         self.fields['triplosensitivity_score'] = original_fields.get('triplosensitivity_score')
+        self.fields['required_overlap_percentage'] = original_fields.get('required_overlap_percentage')
         self.fields['gene'] = original_fields.get('gene')
         if self.instance.pk:
             self.fields['gene_name'] = original_fields.get('gene_name')
