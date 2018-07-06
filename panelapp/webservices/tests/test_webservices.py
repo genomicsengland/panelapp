@@ -199,4 +199,12 @@ class TestWebservices(TransactionTestCase):
                          [self.region.position_37.lower, self.region.position_37.upper])
         self.assertEqual(r.json()['result']['Regions'][0]['GRCh38Coordinates'],
                          [self.region.position_38.lower, self.region.position_38.upper])
-        self.assertEqual(sorted(r.json()['result']['Regions'][0]['TriplosensitivityScore']), sorted(self.region.triplosensitivity_score))
+        self.assertEqual(r.json()['result']['Regions'][0]['TriplosensitivityScore'], self.region.triplosensitivity_score)
+
+    def test_region_filters(self):
+        url = reverse_lazy('webservices:get_panel', args=(self.region.panel.panel.pk,))
+        r = self.client.get("{}?HaploinsufficiencyScore={}".format(url, self.region.haploinsufficiency_score)).json()
+        self.assertEqual(r['result']['Regions'][0]['HaploinsufficiencyScore'], self.region.haploinsufficiency_score)
+
+        r = self.client.get("{}?TriplosensitivityScore={}".format(url, self.region.triplosensitivity_score)).json()
+        self.assertEqual(r['result']['Regions'][0]['TriplosensitivityScore'], self.region.triplosensitivity_score)
