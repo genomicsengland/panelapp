@@ -62,6 +62,7 @@ class RegistrationForm(UserCreationForm):
     def save(self, *args, **kwargs):
         """Save user and create a reviewer"""
 
+        self.instance.is_active = False
         super().save(*args, **kwargs)
 
         reviewer = Reviewer()

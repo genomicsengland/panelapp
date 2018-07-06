@@ -28,7 +28,7 @@ SECRET_KEY = os.getenv('SECRET_KEY', '-0-&v=+ghegh&l51=rdmvz_5hlf1t-^e&#5d8f07io
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = [host for host in os.getenv('ALLOWED_HOSTS', '').split(';')]
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '').split(';')
 
 PANEL_APP_BASE_URL = os.getenv('PANEL_APP_BASE_URL', 'https://panelapp.extge.co.uk')
 EMAIL_HOST = os.getenv("EMAIL_HOST", None)
@@ -121,6 +121,7 @@ DATABASES = {
 # Auth
 AUTH_USER_MODEL = 'accounts.User'
 LOGIN_REDIRECT_URL = 'home'
+ACCOUNT_EMAIL_VERIFICATION_PERIOD = 24 * 60 * 60 * 3  # 3 days
 
 # Logging
 
