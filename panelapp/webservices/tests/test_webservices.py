@@ -200,6 +200,7 @@ class TestWebservices(TransactionTestCase):
         self.assertEqual(r.json()['result']['Regions'][0]['GRCh38Coordinates'],
                          [self.region.position_38.lower, self.region.position_38.upper])
         self.assertEqual(r.json()['result']['Regions'][0]['TriplosensitivityScore'], self.region.triplosensitivity_score)
+        self.assertEqual(r.json()['result']['Regions'][0]['TypeOfVariants'], self.region.type_of_variants)
 
     def test_region_filters(self):
         url = reverse_lazy('webservices:get_panel', args=(self.region.panel.panel.pk,))

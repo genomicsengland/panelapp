@@ -14,6 +14,7 @@ from django.core import validators
 from django.urls import reverse
 
 from model_utils.models import TimeStampedModel
+from model_utils import Choices
 from array_field_select.fields import ArrayField as SelectArrayField
 from .entity import AbstractEntity
 from .entity import EntityManager
@@ -45,11 +46,11 @@ class Region(AbstractEntity, TimeStampedModel):
         ('22', '22'), ('X', 'X'), ('Y', 'Y')
     ]
 
-    VARIANT_TYPES = [
-        ('Small', 'Small'),
-        ('SV', 'SV'),
-        ('CNV', 'CNV'),
-    ]
+    VARIANT_TYPES = Choices(
+        ('small', 'Small variants'),
+        ('cnv_loss', 'CNV_LOSS'),
+        ('cnv_gain', 'CNV_GAIN')
+    )
 
     DOSAGE_SENSITIVITY_SCORES = (
         ('3', 'Sufficient evidence suggesting dosage sensitivity is associated with clinical phenotype'),
@@ -81,6 +82,7 @@ class Region(AbstractEntity, TimeStampedModel):
     required_overlap_percentage = models.IntegerField(help_text='Required percent of overlap',
                                                       validators=[validators.MinValueValidator(0),
                                                                   validators.MaxValueValidator(100)])
+    type_of_variants = models.CharField(max_length=32, choices=VARIANT_TYPES, default=VARIANT_TYPES.small)
 
     gene = JSONField(encoder=DjangoJSONEncoder, blank=True, null=True)  # copy data from Gene.dict_tr
     gene_core = models.ForeignKey(Gene, blank=True, null=True, on_delete=models.PROTECT)  # reference to the original Gene

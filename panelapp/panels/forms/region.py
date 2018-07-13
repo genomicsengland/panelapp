@@ -16,7 +16,6 @@ from panels.models import Region
 from panels.models import GenePanel
 
 
-
 class PanelRegionForm(forms.ModelForm):
     """
     The goal for this form is to add a Region to a Panel.
@@ -98,6 +97,7 @@ class PanelRegionForm(forms.ModelForm):
             'required_overlap_percentage',
             'moi',
             'penetrance',
+            'type_of_variants',
             'publications',
             'phenotypes',
         )
@@ -129,6 +129,7 @@ class PanelRegionForm(forms.ModelForm):
         self.fields['moi'] = original_fields.get('moi')
         self.fields['moi'].required = False
         self.fields['penetrance'] = original_fields.get('penetrance')
+        self.fields['type_of_variants'] = original_fields.get('type_of_variants')
         self.fields['publications'] = original_fields.get('publications')
         self.fields['phenotypes'] = original_fields.get('phenotypes')
         if self.request.user.is_authenticated and self.request.user.reviewer.is_GEL():

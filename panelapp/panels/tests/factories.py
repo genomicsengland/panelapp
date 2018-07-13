@@ -108,6 +108,7 @@ class GenePanelEntrySnapshotFactory(factory.django.DjangoModelFactory):
     phenotypes = factory.Faker('sentences', nb=3)
     moi = Evaluation.MODES_OF_INHERITANCE.Unknown
     mode_of_pathogenicity = Evaluation.MODES_OF_PATHOGENICITY.Other
+    type_of_variants = GenePanelEntrySnapshot.VARIANT_TYPES.small
     saved_gel_status = 0
     gene = factory.LazyAttribute(lambda g: g.gene_core.dict_tr())
 
@@ -215,6 +216,7 @@ class RegionFactory(factory.django.DjangoModelFactory):
     position_38 = factory.LazyAttribute(lambda s: NumericRange(randint(1, 10), randint(11, 20)))
     haploinsufficiency_score = factory.LazyAttribute(lambda s: choice(Region.DOSAGE_SENSITIVITY_SCORES)[0])
     triplosensitivity_score = factory.LazyAttribute(lambda s: choice(Region.DOSAGE_SENSITIVITY_SCORES)[0],)
+    type_of_variants = Region.VARIANT_TYPES.cnv_gain
     required_overlap_percentage = factory.LazyAttribute(lambda s: randint(0, 100))
     panel = factory.SubFactory(GenePanelSnapshotFactory)
     gene_core = factory.SubFactory(GeneFactory)

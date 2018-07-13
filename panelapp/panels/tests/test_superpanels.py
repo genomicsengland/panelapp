@@ -35,6 +35,7 @@ class SuperPanelsTest(LoginGELUser):
             "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][randint(1, 2)][0],
             "penetrance": GenePanelEntrySnapshot.PENETRANCE.Incomplete,
             "current_diagnostic": False,
+            "type_of_variants": GenePanelEntrySnapshot.VARIANT_TYPES.cnv_gain,
         }
 
         gene2_data = {
@@ -46,6 +47,7 @@ class SuperPanelsTest(LoginGELUser):
             "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][randint(1, 2)][0],
             "penetrance": GenePanelEntrySnapshot.PENETRANCE.Incomplete,
             "current_diagnostic": False,
+            "type_of_variants": GenePanelEntrySnapshot.VARIANT_TYPES.cnv_loss,
         }
 
         child1 = GenePanelSnapshotFactory()
@@ -83,6 +85,7 @@ class SuperPanelsTest(LoginGELUser):
             "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][randint(1, 2)][0],
             "penetrance": GenePanelEntrySnapshot.PENETRANCE.Incomplete,
             "current_diagnostic": False,
+            "type_of_variants": GenePanelEntrySnapshot.VARIANT_TYPES.cnv_loss,
         }
 
         gene2_data = {
@@ -94,6 +97,7 @@ class SuperPanelsTest(LoginGELUser):
             "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][randint(1, 2)][0],
             "penetrance": GenePanelEntrySnapshot.PENETRANCE.Incomplete,
             "current_diagnostic": False,
+            "type_of_variants": GenePanelEntrySnapshot.VARIANT_TYPES.cnv_loss,
         }
 
         child1 = GenePanelSnapshotFactory(panel__status=GenePanel.STATUS.public)
@@ -151,6 +155,7 @@ class SuperPanelsTest(LoginGELUser):
             "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][randint(1, 2)][0],
             "penetrance": GenePanelEntrySnapshot.PENETRANCE.Incomplete,
             "current_diagnostic": False,
+            "type_of_variants": GenePanelEntrySnapshot.VARIANT_TYPES.cnv_loss,
         }
 
         gene2_data = {
@@ -162,6 +167,7 @@ class SuperPanelsTest(LoginGELUser):
             "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][randint(1, 2)][0],
             "penetrance": GenePanelEntrySnapshot.PENETRANCE.Incomplete,
             "current_diagnostic": False,
+            "type_of_variants": GenePanelEntrySnapshot.VARIANT_TYPES.cnv_loss,
         }
 
         child1 = GenePanelSnapshotFactory(panel__status=GenePanel.STATUS.public)
@@ -193,6 +199,7 @@ class SuperPanelsTest(LoginGELUser):
             "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][randint(1, 2)][0],
             "penetrance": GenePanelEntrySnapshot.PENETRANCE.Incomplete,
             "current_diagnostic": False,
+            "type_of_variants": GenePanelEntrySnapshot.VARIANT_TYPES.cnv_loss,
         })
         child1.get_gene(gene2.gene_symbol).update_rating(3, self.gel_user, '')
         child1 = child1.panel.active_panel

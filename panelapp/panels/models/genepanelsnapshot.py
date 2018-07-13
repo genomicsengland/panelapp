@@ -1107,6 +1107,7 @@ class GenePanelSnapshot(TimeStampedModel):
             publications=gene_data.get('publications'),
             phenotypes=gene_data.get('phenotypes'),
             mode_of_pathogenicity=gene_data.get('mode_of_pathogenicity'),
+            type_of_variants=gene_data.get('type_of_variants', self.cached_regions.model.VARIANT_TYPES.small),
             saved_gel_status=0,
             flagged=False if user.reviewer.is_GEL() else True
         )
@@ -1256,6 +1257,26 @@ class GenePanelSnapshot(TimeStampedModel):
                     TrackRecord.ISSUE_TYPES.SetModeofPathogenicity,
                     description
                 ))
+
+            type_of_variants = gene_data.get('type_of_variants')
+            if type_of_variants and type_of_variants != gene.type_of_variants:
+                logging.debug("Variant Type for {} was changed from {} to {} panel:{}".format(
+                    gene.label, gene.type_of_variants, gene_data.get('type_of_variants'), self
+                ))
+
+                description = "Variant type for {} was changed from {} to {}. Panel: {}".format(
+                    gene.name,
+                    gene.type_of_variants,
+                    gene_data.get('type_of_variants'),
+                    self.panel.name
+                )
+
+                tracks.append((
+                    TrackRecord.ISSUE_TYPES.ChangedVariantType,
+                    description
+                ))
+
+                gene.type_of_variants = gene_data.get('type_of_variants')
 
             phenotypes = gene_data.get('phenotypes')
             if phenotypes:
@@ -2104,6 +2125,7 @@ class GenePanelSnapshot(TimeStampedModel):
             haploinsufficiency_score=region_data.get('haploinsufficiency_score'),
             triplosensitivity_score=region_data.get('triplosensitivity_score'),
             required_overlap_percentage=region_data.get('required_overlap_percentage'),
+            type_of_variants=region_data.get('type_of_variants', self.cached_regions.model.VARIANT_TYPES.small),
             panel=self,
             moi=region_data.get('moi'),
             penetrance=region_data.get('penetrance'),

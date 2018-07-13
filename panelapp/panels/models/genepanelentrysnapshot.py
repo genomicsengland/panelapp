@@ -1,6 +1,5 @@
 from django.db import models
-from django.db.models import Count
-from django.db.models import Subquery
+from model_utils import Choices
 from django.urls import reverse
 
 from django.core.serializers.json import DjangoJSONEncoder
@@ -27,6 +26,12 @@ class GenePanelEntrySnapshotManager(EntityManager):
 
 
 class GenePanelEntrySnapshot(AbstractEntity, TimeStampedModel):
+    VARIANT_TYPES = Choices(
+        ('small', 'Small variants'),
+        ('cnv_loss', 'CNV_LOSS'),
+        ('cnv_gain', 'CNV_GAIN')
+    )
+
     class Meta:
         get_latest_by = "created"
         ordering = ['-saved_gel_status', ]
@@ -44,6 +49,7 @@ class GenePanelEntrySnapshot(AbstractEntity, TimeStampedModel):
     evaluation = models.ManyToManyField(Evaluation, db_index=True)
     moi = models.CharField("Mode of inheritance", choices=Evaluation.MODES_OF_INHERITANCE, max_length=255)
     penetrance = models.CharField(choices=AbstractEntity.PENETRANCE, max_length=255, blank=True, null=True)
+    type_of_variants = models.CharField(max_length=32, choices=VARIANT_TYPES, default=VARIANT_TYPES.small)
     track = models.ManyToManyField(TrackRecord)
     publications = ArrayField(models.TextField(), blank=True, null=True)
     phenotypes = ArrayField(models.TextField(), blank=True, null=True)
