@@ -50,16 +50,22 @@ class STRManager(EntityManager):
         else:
             qs = super().get_queryset().filter(panel__pk__in=Subquery(self.get_latest_ids(deleted)))
         if name:
-            qs = qs.filter(name=name)
+            if type(name) == list:
+                qs = qs.filter(name__in=name)
+            else:
+                qs = qs.filter(name=name)
         if gene_symbol:
-            qs = qs.filter(gene__gene_symbol=gene_symbol)
+            if type(gene_symbol) == list:
+                qs = qs.filter(gene_core__gene_symbol__in=gene_symbol)
+            else:
+                qs = qs.filter(gene_core__gene_symbol=gene_symbol)
 
         return qs.annotate(
-                entity_type=V('str', output_field=models.CharField()),
-                entity_name=models.F('name'),
                 number_of_reviewers=Count('evaluation__user', distinct=True),
                 number_of_evaluated_genes=Count('evaluation'),
                 number_of_genes=Count('pk'),
+                entity_type=V('str', output_field=models.CharField()),
+                entity_name=models.F('name')
             )\
             .prefetch_related('evaluation', 'tags', 'evidence', 'panel', 'panel__level4title', 'panel__panel')\
             .order_by('panel__pk', '-panel__major_version', '-panel__minor_version')

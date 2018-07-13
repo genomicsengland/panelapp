@@ -101,6 +101,20 @@ class GenePanelSnapshotManager(models.Manager):
                 )
             )
 
+    def get_panel_version(self, name, version):
+        qs = super().get_queryset()
+
+        major_version, minor_version = version.split('.')
+
+        if name.isdigit():
+            filters = Q(panel__pk=name)
+        else:
+            filters = Q(panel__old_pk=name) | Q(panel__name=name) | Q(old_panels__contains=[name])\
+                      | Q(panel__name__icontains=name)
+        qs = qs.filter(filters)
+
+        return qs.filter(major_version=major_version, minor_version=minor_version)
+
     def get_gene_panels(self, gene_symbol, all=False, internal=False):
         """Get all panels for a specific gene in Gene entities"""
 

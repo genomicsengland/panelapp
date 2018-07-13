@@ -3,16 +3,22 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework import permissions
 from panels.models import GenePanelSnapshot
+from panels.models import GenePanelEntrySnapshot
+from panels.models import STR
 from panels.models import Activity
 from django.db.models import Q
+from django.db import models
 from .serializers import PanelListSerializer
 from .serializers import PanelSerializer
 from .serializers import PanelVersionListSerializer
 from .serializers import ActivitySerializer
 from .serializers import GeneSerializer
+from .serializers import GeneDetailSerializer
 from .serializers import STRSerializer
+from .serializers import STRDetailSerializer
 from .serializers import EvaluationSerializer
 from django.http import Http404
+from rest_framework.exceptions import APIException
 
 
 class ReadOnlyListViewset(viewsets.mixins.RetrieveModelMixin, viewsets.mixins.ListModelMixin, viewsets.GenericViewSet):
@@ -21,6 +27,7 @@ class ReadOnlyListViewset(viewsets.mixins.RetrieveModelMixin, viewsets.mixins.Li
 
 class PanelsViewSet(ReadOnlyListViewset):
     permission_classes = (permissions.IsAuthenticated, )
+    lookup_value_regex = '.*'
 
     def get_serializer_class(self):
         if self.action == 'list':
@@ -36,8 +43,16 @@ class PanelsViewSet(ReadOnlyListViewset):
         return GenePanelSnapshot.objects.get_active_annotated(all=retired, name=name)
 
     def get_object(self):
-        obj = GenePanelSnapshot.objects.get_active_annotated(
-            all=True, internal=True, deleted=True, name=self.kwargs['pk']).first()
+        version = self.request.query_params.get('version', None)
+        if version:
+            try:
+                _, _ = version.split('.')
+            except ValueError:
+                APIException(detail='Incorrect version supplied', code='incorrect_version')
+
+            obj = GenePanelSnapshot.objects.get_panel_version(name=self.kwargs['pk'], version=version).first()
+        else:
+            obj = GenePanelSnapshot.objects.get_active_annotated(name=self.kwargs['pk']).first()
 
         if obj:
             return obj
@@ -103,6 +118,12 @@ class EntityViewSet(viewsets.mixins.ListModelMixin, viewsets.GenericViewSet):
 
         return Response(EvaluationSerializer(entity.evaluation.all(), many=True).data)
 
+    def filter_by_tag(self, qs):
+        tags = self.request.query_params.get('tags', '')
+        if tags:
+            qs = qs.filter(tags__name__in=tags.split(','))
+        return qs
+
 
 class GeneViewSet(EntityViewSet):
     permission_classes = (permissions.IsAuthenticated,)
@@ -110,7 +131,7 @@ class GeneViewSet(EntityViewSet):
 
     def get_queryset(self):
         panel = self.get_panel()
-        return panel.get_all_genes
+        return self.filter_by_tag(panel.get_all_genes)
 
 
 class STRViewSet(EntityViewSet):
@@ -119,4 +140,63 @@ class STRViewSet(EntityViewSet):
 
     def get_queryset(self):
         panel = self.get_panel()
-        return panel.get_all_strs
+        return self.filter_by_tag(panel.get_all_strs)
+
+
+class EntitySearchViewSet(ReadOnlyListViewset):
+    permission_classes = (permissions.IsAuthenticated,)
+    lookup_field = 'entity_name'
+    lookup_url_kwarg = 'entity_name'
+
+    @property
+    def active_snapshot_ids(self):
+        panel_names = self.request.query_params.get('panel_name', '')
+        if panel_names:
+            all_panels = GenePanelSnapshot.objects.get_active_annotated() \
+                .filter(panel__name__in=panel_names.split(',')) \
+                .values_list('pk', flat=True)
+        else:
+            all_panels = GenePanelSnapshot.objects.get_active_annotated() \
+                .values_list('pk', flat=True)
+
+        return list(all_panels)
+
+    def filter_by_tag(self, qs):
+        tags = self.request.query_params.get('tags', '')
+        if tags:
+            qs = qs.filter(tags__name__in=tags.split(','))
+        return qs
+
+
+class GeneSearchViewSet(EntitySearchViewSet):
+    """Search Genes"""
+    serializer_class = GeneDetailSerializer
+
+    def get_queryset(self):
+        filters = {
+            'pks': self.active_snapshot_ids
+        }
+        if self.kwargs.get('entity_name'):
+            filters['gene_symbol'] = self.kwargs['entity_name'].split(',')
+
+        return self.filter_by_tag(GenePanelEntrySnapshot.objects.get_active(**filters))
+
+    def retrieve(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
+class STRSearchViewSet(EntitySearchViewSet):
+    """Search STRs"""
+    serializer_class = STRDetailSerializer
+
+    def get_queryset(self):
+        filters = {
+            'pks': self.active_snapshot_ids
+        }
+        if self.kwargs.get('entity_name'):
+            filters['name'] = self.kwargs['entity_name'].split(',')
+
+        return self.filter_by_tag(STR.objects.get_active(**filters))
+
+    def retrieve(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)

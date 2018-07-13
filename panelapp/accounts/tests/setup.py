@@ -24,7 +24,7 @@ class SetupUsers(TransactionTestCase):
 
 class LoginReviewerUser(SetupUsers):
     """
-    LoginGELUser sets up session data on the default Client object available via
+    LoginReviewerUser sets up session data on the default Client object available via
     self.client, so in the later tests we don't need to authorise before we make
     the requests.
     """
@@ -45,6 +45,19 @@ class LoginGELUser(SetupUsers):
     def setUp(self):
         super().setUp()
         login_res = self.client.login(username="gel_user", password="pass")
+        assert login_res is True
+
+
+class LoginExternalUser(SetupUsers):
+    """
+    LoginExternalUser sets up session data on the default Client object available via
+    self.client, so in the later tests we don't need to authorise before we make
+    the requests.
+    """
+
+    def setUp(self):
+        super().setUp()
+        login_res = self.client.login(username="external_user", password="pass")
         assert login_res is True
 
 

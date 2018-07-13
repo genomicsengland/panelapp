@@ -16,12 +16,15 @@ from panels.models import STR
 from panels.models import Region
 from psycopg2.extras import NumericRange
 
+from faker import Faker
+fake = Faker()
+
 
 class Level4TitleFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Level4Title
 
-    name = factory.Faker('sentence', nb_words=6, variable_nb_words=True)
+    name = factory.LazyAttribute(lambda x: fake.sentence(nb_words=6, variable_nb_words=True).strip('.'))
     description = factory.Faker('sentence', nb_words=6, variable_nb_words=True)
     level3title = factory.Faker('sentence', nb_words=6, variable_nb_words=True)
     level2title = factory.Faker('sentence', nb_words=6, variable_nb_words=True)
@@ -52,7 +55,7 @@ class GenePanelFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = GenePanel
 
-    name = factory.Faker('sentence')
+    name = factory.LazyAttribute(lambda x: fake.sentence(nb_words=6, variable_nb_words=True).strip('.'))
     genepanelsnapshot = factory.RelatedFactory(GenePanelSnapshotFactory)
 
 
@@ -139,6 +142,18 @@ class GenePanelEntrySnapshotFactory(factory.django.DjangoModelFactory):
                 self.evidence.add(evidence)
 
     @factory.post_generation
+    def tags(self, create, tags, **kwargs):
+        if not create:
+            return
+
+        if not tags:
+            tags = TagFactory.create_batch(1)
+
+        for tag in tags:
+            if tag:
+                self.tags.add(tag)
+
+    @factory.post_generation
     def stats(self, create, stats, **kwargs):
         if not create:
             return
@@ -183,6 +198,18 @@ class STRFactory(factory.django.DjangoModelFactory):
         for evaluation in evaluations:
             if evaluation:
                 self.evaluation.add(evaluation)
+
+    @factory.post_generation
+    def tags(self, create, tags, **kwargs):
+        if not create:
+            return
+
+        if not tags:
+            tags = TagFactory.create_batch(1)
+
+        for tag in tags:
+            if tag:
+                self.tags.add(tag)
 
     @factory.post_generation
     def evidence(self, create, extracted, **kwargs):

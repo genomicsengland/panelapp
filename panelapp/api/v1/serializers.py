@@ -35,58 +35,6 @@ class EvidenceListField(serializers.ListField):
         return data.values_list('name', flat=True) if data else []
 
 
-class GeneSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = GenePanelEntrySnapshot
-        fields = (
-            'gene',
-            'entity_type',
-            'entity_name',
-            'confidence_level',
-            'penetrance',
-            'mode_of_pathogenicity',
-            'publications',
-            'evidence',
-            'phenotypes',
-            'mode_of_inheritance'
-        )
-
-    entity_type = serializers.CharField()
-    entity_name = serializers.CharField()
-    gene = serializers.JSONField()
-    confidence_level = serializers.CharField(source='saved_gel_status')  # FIXME(Oleg) use old values or enum...
-    mode_of_inheritance = serializers.CharField(source='moi')
-    publications = NonEmptyItemsListField()
-    phenotypes = NonEmptyItemsListField()
-    evidence = EvidenceListField()
-
-
-class STRSerializer(GeneSerializer):
-    class Meta:
-        model = STR
-        fields = (
-            'gene',
-            'entity_type',
-            'entity_name',
-            'confidence_level',
-            'penetrance',
-            'mode_of_pathogenicity',
-            'publications',
-            'evidence',
-            'phenotypes',
-            'mode_of_inheritance',
-            'repeated_sequence',
-            'chromosome',
-            'position_37',
-            'position_38',
-            'normal_repeats',
-            'pathogenic_repeats'
-        )
-
-    position_37 = RangeIntegerField()
-    position_38 = RangeIntegerField()
-
-
 class PanelVersionListSerializer(serializers.ModelSerializer):
     class Meta:
         model = GenePanelSnapshot
@@ -112,6 +60,128 @@ class PanelListSerializer(serializers.ModelSerializer):
     version_created = serializers.DateTimeField(source='created', read_only=True)
     relevant_disorders = NonEmptyItemsListField(source='old_panels')
     stats = StatsJSONField(help_text="Object with panel statistics (number of genes or STRs)", read_only=True)
+
+
+class GeneSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = GenePanelEntrySnapshot
+        fields = (
+            'gene',
+            'entity_type',
+            'entity_name',
+            'confidence_level',
+            'penetrance',
+            'mode_of_pathogenicity',
+            'publications',
+            'evidence',
+            'phenotypes',
+            'mode_of_inheritance',
+            'tags'
+        )
+
+    entity_type = serializers.CharField()
+    entity_name = serializers.CharField()
+    gene = serializers.JSONField()
+    confidence_level = serializers.CharField(source='saved_gel_status')  # FIXME(Oleg) use old values or enum...
+    mode_of_inheritance = serializers.CharField(source='moi')
+    publications = NonEmptyItemsListField()
+    phenotypes = NonEmptyItemsListField()
+    evidence = EvidenceListField()
+    tags = serializers.SlugRelatedField(
+        many=True,
+        read_only=True,
+        slug_field='name'
+    )
+
+
+class GeneDetailSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = GenePanelEntrySnapshot
+        fields = (
+            'gene',
+            'entity_type',
+            'entity_name',
+            'confidence_level',
+            'penetrance',
+            'mode_of_pathogenicity',
+            'publications',
+            'evidence',
+            'phenotypes',
+            'mode_of_inheritance',
+            'tags',
+            'panel'
+        )
+
+    entity_type = serializers.CharField()
+    entity_name = serializers.CharField()
+    gene = serializers.JSONField()
+    confidence_level = serializers.CharField(source='saved_gel_status')  # FIXME(Oleg) use old values or enum...
+    mode_of_inheritance = serializers.CharField(source='moi')
+    publications = NonEmptyItemsListField()
+    phenotypes = NonEmptyItemsListField()
+    evidence = EvidenceListField()
+    panel = PanelListSerializer(many=False, read_only=True)
+    tags = serializers.SlugRelatedField(
+        many=True,
+        read_only=True,
+        slug_field='name'
+    )
+
+
+class STRSerializer(GeneSerializer):
+    class Meta:
+        model = STR
+        fields = (
+            'gene',
+            'entity_type',
+            'entity_name',
+            'confidence_level',
+            'penetrance',
+            'mode_of_pathogenicity',
+            'publications',
+            'evidence',
+            'phenotypes',
+            'mode_of_inheritance',
+            'repeated_sequence',
+            'chromosome',
+            'grch37_coordinates',
+            'grch38_coordinates',
+            'normal_repeats',
+            'pathogenic_repeats',
+            'tags'
+        )
+
+    grch37_coordinates = RangeIntegerField(source='position_37')
+    grch38_coordinates = RangeIntegerField(source='position_38')
+
+
+class STRDetailSerializer(GeneDetailSerializer):
+    class Meta:
+        model = STR
+        fields = (
+            'gene',
+            'entity_type',
+            'entity_name',
+            'confidence_level',
+            'penetrance',
+            'mode_of_pathogenicity',
+            'publications',
+            'evidence',
+            'phenotypes',
+            'mode_of_inheritance',
+            'repeated_sequence',
+            'chromosome',
+            'grch37_coordinates',
+            'grch38_coordinates',
+            'normal_repeats',
+            'pathogenic_repeats',
+            'panel',
+            'tags'
+        )
+
+    grch37_coordinates = RangeIntegerField(source='position_37')
+    grch38_coordinates = RangeIntegerField(source='position_38')
+    panel = PanelListSerializer(many=False, read_only=True)
 
 
 class PanelSerializer(PanelListSerializer):

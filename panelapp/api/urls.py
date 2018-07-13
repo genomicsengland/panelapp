@@ -19,6 +19,7 @@ schema_view = get_schema_view(
     permission_classes=(ReadOnlyPermissions, ),
 )
 
+app_name = 'api'
 urlpatterns = [
     path('v1/', include('api.v1.urls', namespace='v1')),
 ]

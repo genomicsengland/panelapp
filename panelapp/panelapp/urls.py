@@ -42,7 +42,7 @@ urlpatterns = [
     path('crowdsourcing/', include('v1rewrites.urls', namespace="v1rewrites")),
     re_path(r'^api/docs(?P<format>\.json|\.yaml)$', schema_view.without_ui(cache_timeout=None), name='schema-json'),
     re_path(r'^api/docs/$', schema_view.with_ui('swagger', cache_timeout=None), name='schema-swagger-ui'),
-    path('api/', include('api.urls')),
+    path('api/', include('api.urls', namespace='api')),
     path('WebServices/', include('webservices.urls', namespace="webservices")),
     path('markdownx/', include('markdownx.urls')),
     path('GeL-admin/', admin.site.urls),

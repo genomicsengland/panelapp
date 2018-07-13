@@ -152,7 +152,7 @@ class GenePanelSnapshotTest(LoginGELUser):
             "gene": gpes.gene_core.pk,
             "gene_name": "Gene name",
             "source": set([source, new_evidence]),
-            "tags": [TagFactory().pk, ] + [tag.name for tag in gpes.tags.all()],
+            "tags": [TagFactory().pk, ] + [tag.pk for tag in gpes.tags.all()],
             "publications": ";".join([publication, fake.sentence()]),
             "phenotypes": ";".join([phenotype, fake.sentence(), fake.sentence()]),
             "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)][0],
@@ -183,7 +183,7 @@ class GenePanelSnapshotTest(LoginGELUser):
             "gene": gpes.gene_core.pk,
             "gene_name": "Gene name",
             "source": set([ev.name for ev in gpes.evidence.all()[1:]]),
-            "tags": [tag.name for tag in gpes.tags.all()],
+            "tags": [tag.pk for tag in gpes.tags.all()],
             "publications": ";".join([publication for publication in gpes.publications]),
             "phenotypes": ";".join([phenotype for phenotype in gpes.phenotypes]),
             "moi": gpes.moi,
@@ -225,7 +225,7 @@ class GenePanelSnapshotTest(LoginGELUser):
         res = self.client.post(url, gene_data)
         assert res.status_code == 302
         gene = GenePanel.objects.get(pk=gpes.panel.panel.pk).active_panel.get_gene(gpes.gene_core.gene_symbol)
-        assert sorted(list(gene.tags.all())) != sorted(list(gpes.tags.all()))
+        assert sorted(list(gene.tags.values_list('pk'))) != sorted(list(gpes.tags.values_list('pk')))
 
     def test_remove_tag_via_edit_details(self):
         """Remove tags via edit gene detail section"""
@@ -276,7 +276,7 @@ class GenePanelSnapshotTest(LoginGELUser):
             "gene": gpes.gene_core.pk,
             "gene_name": "Gene name",
             "source": set([ev.name for ev in gpes.evidence.all()]),
-            "tags": [tag.name for tag in gpes.tags.all()],
+            "tags": [tag.pk for tag in gpes.tags.all()],
             "publications": ";".join([publication for publication in gpes.publications]),
             "phenotypes": ";".join([phenotype for phenotype in gpes.phenotypes]),
             "moi": gpes.moi,
@@ -308,7 +308,7 @@ class GenePanelSnapshotTest(LoginGELUser):
             "gene": gpes.gene_core.pk,
             "gene_name": "Gene name",
             "source": set([ev.name for ev in gpes.evidence.all()]),
-            "tags": [tag.name for tag in gpes.tags.all()],
+            "tags": [tag.pk for tag in gpes.tags.all()],
             "publications": ";".join([fake.sentence(), fake.sentence()]),
             "phenotypes": ";".join([phenotype for phenotype in gpes.phenotypes]),
             "moi": gpes.moi,
@@ -340,7 +340,7 @@ class GenePanelSnapshotTest(LoginGELUser):
             "gene": gpes.gene_core.pk,
             "gene_name": "Gene name",
             "source": set([ev.name for ev in gpes.evidence.all()]),
-            "tags": [tag.name for tag in gpes.tags.all()],
+            "tags": [tag.pk for tag in gpes.tags.all()],
             "publications": ";".join(gpes.publications[:1]),
             "phenotypes": ";".join([phenotype for phenotype in gpes.phenotypes]),
             "moi": gpes.moi,
@@ -371,7 +371,7 @@ class GenePanelSnapshotTest(LoginGELUser):
             "gene": gpes.gene_core.pk,
             "gene_name": "Gene name",
             "source": [ev.name for ev in gpes.evidence.all()],
-            "tags": [TagFactory().pk, ] + [tag.name for tag in gpes.tags.all()],
+            "tags": [TagFactory().pk, ] + [tag.pk for tag in gpes.tags.all()],
             "publications": ";".join(gpes.publications),
             "phenotypes": ";".join(gpes.phenotypes),
             "moi": gpes.moi,
@@ -449,7 +449,7 @@ class GenePanelSnapshotTest(LoginGELUser):
             "gene": new_gene.pk,
             "gene_name": "Other name",
             "source": set([source, Evidence.ALL_SOURCES[randint(0, 9)]]),
-            "tags": [TagFactory().pk, ] + [tag.name for tag in gpes.tags.all()],
+            "tags": [TagFactory().pk, ] + [tag.pk for tag in gpes.tags.all()],
             "publications": ";".join([publication, fake.sentence()]),
             "phenotypes": ";".join([phenotype, fake.sentence(), fake.sentence()]),
             "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)][0],
