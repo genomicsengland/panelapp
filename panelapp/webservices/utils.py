@@ -32,7 +32,7 @@ def convert_moi(moi, back=False):
 
 def convert_mop(mop, back=False):
     short_terms = {
-        'Loss-of-function variants (as defined in pop up message) DO NOT cause this phenotype - please provide details in the comments': 'loss_of_function',  # noqa
+        'Loss-of-function variants (as defined in pop up message) DO NOT cause this phenotype - please provide details in the comments': 'no_loss_of_function',  # noqa
         'Other - please provide details in the comments': 'other'
     }
 
