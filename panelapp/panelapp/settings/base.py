@@ -228,7 +228,7 @@ CORS_ORIGIN_ALLOW_ALL = True
 CORS_URLS_REGEX = r'^/WebServices/.*$'
 CORS_ALLOW_METHODS = ('GET',)
 
-CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', 'amqp://localhost/panelapp')
+CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', 'pyamqp://localhost:5672/')
 
 PACKAGE_VERSION = panelapp.__version__
 
