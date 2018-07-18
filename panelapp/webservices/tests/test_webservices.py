@@ -2,9 +2,11 @@ from django.test import TransactionTestCase
 from django.urls import reverse_lazy
 from panels.models import GenePanel
 from panels.models import GenePanelSnapshot
+from panels.models import Evaluation
 from panels.tests.factories import GenePanelSnapshotFactory
 from panels.tests.factories import GenePanelEntrySnapshotFactory
 from panels.tests.factories import STRFactory
+from webservices.utils import convert_mop
 
 
 class TestWebservices(TransactionTestCase):
@@ -175,3 +177,14 @@ class TestWebservices(TransactionTestCase):
         self.assertEqual(r.status_code, 200)
         self.assertEqual(result_genes, list(sorted(r.json()['result']['Genes'], key=lambda x: x.get('GeneSymbol'))))
 
+    def test_no_loss_of_function(self):
+        url = reverse_lazy('webservices:search_genes', args=(self.gpes.gene_core.gene_symbol,))
+        r = self.client.get("{}?ModeOfPathogenicity={}".format(url, 'no_loss_of_function'))
+        self.assertEqual(len(r.json()['results']), 0)
+
+        self.gpes.mode_of_pathogenicity = convert_mop('no_loss_of_function', back=True)
+        self.gpes.save()
+
+        r = self.client.get("{}?ModeOfPathogenicity={}".format(url, 'no_loss_of_function'))
+        self.assertEqual(len(r.json()['results']), 1)
+        self.assertEqual(r.json()['results'][0]['GeneSymbol'], self.gpes.gene.get('gene_symbol'))
