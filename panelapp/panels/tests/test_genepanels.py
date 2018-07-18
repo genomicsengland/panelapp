@@ -396,8 +396,8 @@ class GenePanelTest(LoginGELUser):
         gene_symbol = gpes.gene_core.gene_symbol
 
         # check we copy evaluation rather than assign it
-        self.assertEqual(gps.panel.active_panel.get_all_genes[0].evaluation.first().genepanelentrysnapshot_set.count(),
-                         1)
+        current_count = gps.panel.active_panel.get_all_genes[0].evaluation.first().genepanelentrysnapshot_set.count()
+        self.assertEqual(current_count, 1)
 
         # check if deleting gene preserves it in the previous versions
         gp = gps.panel

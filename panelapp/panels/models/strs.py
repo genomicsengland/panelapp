@@ -50,12 +50,12 @@ class STRManager(EntityManager):
         else:
             qs = super().get_queryset().filter(panel__pk__in=Subquery(self.get_latest_ids(deleted)))
         if name:
-            if type(name) == list:
+            if isinstance(name, list):
                 qs = qs.filter(name__in=name)
             else:
                 qs = qs.filter(name=name)
         if gene_symbol:
-            if type(gene_symbol) == list:
+            if isinstance(gene_symbol, list):
                 qs = qs.filter(gene_core__gene_symbol__in=gene_symbol)
             else:
                 qs = qs.filter(gene_core__gene_symbol=gene_symbol)
