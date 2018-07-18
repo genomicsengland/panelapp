@@ -69,6 +69,7 @@ setup(
         'ijson==2.3',
         'ujson==1.35',
         'django-admin-list-filter-dropdown==1.0.1',
-        'pytz==2018.4'
+        'pytz==2018.4',
+        'gunicorn==19.9.0',
     ]
 )
