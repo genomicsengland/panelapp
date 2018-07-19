@@ -41,7 +41,7 @@ setup(
     ],
     dev_requires=[
         'django-debug-toolbar==1.9.1',
-        'django-extensions==2.0.7',
+        'django-extensions==2.1.0',
         'ipython==6.4.0'
     ],
     install_requires=[

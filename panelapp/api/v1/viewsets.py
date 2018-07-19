@@ -7,6 +7,7 @@ from panels.models import GenePanelEntrySnapshot
 from panels.models import STR
 from panels.models import Activity
 from django.db.models import Q
+from django.db.models import ObjectDoesNotExist
 from django.db import models
 from .serializers import PanelListSerializer
 from .serializers import PanelSerializer
@@ -27,7 +28,7 @@ class ReadOnlyListViewset(viewsets.mixins.RetrieveModelMixin, viewsets.mixins.Li
 
 class PanelsViewSet(ReadOnlyListViewset):
     permission_classes = (permissions.IsAuthenticated, )
-    lookup_value_regex = '.*'
+    lookup_value_regex = '[^/]+'
 
     def get_serializer_class(self):
         if self.action == 'list':
@@ -108,16 +109,6 @@ class EntityViewSet(viewsets.mixins.ListModelMixin, viewsets.GenericViewSet):
 
         raise Http404
 
-    @action(detail=True)
-    def evaluations(self, request, panel_pk=None, entity_name=None):
-        panel = self.get_panel()
-        if self.serializer_class == GeneSerializer:
-            entity = panel.get_gene(entity_name)
-        elif self.serializer_class == STRSerializer:
-            entity = panel.get_str(entity_name)
-
-        return Response(EvaluationSerializer(entity.evaluation.all(), many=True).data)
-
     def filter_by_tag(self, qs):
         tags = self.request.query_params.get('tags', '')
         if tags:
@@ -132,6 +123,32 @@ class GeneViewSet(EntityViewSet):
     def get_queryset(self):
         panel = self.get_panel()
         return self.filter_by_tag(panel.get_all_genes)
+
+
+class GeneEvaluationsViewSet(EntityViewSet):
+    permission_classes = (permissions.IsAuthenticated,)
+    serializer_class = EvaluationSerializer
+
+    def get_queryset(self):
+        panel = self.get_panel()
+        try:
+            gene = panel.get_gene(self.kwargs['gene_entity_name'])
+            return gene.evaluation.all()
+        except ObjectDoesNotExist:
+            raise Http404
+
+
+class STREvaluationsViewSet(EntityViewSet):
+    permission_classes = (permissions.IsAuthenticated,)
+    serializer_class = EvaluationSerializer
+
+    def get_queryset(self):
+        panel = self.get_panel()
+        try:
+            str_item = panel.get_str(self.kwargs['str_entity_name'])
+            return str_item.evaluation.all()
+        except ObjectDoesNotExist:
+            raise Http404
 
 
 class STRViewSet(EntityViewSet):
@@ -170,6 +187,7 @@ class EntitySearchViewSet(ReadOnlyListViewset):
 
 class GeneSearchViewSet(EntitySearchViewSet):
     """Search Genes"""
+    permission_classes = (permissions.IsAuthenticated,)
     serializer_class = GeneDetailSerializer
 
     def get_queryset(self):
@@ -187,6 +205,7 @@ class GeneSearchViewSet(EntitySearchViewSet):
 
 class STRSearchViewSet(EntitySearchViewSet):
     """Search STRs"""
+    permission_classes = (permissions.IsAuthenticated,)
     serializer_class = STRDetailSerializer
 
     def get_queryset(self):

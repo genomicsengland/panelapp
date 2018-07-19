@@ -158,3 +158,9 @@ class TestAPIV1(LoginExternalUser):
         r = self.client.get(reverse_lazy('api:v1:panels-detail', args=(super_panel.panel.pk,)))
         self.assertEqual(r.status_code, 200)
         self.assertEqual(result_genes, list(sorted(r.json()['genes'], key=lambda x: x.get('gene_symbol'))))
+
+    def test_evaluations(self):
+        r = self.client.get(reverse_lazy('api:v1:genes-evaluations-list', args=(self.gpes.panel.panel.pk,
+                                                                                self.gpes.gene_core.gene_symbol)))
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(len(r.json()['results']), 4)
