@@ -3,17 +3,20 @@ from django.db.models import Q
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework import permissions
+from rest_framework import pagination
+from rest_framework import generics
 from .utils import convert_moi
 from .utils import convert_mop
 from .utils import convert_evidences
 from .utils import convert_gel_status
+from .utils import convert_confidence_level
 
 from panels.models import GenePanel
 from panels.models import GenePanelSnapshot
 from panels.models import GenePanelEntrySnapshot
 from .serializers import PanelSerializer
-from .serializers import ListPanelSerializer
 from .serializers import GenesSerializer
+from .serializers import EntitySerializer
 
 
 def filter_entity_list(entity_list, moi=None, mop=None, penetrance=None, conf_level=None, evidence=None,
@@ -222,3 +225,77 @@ def search_by_gene(request, gene):
     data["results"] = serializer.to_representation(panels_ids_dict)
     data["meta"]["numOfResults"] = len(data["results"])
     return Response(data)
+
+
+class EntitiesPagination(pagination.PageNumberPagination):
+    page_size = 100
+    page_size_query_param = 'page_size'
+    max_page_size = 200
+
+
+class EntitiesListView(generics.ListAPIView):
+    serializer_class = EntitySerializer
+    pagination_class = EntitiesPagination
+
+    def get_queryset(self):
+        filters = {}
+        entity_name = self.request.query_params.get('entity_name')
+
+        entity_names_qs = None
+        if entity_name != "all":
+            for g in entity_name.split(","):
+                if not entity_names_qs:
+                    entity_names_qs = Q(entity_name=g)
+                else:
+                    entity_names_qs = entity_names_qs | Q(entity_name=g)
+
+        if self.request.query_params.get('ModeOfInheritance'):
+            filters["moi__in"] = [
+                convert_moi(x, True)
+                for x in self.request.query_params.get("ModeOfInheritance").split(",")
+                if convert_moi(x, True)
+            ]
+
+        if self.request.query_params.get('ModeOfPathogenicity'):
+            filters["mode_of_pathogenicity__in"] = [
+                convert_mop(x, True)
+                for x in self.request.query_params.get("ModeOfPathogenicity").split(",")
+                if convert_mop(x, True)
+            ]
+
+        if self.request.query_params.get('Penetrance'):
+            filters["penetrance__in"] = self.request.query_params.get("Penetrance").split(",")
+        if self.request.query_params.get('LevelOfConfidence'):
+            filters["saved_gel_status__in"] = [
+                convert_confidence_level(level)
+                for level in self.request.query_params.get("LevelOfConfidence").split(",")
+                if level
+            ]
+        if self.request.query_params.get('Evidences'):
+            filters["evidence__name__in"] = [
+                convert_evidences(x, True)
+                for x in self.request.query_params.get("Evidences").split(",")
+                if convert_evidences(x, True)
+            ]
+        if self.request.query_params.get('panel_name'):
+            panel_names = self.request.query_params.get("panel_name").split(",")
+        else:
+            panel_names = None
+
+        if panel_names:
+            all_panels = GenePanelSnapshot.objects.get_active_annotated().filter(panel__name__in=panel_names)
+        else:
+            all_panels = GenePanelSnapshot.objects.get_active_annotated()
+
+        panels_ids_dict = {panel.panel.pk: (panel.panel.pk, panel) for panel in all_panels}
+        filters.update({'panel__panel__pk__in': list(panels_ids_dict.keys())})
+
+        # TODO FIXME WIP
+
+        # chain 2 queries - str and gene items for the specific values only which we need, otherwise just ignore
+        # also annotate the missing values for genes, i.e. positions, etc, etc, otherwise it would fail
+
+        return
+
+
+list_entities = EntitiesListView.as_view()

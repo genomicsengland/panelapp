@@ -230,3 +230,52 @@ class ListPanelSerializer(serializers.BaseSerializer):
 
     def to_internal_value(self, data):
         pass
+
+
+class EntitySerializer(EnsembleIdMixin, serializers.BaseSerializer):
+    def to_representation(self, entity):
+        out = {
+            "GeneSymbol": entity.gene.get('gene_symbol'),
+            "EntityType": entity.entity_type,
+            "EnsembleGeneIds": self.get_ensemblId(entity) if entity.gene else None,
+            "ModeOfInheritance": make_null(convert_moi(entity.moi)),
+            "Penetrance": make_null(entity.penetrance),
+            "Publications": make_null(entity.publications),
+            "Phenotypes": make_null(entity.phenotypes),
+            "LevelOfConfidence": convert_gel_status(entity.saved_gel_status),
+            "Evidences": [ev.name for ev in entity.evidence.all()],
+            "Panel": {
+                "Name": entity.panel.panel.name,
+                "DiseaseSubGroup": entity.panel.level4title.level3title,
+                "DiseaseGroup": entity.panel.level4title.level2title,
+                "CurrentVersion": entity.panel.version,
+                "CurrentCreated": entity.panel.created,
+                "Panel_Id": entity.panel.panel.old_pk if entity.panel.panel.old_pk else str(entity.panel.panel.pk),
+                "Relevant_disorders": filter(filter_empty, entity.panel.old_panels),
+                "Status": entity.panel.panel.status,
+            }
+        }
+
+        if entity.entity_type == 'gene':
+            out["ModeOfPathogenicity"] = make_null(entity.mode_of_pathogenicity)
+        elif entity.entity_type == 'str':
+            out["Name"] = entity.name
+            out["Chromosome"] = entity.chromosome
+            out["GRCh37Coordinates"] = [entity.position_37.lower, entity.position_37.upper]
+            out["GRCh38Coordinates"] = [entity.position_38.lower, entity.position_38.upper]
+            out["RepeatedSequence"] = entity.repeated_sequence
+            out["NormalRepeats"] = entity.normal_repeats
+            out["PathogenicRepeats"] = entity.pathogenic_repeats
+        else:
+            raise Exception('Incorrect entity type for {}'.format(entity))
+
+        return out
+
+    def update(self, instance, validated_data):
+        pass
+
+    def create(self, validated_data):
+        pass
+
+    def to_internal_value(self, data):
+        pass
