@@ -332,7 +332,7 @@ class RegionReviewTest(LoginGELUser):
         res = self.client.post(url, data, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
         gene = GenePanel.objects.get(pk=region.panel.panel.pk).active_panel.get_region(region.name)
         assert res.json().get('status') == 200
-        assert Comment.objects.count() == 2
+        assert Comment.objects.count() == 3
         assert gene.saved_gel_status == new_status
 
         new_status = 2
@@ -341,7 +341,7 @@ class RegionReviewTest(LoginGELUser):
         res = self.client.post(url, data, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
         gene = GenePanel.objects.get(pk=region.panel.panel.pk).active_panel.get_region(region.name)
         assert res.json().get('status') == 200
-        assert Comment.objects.count() == 3
+        assert Comment.objects.count() == 6
         assert gene.saved_gel_status == new_status
 
         new_status = 3
@@ -350,7 +350,7 @@ class RegionReviewTest(LoginGELUser):
         res = self.client.post(url, data, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
         gene = GenePanel.objects.get(pk=region.panel.panel.pk).active_panel.get_region(region.name)
         assert res.json().get('status') == 200
-        assert Comment.objects.count() == 4
+        assert Comment.objects.count() == 10
         assert gene.saved_gel_status == new_status
         assert gene.panel.version != region.panel.version
 
@@ -371,7 +371,7 @@ class RegionReviewTest(LoginGELUser):
             "publications": ";".join([fake.sentence(), fake.sentence()]),
             "phenotypes": ";".join([fake.sentence(), fake.sentence(), fake.sentence()]),
             "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)],
-            "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][randint(1, 2)],
+            "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][randint(1, 2)][0],
         }
         self.client.post(evaluation_url, gene_data, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
         gene = GenePanel.objects.get(pk=region.panel.panel.pk).active_panel.get_region(region.name)
