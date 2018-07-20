@@ -131,15 +131,15 @@ class EvaluationRegionTest(LoginGELUser):
             "comments": fake.sentence(),
             "publications": ";".join([fake.sentence(), fake.sentence()]),
             "phenotypes": ";".join(old_phenotypes),
-            "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)],
-            "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][randint(1, 2)],
+            "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)][0],
+            "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][randint(1, 2)][0],
         }
         self.client.post(url, gene_data)
         assert Evaluation.objects.filter(user=self.gel_user).count() == 1
 
         gene_data = {
-            "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)],
-            "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][randint(1, 2)],
+            "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)][0],
+            "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][randint(1, 2)][0],
         }
         self.client.post(url, gene_data)
         assert Evaluation.objects.filter(user=self.gel_user).count() == 1
@@ -406,8 +406,8 @@ class RegionReviewTest(LoginGELUser):
             "comments": fake.sentence(),
             "publications": ";".join([fake.sentence(), fake.sentence()]),
             "phenotypes": ";".join([fake.sentence(), fake.sentence(), fake.sentence()]),
-            "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)],
-            "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][randint(1, 2)],
+            "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)][0],
+            "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][randint(1, 2)][0],
         }
         self.client.post(evaluation_url, gene_data, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
         gene = GenePanel.objects.get(pk=region.panel.panel.pk).active_panel.get_region(region.name)
@@ -445,8 +445,8 @@ class RegionReviewTest(LoginGELUser):
             "comments": comment,
             "publications": ";".join([fake.sentence(), fake.sentence()]),
             "phenotypes": ";".join([fake.sentence(), fake.sentence(), fake.sentence()]),
-            "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)],
-            "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][randint(1, 2)],
+            "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)][0],
+            "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][randint(1, 2)][0],
         }
         self.client.post(evaluation_url, gene_data, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
         gene = GenePanel.objects.get(pk=region.panel.panel.pk).active_panel.get_region(region.name)
