@@ -16,7 +16,8 @@ from .serializers import ListPanelSerializer
 from .serializers import GenesSerializer
 
 
-def filter_entity_list(entity_list, moi=None, mop=None, penetrance=None, conf_level=None, evidence=None):
+def filter_entity_list(entity_list, moi=None, mop=None, penetrance=None, conf_level=None, evidence=None,
+                       haploinsufficiency_score=None, triplosensitivity_score=None):
     final_list = []
     for entity in entity_list:
         filters = True
@@ -31,6 +32,13 @@ def filter_entity_list(entity_list, moi=None, mop=None, penetrance=None, conf_le
             filters = False
         if evidence is not None and not set([ev.name for ev in entity.evidence.all]).intersection(set(evidence)):
             filters = False
+
+        if entity.is_region():
+            if haploinsufficiency_score and entity.haploinsufficiency_score not in haploinsufficiency_score:
+                filters = False
+            if triplosensitivity_score and entity.triplosensitivity_score not in triplosensitivity_score:
+                filters = False
+
         if filters:
             final_list.append(entity)
     return final_list
@@ -50,6 +58,10 @@ def get_panel(request, panel_name):
         filters["penetrance"] = request.GET["Penetrance"].split(",")
     if "LevelOfConfidence" in request.GET:
         filters["conf_level"] = request.GET["LevelOfConfidence"].split(",")
+    if "HaploinsufficiencyScore" in request.GET:
+        filters["haploinsufficiency_score"] = request.GET["HaploinsufficiencyScore"].split(',')
+    if "TriplosensitivityScore" in request.GET:
+        filters["triplosensitivity_score"] = request.GET["TriplosensitivityScore"].split(',')
 
     if "version" in request.GET:
         version = request.GET["version"]
@@ -135,6 +147,7 @@ def get_panel(request, panel_name):
     serializer = PanelSerializer(
         filter_entity_list(instance.get_all_genes_extra, **filters),
         filter_entity_list(instance.get_all_strs_extra, **filters),
+        filter_entity_list(instance.get_all_regions_extra, **filters),
         instance=instance,
         context={'request': request}
     )

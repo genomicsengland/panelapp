@@ -2,7 +2,8 @@
 
 from collections import OrderedDict
 from django import forms
-from .helpers import GELSimpleArrayField
+from django.contrib.postgres.forms import SimpleArrayField
+from django.contrib.postgres.forms import IntegerRangeField
 from dal_select2.widgets import ModelSelect2
 from dal_select2.widgets import Select2Multiple
 from dal_select2.widgets import ModelSelect2Multiple
@@ -11,19 +12,20 @@ from panels.models import Tag
 from panels.models import Gene
 from panels.models import Evidence
 from panels.models import Evaluation
-from panels.models import GenePanelEntrySnapshot
+from panels.models import Region
 from panels.models import GenePanel
 
 
-class PanelGeneForm(forms.ModelForm):
-    """The goal for this form is to add a Gene to a Panel.
+class PanelRegionForm(forms.ModelForm):
+    """
+    The goal for this form is to add a Region to a Panel.
 
     How this works:
 
-    This form actually contains data for multiple models: GenePanelEntrySnapshot,
+    This form actually contains data for multiple models: Regopm,
     Evidence, Evaluation. Some of this data is duplicated, and it's not clear if
     it needs to stay this way or should be refactored and moved to the models where
-    it belongs. I.e. GenePanelEntrySnapshot has moi, mop, comments, etc. It's
+    it belongs. I.e. GenePanelEntrySnapshot has moi, comments, etc. It's
     not clear if we need to keep it here, or move it to Evaluation model since
     it has the same values.
 
@@ -39,6 +41,7 @@ class PanelGeneForm(forms.ModelForm):
 
     gene = forms.ModelChoiceField(
         label="Gene symbol",
+        required=False,
         queryset=Gene.objects.filter(active=True),
         widget=ModelSelect2(
             url="autocomplete-gene",
@@ -46,7 +49,10 @@ class PanelGeneForm(forms.ModelForm):
         )
     )
 
-    gene_name = forms.CharField()
+    position_37 = IntegerRangeField(require_all_fields=True, required=True)
+    position_38 = IntegerRangeField(require_all_fields=True, required=True)
+
+    gene_name = forms.CharField(required=False)
 
     source = Select2ListMultipleChoiceField(
         choice_list=Evidence.ALL_SOURCES, required=False,
@@ -57,13 +63,13 @@ class PanelGeneForm(forms.ModelForm):
         widget=ModelSelect2Multiple(url="autocomplete-tags")
     )
 
-    publications = GELSimpleArrayField(
+    publications = SimpleArrayField(
         forms.CharField(),
         label="Publications (PMID: 1234;4321)",
         delimiter=";",
         required=False
     )
-    phenotypes = GELSimpleArrayField(
+    phenotypes = SimpleArrayField(
         forms.CharField(),
         label="Phenotypes (separate using a semi-colon - ;)",
         delimiter=";",
@@ -75,12 +81,20 @@ class PanelGeneForm(forms.ModelForm):
         required=False
     )
     current_diagnostic = forms.BooleanField(required=False)
+
     comments = forms.CharField(widget=forms.Textarea, required=False)
 
     class Meta:
-        model = GenePanelEntrySnapshot
+        model = Region
         fields = (
-            'mode_of_pathogenicity',
+            'name',
+            'verbose_name',
+            'chromosome',
+            'position_37',
+            'position_38',
+            'haploinsufficiency_score',
+            'triplosensitivity_score',
+            'required_overlap_percentage',
             'moi',
             'penetrance',
             'type_of_variants',
@@ -96,11 +110,22 @@ class PanelGeneForm(forms.ModelForm):
         original_fields = self.fields
 
         self.fields = OrderedDict()
+        self.fields['name'] = original_fields.get('name')
+        self.fields['verbose_name'] = original_fields.get('verbose_name')
+        self.fields['chromosome'] = original_fields.get('chromosome')
+        self.fields['position_37'] = original_fields.get('position_37')
+        self.fields['position_37'].widget.widgets[0].attrs = {'placeholder': 'Position start (GRCh37)'}
+        self.fields['position_37'].widget.widgets[1].attrs = {'placeholder': 'Position end (GRCh37)'}
+        self.fields['position_38'] = original_fields.get('position_38')
+        self.fields['position_38'].widget.widgets[0].attrs = {'placeholder': 'Position start (GRCh38)'}
+        self.fields['position_38'].widget.widgets[1].attrs = {'placeholder': 'Position end (GRCh38)'}
+        self.fields['haploinsufficiency_score'] = original_fields.get('haploinsufficiency_score')
+        self.fields['triplosensitivity_score'] = original_fields.get('triplosensitivity_score')
+        self.fields['required_overlap_percentage'] = original_fields.get('required_overlap_percentage')
         self.fields['gene'] = original_fields.get('gene')
         if self.instance.pk:
             self.fields['gene_name'] = original_fields.get('gene_name')
         self.fields['source'] = original_fields.get('source')
-        self.fields['mode_of_pathogenicity'] = original_fields.get('mode_of_pathogenicity')
         self.fields['moi'] = original_fields.get('moi')
         self.fields['moi'].required = False
         self.fields['penetrance'] = original_fields.get('penetrance')
@@ -124,65 +149,66 @@ class PanelGeneForm(forms.ModelForm):
             raise forms.ValidationError('Please select a mode of inheritance')
         return self.cleaned_data['moi']
 
-    def clean_gene(self):
+    def clean_name(self):
         """Check if gene exists in a panel if we add a new gene or change the gene"""
 
-        gene_symbol = self.cleaned_data['gene'].gene_symbol
-        if not self.instance.pk and self.panel.has_gene(gene_symbol):
+        name = self.cleaned_data['name']
+        if not self.instance.pk and self.panel.has_region(name):
             raise forms.ValidationError(
-                "Gene has already been added to the panel",
-                code='gene_exists_in_panel',
+                "Region has already been added to the panel",
+                code='region_exists_in_panel',
             )
-        elif self.instance.pk and 'gene' in self.changed_data \
-                and gene_symbol != self.instance.gene.get('gene_symbol')\
-                and self.panel.has_gene(gene_symbol):
+        elif self.instance.pk and 'name' in self.changed_data \
+                and name != self.instance.name \
+                and self.panel.has_region(name):
             raise forms.ValidationError(
-                "Gene has already been added to the panel",
-                code='gene_exists_in_panel',
+                "Region has already been added to the panel",
+                code='region_exists_in_panel',
             )
-        if not self.cleaned_data.get('gene_name'):
-            self.cleaned_data['gene_name'] = self.cleaned_data['gene'].gene_name
+        if not self.cleaned_data.get('name'):
+            self.cleaned_data['name'] = self.cleaned_data['name']
 
-        return self.cleaned_data['gene']
+        return self.cleaned_data['name']
 
     def save(self, *args, **kwargs):
         """Don't save the original panel as we need to increment version first"""
         return False
 
-    def save_gene(self, *args, **kwargs):
+    def save_region(self, *args, **kwargs):
         """Saves the gene, increments version and returns the gene back"""
 
-        gene_data = self.cleaned_data
-        gene_data['sources'] = gene_data.pop('source')
+        region_data = self.cleaned_data
+        region_data['sources'] = region_data.pop('source')
 
-        if gene_data.get('comments'):
-            gene_data['comment'] = gene_data.pop('comments')
+        if region_data.get('comments'):
+            region_data['comment'] = region_data.pop('comments')
 
         if self.initial:
-            initial_gene_symbol = self.initial['gene_json'].get('gene_symbol')
+            initial_name = self.initial['name']
         else:
-            initial_gene_symbol = None
+            initial_name = None
 
-        new_gene_symbol = gene_data.get('gene').gene_symbol
+        new_region_name = region_data['name']
 
-        if self.initial and self.panel.has_gene(initial_gene_symbol):
+        if self.initial and self.panel.has_region(initial_name):
             self.panel = self.panel.increment_version()
             self.panel = GenePanel.objects.get(pk=self.panel.panel.pk).active_panel
-            self.panel.update_gene(
+            self.panel.update_region(
                 self.request.user,
-                initial_gene_symbol,
-                gene_data
+                initial_name,
+                region_data,
+                remove_gene=True if not region_data.get('gene') else False
             )
             self.panel = GenePanel.objects.get(pk=self.panel.panel.pk).active_panel
-            return self.panel.get_gene(new_gene_symbol)
+            return self.panel.get_region(new_region_name)
         else:
             increment_version = self.request.user.is_authenticated and self.request.user.reviewer.is_GEL()
-            gene = self.panel.add_gene(
+            region = self.panel.add_region(
                 self.request.user,
-                new_gene_symbol,
-                gene_data,
+                new_region_name,
+                region_data,
                 increment_version
             )
             self.panel = GenePanel.objects.get(pk=self.panel.panel.pk).active_panel
             self.panel.update_saved_stats()
-            return gene
+            return region

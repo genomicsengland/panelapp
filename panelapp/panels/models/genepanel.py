@@ -69,6 +69,7 @@ class GenePanel(TimeStampedModel):
                 'panel',
                 'level4title',
                 'str_set',
+                'region_set',
                 'genepanelentrysnapshot_set__evaluation__user',
                 'genepanelentrysnapshot_set__evaluation__user__reviewer'
             ).annotate(

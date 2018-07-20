@@ -10,10 +10,13 @@ from panelapp.mixins import GELReviewerRequiredMixin
 from panelapp.mixins import VerifiedReviewerRequiredMixin
 from .forms import PanelGeneForm
 from .forms import PanelSTRForm
+from .forms import PanelRegionForm
 from .forms import GeneReadyForm
 from .forms import GeneReviewForm
 from .forms import STRReviewForm
 from .forms import STRReadyForm
+from .forms import RegionReviewForm
+from .forms import RegionReadyForm
 from .forms.ajax import UpdateGeneTagsForm
 from .forms.ajax import UpdateGeneMOPForm
 from .forms.ajax import UpdateGeneMOIForm
@@ -25,6 +28,11 @@ from .forms.ajax import UpdateSTRMOIForm
 from .forms.ajax import UpdateSTRPhenotypesForm
 from .forms.ajax import UpdateSTRPublicationsForm
 from .forms.ajax import UpdateSTRRatingForm
+from .forms.ajax import UpdateRegionTagsForm
+from .forms.ajax import UpdateRegionMOIForm
+from .forms.ajax import UpdateRegionPhenotypesForm
+from .forms.ajax import UpdateRegionPublicationsForm
+from .forms.ajax import UpdateRegionRatingForm
 
 from .forms.ajax import EditCommentForm
 from .models import GenePanel
@@ -103,6 +111,17 @@ class GeneClearDataAjaxMixin(BaseAjaxGeneMixin, EntityMixin):
                 )
             })
             details = render(self.request, 'panels/strs/details.html', ctx)
+        elif self.is_region():
+            ctx.update({
+                'panel': self.panel,
+                'form_edit': PanelRegionForm(
+                    instance=self.object,
+                    initial=self.object.get_form_initial(),
+                    panel=self.panel,
+                    request=self.request
+                )
+            })
+            details = render(self.request, 'panels/region/details.html', ctx)
 
         return {
             'inner-fragments': {
@@ -150,26 +169,31 @@ class ClearSourcesAjaxView(GELReviewerRequiredMixin, GeneClearDataAjaxMixin, AJA
 class ClearSingleSourceAjaxView(EntityMixin, GELReviewerRequiredMixin, BaseAjaxGeneMixin, AJAXMixin, View):
     def get_template_names(self):
         if self.is_gene():
-            return "panels/genepanel_table.html"
-        elif self.is_str():
-            return "panels/strs_table.html"
+            return "panels/entities_list_table.html"
 
     def process(self):
         self.panel.increment_version()
         if self.is_gene():
             self.panel.get_gene(self.kwargs['entity_name'])\
                 .clear_evidences(self.request.user, evidence=self.kwargs['source'])
+        elif self.is_str():
+            self.panel.get_str(self.kwargs['entity_name'])\
+                .clear_evidences(self.request.user, evidence=self.kwargs['source'])
+        elif self.is_region():
+            self.panel.get_region(self.kwargs['entity_name'])\
+                .clear_evidences(self.request.user, evidence=self.kwargs['source'])
         self.panel.update_saved_stats()
         return self.return_data()
 
     def return_data(self):
         ctx = {
-            'panel': self.panel
+            'panel': self.panel,
+            'entities': self.panel.get_all_entities_extra
         }
         table = render(self.request, self.get_template_names(), ctx)
         return {
             'inner-fragments': {
-                '#genes_table': table
+                '#entities_table': table
             }
         }
 
@@ -218,46 +242,55 @@ class ApprovePanelAjaxView(GELReviewerRequiredMixin, PanelAjaxMixin, AJAXMixin, 
 class DeleteEntityAjaxView(EntityMixin, GELReviewerRequiredMixin, BaseAjaxGeneMixin, AJAXMixin, View):
     def get_template_names(self):
         if self.is_gene():
-            return "panels/genepanel_table.html"
-        elif self.is_str():
-            return "panels/strs_table.html"
+            return "panels/entities_list_table.html"
 
     def process(self):
         if self.is_gene():
             self.panel.delete_gene(self.kwargs['entity_name'], True, self.request.user)
         elif self.is_str():
             self.panel.delete_str(self.kwargs['entity_name'], True, self.request.user)
+        elif self.is_region():
+            self.panel.delete_region(self.kwargs['entity_name'], True, self.request.user)
 
         del self.panel
         return self.return_data()
 
     def return_data(self):
         ctx = {
-            'panel': self.panel
+            'panel': self.panel,
+            'entities': self.panel.get_all_entities_extra
         }
         table = render(self.request, self.get_template_names(), ctx)
         return {
             'inner-fragments': {
-                '#genes_table' if self.is_gene() else '#strs_table': table  # TODO(Oleg) refactor
+                '#entities_table': table
             }
         }
 
 
-class ApproveGeneAjaxView(GELReviewerRequiredMixin, BaseAjaxGeneMixin, AJAXMixin, View):
-    template_name = "panels/genepanel_table.html"
+class ApproveEntityAjaxView(GELReviewerRequiredMixin, BaseAjaxGeneMixin, AJAXMixin, View):
+    template_name = "panels/entities_list_table.html"
 
     def process(self):
-        self.panel.get_gene(self.kwargs['gene_symbol']).approve_gene()  # TODO(Oleg) refactor
+        if self.is_gene():
+            self.panel.get_gene(self.kwargs['entity_symbol']).approve_entity()
+        if self.is_str():
+            self.panel.get_str(self.kwargs['entity_symbol']).approve_entity()
+        if self.is_region():
+            self.panel.get_region(self.kwargs['entity_symbol']).approve_entity()
+        del self.panel
+
         return self.return_data()
 
     def return_data(self):
         ctx = {
-            'panel': self.panel
+            'panel': self.panel,
+            'entities': self.panel.get_all_entities_extra
         }
         table = render(self.request, self.template_name, ctx)
         return {
             'inner-fragments': {
-                '#genes_table': table  # TODO(Oleg) refactor
+                '#entities_table': table  # TODO(Oleg) refactor
             }
         }
 
@@ -349,26 +382,50 @@ class UpdateEvaluationsMixin(VerifiedReviewerRequiredMixin, BaseAjaxGeneMixin, E
             ctx['edit_entity_phenotypes_form'] = UpdateSTRPhenotypesForm(instance=self.object)
             ctx['edit_entity_publications_form'] = UpdateSTRPublicationsForm(instance=self.object)
             ctx['edit_entity_rating_form'] = UpdateSTRRatingForm(instance=self.object)
+        elif self.is_region():
+            ctx['form_edit'] = PanelRegionForm(
+                instance=self.object,
+                initial=self.object.get_form_initial(),
+                panel=self.panel,
+                request=self.request
+            )
+            ctx['entity_ready_form'] = RegionReadyForm(
+                instance=self.object,
+                initial={},
+                request=self.request,
+            )
+
+            ctx['form'] = RegionReviewForm(
+                panel=self.panel,
+                request=self.request,
+                region=self.object
+            )
+
+            ctx['edit_entity_tags_form'] = UpdateRegionTagsForm(instance=self.object)
+            ctx['edit_entity_moi_form'] = UpdateRegionMOIForm(instance=self.object)
+            ctx['edit_entity_phenotypes_form'] = UpdateRegionPhenotypesForm(instance=self.object)
+            ctx['edit_entity_publications_form'] = UpdateRegionPublicationsForm(instance=self.object)
+            ctx['edit_entity_rating_form'] = UpdateRegionRatingForm(instance=self.object)
 
         return ctx
 
     def return_data(self):
         ctx = self.get_context_data()
 
+        evaluations = render(self.request, 'panels/entity/evaluate.html', ctx)
+        reviews = render(self.request, 'panels/entity/review/review_evaluations.html', ctx)
+        genes_list = render(self.request, 'panels/entity/evaluation_genes_list.html', ctx)
+        strs_list = render(self.request, 'panels/entity/evaluation_strs_list.html', ctx)
+        regions_list = render(self.request, 'panels/entity/evaluation_regions_list.html', ctx)
+        history = render(self.request, 'panels/entity/history.html', ctx)
+        header = render(self.request, 'panels/entity/header.html', ctx)
+
         if self.is_gene():
-            evaluations = render(self.request, 'panels/entity/evaluate.html', ctx)
-            reviews = render(self.request, 'panels/entity/review/review_evaluations.html', ctx)
             details = render(self.request, 'panels/genepanelentrysnapshot/details.html', ctx)
-            genes_list = render(self.request, 'panels/entity/evaluation_genes_list.html', ctx)
-            history = render(self.request, 'panels/entity/history.html', ctx)
-            header = render(self.request, 'panels/entity/header.html', ctx)
         elif self.is_str():
-            evaluations = render(self.request, 'panels/entity/evaluate.html', ctx)
-            reviews = render(self.request, 'panels/entity/review/review_evaluations.html', ctx)
             details = render(self.request, 'panels/strs/details.html', ctx)
-            genes_list = render(self.request, 'panels/entity/evaluation_genes_list.html', ctx)
-            history = render(self.request, 'panels/entity/history.html', ctx)
-            header = render(self.request, 'panels/entity/header.html', ctx)
+        elif self.is_region():
+            details = render(self.request, 'panels/region/details.html', ctx)
 
         return {
             'inner-fragments': {
@@ -376,6 +433,8 @@ class UpdateEvaluationsMixin(VerifiedReviewerRequiredMixin, BaseAjaxGeneMixin, E
                 '#review-evaluations': reviews,
                 '#details': details,
                 '#genes_list': genes_list,
+                '#strs_list': strs_list,
+                '#regions_list': regions_list,
                 '#history': history,
                 '#gene_header': header
             }
@@ -391,6 +450,8 @@ class UpdateEntityTagsAjaxView(GELReviewerRequiredMixin, UpdateEvaluationsMixin)
             return UpdateGeneTagsForm
         elif self.is_str():
             return UpdateSTRTagsForm
+        elif self.is_region():
+            return UpdateRegionTagsForm
 
     def process(self):
         form = self.form_class(instance=self.object, data=self.request.POST)
@@ -428,7 +489,7 @@ class UpdateEntityMOPAjaxView(GELReviewerRequiredMixin, UpdateEvaluationsMixin):
         return None
 
     def process(self):
-        if self.is_str():
+        if self.is_str() or self.is_region():
             return {'status': 501, 'reason': 'Not implemented'}
 
         form = self.form_class(instance=self.object, data=self.request.POST)
@@ -459,6 +520,8 @@ class UpdateEntityMOIAjaxView(GELReviewerRequiredMixin, UpdateEvaluationsMixin):
             return UpdateGeneMOIForm
         elif self.is_str():
             return UpdateSTRMOIForm
+        elif self.is_region():
+            return UpdateRegionMOIForm
 
     def process(self):
         form = self.form_class(instance=self.object, data=self.request.POST)
@@ -489,6 +552,8 @@ class UpdateEntityPhenotypesAjaxView(GELReviewerRequiredMixin, UpdateEvaluations
             return UpdateGenePhenotypesForm
         elif self.is_str():
             return UpdateSTRPhenotypesForm
+        elif self.is_region():
+            return UpdateRegionPhenotypesForm
 
     def process(self):
         form = self.form_class(instance=self.object, data=self.request.POST)
@@ -519,6 +584,8 @@ class UpdateEntityPublicationsAjaxView(GELReviewerRequiredMixin, UpdateEvaluatio
             return UpdateGenePublicationsForm
         elif self.is_str():
             return UpdateSTRPublicationsForm
+        elif self.is_region():
+            return UpdateRegionPublicationsForm
 
     def process(self):
         form = self.form_class(instance=self.object, data=self.request.POST)
@@ -549,6 +616,8 @@ class UpdateEntityRatingAjaxView(GELReviewerRequiredMixin, UpdateEvaluationsMixi
             return UpdateGeneRatingForm
         elif self.is_str():
             return UpdateSTRRatingForm
+        elif self.is_region():
+            return UpdateRegionRatingForm
 
     def process(self):
         form = self.form_class(instance=self.object, data=self.request.POST)
@@ -616,6 +685,12 @@ class SubmitEntityCommentFormAjaxView(VerifiedReviewerRequiredMixin, EntityMixin
                 'pk': self.panel.panel.pk,
                 'entity_name': self.object.name,
                 'entity_type': 'str'
+            }
+        elif self.is_region():
+            kwargs = {
+                'pk': self.panel.panel.pk,
+                'entity_name': self.object.name,
+                'entity_type': 'region'
             }
         return redirect(reverse_lazy('panels:evaluation', kwargs=kwargs))
 

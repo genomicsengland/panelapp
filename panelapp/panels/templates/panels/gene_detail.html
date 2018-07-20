@@ -8,7 +8,7 @@
 
 {% block content %}
 <ol class="breadcrumb">
-  <li><a href="{% url 'panels:entities_list' %}">Genes</a></li>
+  <li><a href="{% url 'panels:entities_list' %}">Entities</a></li>
   <li class="active">{{ gene_symbol }}</li>
 </ol>
 <h1>
@@ -94,6 +94,10 @@
                       <a href="{% url 'panels:evaluation' entry.panel.panel.id 'str' entry.name %}" class="link-inherit gel-text {{ entry|gene_list_class }} js-open-on-submit">{{ entry.name }}</a> <span class="gel-banner gel-added" style="font-size:16px;">STR</span> in <a href="{% url 'panels:detail' entry.panel.panel.id %}" class="js-open-on-submit">
                         {{ entry.panel.level4title.name }}
                       </a>
+                    {% elif entry.is_region %}
+                      <a href="{% url 'panels:evaluation' entry.panel.panel.id 'region' entry.name %}" class="link-inherit gel-text {{ entry|gene_list_class }} js-open-on-submit">{{ entry.name }}</a> <span class="gel-banner gel-added" style="font-size:16px;">Region</span> in <a href="{% url 'panels:detail' entry.panel.panel.id %}" class="js-open-on-submit">
+                        {{ entry.panel.level4title.name }}
+                      </a>
                     {% else %}
                     <a href="{% url 'panels:evaluation' entry.panel.panel.id 'gene' entry.gene.gene_symbol %}" class="link-inherit gel-text {{ entry|gene_list_class }} js-open-on-submit">{{ entry.gene.gene_symbol }}</a> in <a href="{% url 'panels:detail' entry.panel.panel.id %}" class="js-open-on-submit">
                       {{ entry.panel.level4title.name }}
@@ -119,7 +123,7 @@
                   </p>
                 </td>
                 <td>
-                  {{ entry.number_of_evaluated_genes }} review{{entry.number_of_evaluated_genes|pluralize}}
+                  {{ entry.number_of_evaluated_entities }} review{{entry.number_of_evaluated_entities|pluralize}}
                 </td>
                 <td>
                   {% if entry.moi %}

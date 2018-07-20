@@ -28,6 +28,7 @@ class TrackRecord(TimeStampedModel):
         ("UploadGeneInformation", "Upload gene information"),
         ("RemovedTag", "Removed Tag"),
         ("AddedTag", "Added Tag"),
+        ("ChangedName", "Changed Name"),
         ("ChangedSTRName", "Changed STR Name"),
         ("ChangedChromosome", "Changed Chromosome"),
         ("ChangedPosition37", "Changed GRCh37"),
@@ -35,7 +36,9 @@ class TrackRecord(TimeStampedModel):
         ("ChangedNormalRepeats", "Changed Normal Number of Repeats"),
         ("ChangedPathogenicRepeats", "Changed Pathogenic Number of Repeats"),
         ("RemovedGene", "Removed Gene from the STR"),
-        ("ChangedRepeatedSequence", "Changed Repeated Sequence")
+        ("ChangedRepeatedSequence", "Changed Repeated Sequence"),
+        ('ChangedEffectTypes', 'Changed Effect Types'),
+        ('ChangedVariantType', 'Changed Variant Types'),
     )
 
     class Meta:

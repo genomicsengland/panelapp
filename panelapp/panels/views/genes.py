@@ -2,42 +2,22 @@ import csv
 from datetime import datetime
 
 from django.contrib import messages
-from django.http import Http404
-from django.shortcuts import get_list_or_404
-from django.db.models import Q
 from django.views.generic.base import View
 from django.views.generic import FormView
-from django.views.generic import ListView
-from django.views.generic import UpdateView
 from django.views.generic import DetailView
-from django.views.generic import CreateView
 from django.shortcuts import redirect
 from django.urls import reverse_lazy
-from django.utils.functional import cached_property
 from django.template.defaultfilters import pluralize
 from django.http import HttpResponse
 from django.http import StreamingHttpResponse
 
 from panelapp.mixins import GELReviewerRequiredMixin
-from panelapp.mixins import VerifiedReviewerRequiredMixin
-from panels.forms import UploadGenesForm
-from panels.forms import UploadPanelsForm
-from panels.forms import UploadReviewsForm
-from panels.forms import PanelForm
-from panels.forms import PromotePanelForm
-from panels.forms import PanelGeneForm
-from panels.forms import GeneReadyForm
-from panels.forms import GeneReviewForm
 from panels.forms import ComparePanelsForm
 from panels.forms import CopyReviewsForm
-from panels.models import Tag
-from panels.models import STR
 
 from panels.models import GenePanel
 from panels.models import GenePanelSnapshot
-from panels.models import GenePanelEntrySnapshot
 from panels.models import ProcessingRunCode
-from panels.models import STR
 from panels.mixins import PanelMixin
 from panels.utils import remove_non_ascii
 from .entities import EchoWriter
@@ -61,7 +41,7 @@ class DownloadPanelTSVMixin(PanelMixin, DetailView):
         writer = csv.writer(response, delimiter='\t')
 
         writer.writerow((
-            "Gene Entity Symbol",
+            "Entity Symbol",
             "Entity type",
             "Sources(; separated)",
             "Level4",
@@ -83,14 +63,16 @@ class DownloadPanelTSVMixin(PanelMixin, DetailView):
             "EnsemblId(GRch37)",
             "EnsemblId(GRch38)",
             "HGNC",
-            "STR Position Chromosome",
-            "STR Position GRCh37 Start",
-            "STR Position GRCh37 End",
-            "STR Position GRCh38 Start",
-            "STR Position GRCh38 End",
+            "Position Chromosome",
+            "Position GRCh37 Start",
+            "Position GRCh37 End",
+            "Position GRCh38 Start",
+            "Position GRCh38 End",
             "STR Repeated Sequence",
             "STR Normal Repeats",
             "STR Pathogenic Repeats",
+            "Region Haploinsufficiency Score",
+            "Region Triplosensitivity Score",
         ))
 
         categories = self.get_categories()
@@ -122,6 +104,7 @@ class DownloadPanelTSVMixin(PanelMixin, DetailView):
                     gpentry.gene.get('ensembl_genes', {}).get('GRch37', {}).get('82', {}).get('ensembl_id', '-'),
                     gpentry.gene.get('ensembl_genes', {}).get('GRch38', {}).get('90', {}).get('ensembl_id', '-'),
                     gpentry.gene.get('hgnc_id', '-'),
+                    '-',
                     '-',
                     '-',
                     '-',
@@ -170,8 +153,51 @@ class DownloadPanelTSVMixin(PanelMixin, DetailView):
                     strentry.repeated_sequence,
                     strentry.normal_repeats,
                     strentry.pathogenic_repeats,
+                    '-',
+                    '-'
                 )
                 writer.writerow(export_strentry)
+
+        for region in self.object.get_all_regions_extra:
+            if not region.flagged and str(region.status) in categories:
+                amber_perc, green_perc, red_prec = region.aggregate_ratings()
+
+                evidence = ";".join([evidence.name for evidence in region.evidence.all()])
+                export_region = (
+                    region.name,
+                    'region',
+                    evidence,
+                    panel_name,
+                    self.object.level4title.level3title,
+                    self.object.level4title.level2title,
+                    region.moi,
+                    ";".join(map(remove_non_ascii, region.phenotypes)),
+                    ";".join(map(remove_non_ascii, self.object.level4title.omim)),
+                    ";".join(map(remove_non_ascii, self.object.level4title.orphanet)),
+                    ";".join(map(remove_non_ascii, self.object.level4title.hpo)),
+                    ";".join(map(remove_non_ascii, region.publications)),
+                    "",
+                    str(region.flagged),
+                    str(region.saved_gel_status),
+                    ";".join(map(str, [green_perc, amber_perc, red_prec])),
+                    str(version),
+                    region.ready,
+                    '-',
+                    region.gene.get('ensembl_genes', {}).get('GRch37', {}).get('82', {}).get('ensembl_id', '-') if region.gene else '',
+                    region.gene.get('ensembl_genes', {}).get('GRch38', {}).get('90', {}).get('ensembl_id', '-') if region.gene else '',
+                    region.gene.get('hgnc_id', '-') if region.gene else '',
+                    region.chromosome,
+                    region.position_37.lower,
+                    region.position_37.upper,
+                    region.position_38.lower,
+                    region.position_38.upper,
+                    '-',
+                    '-',
+                    '-',
+                    region.haploinsufficiency_score,
+                    region.triplosensitivity_score
+                )
+                writer.writerow(export_region)
 
         return response
 

@@ -7,12 +7,15 @@ from panels.models import GenePanel
 from .panel import PanelForm  # noqa
 from .promotepanel import PromotePanelForm  # noqa
 from .panelgene import PanelGeneForm  # noqa
-from .str import PanelSTRForm  # noqa
 from .genereview import GeneReviewForm  # noqa
 from .geneready import GeneReadyForm  # noqa
+from .str import PanelSTRForm  # noqa
 from .strreview import STRReviewForm  # noqa
 from .str_ready import STRReadyForm  # noqa
 from .activity import ActivityFilterForm
+from .region import PanelRegionForm  # noqa
+from .region_review import RegionReviewForm  # noqa
+from .region_ready import RegionReadyForm  # noqa
 from panels.models import ProcessingRunCode
 from panels.exceptions import UserDoesNotExist
 from panels.exceptions import GeneDoesNotExist

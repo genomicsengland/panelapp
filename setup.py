@@ -71,5 +71,7 @@ setup(
         'django-admin-list-filter-dropdown==1.0.1',
         'pytz==2018.4',
         'gunicorn==19.9.0',
+        'pytz==2018.4'
+        'django-array-field-select==0.2.0'
     ]
 )

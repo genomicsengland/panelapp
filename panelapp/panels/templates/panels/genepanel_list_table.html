@@ -88,6 +88,9 @@
                 {% if entry.stats.number_of_strs %}
                     <br />STRs: {{ entry.stats.number_of_strs }}
                 {% endif %}
+                {% if entry.stats.number_of_regions %}
+                    <br />Regions: {{ entry.stats.number_of_regions }}
+                {% endif %}
               </td>
               <td>
                   {% if entry.stats.number_of_reviewers != None %}

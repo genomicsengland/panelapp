@@ -10,9 +10,12 @@ from django.core.serializers.json import DjangoJSONEncoder
 from django.contrib.postgres.fields import JSONField
 from django.contrib.postgres.fields import ArrayField
 from django.contrib.postgres.fields import IntegerRangeField
+from django.core import validators
 from django.urls import reverse
 
 from model_utils.models import TimeStampedModel
+from model_utils import Choices
+from array_field_select.fields import ArrayField as SelectArrayField
 from .entity import AbstractEntity
 from .entity import EntityManager
 from .gene import Gene
@@ -24,17 +27,17 @@ from .tag import Tag
 from .genepanelsnapshot import GenePanelSnapshot
 
 
-class STRManager(EntityManager):
-    """Objects manager for STR."""
+class RegionManager(EntityManager):
+    """STR Objects manager."""
 
-    def get_str_panels(self, name, deleted=False, pks=None):
-        """Get panels for the specified STR name"""
+    def get_region_panels(self, name, deleted=False, pks=None):
+        """Get panels for the specified region name"""
 
         return self.get_active(deleted=deleted, name=name, pks=pks)
 
 
-class STR(AbstractEntity, TimeStampedModel):
-    """Short Tandem Repeat (STR) Entity"""
+class Region(AbstractEntity, TimeStampedModel):
+    """Regions Entity"""
 
     CHROMOSOMES = [
         ('1', '1'), ('2', '2'), ('3', '3'), ('4', '4'), ('5', '5'), ('6', '6'), ('7', '7'),
@@ -42,6 +45,21 @@ class STR(AbstractEntity, TimeStampedModel):
         ('15', '15'), ('16', '16'), ('17', '17'), ('18', '18'), ('19', '19'), ('20', '20'), ('21', '21'),
         ('22', '22'), ('X', 'X'), ('Y', 'Y')
     ]
+
+    VARIANT_TYPES = Choices(
+        ('small', 'Small variants'),
+        ('cnv_loss', 'CNV_LOSS'),
+        ('cnv_gain', 'CNV_GAIN')
+    )
+
+    DOSAGE_SENSITIVITY_SCORES = (
+        ('3', 'Sufficient evidence suggesting dosage sensitivity is associated with clinical phenotype'),
+        ('2', 'Emerging evidence suggesting dosage sensitivity is associated with clinical phenotype'),
+        ('1', 'Little evidence suggesting dosage sensitivity is associated with clinical phenotype'),
+        ('0', 'No evidence to suggest that dosage sensitivity is associated with clinical phenotype'),
+        ('40', 'Dosage sensitivity unlikely'),
+        ('30', 'Gene associated with autosomal recessive phenotype')
+    )
 
     class Meta:
         get_latest_by = "created"
@@ -54,14 +72,17 @@ class STR(AbstractEntity, TimeStampedModel):
 
     panel = models.ForeignKey(GenePanelSnapshot, on_delete=models.PROTECT)
 
-    name = models.CharField(max_length=128)
-    repeated_sequence = models.CharField(max_length=128)
+    name = models.CharField(max_length=128, help_text="Region ID")
+    verbose_name = models.CharField(max_length=256, blank=True, null=True, help_text='Region Name')
     chromosome = models.CharField(max_length=8, choices=CHROMOSOMES)
     position_37 = IntegerRangeField()
     position_38 = IntegerRangeField()
-    normal_repeats = models.IntegerField(help_text="=< Maximum normal number of repeats", verbose_name="Normal")
-    pathogenic_repeats = models.IntegerField(help_text=">= Minimum fully penetrant pathogenic number of repeats",
-                                             verbose_name="Pathogenic")
+    haploinsufficiency_score = models.CharField(max_length=2, choices=DOSAGE_SENSITIVITY_SCORES)
+    triplosensitivity_score = models.CharField(max_length=2, choices=DOSAGE_SENSITIVITY_SCORES)
+    required_overlap_percentage = models.IntegerField(help_text='Required percent of overlap',
+                                                      validators=[validators.MinValueValidator(0),
+                                                                  validators.MaxValueValidator(100)])
+    type_of_variants = models.CharField(max_length=32, choices=VARIANT_TYPES, default=VARIANT_TYPES.small)
 
     gene = JSONField(encoder=DjangoJSONEncoder, blank=True, null=True)  # copy data from Gene.dict_tr
     gene_core = models.ForeignKey(Gene, blank=True, null=True, on_delete=models.PROTECT)  # reference to the original Gene
@@ -84,36 +105,36 @@ class STR(AbstractEntity, TimeStampedModel):
     )
     saved_gel_status = models.IntegerField(null=True, db_index=True)
 
-    objects = STRManager()
+    objects = RegionManager()
 
     def __str__(self):
-        return "Panel: {panel_name} STR: {str_name}".format(
+        return "Panel: {panel_name} Region: {region_name}".format(
             panel_name=self.panel.panel.name,
-            str_name=self.name
+            region_name=self.name
         )
 
     @property
     def _entity_type(self):
-        return 'str'
+        return 'region'
 
     @property
     def label(self):
-        return 'STR: {name}'.format(name=self.name)
+        return 'Region: {name}'.format(name=self.name)
 
     def get_absolute_url(self):
         """Returns absolute url for this STR in a panel"""
 
-        return reverse('panels:evaluation', args=(self.panel.panel.pk, 'str', self.name))
+        return reverse('panels:evaluation', args=(self.panel.panel.pk, 'region', self.name))
 
     def dict_tr(self):
         return {
             "name": self.name,
+            "verbose_name": self.verbose_name,
             "chromosome": self.chromosome,
             "position_37": (self.position_37.lower, self.position_37.upper),
             "position_38": (self.position_38.lower, self.position_38.upper),
-            "repeated_sequence": self.repeated_sequence,
-            "normal_repeats": self.normal_repeats,
-            "pathogenic_repeats": self.pathogenic_repeats,
+            "haploinsufficiency_score": self.haploinsufficiency_score,
+            "triplosensitivity_score": self.triplosensitivity_score,
             "gene": self.gene,
             "evidence": [evidence.dict_tr() for evidence in self.evidence.all()],
             "evaluation": [evaluation.dict_tr() for evaluation in self.evaluation.all()],
@@ -126,6 +147,28 @@ class STR(AbstractEntity, TimeStampedModel):
             "tags": [tag.name for tag in self.tags.all()]
         }
 
+    @property
+    def human_haploinsufficiency_score(self):
+        if not self.haploinsufficiency_score:
+            return ''
+
+        for values in self.DOSAGE_SENSITIVITY_SCORES:
+            if values[0] == self.haploinsufficiency_score:
+                return values[1]
+        else:
+            return ''
+
+    @property
+    def human_triplosensitivity_score(self):
+        if not self.triplosensitivity_score:
+            return ''
+
+        for values in self.DOSAGE_SENSITIVITY_SCORES:
+            if values[0] == self.triplosensitivity_score:
+                return values[1]
+        else:
+            return ''
+
     def get_form_initial(self):
         """Since we create a new version every time we want to update something this method
         gets the initial data for the form.
@@ -133,12 +176,12 @@ class STR(AbstractEntity, TimeStampedModel):
 
         return {
             "name": self.name,
+            "verbose_name": self.verbose_name,
             "chromosome": self.chromosome,
             "position_37": self.position_37,
             "position_38": self.position_38,
-            "repeated_sequence": self.repeated_sequence,
-            "normal_repeats": self.normal_repeats,
-            "pathogenic_repeats": self.pathogenic_repeats,
+            "haploinsufficiency_score": self.haploinsufficiency_score,
+            "triplosensitivity_score": self.triplosensitivity_score,
             "gene": self.gene_core,
             "gene_json": self.gene,
             "gene_name": self.gene.get('gene_name') if self.gene else None,

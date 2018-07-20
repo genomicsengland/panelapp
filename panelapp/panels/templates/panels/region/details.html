@@ -9,6 +9,22 @@
                 <dt>GEL status</dt>
                 <dd>{{ entity.status }}</dd>
             {% endif %}
+            <dt>ISCA ID</dt>
+            <dd>{{ entity.name }}</dd>
+            <dt>ISCA Region Name</dt>
+            <dd>{{ entity.verbose_name }}</dd>
+            <dt>Chromosome</dt>
+            <dd>{{ entity.chromosome }}</dd>
+            <dt>GRCh37 Coordinates</dt>
+            <dd>{{ entity.position_37.lower }}-{{ entity.position_37.upper }}</dd>
+            <dt>GRCh38 Coordinates</dt>
+            <dd>{{ entity.position_38.lower }}-{{ entity.position_38.upper }}</dd>
+            <dt>Haploinsufficiency Score</dt>
+            <dd>{{ entity.human_haploinsufficiency_score }}</dd>
+            <dt>Triplosensitivity Score</dt>
+            <dd>{{ entity.human_triplosensitivity_score }}</dd>
+            <dt>Required percent of overlap</dt>
+            <dd>{{ entity.required_overlap_percentage }}%</dd>
             {% if entity.moi %}
             <dt>Mode of Inheritance</dt>
             <dd>{{ entity.moi }}</dd>
@@ -63,6 +79,8 @@
             </dd>
             <dt>Penetrance</dt>
             <dd>{{ entity.penetrance }}</dd>
+            <dt>Type of variants</dt>
+            <dd>{{ entity.type_of_variants }}</dd>
             {% if entity.publications %}
             <dt>Publications</dt>
             <dd>
@@ -79,44 +97,23 @@
                 {% endif %}
             </dd>
             {% endif %}
-            {% if entity.mode_of_pathogenicity %}
-            <dt>Mode of Pathogenicity</dt>
-            <dd>{{ entity.mode_of_pathogenicity }}</dd>
-                {% if request.user.is_authenticated and request.user.reviewer.is_GEL %}
-                    <a href="{% url 'panels:clear_entity_mode_of_pathogenicity' panel.panel_id entity_type entity_name %}" class="link-muted" data-ajax="true" data-success="djangoAjaxHandler">
-                        Clear Mode of Pathogenicity
-                    </a>
-                {% endif %}
-            {% endif %}
-            <dt>Type of variants</dt>
-            <dd>{{ entity.type_of_variants }}</dd>
-            <dt>Panels with this gene</dt>
-            <dd>
-                <ul>
-                    {% for sharing_panel in sharing_panels %}
-                        <li><a href="{% url 'panels:detail' sharing_panel.panel_id  %}">
-                            {{ sharing_panel.panel.name }}
-                        </a></li>
-                    {% endfor %}
-                </ul>
-            </dd>
         </dl>
     </div>
   {% if request.user.is_authenticated and request.user.reviewer.is_GEL %}
   <div class="panel-footer">
-    <a href="{% url 'panels:edit_entity' panel.panel_id entity_type entity_name %}" class="btn btn-info" data-module="showhide" data-show=".edit-gene-form" data-hide=".panel.panel-details">
-      <i class="fa fa-edit"></i> Edit gene
+    <a href="{% url 'panels:edit_entity' panel.panel_id entity_type entity_name %}" class="btn btn-info" data-module="showhide" data-show=".edit-region-form" data-hide=".panel.panel-details">
+      <i class="fa fa-edit"></i> Edit Region
     </a>
   </div>
   {% endif %}
 </div>
 {% if request.user.is_authenticated and request.user.reviewer.is_GEL %}
-<form class="edit-gene-form form row hidden" action="{% url 'panels:edit_entity' panel.panel_id entity_type entity_name %}#!details" method="post">
+<form class="edit-region-form form row hidden" action="{% url 'panels:edit_entity' panel.panel_id entity_type entity_name %}#!details" method="post">
   {% csrf_token %}
   <div class="col-md-12">
     <div class="well">
       <fieldset>
-        <legend>Edit Gene</legend>
+        <legend>Edit Region</legend>
         {% for field in form_edit %}
           <div class="form-group">
             {% if field.errors %}
@@ -133,7 +130,11 @@
                 {{ field.label_tag }}
             {% endif %}
 
-            {% bootstrap_field field show_label=False %}
+            {% if field.help_text %}
+                <div class="text-muted">{{ field.help_text }}</div>
+            {% endif %}
+
+            {% bootstrap_field field show_label=False show_help=False %}
           </div>
         {% endfor %}
         <a href="{{ entity.get_absolute_url }}" class="btn btn-default">Cancel</a>
