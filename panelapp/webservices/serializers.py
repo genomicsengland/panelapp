@@ -235,7 +235,7 @@ class ListPanelSerializer(serializers.BaseSerializer):
 class EntitySerializer(EnsembleIdMixin, serializers.BaseSerializer):
     def to_representation(self, entity):
         out = {
-            "GeneSymbol": entity.gene.get('gene_symbol'),
+            "GeneSymbol": entity.gene.get('gene_symbol') if entity.gene else None,
             "EntityType": entity.entity_type,
             "EnsembleGeneIds": self.get_ensemblId(entity) if entity.gene else None,
             "ModeOfInheritance": make_null(convert_moi(entity.moi)),
