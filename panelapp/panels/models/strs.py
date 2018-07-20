@@ -6,6 +6,9 @@ Author: Oleg Gerasimenko
 """
 
 from django.db import models
+from django.db.models import Count
+from django.db.models import Subquery
+from django.db.models import Value as V
 from django.core.serializers.json import DjangoJSONEncoder
 from django.contrib.postgres.fields import JSONField
 from django.contrib.postgres.fields import ArrayField
@@ -16,6 +19,7 @@ from model_utils.models import TimeStampedModel
 from .entity import AbstractEntity
 from .entity import EntityManager
 from .gene import Gene
+from .genepanel import GenePanel
 from .evidence import Evidence
 from .evaluation import Evaluation
 from .trackrecord import TrackRecord
@@ -26,6 +30,39 @@ from .genepanelsnapshot import GenePanelSnapshot
 
 class STRManager(EntityManager):
     """Objects manager for STR."""
+
+    def get_latest_ids(self, deleted=False):
+        """Get STR ids"""
+
+        qs = super().get_queryset()
+        if not deleted:
+            qs = qs.exclude(panel__panel__status=GenePanel.STATUS.deleted)
+
+        return qs.distinct('panel__panel__pk')\
+            .values_list('panel__pk', flat=True)\
+            .order_by('panel__panel__pk', '-panel__major_version', '-panel__minor_version')
+
+    def get_active(self, deleted=False, name=None, gene_symbol=None, pks=None):
+        """Get active STRs"""
+
+        if pks:
+            qs = super().get_queryset().filter(panel__pk__in=pks)
+        else:
+            qs = super().get_queryset().filter(panel__pk__in=Subquery(self.get_latest_ids(deleted)))
+        if name:
+            qs = qs.filter(name=name)
+        if gene_symbol:
+            qs = qs.filter(gene__gene_symbol=gene_symbol)
+
+        return qs.annotate(
+                entity_type=V('str', output_field=models.CharField()),
+                entity_name=models.F('name'),
+                number_of_reviewers=Count('evaluation__user', distinct=True),
+                number_of_evaluated_genes=Count('evaluation'),
+                number_of_genes=Count('pk'),
+            )\
+            .prefetch_related('evaluation', 'tags', 'evidence', 'panel', 'panel__level4title', 'panel__panel')\
+            .order_by('panel__pk', '-panel__major_version', '-panel__minor_version')
 
     def get_str_panels(self, name, deleted=False, pks=None):
         """Get panels for the specified STR name"""
@@ -63,7 +100,7 @@ class STR(AbstractEntity, TimeStampedModel):
     pathogenic_repeats = models.IntegerField(help_text=">= Minimum fully penetrant pathogenic number of repeats",
                                              verbose_name="Pathogenic")
 
-    gene = JSONField(encoder=DjangoJSONEncoder, blank=True, null=True)  # copy data from Gene.dict_tr
+    gene = JSONField(encoder=DjangoJSONEncoder, blank=True, null=True, default=dict)  # copy data from Gene.dict_tr
     gene_core = models.ForeignKey(Gene, blank=True, null=True, on_delete=models.PROTECT)  # reference to the original Gene
     evidence = models.ManyToManyField(Evidence)
     evaluation = models.ManyToManyField(Evaluation, db_index=True)

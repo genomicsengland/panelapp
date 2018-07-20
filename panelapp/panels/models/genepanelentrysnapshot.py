@@ -1,14 +1,19 @@
 from django.db import models
 from model_utils import Choices
+from django.db.models import Count
+from django.db.models import Subquery
+from django.db.models import Value as V
 from django.urls import reverse
 
 from django.core.serializers.json import DjangoJSONEncoder
 from django.contrib.postgres.fields import JSONField
 from django.contrib.postgres.fields import ArrayField
+from django.contrib.postgres.fields import IntegerRangeField
 
 from model_utils.models import TimeStampedModel
 
 from .gene import Gene
+from .genepanel import GenePanel
 from .evidence import Evidence
 from .evaluation import Evaluation
 from .trackrecord import TrackRecord
@@ -22,7 +27,41 @@ from .entity import EntityManager
 class GenePanelEntrySnapshotManager(EntityManager):
     """Objects manager for GenePanelEntrySnapshot."""
 
-    pass
+    def get_latest_ids(self, deleted=False):
+        """Get GenePanelSnapshot ids"""
+
+        qs = super().get_queryset()
+        if not deleted:
+            qs = qs.exclude(panel__panel__status=GenePanel.STATUS.deleted)
+
+        return qs.distinct('panel__panel__pk')\
+            .values_list('panel__pk', flat=True)\
+            .order_by('panel__panel__pk', '-panel__major_version', '-panel__minor_version')
+
+    def get_active(self, deleted=False, gene_symbol=None, pks=None):
+        """Get active Gene Entry Snapshots"""
+
+        if pks:
+            qs = super().get_queryset().filter(panel__pk__in=pks)
+        else:
+            qs = super().get_queryset().filter(panel__pk__in=Subquery(self.get_latest_ids(deleted)))
+        if gene_symbol:
+            qs = qs.filter(gene_core__gene_symbol=gene_symbol)
+
+        return qs.annotate(
+                entity_type=V('gene', output_field=models.CharField()),
+                entity_name=models.F('gene_core__gene_symbol'),
+                number_of_reviewers=Count('evaluation__user', distinct=True),
+                number_of_evaluated_genes=Count('evaluation'),
+                number_of_genes=Count('pk')
+            )\
+            .prefetch_related('evaluation', 'tags', 'evidence', 'panel', 'panel__level4title', 'panel__panel')\
+            .order_by('panel__pk', '-panel__major_version', '-panel__minor_version')
+
+    def get_gene_panels(self, gene_symbol, deleted=False, pks=None):
+        """Get panels for the specified gene"""
+
+        return self.get_active(deleted=deleted, gene_symbol=gene_symbol, pks=pks)
 
 
 class GenePanelEntrySnapshot(AbstractEntity, TimeStampedModel):

@@ -1,5 +1,6 @@
 from django.db import DatabaseError
 from django.db.models import Q
+from django.utils.functional import cached_property
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework import permissions
@@ -14,9 +15,11 @@ from .utils import convert_confidence_level
 from panels.models import GenePanel
 from panels.models import GenePanelSnapshot
 from panels.models import GenePanelEntrySnapshot
+from panels.models import STR
 from .serializers import PanelSerializer
 from .serializers import GenesSerializer
 from .serializers import EntitySerializer
+from .serializers import ListPanelSerializer
 
 
 def filter_entity_list(entity_list, moi=None, mop=None, penetrance=None, conf_level=None, evidence=None,
@@ -237,17 +240,25 @@ class EntitiesListView(generics.ListAPIView):
     serializer_class = EntitySerializer
     pagination_class = EntitiesPagination
 
+    @cached_property
+    def snapshot_ids(self):
+        if self.request.query_params.get('panel_name'):
+            panel_names = self.request.query_params.get("panel_name").split(",")
+        else:
+            panel_names = None
+
+        if panel_names:
+            all_panels = GenePanelSnapshot.objects.get_active_annotated().filter(panel__name__in=panel_names)
+        else:
+            all_panels = GenePanelSnapshot.objects.get_active_annotated()
+
+        return [s.pk for s in all_panels]
+
     def get_queryset(self):
         filters = {}
-        entity_name = self.request.query_params.get('entity_name')
 
-        entity_names_qs = None
-        if entity_name != "all":
-            for g in entity_name.split(","):
-                if not entity_names_qs:
-                    entity_names_qs = Q(entity_name=g)
-                else:
-                    entity_names_qs = entity_names_qs | Q(entity_name=g)
+        if self.request.query_params.get('entity_name'):
+            filters['entity_name__in'] = self.request.query_params.get('entity_name').split(',')
 
         if self.request.query_params.get('ModeOfInheritance'):
             filters["moi__in"] = [
@@ -277,25 +288,29 @@ class EntitiesListView(generics.ListAPIView):
                 for x in self.request.query_params.get("Evidences").split(",")
                 if convert_evidences(x, True)
             ]
-        if self.request.query_params.get('panel_name'):
-            panel_names = self.request.query_params.get("panel_name").split(",")
-        else:
-            panel_names = None
 
-        if panel_names:
-            all_panels = GenePanelSnapshot.objects.get_active_annotated().filter(panel__name__in=panel_names)
-        else:
-            all_panels = GenePanelSnapshot.objects.get_active_annotated()
+        active_genes = GenePanelEntrySnapshot.objects.get_active(pks=self.snapshot_ids)
+        genes = active_genes.filter(**filters)
 
-        panels_ids_dict = {panel.panel.pk: (panel.panel.pk, panel) for panel in all_panels}
-        filters.update({'panel__panel__pk__in': list(panels_ids_dict.keys())})
+        active_strs = STR.objects.get_active(pks=self.snapshot_ids)
+        strs = active_strs.filter(**filters)
 
-        # TODO FIXME WIP
+        return strs.union(genes).values('entity_name', 'entity_type', 'pk')
 
-        # chain 2 queries - str and gene items for the specific values only which we need, otherwise just ignore
-        # also annotate the missing values for genes, i.e. positions, etc, etc, otherwise it would fail
+    def list(self, request, *args, **kwargs):
+        # We can't union two queries as they have different fields which fail on PostgreSQL level, due to field types
+        # and count mismatch. Instead get the ids for a specific page, and then just get those values, create a joined
+        # list, push to serializer.
 
-        return
+        queryset = self.filter_queryset(self.get_queryset())
+
+        page = self.paginate_queryset(queryset)
+        genes = GenePanelEntrySnapshot.objects.get_active(pks=self.snapshot_ids) \
+            .filter(pk__in=[e.get('pk') for e in page if e.get('entity_type') == 'gene'])
+        strs = STR.objects.get_active(pks=self.snapshot_ids) \
+            .filter(pk__in=[e.get('pk') for e in page if e.get('entity_type') == 'str'])
+        serializer = self.get_serializer(list(strs) + list(genes), many=True)
+        return self.get_paginated_response(serializer.data)
 
 
 list_entities = EntitiesListView.as_view()
