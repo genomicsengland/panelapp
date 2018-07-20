@@ -72,8 +72,8 @@ class Region(AbstractEntity, TimeStampedModel):
 
     panel = models.ForeignKey(GenePanelSnapshot, on_delete=models.PROTECT)
 
-    name = models.CharField(max_length=128, help_text="ISCA ID")
-    verbose_name = models.CharField(max_length=256, blank=True, null=True, help_text='ISCA Region Name')
+    name = models.CharField(max_length=128, help_text="Region ID")
+    verbose_name = models.CharField(max_length=256, blank=True, null=True, help_text='Region Name')
     chromosome = models.CharField(max_length=8, choices=CHROMOSOMES)
     position_37 = IntegerRangeField()
     position_38 = IntegerRangeField()
