@@ -100,7 +100,7 @@ class STR(AbstractEntity, TimeStampedModel):
     pathogenic_repeats = models.IntegerField(help_text=">= Minimum fully penetrant pathogenic number of repeats",
                                              verbose_name="Pathogenic")
 
-    gene = JSONField(encoder=DjangoJSONEncoder, blank=True, null=True, default=dict)  # copy data from Gene.dict_tr
+    gene = JSONField(encoder=DjangoJSONEncoder, blank=True, null=True)  # copy data from Gene.dict_tr
     gene_core = models.ForeignKey(Gene, blank=True, null=True, on_delete=models.PROTECT)  # reference to the original Gene
     evidence = models.ManyToManyField(Evidence)
     evaluation = models.ManyToManyField(Evaluation, db_index=True)
