@@ -5,10 +5,10 @@ from rest_framework import permissions
 from panels.models import GenePanelSnapshot
 from panels.models import GenePanelEntrySnapshot
 from panels.models import STR
+from panels.models import Region
 from panels.models import Activity
 from django.db.models import Q
 from django.db.models import ObjectDoesNotExist
-from django.db import models
 from .serializers import PanelListSerializer
 from .serializers import PanelSerializer
 from .serializers import PanelVersionListSerializer
@@ -18,6 +18,8 @@ from .serializers import GeneDetailSerializer
 from .serializers import STRSerializer
 from .serializers import STRDetailSerializer
 from .serializers import EvaluationSerializer
+from .serializers import RegionSerializer
+from .serializers import RegionDetailSerializer
 from django.http import Http404
 from rest_framework.exceptions import APIException
 
@@ -138,6 +140,15 @@ class GeneEvaluationsViewSet(EntityViewSet):
             raise Http404
 
 
+class STRViewSet(EntityViewSet):
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
+    serializer_class = STRSerializer
+
+    def get_queryset(self):
+        panel = self.get_panel()
+        return self.filter_by_tag(panel.get_all_strs)
+
+
 class STREvaluationsViewSet(EntityViewSet):
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
     serializer_class = EvaluationSerializer
@@ -151,13 +162,26 @@ class STREvaluationsViewSet(EntityViewSet):
             raise Http404
 
 
-class STRViewSet(EntityViewSet):
+class RegionViewSet(EntityViewSet):
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
-    serializer_class = STRSerializer
+    serializer_class = RegionSerializer
 
     def get_queryset(self):
         panel = self.get_panel()
-        return self.filter_by_tag(panel.get_all_strs)
+        return self.filter_by_tag(panel.get_all_regions)
+
+
+class RegionEvaluationsViewSet(EntityViewSet):
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
+    serializer_class = EvaluationSerializer
+
+    def get_queryset(self):
+        panel = self.get_panel()
+        try:
+            region = panel.get_region(self.kwargs['region_entity_name'])
+            return region.evaluation.all()
+        except ObjectDoesNotExist:
+            raise Http404
 
 
 class EntitySearchViewSet(ReadOnlyListViewset):
@@ -216,6 +240,24 @@ class STRSearchViewSet(EntitySearchViewSet):
             filters['name'] = self.kwargs['entity_name'].split(',')
 
         return self.filter_by_tag(STR.objects.get_active(**filters))
+
+    def retrieve(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
+class RegionSearchViewSet(EntitySearchViewSet):
+    """Search STRs"""
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
+    serializer_class = RegionDetailSerializer
+
+    def get_queryset(self):
+        filters = {
+            'pks': self.active_snapshot_ids
+        }
+        if self.kwargs.get('entity_name'):
+            filters['name'] = self.kwargs['entity_name'].split(',')
+
+        return self.filter_by_tag(Region.objects.get_active(**filters))
 
     def retrieve(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)

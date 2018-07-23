@@ -2,6 +2,7 @@ from rest_framework import serializers
 from panels.models import GenePanelSnapshot
 from panels.models import GenePanelEntrySnapshot
 from panels.models import STR
+from panels.models import Region
 from panels.models import Activity
 from panels.models import Evaluation
 
@@ -137,7 +138,6 @@ class STRSerializer(GeneSerializer):
             'entity_name',
             'confidence_level',
             'penetrance',
-            'mode_of_pathogenicity',
             'publications',
             'evidence',
             'phenotypes',
@@ -155,6 +155,35 @@ class STRSerializer(GeneSerializer):
     grch38_coordinates = RangeIntegerField(source='position_38')
 
 
+class RegionSerializer(GeneSerializer):
+    class Meta:
+        model = Region
+        fields = (
+            'gene',
+            'entity_type',
+            'entity_name',
+            'verbose_name',
+            'confidence_level',
+            'penetrance',
+            'mode_of_pathogenicity',
+            'haploinsufficiency_score',
+            'triplosensitivity_score',
+            'required_overlap_percentage',
+            'type_of_variants',
+            'publications',
+            'evidence',
+            'phenotypes',
+            'mode_of_inheritance',
+            'chromosome',
+            'grch37_coordinates',
+            'grch38_coordinates',
+            'tags'
+        )
+
+    grch37_coordinates = RangeIntegerField(source='position_37')
+    grch38_coordinates = RangeIntegerField(source='position_38')
+
+
 class STRDetailSerializer(GeneDetailSerializer):
     class Meta:
         model = STR
@@ -164,7 +193,6 @@ class STRDetailSerializer(GeneDetailSerializer):
             'entity_name',
             'confidence_level',
             'penetrance',
-            'mode_of_pathogenicity',
             'publications',
             'evidence',
             'phenotypes',
@@ -184,16 +212,49 @@ class STRDetailSerializer(GeneDetailSerializer):
     panel = PanelListSerializer(many=False, read_only=True)
 
 
+class RegionDetailSerializer(GeneDetailSerializer):
+    class Meta:
+        model = Region
+        fields = (
+            'gene',
+            'entity_type',
+            'entity_name',
+            'verbose_name',
+            'confidence_level',
+            'penetrance',
+            'mode_of_pathogenicity',
+            'haploinsufficiency_score',
+            'triplosensitivity_score',
+            'required_overlap_percentage',
+            'type_of_variants',
+            'penetrance',
+            'publications',
+            'evidence',
+            'phenotypes',
+            'mode_of_inheritance',
+            'chromosome',
+            'grch37_coordinates',
+            'grch38_coordinates',
+            'panel',
+            'tags'
+        )
+
+    grch37_coordinates = RangeIntegerField(source='position_37')
+    grch38_coordinates = RangeIntegerField(source='position_38')
+    panel = PanelListSerializer(many=False, read_only=True)
+
+
 class PanelSerializer(PanelListSerializer):
     class Meta:
         model = GenePanelSnapshot
         fields = ('id', 'hash_id', 'name', 'disease_group', 'disease_sub_group', 'status',
-                  'version', 'version_created', 'relevant_disorders', 'stats', 'genes', 'strs')
+                  'version', 'version_created', 'relevant_disorders', 'stats', 'genes', 'strs', 'regions')
 
     id = serializers.CharField(source='panel_id')
     hash_id = serializers.StringRelatedField(source='panel.old_pk')
     genes = GeneSerializer(source='get_all_genes_extra', many=True, read_only=True)
     strs = STRSerializer(source='get_all_strs_extra', many=True, read_only=True)
+    regions = RegionSerializer(source='get_all_regions_extra', many=True, read_only=True)
 
 
 class ActivitySerializer(serializers.ModelSerializer):

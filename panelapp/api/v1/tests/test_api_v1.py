@@ -5,6 +5,7 @@ from panels.models import GenePanel
 from panels.tests.factories import GenePanelSnapshotFactory
 from panels.tests.factories import GenePanelEntrySnapshotFactory
 from panels.tests.factories import STRFactory
+from panels.tests.factories import RegionFactory
 
 
 class TestAPIV1(LoginExternalUser):
@@ -18,6 +19,7 @@ class TestAPIV1(LoginExternalUser):
         self.gpes_deleted = GenePanelEntrySnapshotFactory(panel__panel__status=GenePanel.STATUS.deleted)
         self.genes = GenePanelEntrySnapshotFactory.create_batch(4, panel=self.gps)
         self.str = STRFactory(panel__panel__status=GenePanel.STATUS.public)
+        self.region = RegionFactory(panel__panel__status=GenePanel.STATUS.public)
 
     def test_list_panels(self):
         r = self.client.get(reverse_lazy('api:v1:panels-list'))
@@ -30,7 +32,7 @@ class TestAPIV1(LoginExternalUser):
     def test_list_panels_name(self):
         url = reverse_lazy('api:v1:panels-list')
         r = self.client.get(url)
-        self.assertEqual(len(r.json()['results']), 3)
+        self.assertEqual(len(r.json()['results']), 4)
         self.assertEqual(r.status_code, 200)
 
     def test_retired_panels(self):
@@ -40,13 +42,13 @@ class TestAPIV1(LoginExternalUser):
         self.gps.panel.save()
 
         r = self.client.get(url)
-        self.assertEqual(len(r.json()['results']), 2)
+        self.assertEqual(len(r.json()['results']), 3)
         self.assertEqual(r.status_code, 200)
 
         # Test deleted panels
         url = reverse_lazy('api:v1:panels-list')
         r = self.client.get("{}?retired=True".format(url))
-        self.assertEqual(len(r.json()['results']), 3)  # one for gpes via factory, 2nd - retired
+        self.assertEqual(len(r.json()['results']), 4)  # one for gpes via factory, 2nd - retired
         self.assertEqual(r.status_code, 200)
 
         # Test for unapproved panels
@@ -55,7 +57,7 @@ class TestAPIV1(LoginExternalUser):
 
         url = reverse_lazy('api:v1:panels-list')
         r = self.client.get("{}?retired=True".format(url))
-        self.assertEqual(len(r.json()['results']), 2)  # only retired panel will be visible
+        self.assertEqual(len(r.json()['results']), 3)  # only retired panel will be visible
         self.assertEqual(r.status_code, 200)
 
     def test_internal_panel(self):
@@ -151,6 +153,17 @@ class TestAPIV1(LoginExternalUser):
                          [self.str.position_38.lower, self.str.position_38.upper])
         self.assertEqual(r.json()['strs'][0]['pathogenic_repeats'], self.str.pathogenic_repeats)
 
+    def test_region_in_panel(self):
+        r = self.client.get(reverse_lazy('api:v1:panels-detail', args=(self.region.panel.panel.pk,)))
+        self.assertEqual(r.status_code, 200)
+        region = r.json()['regions'][0]
+        self.assertEqual(region['entity_name'], self.region.name)
+        self.assertEqual(region['grch37_coordinates'],
+                         [self.region.position_37.lower, self.region.position_37.upper])
+        self.assertEqual(region['grch38_coordinates'],
+                         [self.region.position_38.lower, self.region.position_38.upper])
+        self.assertEqual(region['triplosensitivity_score'], self.region.triplosensitivity_score)
+
     def test_super_panel(self):
         super_panel = GenePanelSnapshotFactory(panel__status=GenePanel.STATUS.public)
         super_panel.child_panels.set([self.gps_public, ])
@@ -168,6 +181,27 @@ class TestAPIV1(LoginExternalUser):
         self.assertEqual(r.status_code, 200)
         self.assertEqual(len(r.json()['results']), 4)
 
+    def test_region_evaluations(self):
+        r = self.client.get(reverse_lazy('api:v1:regions-evaluations-list', args=(self.region.panel.panel.pk,
+                                                                                 self.region.name)))
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(len(r.json()['results']), 4)
+
+    def test_genes_list(self):
+        r = self.client.get(reverse_lazy('api:v1:genes-list'))
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(len(r.json()['results']), 5)
+
+    def test_strs_list(self):
+        r = self.client.get(reverse_lazy('api:v1:strs-list'))
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(len(r.json()['results']), 1)
+
+    def test_regions_list(self):
+        r = self.client.get(reverse_lazy('api:v1:regions-list'))
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(len(r.json()['results']), 1)
+
 
 class NonAuthAPIv1Request(TestCase):
     def setUp(self):
@@ -180,6 +214,7 @@ class NonAuthAPIv1Request(TestCase):
         self.gpes_deleted = GenePanelEntrySnapshotFactory(panel__panel__status=GenePanel.STATUS.deleted)
         self.genes = GenePanelEntrySnapshotFactory.create_batch(4, panel=self.gps)
         self.str = STRFactory(panel__panel__status=GenePanel.STATUS.public)
+        self.region = RegionFactory(panel__panel__status=GenePanel.STATUS.public)
 
     def test_list_of_panels(self):
         r = self.client.get(reverse_lazy('api:v1:panels-list'))
@@ -198,14 +233,25 @@ class NonAuthAPIv1Request(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
 
+    def test_region_search(self):
+        url = reverse_lazy('api:v1:regions-detail', args=(self.region.name,))
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+
     def test_evaluations(self):
         r = self.client.get(reverse_lazy('api:v1:genes-evaluations-list', args=(self.gpes.panel.panel.pk,
                                                                                 self.gpes.gene_core.gene_symbol)))
         self.assertEqual(r.status_code, 200)
         self.assertEqual(len(r.json()['results']), 4)
 
-    def test_strs(self):
+    def test_strs_evaluations(self):
         r = self.client.get(reverse_lazy('api:v1:strs-evaluations-list', args=(self.str.panel.panel.pk,
                                                                                self.str.name)))
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(len(r.json()['results']), 4)
+
+    def test_region_evaluations(self):
+        r = self.client.get(reverse_lazy('api:v1:regions-evaluations-list', args=(self.region.panel.panel.pk,
+                                                                                  self.region.name)))
         self.assertEqual(r.status_code, 200)
         self.assertEqual(len(r.json()['results']), 4)

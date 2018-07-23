@@ -40,8 +40,8 @@ class EvaluationRegionTest(LoginGELUser):
             "comments": fake.sentence(),
             "publications": ";".join([fake.sentence(), fake.sentence()]),
             "phenotypes": ";".join([fake.sentence(), fake.sentence(), fake.sentence()]),
-            "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)],
-            "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][randint(1, 2)],
+            "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)][0],
+            "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][randint(1, 2)][0],
         }
         res = self.client.post(url, region_data)
         assert res.status_code == 302

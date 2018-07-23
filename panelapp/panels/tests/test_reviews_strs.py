@@ -333,7 +333,7 @@ class STRReviewTest(LoginGELUser):
         res = self.client.post(url, data, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
         gene = GenePanel.objects.get(pk=str_item.panel.panel.pk).active_panel.get_str(str_item.name)
         assert res.json().get('status') == 200
-        assert Comment.objects.count() == 3
+        assert Comment.objects.count() == 3  # FIXME old comments are deleted even for the current object...
         assert gene.saved_gel_status == new_status
 
         new_status = 2
