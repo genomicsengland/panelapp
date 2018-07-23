@@ -27,7 +27,7 @@ class ReadOnlyListViewset(viewsets.mixins.RetrieveModelMixin, viewsets.mixins.Li
 
 
 class PanelsViewSet(ReadOnlyListViewset):
-    permission_classes = (permissions.IsAuthenticated, )
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly, )
     lookup_value_regex = '[^/]+'
 
     def get_serializer_class(self):
@@ -85,7 +85,7 @@ class PanelsViewSet(ReadOnlyListViewset):
 
 
 class ActivityViewSet(viewsets.mixins.ListModelMixin, viewsets.GenericViewSet):
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
     serializer_class = ActivitySerializer
 
     def get_queryset(self):
@@ -96,7 +96,7 @@ class ActivityViewSet(viewsets.mixins.ListModelMixin, viewsets.GenericViewSet):
 
 
 class EntityViewSet(viewsets.mixins.ListModelMixin, viewsets.GenericViewSet):
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
     lookup_field = 'entity_name'
     lookup_url_kwarg = 'entity_name'
 
@@ -117,7 +117,7 @@ class EntityViewSet(viewsets.mixins.ListModelMixin, viewsets.GenericViewSet):
 
 
 class GeneViewSet(EntityViewSet):
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
     serializer_class = GeneSerializer
 
     def get_queryset(self):
@@ -126,7 +126,7 @@ class GeneViewSet(EntityViewSet):
 
 
 class GeneEvaluationsViewSet(EntityViewSet):
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
     serializer_class = EvaluationSerializer
 
     def get_queryset(self):
@@ -139,7 +139,7 @@ class GeneEvaluationsViewSet(EntityViewSet):
 
 
 class STREvaluationsViewSet(EntityViewSet):
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
     serializer_class = EvaluationSerializer
 
     def get_queryset(self):
@@ -152,7 +152,7 @@ class STREvaluationsViewSet(EntityViewSet):
 
 
 class STRViewSet(EntityViewSet):
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
     serializer_class = STRSerializer
 
     def get_queryset(self):
@@ -161,7 +161,7 @@ class STRViewSet(EntityViewSet):
 
 
 class EntitySearchViewSet(ReadOnlyListViewset):
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
     lookup_field = 'entity_name'
     lookup_url_kwarg = 'entity_name'
 
@@ -187,7 +187,7 @@ class EntitySearchViewSet(ReadOnlyListViewset):
 
 class GeneSearchViewSet(EntitySearchViewSet):
     """Search Genes"""
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
     serializer_class = GeneDetailSerializer
 
     def get_queryset(self):
@@ -205,7 +205,7 @@ class GeneSearchViewSet(EntitySearchViewSet):
 
 class STRSearchViewSet(EntitySearchViewSet):
     """Search STRs"""
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
     serializer_class = STRDetailSerializer
 
     def get_queryset(self):

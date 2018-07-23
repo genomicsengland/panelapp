@@ -1,8 +1,7 @@
-from django.test import TransactionTestCase
+from django.test import TestCase
 from django.urls import reverse_lazy
 from accounts.tests.setup import LoginExternalUser
 from panels.models import GenePanel
-from panels.models import GenePanelSnapshot
 from panels.tests.factories import GenePanelSnapshotFactory
 from panels.tests.factories import GenePanelEntrySnapshotFactory
 from panels.tests.factories import STRFactory
@@ -23,6 +22,10 @@ class TestAPIV1(LoginExternalUser):
     def test_list_panels(self):
         r = self.client.get(reverse_lazy('api:v1:panels-list'))
         self.assertEqual(r.status_code, 200)
+
+    def test_read_only_list_of_panels(self):
+        r = self.client.post(reverse_lazy('api:v1:panels-list'), {'something': 'something'})
+        self.assertEqual(r.status_code, 405)
 
     def test_list_panels_name(self):
         url = reverse_lazy('api:v1:panels-list')
@@ -162,5 +165,47 @@ class TestAPIV1(LoginExternalUser):
     def test_evaluations(self):
         r = self.client.get(reverse_lazy('api:v1:genes-evaluations-list', args=(self.gpes.panel.panel.pk,
                                                                                 self.gpes.gene_core.gene_symbol)))
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(len(r.json()['results']), 4)
+
+
+class NonAuthAPIv1Request(TestCase):
+    def setUp(self):
+        super().setUp()
+        self.gps = GenePanelSnapshotFactory(panel__status=GenePanel.STATUS.public)
+        self.gps_public = GenePanelSnapshotFactory(panel__status=GenePanel.STATUS.public)
+        self.gpes = GenePanelEntrySnapshotFactory(panel=self.gps_public)
+        self.gpes_internal = GenePanelEntrySnapshotFactory(panel__panel__status=GenePanel.STATUS.internal)
+        self.gpes_retired = GenePanelEntrySnapshotFactory(panel__panel__status=GenePanel.STATUS.retired)
+        self.gpes_deleted = GenePanelEntrySnapshotFactory(panel__panel__status=GenePanel.STATUS.deleted)
+        self.genes = GenePanelEntrySnapshotFactory.create_batch(4, panel=self.gps)
+        self.str = STRFactory(panel__panel__status=GenePanel.STATUS.public)
+
+    def test_list_of_panels(self):
+        r = self.client.get(reverse_lazy('api:v1:panels-list'))
+        self.assertEqual(r.status_code, 200)
+
+    def test_read_only_list_of_panels(self):
+        r = self.client.post(reverse_lazy('api:v1:panels-list'), {'something': 'something'})
+        self.assertEqual(r.status_code, 403)
+
+    def test_get_panel_name(self):
+        r = self.client.get(reverse_lazy('api:v1:panels-detail', args=(self.gpes.panel.panel.name,)))
+        self.assertEqual(r.status_code, 200)
+
+    def test_get_search_gene(self):
+        url = reverse_lazy('api:v1:genes-detail', args=(self.gpes.gene_core.gene_symbol,))
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+
+    def test_evaluations(self):
+        r = self.client.get(reverse_lazy('api:v1:genes-evaluations-list', args=(self.gpes.panel.panel.pk,
+                                                                                self.gpes.gene_core.gene_symbol)))
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(len(r.json()['results']), 4)
+
+    def test_strs(self):
+        r = self.client.get(reverse_lazy('api:v1:strs-evaluations-list', args=(self.str.panel.panel.pk,
+                                                                               self.str.name)))
         self.assertEqual(r.status_code, 200)
         self.assertEqual(len(r.json()['results']), 4)
