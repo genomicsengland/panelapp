@@ -1,4 +1,5 @@
 import factory
+from uuid import uuid1
 from random import randint
 from random import choice
 from panels.models import Gene
@@ -89,7 +90,7 @@ class TagFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Tag
 
-    name = factory.Faker('word')
+    name = factory.LazyAttribute(lambda o: uuid1().hex)
 
 
 class CommentFactory(factory.django.DjangoModelFactory):

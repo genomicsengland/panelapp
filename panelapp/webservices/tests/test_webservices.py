@@ -209,3 +209,12 @@ class TestWebservices(TransactionTestCase):
 
         r = self.client.get("{}?TriplosensitivityScore={}".format(url, self.region.triplosensitivity_score)).json()
         self.assertEqual(r['result']['Regions'][0]['TriplosensitivityScore'], self.region.triplosensitivity_score)
+
+    def test_list_entities(self):
+        url = reverse_lazy('webservices:list_entities')
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        res = r.json()
+        self.assertEqual(len(res['results']), 7)
+        self.assertEqual(len([r for r in res['results'] if r['EntityType'] == 'str']), 1)
+        self.assertEqual(len([r for r in res['results'] if r['EntityType'] == 'region']), 1)

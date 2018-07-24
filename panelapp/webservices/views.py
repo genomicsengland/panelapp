@@ -1,19 +1,26 @@
 from django.db import DatabaseError
 from django.db.models import Q
+from django.utils.functional import cached_property
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework import permissions
+from rest_framework import pagination
+from rest_framework import generics
 from .utils import convert_moi
 from .utils import convert_mop
 from .utils import convert_evidences
 from .utils import convert_gel_status
+from .utils import convert_confidence_level
 
 from panels.models import GenePanel
 from panels.models import GenePanelSnapshot
 from panels.models import GenePanelEntrySnapshot
+from panels.models import STR
+from panels.models import Region
 from .serializers import PanelSerializer
-from .serializers import ListPanelSerializer
 from .serializers import GenesSerializer
+from .serializers import EntitySerializer
+from .serializers import ListPanelSerializer
 
 
 def filter_entity_list(entity_list, moi=None, mop=None, penetrance=None, conf_level=None, evidence=None,
@@ -222,3 +229,94 @@ def search_by_gene(request, gene):
     data["results"] = serializer.to_representation(panels_ids_dict)
     data["meta"]["numOfResults"] = len(data["results"])
     return Response(data)
+
+
+class EntitiesPagination(pagination.PageNumberPagination):
+    page_size = 100
+    page_size_query_param = 'page_size'
+    max_page_size = 200
+
+
+class EntitiesListView(generics.ListAPIView):
+    serializer_class = EntitySerializer
+    pagination_class = EntitiesPagination
+
+    @cached_property
+    def snapshot_ids(self):
+        if self.request.query_params.get('panel_name'):
+            panel_names = self.request.query_params.get("panel_name").split(",")
+        else:
+            panel_names = None
+
+        if panel_names:
+            all_panels = GenePanelSnapshot.objects.get_active_annotated().filter(panel__name__in=panel_names)
+        else:
+            all_panels = GenePanelSnapshot.objects.get_active_annotated()
+
+        return [s.pk for s in all_panels]
+
+    def get_queryset(self):
+        filters = {}
+
+        if self.request.query_params.get('entity_name'):
+            filters['entity_name__in'] = self.request.query_params.get('entity_name').split(',')
+
+        if self.request.query_params.get('ModeOfInheritance'):
+            filters["moi__in"] = [
+                convert_moi(x, True)
+                for x in self.request.query_params.get("ModeOfInheritance").split(",")
+                if convert_moi(x, True)
+            ]
+
+        if self.request.query_params.get('ModeOfPathogenicity'):
+            filters["mode_of_pathogenicity__in"] = [
+                convert_mop(x, True)
+                for x in self.request.query_params.get("ModeOfPathogenicity").split(",")
+                if convert_mop(x, True)
+            ]
+
+        if self.request.query_params.get('Penetrance'):
+            filters["penetrance__in"] = self.request.query_params.get("Penetrance").split(",")
+        if self.request.query_params.get('LevelOfConfidence'):
+            filters["saved_gel_status__in"] = [
+                convert_confidence_level(level)
+                for level in self.request.query_params.get("LevelOfConfidence").split(",")
+                if level
+            ]
+        if self.request.query_params.get('Evidences'):
+            filters["evidence__name__in"] = [
+                convert_evidences(x, True)
+                for x in self.request.query_params.get("Evidences").split(",")
+                if convert_evidences(x, True)
+            ]
+
+        active_genes = GenePanelEntrySnapshot.objects.get_active(pks=self.snapshot_ids)
+        genes = active_genes.filter(**filters)
+
+        active_strs = STR.objects.get_active(pks=self.snapshot_ids)
+        strs = active_strs.filter(**filters)
+
+        active_regions = Region.objects.get_active(pks=self.snapshot_ids)
+        regions = active_regions.filter(**filters)
+
+        return strs.union(genes).union(regions).values('entity_name', 'entity_type', 'pk')
+
+    def list(self, request, *args, **kwargs):
+        # We can't union two queries as they have different fields which fail on PostgreSQL level, due to field types
+        # and count mismatch. Instead get the ids for a specific page, and then just get those values, create a joined
+        # list, push to serializer.
+
+        queryset = self.filter_queryset(self.get_queryset())
+
+        page = self.paginate_queryset(queryset)
+        genes = GenePanelEntrySnapshot.objects.get_active(pks=self.snapshot_ids) \
+            .filter(pk__in=[e.get('pk') for e in page if e.get('entity_type') == 'gene'])
+        strs = STR.objects.get_active(pks=self.snapshot_ids) \
+            .filter(pk__in=[e.get('pk') for e in page if e.get('entity_type') == 'str'])
+        regions = Region.objects.get_active(pks=self.snapshot_ids) \
+            .filter(pk__in=[e.get('pk') for e in page if e.get('entity_type') == 'region'])
+        serializer = self.get_serializer(list(strs) + list(genes) + list(regions), many=True)
+        return self.get_paginated_response(serializer.data)
+
+
+list_entities = EntitiesListView.as_view()

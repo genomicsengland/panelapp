@@ -91,6 +91,20 @@ def convert_gel_status(gel_status):
         return "LowEvidence"
 
 
+def convert_confidence_level(conf_level):
+    map_levels = {
+        'HighEvidence': 3,
+        'ModerateEvidence': 2,
+        'LowEvidence': 1,
+        'NoList': 0
+    }
+
+    if conf_level in map_levels:
+        return map_levels[conf_level]
+    else:
+        return 0
+
+
 def make_null(value):
     if not value or value == [""]:
         return None
