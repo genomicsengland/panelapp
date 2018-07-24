@@ -370,7 +370,7 @@ class RegionReviewTest(LoginGELUser):
             "comments": fake.sentence(),
             "publications": ";".join([fake.sentence(), fake.sentence()]),
             "phenotypes": ";".join([fake.sentence(), fake.sentence(), fake.sentence()]),
-            "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)],
+            "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)][0],
             "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][randint(1, 2)][0],
         }
         self.client.post(evaluation_url, gene_data, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
