@@ -11,6 +11,7 @@ from .viewsets import STRSearchViewSet
 from .viewsets import RegionViewSet
 from .viewsets import RegionEvaluationsViewSet
 from .viewsets import RegionSearchViewSet
+from .viewsets import EntitySearchViewSet
 
 router = routers.DefaultRouter()
 router.register(r'panels', PanelsViewSet, base_name='panels')
@@ -37,6 +38,7 @@ router.register(r'activities', ActivityViewSet, base_name='activities')
 router.register(r'genes', GeneSearchViewSet, base_name='genes')
 router.register(r'strs', STRSearchViewSet, base_name='strs')
 router.register(r'regions', RegionSearchViewSet, base_name='regions')
+router.register(r'entities', EntitySearchViewSet, base_name='entities')
 
 app_name = 'apiv1'
 urlpatterns = [

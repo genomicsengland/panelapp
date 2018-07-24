@@ -268,4 +268,36 @@ class EvaluationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Evaluation
         fields = ('created', 'rating', 'mode_of_pathogenicity', 'publications', 'phenotypes', 'moi',
-                  'current_diagnostic', 'clinically_relevant',)
+                  'current_diagnostic', 'clinically_relevant', )
+
+
+class EntitiesListSerializer(serializers.ListSerializer):
+    gene_serializer = None
+    str_serializer = None
+    region_serializer = None
+
+    def __init__(self, *args, **kwargs):
+        self.gene_serializer = GeneDetailSerializer()
+        self.str_serializer = STRDetailSerializer()
+        self.region_serializer = RegionDetailSerializer()
+        super().__init__(*args, **kwargs)
+
+    def to_representation(self, data):
+        """
+        List of object instances -> List of dicts of primitive datatypes.
+        """
+
+        types_to_serializers = {
+            'gene': self.gene_serializer,
+            'str': self.str_serializer,
+            'region': self.region_serializer
+        }
+
+        return [
+            types_to_serializers[item.entity_type].to_representation(item) for item in data
+        ]
+
+
+class EntitySerializer(serializers.BaseSerializer):
+    class Meta:
+        list_serializer_class = EntitiesListSerializer

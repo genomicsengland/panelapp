@@ -192,6 +192,11 @@ class TestAPIV1(LoginExternalUser):
         self.assertEqual(r.status_code, 200)
         self.assertEqual(len(r.json()['results']), 5)
 
+    def test_genes_list_filter_name(self):
+        r = self.client.get(reverse_lazy('api:v1:genes-detail', args=(self.gpes.gene_core.gene_symbol, )))
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(len(r.json()['results']), 1)
+
     def test_strs_list(self):
         r = self.client.get(reverse_lazy('api:v1:strs-list'))
         self.assertEqual(r.status_code, 200)
@@ -199,6 +204,20 @@ class TestAPIV1(LoginExternalUser):
 
     def test_regions_list(self):
         r = self.client.get(reverse_lazy('api:v1:regions-list'))
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(len(r.json()['results']), 1)
+
+    def test_entities_list(self):
+        r = self.client.get(reverse_lazy('api:v1:entities-list'))
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(len(r.json()['results']), 7)
+
+    def test_read_only_list_of_entities(self):
+        r = self.client.post(reverse_lazy('api:v1:entities-list'), {'something': 'something'})
+        self.assertEqual(r.status_code, 405)
+
+    def test_entities_list_filter_name(self):
+        r = self.client.get(reverse_lazy('api:v1:entities-detail', args=(self.region.name,)))
         self.assertEqual(r.status_code, 200)
         self.assertEqual(len(r.json()['results']), 1)
 
@@ -222,6 +241,10 @@ class NonAuthAPIv1Request(TestCase):
 
     def test_read_only_list_of_panels(self):
         r = self.client.post(reverse_lazy('api:v1:panels-list'), {'something': 'something'})
+        self.assertEqual(r.status_code, 403)
+
+    def test_read_only_list_of_entities(self):
+        r = self.client.post(reverse_lazy('api:v1:entities-list'), {'something': 'something'})
         self.assertEqual(r.status_code, 403)
 
     def test_get_panel_name(self):

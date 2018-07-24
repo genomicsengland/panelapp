@@ -9,6 +9,7 @@ from panels.models import Region
 from panels.models import Activity
 from django.db.models import Q
 from django.db.models import ObjectDoesNotExist
+from django.utils.functional import cached_property
 from .serializers import PanelListSerializer
 from .serializers import PanelSerializer
 from .serializers import PanelVersionListSerializer
@@ -20,6 +21,7 @@ from .serializers import STRDetailSerializer
 from .serializers import EvaluationSerializer
 from .serializers import RegionSerializer
 from .serializers import RegionDetailSerializer
+from .serializers import EntitySerializer
 from django.http import Http404
 from rest_framework.exceptions import APIException
 
@@ -258,6 +260,62 @@ class RegionSearchViewSet(EntitySearchViewSet):
             filters['name'] = self.kwargs['entity_name'].split(',')
 
         return self.filter_by_tag(Region.objects.get_active(**filters))
+
+    def retrieve(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
+class EntitySearchViewSet(EntitySearchViewSet):
+    """Search Entities"""
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
+    serializer_class = EntitySerializer
+
+    @cached_property
+    def snapshot_ids(self):
+        if self.request.query_params.get('panel_name'):
+            panel_names = self.request.query_params.get("panel_name").split(",")
+        else:
+            panel_names = None
+
+        if panel_names:
+            all_panels = GenePanelSnapshot.objects.get_active_annotated().filter(panel__name__in=panel_names)
+        else:
+            all_panels = GenePanelSnapshot.objects.get_active_annotated()
+
+        return [s.get('pk') for s in all_panels.values('pk')]
+
+    def get_queryset(self):
+        filters = {}
+
+        if self.kwargs.get('entity_name'):
+            filters['entity_name__in'] = self.kwargs['entity_name'].split(',')
+
+        active_genes = GenePanelEntrySnapshot.objects.get_active(pks=self.snapshot_ids)
+        genes = active_genes.filter(**filters)
+
+        active_strs = STR.objects.get_active(pks=self.snapshot_ids)
+        strs = active_strs.filter(**filters)
+
+        active_regions = Region.objects.get_active(pks=self.snapshot_ids)
+        regions = active_regions.filter(**filters)
+
+        return strs.union(genes).union(regions).values('entity_name', 'entity_type', 'pk')
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+
+        page = self.paginate_queryset(queryset)
+
+        genes = GenePanelEntrySnapshot.objects.get_active(pks=self.snapshot_ids) \
+            .filter(pk__in=[e.get('pk') for e in page if e.get('entity_type') == 'gene'])
+        strs = STR.objects.get_active(pks=self.snapshot_ids) \
+            .filter(pk__in=[e.get('pk') for e in page if e.get('entity_type') == 'str'])
+        regions = Region.objects.get_active(pks=self.snapshot_ids) \
+            .filter(pk__in=[e.get('pk') for e in page if e.get('entity_type') == 'region'])
+
+        serializer = self.get_serializer(list(genes) + list(strs) + list(regions), many=True)
+
+        return self.get_paginated_response(serializer.data)
 
     def retrieve(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
