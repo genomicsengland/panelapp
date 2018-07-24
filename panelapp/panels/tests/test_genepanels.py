@@ -11,6 +11,7 @@ from panels.tests.factories import GeneFactory
 from panels.tests.factories import EvidenceFactory
 from panels.tests.factories import GenePanelSnapshotFactory
 from panels.tests.factories import GenePanelEntrySnapshotFactory
+from panels.tests.factories import PanelTypeFactory
 
 
 fake = Factory.create()
@@ -404,3 +405,17 @@ class GenePanelTest(LoginGELUser):
         gps.delete_gene(gene_symbol)
         v1 = gp.genepanelsnapshot_set.get(major_version=0, minor_version=1)
         self.assertTrue(v1.has_gene(gene_symbol))
+
+    def test_panel_types(self):
+        panel_type = PanelTypeFactory()
+        gpes = GenePanelEntrySnapshotFactory()
+
+        panel_data = self.panel_data
+        panel_data['types'] = [panel_type.pk, ]
+        res = self.client.post(reverse_lazy('panels:create'), panel_data)
+        self.assertEqual(res.status_code, 302)
+
+        gp = GenePanel.objects.get(name=self.panel_data['level4'])
+        self.assertEqual(gp.types.first(), panel_type)
+        r = self.client.get(reverse_lazy('panels:detail', args=(gp.pk,)))
+        self.assertIn(panel_type.name.encode(), r.content)

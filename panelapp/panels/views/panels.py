@@ -319,12 +319,15 @@ class DownloadAllPanels(GELReviewerRequiredMixin, View):
             "Reviewer name and affiliation (;)",
             "Reviewer emails (;)",
             "Status",
-            "Relevant disorders"
+            "Relevant disorders",
+            "Types"
         )
 
         panels = GenePanelSnapshot.objects\
             .get_active_annotated(all=True, internal=True)\
             .prefetch_related(
+                'panel',
+                'panel__types',
                 'genepanelentrysnapshot_set',
                 'genepanelentrysnapshot_set__evaluation',
                 'genepanelentrysnapshot_set__evaluation__user',
@@ -355,7 +358,8 @@ class DownloadAllPanels(GELReviewerRequiredMixin, View):
                 ";".join(contributors),  # aff
                 ";".join([user[2] for user in reviewers if user[2]]),  # email
                 panel.panel.status.upper(),
-                ";".join(panel.old_panels)
+                ";".join(panel.old_panels),
+                ";".join(panel.panel.types.values_list('name', flat=True)),
             )
 
     def get(self, request, *args, **kwargs):

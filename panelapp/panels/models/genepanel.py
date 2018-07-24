@@ -1,14 +1,13 @@
 from django.db import models
 from django.db.models import Sum
-from django.db.models import Count
 from django.db.models import Case
 from django.db.models import When
 from django.db.models import Value
-from django.contrib.postgres.aggregates import ArrayAgg
 from django.urls import reverse
 from django.utils.functional import cached_property
 from model_utils import Choices
 from model_utils.models import TimeStampedModel
+from .panel_types import PanelType
 
 
 class GenePanelManager(models.Manager):
@@ -34,6 +33,7 @@ class GenePanel(TimeStampedModel):
     old_pk = models.CharField(max_length=24, null=True, blank=True, db_index=True)  # Mongo ObjectID hex string
     name = models.CharField(max_length=255, db_index=True)
     status = models.CharField(choices=STATUS, default=STATUS.internal, max_length=36, db_index=True)
+    types = models.ManyToManyField(PanelType)
 
     objects = GenePanelManager()
 

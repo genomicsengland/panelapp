@@ -5,6 +5,7 @@ from panels.models import Gene
 from panels.models import Evidence
 from panels.models import Tag
 from panels.models import GenePanelSnapshot
+from panels.models import PanelType
 
 
 class GeneAutocomplete(Select2QuerySetView):
@@ -40,5 +41,15 @@ class SimplePanelsAutocomplete(Select2QuerySetView):
 
         if self.q:
             qs = qs.filter(Q(panel__name__icontains=self.q) | Q(panel__name__icontains=self.q))
+
+        return qs
+
+
+class SimplePanelTypesAutocomplete(Select2QuerySetView):
+    def get_queryset(self):
+        qs = PanelType.objects.all()
+
+        if self.q:
+            qs = qs.filter(Q(name__icontains=self.q) | Q(name__icontains=self.q))
 
         return qs
