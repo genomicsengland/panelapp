@@ -16,6 +16,7 @@ from panels.models import GenePanel
 from panels.models import GenePanelSnapshot
 from panels.models import GenePanelEntrySnapshot
 from panels.models import STR
+from panels.models import Region
 from .serializers import PanelSerializer
 from .serializers import GenesSerializer
 from .serializers import EntitySerializer
@@ -295,7 +296,10 @@ class EntitiesListView(generics.ListAPIView):
         active_strs = STR.objects.get_active(pks=self.snapshot_ids)
         strs = active_strs.filter(**filters)
 
-        return strs.union(genes).values('entity_name', 'entity_type', 'pk')
+        active_regions = Region.objects.get_active(pks=self.snapshot_ids)
+        regions = active_regions.filter(**filters)
+
+        return strs.union(genes).union(regions).values('entity_name', 'entity_type', 'pk')
 
     def list(self, request, *args, **kwargs):
         # We can't union two queries as they have different fields which fail on PostgreSQL level, due to field types
@@ -309,7 +313,9 @@ class EntitiesListView(generics.ListAPIView):
             .filter(pk__in=[e.get('pk') for e in page if e.get('entity_type') == 'gene'])
         strs = STR.objects.get_active(pks=self.snapshot_ids) \
             .filter(pk__in=[e.get('pk') for e in page if e.get('entity_type') == 'str'])
-        serializer = self.get_serializer(list(strs) + list(genes), many=True)
+        regions = Region.objects.get_active(pks=self.snapshot_ids) \
+            .filter(pk__in=[e.get('pk') for e in page if e.get('entity_type') == 'region'])
+        serializer = self.get_serializer(list(strs) + list(genes) + list(regions), many=True)
         return self.get_paginated_response(serializer.data)
 
 

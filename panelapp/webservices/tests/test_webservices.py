@@ -215,5 +215,6 @@ class TestWebservices(TransactionTestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         res = r.json()
-        self.assertEqual(len(res['results']), 6)
+        self.assertEqual(len(res['results']), 7)
         self.assertEqual(len([r for r in res['results'] if r['EntityType'] == 'str']), 1)
+        self.assertEqual(len([r for r in res['results'] if r['EntityType'] == 'region']), 1)

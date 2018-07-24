@@ -19,6 +19,7 @@ from array_field_select.fields import ArrayField as SelectArrayField
 from .entity import AbstractEntity
 from .entity import EntityManager
 from .gene import Gene
+from .genepanel import GenePanel
 from .evidence import Evidence
 from .evaluation import Evaluation
 from .trackrecord import TrackRecord
@@ -28,7 +29,40 @@ from .genepanelsnapshot import GenePanelSnapshot
 
 
 class RegionManager(EntityManager):
-    """STR Objects manager."""
+    """Regions Objects manager."""
+
+    def get_latest_ids(self, deleted=False):
+        """Get Region ids"""
+
+        qs = super().get_queryset()
+        if not deleted:
+            qs = qs.exclude(panel__panel__status=GenePanel.STATUS.deleted)
+
+        return qs.distinct('panel__panel__pk')\
+            .values_list('panel__pk', flat=True)\
+            .order_by('panel__panel__pk', '-panel__major_version', '-panel__minor_version')
+
+    def get_active(self, deleted=False, name=None, gene_symbol=None, pks=None):
+        """Get active STRs"""
+
+        if pks:
+            qs = super().get_queryset().filter(panel__pk__in=pks)
+        else:
+            qs = super().get_queryset().filter(panel__pk__in=models.Subquery(self.get_latest_ids(deleted)))
+        if name:
+            qs = qs.filter(name=name)
+        if gene_symbol:
+            qs = qs.filter(gene__gene_symbol=gene_symbol)
+
+        return qs.annotate(
+                entity_type=models.Value('region', output_field=models.CharField()),
+                entity_name=models.F('name'),
+                number_of_reviewers=models.Count('evaluation__user', distinct=True),
+                number_of_evaluated_genes=models.Count('evaluation'),
+                number_of_genes=models.Count('pk'),
+            )\
+            .prefetch_related('evaluation', 'tags', 'evidence', 'panel', 'panel__level4title', 'panel__panel')\
+            .order_by('panel__pk', '-panel__major_version', '-panel__minor_version')
 
     def get_region_panels(self, name, deleted=False, pks=None):
         """Get panels for the specified region name"""

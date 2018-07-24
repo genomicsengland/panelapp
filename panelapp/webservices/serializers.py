@@ -266,6 +266,15 @@ class EntitySerializer(EnsembleIdMixin, serializers.BaseSerializer):
             out["RepeatedSequence"] = entity.repeated_sequence
             out["NormalRepeats"] = entity.normal_repeats
             out["PathogenicRepeats"] = entity.pathogenic_repeats
+        elif entity.entity_type == 'region':
+            out["Name"] = entity.name
+            out["VerboseName"] = entity.verbose_name
+            out["Chromosome"] = entity.chromosome
+            out["GRCh37Coordinates"] = [entity.position_37.lower, entity.position_37.upper]
+            out["GRCh38Coordinates"] = [entity.position_38.lower, entity.position_38.upper]
+            out["HaploinsufficiencyScore"] = entity.haploinsufficiency_score
+            out["TriplosensitivityScore"] = entity.triplosensitivity_score
+            out["RequiredOverlapPercentage"] = entity.required_overlap_percentage
         else:
             raise Exception('Incorrect entity type for {}'.format(entity))
 
