@@ -71,12 +71,14 @@ setup(
         'django-admin-list-filter-dropdown==1.0.1',
         'pytz==2018.4',
         'gunicorn==19.9.0',
-        'pytz==2018.4'
+        'pytz==2018.4',
         'django-array-field-select==0.2.0'
         'drf-yasg==1.9.0',
         'flex==6.13.2',
         'swagger-spec-validator==2.3.1',
         'djangorestframework-jsonapi==2.4.0',
         'drf-nested-routers==0.90.2'
+        'django-array-field-select==0.2.0',
+        'git+git://github.com/justinmayer/django-autoslug.git@4dc75083d84265e019a900d636273c731457193d'
     ]
 )

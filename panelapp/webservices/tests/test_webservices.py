@@ -7,6 +7,7 @@ from panels.tests.factories import GenePanelSnapshotFactory
 from panels.tests.factories import GenePanelEntrySnapshotFactory
 from panels.tests.factories import STRFactory
 from panels.tests.factories import RegionFactory
+from panels.tests.factories import PanelTypeFactory
 from webservices.utils import convert_mop
 
 
@@ -31,6 +32,15 @@ class TestWebservices(TransactionTestCase):
         url = reverse_lazy('webservices:list_panels')
         r = self.client.get(url)
         self.assertEqual(len(r.json()['result']), 4)
+        self.assertEqual(r.status_code, 200)
+
+    def test_list_panels_filter_type(self):
+        panel_type = PanelTypeFactory()
+        self.gps.panel.types.add(panel_type)
+        url = reverse_lazy('webservices:list_panels')
+        r = self.client.get(url + '?Types=' + panel_type.slug)
+        self.assertEqual(len(r.json()['result']), 1)
+        self.assertEqual(r.json()['result'][0]['Name'], self.gps.panel.name)
         self.assertEqual(r.status_code, 200)
 
     def test_retired_panels(self):

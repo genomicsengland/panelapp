@@ -39,6 +39,9 @@
               <br />This panel contains these {{ panel.child_panels.all|length }} panels:
               {% for child_panel in panel.child_panels.all %}<br /><a href="{% url 'panels:detail' child_panel.panel.pk %}">{{ child_panel }}</a> {% endfor %}
           {% endif %}
+          {% if panel.panel.types.all %}
+              <br />Panel types: {% for type in panel.panel.types.all %}{{ type.name }}{% if not forloop.last %} ,{% endif %}{% endfor %}
+          {% endif %}
 
           {% if panel.panel.old_pk %}<br />Previous code: {{ panel.panel.old_pk }}{% endif %}
       </p>

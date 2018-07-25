@@ -4,6 +4,7 @@ from dal_select2.widgets import ModelSelect2Multiple
 from panels.models import Level4Title
 from panels.models import GenePanel
 from panels.models import GenePanelSnapshot
+from panels.models import PanelType
 
 
 class PanelForm(forms.ModelForm):
@@ -26,9 +27,19 @@ class PanelForm(forms.ModelForm):
         )
     )
 
+    types = forms.ModelMultipleChoiceField(
+        label="Types",
+        required=False,
+        queryset=PanelType.objects.all(),
+        widget=ModelSelect2Multiple(
+            url="autocomplete-simple-panel-types",
+            attrs={'data-minimum-input-length': 1}
+        )
+    )
+
     class Meta:
         model = GenePanelSnapshot
-        fields = ('old_panels',)
+        fields = ('old_panels', )
 
     def __init__(self, *args, **kwargs):
         gel_curator = kwargs.pop('gel_curator')
@@ -46,6 +57,7 @@ class PanelForm(forms.ModelForm):
         self.fields['orphanet'] = original_fields.get('orphanet')
         self.fields['hpo'] = original_fields.get('hpo')
         self.fields['old_panels'] = original_fields.get('old_panels')
+        self.fields['types'] = original_fields.get('types')
         if gel_curator:  # TODO (Oleg) also check if we have entities in this panel
             self.fields['child_panels'] = original_fields.get('child_panels')
         self.fields['status'] = original_fields.get('status')
@@ -54,6 +66,7 @@ class PanelForm(forms.ModelForm):
             self.fields['status'].initial = self.instance.panel.status
             if gel_curator:
                 self.fields['child_panels'].initial = self.instance.child_panels.values_list('pk', flat=True)
+                self.fields['types'].initial = self.instance.panel.types.values_list('pk', flat=True)
 
     def clean_level4(self):
         if not self.instance.pk or self.cleaned_data['level4'] != self.instance.level4title.name:
@@ -103,12 +116,15 @@ class PanelForm(forms.ModelForm):
             if 'child_panels' in self.changed_data:
                 self.instance.child_panels.set(self.cleaned_data['child_panels'])
 
+            if 'types' in self.cleaned_data:
+                panel.types.set(self.cleaned_data['types'])
+
             if data_changed or self.changed_data:
                 self.instance.increment_version()
-                self.instance.panel.save()
+                panel.save()
                 self.instance.update_saved_stats()
             else:
-                self.instance.panel.save()
+                panel.save()
 
         else:
             panel = GenePanel.objects.create(
@@ -126,6 +142,8 @@ class PanelForm(forms.ModelForm):
                 self.instance.major_version = max(self.instance.child_panels.values_list('major_version', flat=True))
                 self.instance.save(update_fields=['major_version', ])
                 self.instance.update_saved_stats()
+            if self.cleaned_data.get('types'):
+                panel.types.set(self.cleaned_data['types'])
 
     @staticmethod
     def _clean_array(data, separator=","):

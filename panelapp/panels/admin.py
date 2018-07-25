@@ -1,6 +1,5 @@
 from django.contrib import admin
-from django_admin_listfilter_dropdown.filters import DropdownFilter, RelatedDropdownFilter
-from accounts.models import User
+from django_admin_listfilter_dropdown.filters import DropdownFilter
 from .models import Tag
 from .models import STR
 from .models import Gene
@@ -16,6 +15,7 @@ from .models import GenePanelEntrySnapshot
 from .models import UploadedGeneList
 from .models import UploadedPanelList
 from .models import UploadedReviewsList
+from .models import PanelType
 
 
 class TagAdmin(admin.ModelAdmin):
@@ -100,6 +100,18 @@ class GenePanelAdmin(admin.ModelAdmin):
         'genepanelsnapshot_set__level4title__level3title',
         'genepanelsnapshot_set__level4title__level2title',
         'old_panels'
+    )
+
+
+class PanelTypeAdmin(admin.ModelAdmin):
+    list_display = ('name', 'slug')
+    readonly_fields = (
+        'slug',
+    )
+    search_fields = (
+        'name',
+        'description',
+        'slug',
     )
 
 
@@ -238,6 +250,7 @@ admin.site.register(Evidence, EvidenceAdmin)
 admin.site.register(Evaluation, EvaluationAdmin)
 admin.site.register(TrackRecord, TrackRecordAdmin)
 admin.site.register(GenePanel, GenePanelAdmin)
+admin.site.register(PanelType, PanelTypeAdmin)
 admin.site.register(GenePanelSnapshot, GenePanelSnapshotAdmin)
 admin.site.register(GenePanelEntrySnapshot, GenePanelEntrySnapshotAdmin)
 admin.site.register(STR, STRAdmin)

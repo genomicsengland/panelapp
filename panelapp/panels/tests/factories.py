@@ -14,6 +14,7 @@ from panels.models import GenePanel
 from panels.models import GenePanelSnapshot
 from panels.models import STR
 from panels.models import Region
+from panels.models import PanelType
 from psycopg2.extras import NumericRange
 
 from faker import Faker
@@ -57,6 +58,14 @@ class GenePanelFactory(factory.django.DjangoModelFactory):
 
     name = factory.LazyAttribute(lambda x: fake.sentence(nb_words=6, variable_nb_words=True).strip('.'))
     genepanelsnapshot = factory.RelatedFactory(GenePanelSnapshotFactory)
+
+
+class PanelTypeFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = PanelType
+
+    name = factory.Faker('word')
+    description = factory.Faker('sentences', nb=3)
 
 
 class GeneFactory(factory.django.DjangoModelFactory):

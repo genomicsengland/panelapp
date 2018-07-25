@@ -168,6 +168,9 @@ def list_panels(request):
     if "Name" in request.GET:
         filters["panel__name__icontains"] = request.GET["Name"]
 
+    if "Types" in request.GET:
+        filters["panel__types__slug__in"] = request.GET["Types"].split(',')
+
     if request.GET.get('Retired', '').lower() == 'true':
         queryset = GenePanelSnapshot.objects.get_active_annotated(all=True).filter(**filters)
     else:
