@@ -79,6 +79,6 @@ setup(
         'djangorestframework-jsonapi==2.4.0',
         'drf-nested-routers==0.90.2'
         'django-array-field-select==0.2.0',
-        'git+git://github.com/justinmayer/django-autoslug.git@4dc75083d84265e019a900d636273c731457193d'
+        'django-autoslug-iplweb==1.9.4'
     ]
 )
