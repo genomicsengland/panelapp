@@ -32,7 +32,7 @@ class Activity(TimeStampedModel):
     panel = models.ForeignKey(GenePanel, on_delete=models.SET_NULL, null=True)
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
     text = models.TextField()
-    item_type = models.CharField(max_length=32, null=True)
+    item_type = models.CharField(max_length=32, null=True)  # TODO (Oleg) change to Enum
     entity_type = models.CharField(max_length=32, null=True)
     entity_name = models.CharField(max_length=128, null=True)
     extra_data = JSONField(default=dict, encoder=DjangoJSONEncoder)
@@ -40,6 +40,14 @@ class Activity(TimeStampedModel):
     @property
     def panel_version(self):
         return self.extra_data.get('panel_version')
+
+    @property
+    def panel_name(self):
+        return self.extra_data.get('panel_name')
+
+    @property
+    def user_name(self):
+        return self.extra_data.get('user_name')
 
     @classmethod
     def log(cls, user, panel_snapshot, text, extra_info):

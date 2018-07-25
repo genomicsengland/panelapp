@@ -196,7 +196,7 @@ class STRTest(LoginGELUser):
             "gene": str_item.gene_core.pk,
             "gene_name": "Gene name",
             "source": set([source, new_evidence]),
-            "tags": [TagFactory().pk, ] + [tag.name for tag in str_item.tags.all()],
+            "tags": [TagFactory().pk, ] + [tag.pk for tag in str_item.tags.all()],
             "publications": ";".join([publication, fake.sentence()]),
             "phenotypes": ";".join([phenotype, fake.sentence(), fake.sentence()]),
             "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)][0],
@@ -243,7 +243,7 @@ class STRTest(LoginGELUser):
             "gene": str_item.gene_core.pk,
             "gene_name": "Gene name",
             "source": set([source, new_evidence]),
-            "tags": [TagFactory().pk, ] + [tag.name for tag in str_item.tags.all()],
+            "tags": [TagFactory().pk, ] + [tag.pk for tag in str_item.tags.all()],
             "publications": ";".join([publication, fake.sentence()]),
             "phenotypes": ";".join([phenotype, fake.sentence(), fake.sentence()]),
             "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)][0],
@@ -287,7 +287,7 @@ class STRTest(LoginGELUser):
             "gene": str_item.gene_core.pk,
             "gene_name": "Gene name",
             "source": set([source, new_evidence]),
-            "tags": [TagFactory().pk, ] + [tag.name for tag in str_item.tags.all()],
+            "tags": [TagFactory().pk, ] + [tag.pk for tag in str_item.tags.all()],
             "publications": ";".join([publication, fake.sentence()]),
             "phenotypes": ";".join([phenotype, fake.sentence(), fake.sentence()]),
             "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)][0],
@@ -331,7 +331,7 @@ class STRTest(LoginGELUser):
             'pathogenic_repeats': '5',
             "gene_name": "Gene name",
             "source": set([source, new_evidence]),
-            "tags": [TagFactory().pk, ] + [tag.name for tag in str_item.tags.all()],
+            "tags": [TagFactory().pk, ] + [tag.pk for tag in str_item.tags.all()],
             "publications": ";".join([publication, fake.sentence()]),
             "phenotypes": ";".join([phenotype, fake.sentence(), fake.sentence()]),
             "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)][0],
@@ -371,7 +371,7 @@ class STRTest(LoginGELUser):
             "gene": str_item.gene_core.pk,
             "gene_name": "Gene name",
             "source": set([ev.name for ev in str_item.evidence.all()[1:]]),
-            "tags": [tag.name for tag in str_item.tags.all()],
+            "tags": [tag.pk for tag in str_item.tags.all()],
             "publications": ";".join([publication for publication in str_item.publications]),
             "phenotypes": ";".join([phenotype for phenotype in str_item.phenotypes]),
             "moi": str_item.moi,
@@ -418,7 +418,7 @@ class STRTest(LoginGELUser):
         res = self.client.post(url, str_data)
         assert res.status_code == 302
         new_str = GenePanel.objects.get(pk=str_item.panel.panel.pk).active_panel.get_str(str_item.name)
-        assert sorted(list(new_str.tags.all())) != sorted(list(str_item.tags.all()))
+        assert sorted(list(new_str.tags.values_list('pk'))) != sorted(list(str_item.tags.values_list('pk')))
 
     def test_remove_tag_via_edit_details(self):
         """Remove tags via edit gene detail section"""
@@ -485,7 +485,7 @@ class STRTest(LoginGELUser):
             "gene": str_item.gene_core.pk,
             "gene_name": "Gene name",
             "source": set([ev.name for ev in str_item.evidence.all()]),
-            "tags": [tag.name for tag in str_item.tags.all()],
+            "tags": [tag.pk for tag in str_item.tags.all()],
             "publications": ";".join([publication for publication in str_item.publications]),
             "phenotypes": ";".join([phenotype for phenotype in str_item.phenotypes]),
             "moi": str_item.moi,
@@ -524,7 +524,7 @@ class STRTest(LoginGELUser):
             "gene": str_item.gene_core.pk,
             "gene_name": "Gene name",
             "source": set([ev.name for ev in str_item.evidence.all()]),
-            "tags": [tag.name for tag in str_item.tags.all()],
+            "tags": [tag.pk for tag in str_item.tags.all()],
             "publications": ";".join([fake.sentence(), fake.sentence()]),
             "phenotypes": ";".join([phenotype for phenotype in str_item.phenotypes]),
             "moi": str_item.moi,
@@ -563,7 +563,7 @@ class STRTest(LoginGELUser):
             "gene": str_item.gene_core.pk,
             "gene_name": "Gene name",
             "source": set([ev.name for ev in str_item.evidence.all()]),
-            "tags": [tag.name for tag in str_item.tags.all()],
+            "tags": [tag.pk for tag in str_item.tags.all()],
             "publications": ";".join(str_item.publications[:1]),
             "phenotypes": ";".join([phenotype for phenotype in str_item.phenotypes]),
             "moi": str_item.moi,
@@ -642,7 +642,7 @@ class STRTest(LoginGELUser):
             "gene": str_item.gene_core.pk,
             "gene_name": "Other name",
             "source": set([source, Evidence.ALL_SOURCES[randint(0, 9)]]),
-            "tags": [TagFactory().pk, ] + [tag.name for tag in str_item.tags.all()],
+            "tags": [TagFactory().pk, ] + [tag.pk for tag in str_item.tags.all()],
             "publications": ";".join([publication, fake.sentence()]),
             "phenotypes": ";".join([phenotype, fake.sentence(), fake.sentence()]),
             "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)][0],

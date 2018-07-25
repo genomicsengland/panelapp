@@ -189,7 +189,8 @@ class SuperPanelsTest(LoginGELUser):
         parent.update_saved_stats()
         old_parent = parent
 
-        child1 = child1.increment_version()
+        child1.increment_version()
+        child1 = child1.panel.active_panel
         child1.update_gene(self.gel_user, gene2.gene_symbol, {
             "gene": gene2,
             "sources": [Evidence.OTHER_SOURCES[1], ],

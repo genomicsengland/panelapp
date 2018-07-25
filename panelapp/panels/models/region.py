@@ -1,4 +1,4 @@
-"""STRs (Short Tandem Repeats) manager and model
+"""Regions manager and model
 
 Author: Oleg Gerasimenko
 
@@ -6,6 +6,9 @@ Author: Oleg Gerasimenko
 """
 
 from django.db import models
+from django.db.models import Subquery
+from django.db.models import Count
+from django.db.models import Value as V
 from django.core.serializers.json import DjangoJSONEncoder
 from django.contrib.postgres.fields import JSONField
 from django.contrib.postgres.fields import ArrayField
@@ -15,7 +18,6 @@ from django.urls import reverse
 
 from model_utils.models import TimeStampedModel
 from model_utils import Choices
-from array_field_select.fields import ArrayField as SelectArrayField
 from .entity import AbstractEntity
 from .entity import EntityManager
 from .gene import Gene
@@ -43,23 +45,29 @@ class RegionManager(EntityManager):
             .order_by('panel__panel__pk', '-panel__major_version', '-panel__minor_version')
 
     def get_active(self, deleted=False, name=None, gene_symbol=None, pks=None):
-        """Get active STRs"""
+        """Get active Regions"""
 
         if pks:
             qs = super().get_queryset().filter(panel__pk__in=pks)
         else:
-            qs = super().get_queryset().filter(panel__pk__in=models.Subquery(self.get_latest_ids(deleted)))
+            qs = super().get_queryset().filter(panel__pk__in=Subquery(self.get_latest_ids(deleted)))
         if name:
-            qs = qs.filter(name=name)
+            if isinstance(name, list):
+                qs = qs.filter(name__in=name)
+            else:
+                qs = qs.filter(name=name)
         if gene_symbol:
-            qs = qs.filter(gene__gene_symbol=gene_symbol)
+            if isinstance(gene_symbol, list):
+                qs = qs.filter(gene_core__gene_symbol__in=gene_symbol)
+            else:
+                qs = qs.filter(gene_core__gene_symbol=gene_symbol)
 
         return qs.annotate(
-                entity_type=models.Value('region', output_field=models.CharField()),
-                entity_name=models.F('name'),
-                number_of_reviewers=models.Count('evaluation__user', distinct=True),
-                number_of_evaluated_genes=models.Count('evaluation'),
-                number_of_genes=models.Count('pk'),
+                number_of_reviewers=Count('evaluation__user', distinct=True),
+                number_of_evaluated_genes=Count('evaluation'),
+                number_of_genes=Count('pk'),
+                entity_type=V('region', output_field=models.CharField()),
+                entity_name=models.F('name')
             )\
             .prefetch_related('evaluation', 'tags', 'evidence', 'panel', 'panel__level4title', 'panel__panel')\
             .order_by('panel__pk', '-panel__major_version', '-panel__minor_version')

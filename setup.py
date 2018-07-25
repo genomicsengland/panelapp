@@ -41,7 +41,7 @@ setup(
     ],
     dev_requires=[
         'django-debug-toolbar==1.9.1',
-        'django-extensions==2.0.7',
+        'django-extensions==2.1.0',
         'ipython==6.4.0'
     ],
     install_requires=[
@@ -73,5 +73,10 @@ setup(
         'gunicorn==19.9.0',
         'pytz==2018.4'
         'django-array-field-select==0.2.0'
+        'drf-yasg==1.9.0',
+        'flex==6.13.2',
+        'swagger-spec-validator==2.3.1',
+        'djangorestframework-jsonapi==2.4.0',
+        'drf-nested-routers==0.90.2'
     ]
 )

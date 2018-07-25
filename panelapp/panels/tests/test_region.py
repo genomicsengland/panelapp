@@ -250,7 +250,7 @@ class RegionTest(LoginGELUser):
             "tags": [TagFactory().pk, ] + [tag.name for tag in region.tags.all()],
             "publications": ";".join([publication, fake.sentence()]),
             "phenotypes": ";".join([phenotype, fake.sentence(), fake.sentence()]),
-            "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)],
+            "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)][0],
             "penetrance": GenePanelEntrySnapshot.PENETRANCE.Incomplete,
             "type_of_variants": GenePanelEntrySnapshot.VARIANT_TYPES.small,
         }
@@ -569,7 +569,7 @@ class RegionTest(LoginGELUser):
             "tags": [TagFactory().pk, ] + [tag.name for tag in region.tags.all()],
             "publications": ";".join([publication, fake.sentence()]),
             "phenotypes": ";".join([phenotype, fake.sentence(), fake.sentence()]),
-            "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)],
+            "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)][0],
             "type_of_variants": GenePanelEntrySnapshot.VARIANT_TYPES.small,
             "penetrance": GenePanelEntrySnapshot.PENETRANCE.Incomplete,
         }

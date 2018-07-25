@@ -370,7 +370,7 @@ class GeneReviewTest(LoginGELUser):
         res = self.client.post(url, data, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
         gene = GenePanel.objects.get(pk=gpes.panel.panel.pk).active_panel.get_gene(gpes.gene.get('gene_symbol'))
         assert res.json().get('status') == 200
-        assert Comment.objects.count() == 2
+        assert Comment.objects.count() == 3
         assert gene.saved_gel_status == new_status
 
         new_status = 2
@@ -379,7 +379,7 @@ class GeneReviewTest(LoginGELUser):
         res = self.client.post(url, data, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
         gene = GenePanel.objects.get(pk=gpes.panel.panel.pk).active_panel.get_gene(gpes.gene.get('gene_symbol'))
         assert res.json().get('status') == 200
-        assert Comment.objects.count() == 3
+        assert Comment.objects.count() == 6
         assert gene.saved_gel_status == new_status
 
         new_status = 3
@@ -388,7 +388,7 @@ class GeneReviewTest(LoginGELUser):
         res = self.client.post(url, data, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
         gene = GenePanel.objects.get(pk=gpes.panel.panel.pk).active_panel.get_gene(gpes.gene.get('gene_symbol'))
         assert res.json().get('status') == 200
-        assert Comment.objects.count() == 4
+        assert Comment.objects.count() == 10
         assert gene.saved_gel_status == new_status
         assert gene.panel.version != gpes.panel.version
 
