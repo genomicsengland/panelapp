@@ -18,7 +18,7 @@ EMAIL_PORT = 25
 EMAIL_HOST_USER = 'vagrant'
 EMAIL_HOST_PASSWORD = '1'
 
-ALLOWED_HOSTS = ALLOWED_HOSTS + ['localhost', ]
+ALLOWED_HOSTS = ALLOWED_HOSTS + ['localhost', '*']
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
