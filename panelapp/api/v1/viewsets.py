@@ -10,17 +10,12 @@ from panels.models import Activity
 from django.db.models import Q
 from django.db.models import ObjectDoesNotExist
 from django.utils.functional import cached_property
-from .serializers import PanelListSerializer
 from .serializers import PanelSerializer
-from .serializers import PanelVersionListSerializer
 from .serializers import ActivitySerializer
 from .serializers import GeneSerializer
-from .serializers import GeneDetailSerializer
 from .serializers import STRSerializer
-from .serializers import STRDetailSerializer
 from .serializers import EvaluationSerializer
 from .serializers import RegionSerializer
-from .serializers import RegionDetailSerializer
 from .serializers import EntitySerializer
 from django.http import Http404
 from rest_framework.exceptions import APIException
@@ -33,14 +28,12 @@ class ReadOnlyListViewset(viewsets.mixins.RetrieveModelMixin, viewsets.mixins.Li
 class PanelsViewSet(ReadOnlyListViewset):
     permission_classes = (permissions.IsAuthenticatedOrReadOnly, )
     lookup_value_regex = '[^/]+'
+    serializer_class = PanelSerializer
 
-    def get_serializer_class(self):
-        if self.action == 'list':
-            return PanelListSerializer
-        elif self.action == 'retrieve':
-            return PanelSerializer
-        elif self.action == 'versions':
-            return PanelVersionListSerializer
+    def get_serializer(self, *args, **kwargs):
+        if self.action == 'retrieve':
+            kwargs['include_entities'] = True
+        return super().get_serializer(*args, **kwargs)
 
     def get_queryset(self):
         retired = self.request.query_params.get('retired', False)
@@ -63,6 +56,13 @@ class PanelsViewSet(ReadOnlyListViewset):
             return obj
 
         raise Http404
+
+    def retrieve(self, request, *args, **kwargs):
+        """Get individual Panel data
+
+        In addition to the model fields this endpoint also returns `genes`, `strs`, `regions` associated with this panel."""
+
+        return super().retrieve(request, *args, **kwargs)
 
     @action(detail=True)
     def versions(self, request, pk=None):
@@ -214,7 +214,7 @@ class EntitySearchViewSet(ReadOnlyListViewset):
 class GeneSearchViewSet(EntitySearchViewSet):
     """Search Genes"""
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
-    serializer_class = GeneDetailSerializer
+    serializer_class = GeneSerializer
 
     def get_queryset(self):
         filters = {
@@ -232,7 +232,7 @@ class GeneSearchViewSet(EntitySearchViewSet):
 class STRSearchViewSet(EntitySearchViewSet):
     """Search STRs"""
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
-    serializer_class = STRDetailSerializer
+    serializer_class = STRSerializer
 
     def get_queryset(self):
         filters = {
@@ -250,7 +250,7 @@ class STRSearchViewSet(EntitySearchViewSet):
 class RegionSearchViewSet(EntitySearchViewSet):
     """Search STRs"""
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
-    serializer_class = RegionDetailSerializer
+    serializer_class = RegionSerializer
 
     def get_queryset(self):
         filters = {
