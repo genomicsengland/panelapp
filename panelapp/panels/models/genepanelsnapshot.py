@@ -45,7 +45,7 @@ class GenePanelSnapshotManager(models.Manager):
             .values('pk')\
             .order_by('panel_id', '-major_version', '-minor_version')
 
-    def get_active(self, all=False, deleted=False, internal=False, name=None):
+    def get_active(self, all=False, deleted=False, internal=False, name=None, panel_types=None):
         """Get active panels
 
         Parameters:
@@ -61,6 +61,9 @@ class GenePanelSnapshotManager(models.Manager):
 
         if not all:
             qs = qs.filter(Q(panel__status=GenePanel.STATUS.public) | Q(panel__status=GenePanel.STATUS.promoted))
+
+        if panel_types:
+            qs = qs.filter(panel__types__slug__in=panel_types)
 
         if not internal:
             qs = qs.exclude(panel__status=GenePanel.STATUS.internal)
@@ -78,10 +81,10 @@ class GenePanelSnapshotManager(models.Manager):
         return qs.prefetch_related('panel', 'level4title')\
             .order_by('panel__name', '-major_version', '-minor_version')
 
-    def get_active_annotated(self, all=False, deleted=False, internal=False, name=None):
+    def get_active_annotated(self, all=False, deleted=False, internal=False, name=None, panel_types=None):
         """This method adds additional values to the queryset, such as number_of_genes, etc and returns active panels"""
 
-        return self.get_active(all, deleted, internal, name)\
+        return self.get_active(all, deleted, internal, name, panel_types)\
             .annotate(child_panels_count=Count('child_panels')) \
             .annotate(superpanels_count=Count('genepanelsnapshot')) \
             .annotate(

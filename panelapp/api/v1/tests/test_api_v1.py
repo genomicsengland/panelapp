@@ -6,6 +6,7 @@ from panels.tests.factories import GenePanelSnapshotFactory
 from panels.tests.factories import GenePanelEntrySnapshotFactory
 from panels.tests.factories import STRFactory
 from panels.tests.factories import RegionFactory
+from panels.tests.factories import PanelTypeFactory
 
 
 class TestAPIV1(LoginExternalUser):
@@ -33,6 +34,15 @@ class TestAPIV1(LoginExternalUser):
         url = reverse_lazy('api:v1:panels-list')
         r = self.client.get(url)
         self.assertEqual(len(r.json()['results']), 4)
+        self.assertEqual(r.status_code, 200)
+
+    def test_list_panels_filter_types(self):
+        panel_type = PanelTypeFactory()
+        self.gps.panel.types.add(panel_type)
+        url = reverse_lazy('api:v1:panels-list') + '?type=' + panel_type.slug
+        r = self.client.get(url)
+        json_res = r.json()['results']
+        self.assertEqual(json_res[0]['types'][0]['name'], panel_type.name)
         self.assertEqual(r.status_code, 200)
 
     def test_retired_panels(self):
@@ -183,12 +193,19 @@ class TestAPIV1(LoginExternalUser):
 
     def test_region_evaluations(self):
         r = self.client.get(reverse_lazy('api:v1:regions-evaluations-list', args=(self.region.panel.panel.pk,
-                                                                                 self.region.name)))
+                                                                                  self.region.name)))
         self.assertEqual(r.status_code, 200)
         self.assertEqual(len(r.json()['results']), 4)
 
     def test_genes_list(self):
         r = self.client.get(reverse_lazy('api:v1:genes-list'))
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(len(r.json()['results']), 5)
+
+    def test_genes_list_filter_types(self):
+        panel_type = PanelTypeFactory()
+        self.gps.panel.types.add(panel_type)
+        r = self.client.get(reverse_lazy('api:v1:genes-list') + '?type=' + panel_type.slug)
         self.assertEqual(r.status_code, 200)
         self.assertEqual(len(r.json()['results']), 5)
 
@@ -202,8 +219,22 @@ class TestAPIV1(LoginExternalUser):
         self.assertEqual(r.status_code, 200)
         self.assertEqual(len(r.json()['results']), 1)
 
+    def test_strs_list_filter_types(self):
+        panel_type = PanelTypeFactory()
+        self.gps.panel.types.add(panel_type)
+        r = self.client.get(reverse_lazy('api:v1:strs-list') + '?type=' + panel_type.slug)
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(len(r.json()['results']), 1)
+
     def test_regions_list(self):
         r = self.client.get(reverse_lazy('api:v1:regions-list'))
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(len(r.json()['results']), 1)
+
+    def test_regions_list_filter_types(self):
+        panel_type = PanelTypeFactory()
+        self.gps.panel.types.add(panel_type)
+        r = self.client.get(reverse_lazy('api:v1:regions-list') + '?type=' + panel_type.slug)
         self.assertEqual(r.status_code, 200)
         self.assertEqual(len(r.json()['results']), 1)
 
@@ -220,6 +251,13 @@ class TestAPIV1(LoginExternalUser):
         r = self.client.get(reverse_lazy('api:v1:entities-detail', args=(self.region.name,)))
         self.assertEqual(r.status_code, 200)
         self.assertEqual(len(r.json()['results']), 1)
+
+    def test_entities_list_filter_types(self):
+        panel_type = PanelTypeFactory()
+        self.gps.panel.types.add(panel_type)
+        r = self.client.get(reverse_lazy('api:v1:entities-list') + '?type=' + panel_type.slug)
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(len(r.json()['results']), 4)
 
 
 class NonAuthAPIv1Request(TestCase):
