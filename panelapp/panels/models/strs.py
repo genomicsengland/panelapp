@@ -42,8 +42,10 @@ class STRManager(EntityManager):
             .values_list('panel__pk', flat=True)\
             .order_by('panel__panel__pk', '-panel__major_version', '-panel__minor_version')
 
-    def get_active(self, deleted=False, name=None, gene_symbol=None, pks=None):
+    def get_active(self, deleted=False, name=None, gene_symbol=None, pks=None, panel_types=None):
         """Get active STRs"""
+
+        # TODO (Oleg) there is a lot of similar logic between entities models, simplify
 
         if pks:
             qs = super().get_queryset().filter(panel__pk__in=pks)
@@ -59,6 +61,9 @@ class STRManager(EntityManager):
                 qs = qs.filter(gene_core__gene_symbol__in=gene_symbol)
             else:
                 qs = qs.filter(gene_core__gene_symbol=gene_symbol)
+
+        if panel_types:
+            qs = qs.filter(panel__panel__types__slug__in=panel_types)
 
         return qs.annotate(
                 number_of_reviewers=Count('evaluation__user', distinct=True),

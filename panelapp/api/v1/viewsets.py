@@ -25,7 +25,12 @@ class ReadOnlyListViewset(viewsets.mixins.RetrieveModelMixin, viewsets.mixins.Li
     pass
 
 
-class PanelsViewSet(ReadOnlyListViewset):
+class PanelTypesFilterMixin:
+    def panel_types_filters(self):
+        return [pt for pt in self.request.query_params.get('type', '').split(',') if pt]
+
+
+class PanelsViewSet(PanelTypesFilterMixin, ReadOnlyListViewset):
     permission_classes = (permissions.IsAuthenticatedOrReadOnly, )
     lookup_value_regex = '[^/]+'
     serializer_class = PanelSerializer
@@ -38,7 +43,7 @@ class PanelsViewSet(ReadOnlyListViewset):
     def get_queryset(self):
         retired = self.request.query_params.get('retired', False)
         name = self.request.query_params.get('name', None)
-        return GenePanelSnapshot.objects.get_active_annotated(all=retired, name=name)
+        return GenePanelSnapshot.objects.get_active_annotated(all=retired, name=name, panel_types=self.panel_types_filters())
 
     def get_object(self):
         version = self.request.query_params.get('version', None)
@@ -46,7 +51,7 @@ class PanelsViewSet(ReadOnlyListViewset):
             try:
                 _, _ = version.split('.')
             except ValueError:
-                APIException(detail='Incorrect version supplied', code='incorrect_version')
+                raise APIException(detail='Incorrect version supplied', code='incorrect_version')
 
             obj = GenePanelSnapshot.objects.get_panel_version(name=self.kwargs['pk'], version=version).first()
         else:
@@ -186,7 +191,7 @@ class RegionEvaluationsViewSet(EntityViewSet):
             raise Http404
 
 
-class EntitySearchViewSet(ReadOnlyListViewset):
+class EntitySearchViewSet(PanelTypesFilterMixin, ReadOnlyListViewset):
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
     lookup_field = 'entity_name'
     lookup_url_kwarg = 'entity_name'
@@ -222,6 +227,7 @@ class GeneSearchViewSet(EntitySearchViewSet):
         }
         if self.kwargs.get('entity_name'):
             filters['gene_symbol'] = self.kwargs['entity_name'].split(',')
+            filters['panel_types'] = self.panel_types_filters()
 
         return self.filter_by_tag(GenePanelEntrySnapshot.objects.get_active(**filters))
 
@@ -240,6 +246,7 @@ class STRSearchViewSet(EntitySearchViewSet):
         }
         if self.kwargs.get('entity_name'):
             filters['name'] = self.kwargs['entity_name'].split(',')
+            filters['panel_types'] = self.panel_types_filters()
 
         return self.filter_by_tag(STR.objects.get_active(**filters))
 
@@ -248,7 +255,7 @@ class STRSearchViewSet(EntitySearchViewSet):
 
 
 class RegionSearchViewSet(EntitySearchViewSet):
-    """Search STRs"""
+    """Search Regions"""
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
     serializer_class = RegionSerializer
 
@@ -258,6 +265,7 @@ class RegionSearchViewSet(EntitySearchViewSet):
         }
         if self.kwargs.get('entity_name'):
             filters['name'] = self.kwargs['entity_name'].split(',')
+            filters['panel_types'] = self.panel_types_filters()
 
         return self.filter_by_tag(Region.objects.get_active(**filters))
 
@@ -277,10 +285,15 @@ class EntitySearchViewSet(EntitySearchViewSet):
         else:
             panel_names = None
 
+        get_active_filters = {
+            'panel_types': self.panel_types_filters()
+        }
+
         if panel_names:
-            all_panels = GenePanelSnapshot.objects.get_active_annotated().filter(panel__name__in=panel_names)
+            all_panels = GenePanelSnapshot.objects.get_active_annotated(**get_active_filters)\
+                .filter(panel__name__in=panel_names)
         else:
-            all_panels = GenePanelSnapshot.objects.get_active_annotated()
+            all_panels = GenePanelSnapshot.objects.get_active_annotated(**get_active_filters)
 
         return [s.get('pk') for s in all_panels.values('pk')]
 

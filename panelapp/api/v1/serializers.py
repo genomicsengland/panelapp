@@ -5,6 +5,7 @@ from panels.models import STR
 from panels.models import Region
 from panels.models import Activity
 from panels.models import Evaluation
+from panels.models import PanelType
 
 
 class NonEmptyItemsListField(serializers.ListField):
@@ -39,11 +40,22 @@ class EvidenceListField(serializers.ListField):
         return data.values_list('name', flat=True) if data else []
 
 
+class PanelTypeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PanelType
+        fields = (
+            'name',
+            'slug',
+            'description'
+        )
+
+
 class PanelSerializer(serializers.ModelSerializer):
     class Meta:
         model = GenePanelSnapshot
         fields = ('id', 'hash_id', 'name', 'disease_group', 'disease_sub_group', 'status',
-                  'version', 'version_created', 'relevant_disorders', 'stats')
+                  'version', 'version_created', 'relevant_disorders', 'stats', 'types')
+        depth = 1
 
     id = serializers.IntegerField(source='panel_id')
     hash_id = serializers.StringRelatedField(source='panel.old_pk')
@@ -55,6 +67,7 @@ class PanelSerializer(serializers.ModelSerializer):
     version_created = serializers.DateTimeField(source='created', read_only=True)
     relevant_disorders = NonEmptyItemsListField(source='old_panels')
     stats = StatsJSONField(help_text="Object with panel statistics (number of genes or STRs)", read_only=True)
+    types = PanelTypeSerializer(source="panel.types", read_only=True, many=True)
 
     def __init__(self, *args, **kwargs):
         self.include_entities = False
