@@ -655,7 +655,7 @@ class GenePanelSnapshot(TimeStampedModel):
         entity_comments = []
         for entity_name, data in entities.items():
             entity_comments.extend([
-                data['entity'].comment.through(**{
+                data['entity'].comments.through(**{
                     'comment_id': ev.pk,
                     reference_table: data['entity'].pk
                 })
@@ -1037,7 +1037,7 @@ class GenePanelSnapshot(TimeStampedModel):
         else:
             return False
 
-    def delete_region(self, region_name, increment=True):
+    def delete_region(self, region_name, increment=True, user=None):
         """Removes Region from a panel, but leaves it in the previous versions of the same panel"""
 
         if self.has_region(region_name):
@@ -1047,6 +1047,9 @@ class GenePanelSnapshot(TimeStampedModel):
                 self.cached_regions.get(name=region_name).delete()
                 self.clear_cache()
                 self.clear_django_cache()
+
+            if user:
+                self.add_activity(user, "removed region:{} from the panel".format(region_name))
 
             self.update_saved_stats()
             return True

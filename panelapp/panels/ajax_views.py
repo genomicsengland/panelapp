@@ -224,6 +224,7 @@ class DeletePanelAjaxView(GELReviewerRequiredMixin, PanelAjaxMixin, AJAXMixin, V
         panel = GenePanel.objects.get(pk=self.kwargs['pk'])
         panel.status = GenePanel.STATUS.deleted
         panel.save()
+        panel.add_activity(self.request.user, "Panel deleted")
         return self.return_data()
 
 

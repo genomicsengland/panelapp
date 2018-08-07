@@ -135,3 +135,8 @@ class GenePanel(TimeStampedModel):
             major_version=int(major_version),
             minor_version=int(minor_version)
         ).first()
+
+    def add_activity(self, user, text, entity=None):
+        """Adds activity for this panel"""
+
+        self.active_panel.add_activity(user, text)

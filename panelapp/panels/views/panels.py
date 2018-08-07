@@ -77,6 +77,7 @@ class CreatePanelView(GELReviewerRequiredMixin, CreateView):
     def get_form_kwargs(self, *args, **kwargs):
         res = super().get_form_kwargs(*args, **kwargs)
         res['gel_curator'] = self.request.user.is_authenticated and self.request.user.reviewer.is_GEL()
+        res['request'] = self.request
         return res
 
     def form_valid(self, form):
@@ -98,6 +99,7 @@ class UpdatePanelView(GELReviewerRequiredMixin, PanelMixin, UpdateView):
     def get_form_kwargs(self, *args, **kwargs):
         res = super().get_form_kwargs(*args, **kwargs)
         res['gel_curator'] = self.request.user.is_authenticated and self.request.user.reviewer.is_GEL()
+        res['request'] = self.request
         return res
 
     def form_valid(self, form):
@@ -125,7 +127,8 @@ class GenePanelView(DetailView):
         ctx['edit'] = PanelForm(
             initial=ctx['panel'].get_form_initial(),
             instance=ctx['panel'],
-            gel_curator=self.request.user.is_authenticated and self.request.user.reviewer.is_GEL()
+            gel_curator=self.request.user.is_authenticated and self.request.user.reviewer.is_GEL(),
+            request=self.request
         )
         ctx['contributors'] = User.objects.panel_contributors(ctx['panel'].pk)
         ctx['promote_panel_form'] = PromotePanelForm(
