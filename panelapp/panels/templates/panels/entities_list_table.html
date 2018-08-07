@@ -13,7 +13,7 @@
         </th>
         <th class="js-sortable-header"
             style="width: 12%"
-            data-sort-key="entity_name"
+            data-sort-key="entity-name"
             data-sort-type="name"
         >
             Entity
@@ -57,7 +57,7 @@
 <tbody>
 {% for entry in entities %}
 <tr
-    data-gene="{{ entry.name }}"
+    data-entity-name="{{ entry.name }}"
     data-list-index="{{ entry.status }}"
     data-moi="{{ entry.moi }}"
     data-reviews="{{ entry.number_of_evaluations }}"

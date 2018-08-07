@@ -135,11 +135,10 @@ class PanelForm(forms.ModelForm):
                 ))
 
             if 'types' in self.cleaned_data:
-                activities.append("Panel types changed from {} to {}".format(
-                    "; ".join(panel.types.values_list('name', flat=True)),
-                    "; ".join(self.cleaned_data['types'])
-                ))
                 panel.types.set(self.cleaned_data['types'])
+                activities.append("Panel types changed to {}".format(
+                    "; ".join(panel.types.values_list('name', flat=True)),
+                ))
 
             if data_changed or self.changed_data:
                 self.instance.increment_version()
