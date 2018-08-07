@@ -266,6 +266,10 @@ class GenePanelSnapshotTest(LoginGELUser):
         gpes = GenePanelEntrySnapshotFactory(
             penetrance=GenePanelEntrySnapshot.PENETRANCE.Incomplete
         )
+
+        comment = CommentFactory(user=self.verified_user)
+        gpes.comments.add(comment)
+
         url = reverse_lazy('panels:edit_entity', kwargs={
             'pk': gpes.panel.panel.pk,
             'entity_type': 'gene',

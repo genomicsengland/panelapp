@@ -28,7 +28,7 @@ class PanelForm(forms.ModelForm):
     )
 
     types = forms.ModelMultipleChoiceField(
-        label="Types",
+        label="Panel Types",
         required=False,
         queryset=PanelType.objects.all(),
         widget=ModelSelect2Multiple(
@@ -43,6 +43,7 @@ class PanelForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         gel_curator = kwargs.pop('gel_curator')
+        self.request = kwargs.pop('request')
 
         super().__init__(*args, **kwargs)
 
@@ -96,6 +97,8 @@ class PanelForm(forms.ModelForm):
             orphanet=self.cleaned_data['orphanet']
         )
 
+        activities = []
+
         if self.instance.id:
             panel = self.instance.panel
             level4title = self.instance.level4title
@@ -104,20 +107,38 @@ class PanelForm(forms.ModelForm):
             if level4title.dict_tr() != new_level4.dict_tr():
                 data_changed = True
                 new_level4.save()
+                activities.append("Panel name changed from {} to {}".format(
+                    level4title.name,
+                    new_level4.name
+                ))
                 self.instance.level4title = new_level4
                 self.instance.panel.name = new_level4.name
 
             if 'old_panels' in self.changed_data:
+                activities.append("List of old panels changed from {} to {}".format(
+                    "; ".join(self.instance.old_panels),
+                    "; ".join(self.cleaned_data['old_panels'])
+                ))
                 self.instance.old_panels = self.cleaned_data['old_panels']
             
             if 'status' in self.changed_data:
+                activities.append("Panel status changed from {} to {}".format(
+                    self.instance.panel.status,
+                    self.cleaned_data['status']
+                ))
                 self.instance.panel.status = self.cleaned_data['status']
 
             if 'child_panels' in self.changed_data:
                 self.instance.child_panels.set(self.cleaned_data['child_panels'])
+                activities.append("Changed child panels to: {}".format(
+                    "; ".join(self.instance.child_panels.values_list('panel__name', flat=True))
+                ))
 
-            if 'types' in self.cleaned_data:
+            if 'types' in self.changed_data:
                 panel.types.set(self.cleaned_data['types'])
+                activities.append("Panel types changed to {}".format(
+                    "; ".join(panel.types.values_list('name', flat=True)),
+                ))
 
             if data_changed or self.changed_data:
                 self.instance.increment_version()
@@ -133,6 +154,11 @@ class PanelForm(forms.ModelForm):
             )
             new_level4.save()
 
+            activities.append("Added Panel {}".format(panel.name))
+            if self.cleaned_data['old_panels']:
+                activities.append("Set list of old panels to {}".format(
+                    "; ".join(self.cleaned_data['old_panels'])))
+
             self.instance.panel = panel
             self.instance.level4title = new_level4
             self.instance.old_panels = self.cleaned_data['old_panels']
@@ -142,8 +168,17 @@ class PanelForm(forms.ModelForm):
                 self.instance.major_version = max(self.instance.child_panels.values_list('major_version', flat=True))
                 self.instance.save(update_fields=['major_version', ])
                 self.instance.update_saved_stats()
+                activities.append("Set child panels to: {}".format(
+                    self.instance.child_panels.values_list('panel__name', flat=True)
+                ))
             if self.cleaned_data.get('types'):
                 panel.types.set(self.cleaned_data['types'])
+                activities.append("Set panel types to: {}".format(
+                    panel.types.values_list('name', flat=True)
+                ))
+
+        if activities:
+            panel.add_activity(self.request.user, "\n".join(activities))
 
     @staticmethod
     def _clean_array(data, separator=","):
