@@ -131,10 +131,10 @@ class PanelForm(forms.ModelForm):
             if 'child_panels' in self.changed_data:
                 self.instance.child_panels.set(self.cleaned_data['child_panels'])
                 activities.append("Changed child panels to: {}".format(
-                    self.instance.child_panels.values_list('panel__name', flat=True)
+                    "; ".join(self.instance.child_panels.values_list('panel__name', flat=True))
                 ))
 
-            if 'types' in self.cleaned_data:
+            if 'types' in self.changed_data:
                 panel.types.set(self.cleaned_data['types'])
                 activities.append("Panel types changed to {}".format(
                     "; ".join(panel.types.values_list('name', flat=True)),
@@ -177,7 +177,8 @@ class PanelForm(forms.ModelForm):
                     panel.types.values_list('name', flat=True)
                 ))
 
-        panel.add_activity(self.request.user, "\n".join(activities))
+        if activities:
+            panel.add_activity(self.request.user, "\n".join(activities))
 
     @staticmethod
     def _clean_array(data, separator=","):
