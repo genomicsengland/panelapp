@@ -29,18 +29,21 @@
         class="list-group-item {% if entity == entry %}list-group-item-active{% endif %}"
         {% if entity == entry %}id="gene-nav-active-item"{% endif %}
     >
-      <a href="{{ entry.get_absolute_url }}{% if entry.name in panel.current_genes_duplicates %}?pk={{ entry.pk }}{% endif %}">
-      {% if request.user.pk in entry.evaluators %}
+      <a
+         href="{{ entity.get_absolute_url }}{% if entity.name in panel.current_genes_duplicates %}?pk={{ entity.pk }}{% endif %}"
+         title="{{ entity.verbose_name }}"
+      >
+      {% if request.user.pk in entity.evaluators %}
           <i
-              class="fa fa-check-circle {{ entry|gene_list_class }} add-right-margin gel-badge pull-left"
+              class="fa fa-check-circle {{ entity|gene_list_class }} add-right-margin gel-badge pull-left"
               data-toggle="tooltip"
               title="You have reviewed"
           ></i>
       {% else %}
           <i
-              class="fa fa-circle gel-badge add-right-margin pull-left {{ entry|gene_list_class }}"
+              class="fa fa-circle gel-badge add-right-margin pull-left {{ entity|gene_list_class }}"
               data-toggle="tooltip"
-              title="{{ entry|gene_list_name }}"
+              title="{{ entity|gene_list_name }}"
           ></i>
       {% endif %}
       {{ entry.name }}
@@ -48,8 +51,8 @@
           class="pull-right text-muted"
           data-toggle="tooltip"
           data-placement="left"
-          title="{{ entry.number_of_evaluations }} review{{entry.number_of_evaluations|pluralize}}"
-      >{{ entry.number_of_evaluations }}</span>
+          title="{{ entity.number_of_evaluations }} review{{entity.number_of_evaluations|pluralize}}"
+      >{{ entity.number_of_evaluations }}</span>
       </a>
 
     </li>

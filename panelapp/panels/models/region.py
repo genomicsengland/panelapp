@@ -94,7 +94,8 @@ class Region(AbstractEntity, TimeStampedModel):
     VARIANT_TYPES = Choices(
         ('small', 'Small variants'),
         ('cnv_loss', 'CNV_LOSS'),
-        ('cnv_gain', 'CNV_GAIN')
+        ('cnv_gain', 'CNV_GAIN'),
+        ('cnv_both', 'CNV_BOTH')
     )
 
     DOSAGE_SENSITIVITY_SCORES = (
@@ -127,7 +128,8 @@ class Region(AbstractEntity, TimeStampedModel):
     required_overlap_percentage = models.IntegerField(help_text='Required percent of overlap',
                                                       validators=[validators.MinValueValidator(0),
                                                                   validators.MaxValueValidator(100)])
-    type_of_variants = models.CharField(max_length=32, choices=VARIANT_TYPES, default=VARIANT_TYPES.small)
+    type_of_variants = models.CharField("Variation type", max_length=32, choices=VARIANT_TYPES,
+                                        default=VARIANT_TYPES.small)
 
     gene = JSONField(encoder=DjangoJSONEncoder, blank=True, null=True)  # copy data from Gene.dict_tr
     gene_core = models.ForeignKey(Gene, blank=True, null=True, on_delete=models.PROTECT)  # reference to the original Gene

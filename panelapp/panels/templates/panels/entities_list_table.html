@@ -99,10 +99,17 @@
 </td>
 <td>
     <h5 class="gene-cell-title">
-        <a href="{{ entry.get_absolute_url }}" class="link-inherit gel-text {{ entry.gene_list_class }} js-open-on-submit">{{ entry.name }}</a>
+        <a href="{{ entry.get_absolute_url }}" class="link-inherit gel-text {{ entry.gene_list_class }} js-open-on-submit">
+            {{ entry.name }}
+        </a>
     </h5>
     {% if entry.entity_type == 'str' %}
         <span class="label label-default">STR</span>
+    {% elif entry.entity_type == 'region' %}
+        {% if entry.entity_type == 'region' %}
+            {{ entry.verbose_name }}
+        {% endif %}
+        <span class="label label-default">Region</span>
     {% endif %}
     {% if is_super_panel %}
         <div><a class="text-muted small" href="{{ entry.panel.get_absolute_url }}">{{ entry.panel }}</a></div>
