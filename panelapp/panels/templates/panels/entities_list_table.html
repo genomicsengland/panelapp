@@ -106,9 +106,7 @@
     {% if entry.entity_type == 'str' %}
         <span class="label label-default">STR</span>
     {% elif entry.entity_type == 'region' %}
-        {% if entry.entity_type == 'region' %}
-            {{ entry.verbose_name }}
-        {% endif %}
+        {{ entry.verbose_name }}
         <span class="label label-default">Region</span>
     {% endif %}
     {% if is_super_panel %}
