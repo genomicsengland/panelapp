@@ -1,6 +1,6 @@
 from django.db.migrations.executor import MigrationExecutor
 from django.db import connection
-from django.test import TransactionTestCase
+from django.test import TransactionTestCase, TestCase
 from faker import Factory
 from accounts.models import Reviewer
 from .factories import UserFactory

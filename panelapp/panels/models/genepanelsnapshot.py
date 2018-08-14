@@ -3,6 +3,7 @@ import itertools
 from copy import deepcopy
 from django.core.cache import cache
 from django.db import models
+from django.db.utils import DatabaseError
 from django.db import transaction
 from django.db.models import Count
 from django.db.models import Case
@@ -207,9 +208,6 @@ class GenePanelSnapshot(TimeStampedModel):
     class Meta:
         get_latest_by = "created"
         ordering = ['-major_version', '-minor_version', ]
-        indexes = [
-            models.Index(fields=['panel_id', ]),
-        ]
 
     objects = GenePanelSnapshotManager()
 
@@ -666,18 +664,6 @@ class GenePanelSnapshot(TimeStampedModel):
 
         self.clear_cache()
 
-    def update_saved_stats(self):
-        """Get the new values from the database"""
-
-        out = self._get_stats()
-        out['number_of_reviewers'] = len(out['entity_reviewers'])
-        out['number_of_evaluated_entities'] = out['number_of_evaluated_genes'] + out['number_of_evaluated_strs']
-        out['number_of_entities'] = out['number_of_genes'] + out['number_of_strs']
-        out['number_of_ready_entities'] = out['number_of_ready_genes'] + out['number_of_ready_strs']
-        out['number_of_green_entities'] = out['number_of_green_genes'] + out['number_of_green_strs']
-        self.stats = out
-        self.save(update_fields=['stats', ])
-
     @property
     def contributors(self):
         """Returns a tuple with user data
@@ -798,9 +784,29 @@ class GenePanelSnapshot(TimeStampedModel):
         return list(self.current_genes_count.keys())
 
     @cached_property
+    def current_strs(self):
+        """Select and cache gene names"""
+        return list(self.current_strs_count.keys())
+
+    @cached_property
+    def current_regions(self):
+        """Select and cache gene names"""
+        return list(self.current_regions_count.keys())
+
+    @cached_property
     def current_genes_count(self):
         genes_list = [g.get('gene_symbol') for g in self.cached_genes.values_list('gene', flat=True)]
         return {gene: genes_list.count(gene) for gene in genes_list if gene}
+
+    @cached_property
+    def current_strs_count(self):
+        strs_list = [s for s in self.cached_strs.values_list('name', flat=True)]
+        return {str_item: strs_list.count(str_item) for str_item in strs_list if str_item}
+
+    @cached_property
+    def current_regions_count(self):
+        regions_list = [r for r in self.cached_regions.values_list('name', flat=True)]
+        return {region: regions_list.count(region) for region in regions_list if region}
 
     @cached_property
     def current_genes_duplicates(self):
@@ -1204,7 +1210,7 @@ class GenePanelSnapshot(TimeStampedModel):
         gene_core = Gene.objects.get(gene_symbol=gene_symbol)
         gene_info = gene_core.dict_tr()
 
-        gene = self.cached_genes.model(
+        gene = self.genepanelentrysnapshot_set.model(
             gene=gene_info,
             panel=self,
             gene_core=gene_core,
@@ -1213,10 +1219,11 @@ class GenePanelSnapshot(TimeStampedModel):
             publications=gene_data.get('publications'),
             phenotypes=gene_data.get('phenotypes'),
             mode_of_pathogenicity=gene_data.get('mode_of_pathogenicity'),
-            type_of_variants=gene_data.get('type_of_variants', self.cached_regions.model.VARIANT_TYPES.small),
             saved_gel_status=0,
             flagged=False if user.reviewer.is_GEL() else True
         )
+        if gene_data.get('type_of_variants', self.cached_regions.model.VARIANT_TYPES.small):
+            gene.type_of_variants = gene_data.get('type_of_variants', self.cached_regions.model.VARIANT_TYPES.small)
         gene.save()
 
         gene = self.add_entity_info(gene, user, gene.label, gene_data)
@@ -1677,7 +1684,7 @@ class GenePanelSnapshot(TimeStampedModel):
         if increment_version:
             self = self.increment_version()
 
-        str_item = self.cached_strs.model(
+        str_item = self.str_set.model(
             name=str_name,
             chromosome=str_data.get('chromosome'),
             position_37=str_data.get('position_37'),
@@ -2222,7 +2229,7 @@ class GenePanelSnapshot(TimeStampedModel):
         if increment_version:
             self = self.increment_version()
 
-        region = self.cached_regions.model(
+        region = self.region_set.model(
             name=region_name,
             verbose_name=region_data.get('verbose_name'),
             chromosome=region_data.get('chromosome'),

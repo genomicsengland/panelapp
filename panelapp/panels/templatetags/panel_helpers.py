@@ -119,3 +119,9 @@ def pubmed_link(publication):
 @register.filter
 def remove_special(seq):
     return re.sub('\W+', '', seq)
+
+
+@register.filter
+def human_variant_types(variant_type):
+    from panels.models import Region
+    return Region.VARIANT_TYPES[variant_type]

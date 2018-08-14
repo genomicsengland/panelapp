@@ -95,8 +95,6 @@ class STR(AbstractEntity, TimeStampedModel):
         get_latest_by = "created"
         ordering = ['-saved_gel_status', ]
         indexes = [
-            models.Index(fields=['panel_id']),
-            models.Index(fields=['gene_core_id']),
             models.Index(fields=['name'])
         ]
 

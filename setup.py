@@ -6,12 +6,14 @@ from setuptools import find_packages, setup
 # allow setup.py to be run from any path
 os.chdir(os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir)))
 
-from panelapp.panelapp import get_package_version
+
+with open('./VERSION', 'r') as version_file:
+    version = str(version_file.readline()).strip()
 
 
 setup(
     name='panelapp',
-    version=get_package_version(),
+    version=version,
     author='Antonio Rueda-Martin,Oleg Gerasimenko',
     author_email='antonio.rueda-martin@genomicsengland.co.uk,oleg.gerasimenko@genomicsengland.co.uk',
     url='https://github.com/genomicsengland/PanelApp2',
@@ -32,8 +34,8 @@ setup(
         'pytest-runner'
     ],
     tests_require=[
-        'pytest==3.6.1',
-        'pytest-django==3.2.1',
+        'pytest==3.7.1',
+        'pytest-django==3.3.3',
         'flake8==3.5.0',
         'faker==0.8.15',
         'factory_boy==2.11.1',
@@ -45,8 +47,9 @@ setup(
         'ipython==6.4.0'
     ],
     install_requires=[
-        'django==2.0.6',
+        'django==2.0.8',
         'simplejson==3.8.2',
+        'PyYAML==3.13',
         'psycopg2-binary==2.7.4',
         'dj-database-url==0.5.0',
         'django-model-utils==3.1.2',
@@ -62,7 +65,7 @@ setup(
         'Markdown==2.6.11',
         'django-object-actions==0.10.0',
         'django-mathfilters==0.4.0',
-        'celery==4.2.0',
+        'celery==4.2.1',
         'more-itertools==4.2.0',
         'requests==2.19.1',
         'uwsgi==2.0.15',

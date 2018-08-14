@@ -41,8 +41,9 @@ class DownloadPanelTSVMixin(PanelMixin, DetailView):
         writer = csv.writer(response, delimiter='\t')
 
         writer.writerow((
-            "Entity Symbol",
+            "Entity Name",
             "Entity type",
+            "Gene Symbol",
             "Sources(; separated)",
             "Level4",
             "Level3",
@@ -73,6 +74,8 @@ class DownloadPanelTSVMixin(PanelMixin, DetailView):
             "STR Pathogenic Repeats",
             "Region Haploinsufficiency Score",
             "Region Triplosensitivity Score",
+            "Region Variant Type",
+            "Region Verbose Name",
         ))
 
         categories = self.get_categories()
@@ -84,6 +87,7 @@ class DownloadPanelTSVMixin(PanelMixin, DetailView):
                 export_gpentry = (
                     gpentry.gene.get('gene_symbol'),
                     'gene',
+                    gpentry.gene.get('gene_symbol'),
                     evidence,
                     panel_name,
                     self.object.level4title.level3title,
@@ -104,16 +108,18 @@ class DownloadPanelTSVMixin(PanelMixin, DetailView):
                     gpentry.gene.get('ensembl_genes', {}).get('GRch37', {}).get('82', {}).get('ensembl_id', '-'),
                     gpentry.gene.get('ensembl_genes', {}).get('GRch38', {}).get('90', {}).get('ensembl_id', '-'),
                     gpentry.gene.get('hgnc_id', '-'),
-                    '-',
-                    '-',
-                    '-',
-                    '-',
-                    '-',
-                    '-',
-                    '-',
-                    '-',
-                    '-',
-                    '-',
+                    '',
+                    '',
+                    '',
+                    '',
+                    '',
+                    '',
+                    '',
+                    '',
+                    '',
+                    '',
+                    '',
+                    ''
                 )
                 writer.writerow(export_gpentry)
 
@@ -125,6 +131,7 @@ class DownloadPanelTSVMixin(PanelMixin, DetailView):
                 export_strentry = (
                     strentry.name,
                     'str',
+                    strentry.gene.get('gene_symbol') if strentry.gene else '',
                     evidence,
                     panel_name,
                     self.object.level4title.level3title,
@@ -141,7 +148,7 @@ class DownloadPanelTSVMixin(PanelMixin, DetailView):
                     ";".join(map(str, [green_perc, amber_perc, red_prec])),
                     str(version),
                     strentry.ready,
-                    '-',
+                    '',
                     strentry.gene.get('ensembl_genes', {}).get('GRch37', {}).get('82', {}).get('ensembl_id', '-') if strentry.gene else '',
                     strentry.gene.get('ensembl_genes', {}).get('GRch38', {}).get('90', {}).get('ensembl_id', '-') if strentry.gene else '',
                     strentry.gene.get('hgnc_id', '-') if strentry.gene else '',
@@ -153,8 +160,10 @@ class DownloadPanelTSVMixin(PanelMixin, DetailView):
                     strentry.repeated_sequence,
                     strentry.normal_repeats,
                     strentry.pathogenic_repeats,
-                    '-',
-                    '-'
+                    '',
+                    '',
+                    '',
+                    ''
                 )
                 writer.writerow(export_strentry)
 
@@ -166,6 +175,7 @@ class DownloadPanelTSVMixin(PanelMixin, DetailView):
                 export_region = (
                     region.name,
                     'region',
+                    region.gene.get('gene_symbol') if region.gene else '',
                     evidence,
                     panel_name,
                     self.object.level4title.level3title,
@@ -182,7 +192,7 @@ class DownloadPanelTSVMixin(PanelMixin, DetailView):
                     ";".join(map(str, [green_perc, amber_perc, red_prec])),
                     str(version),
                     region.ready,
-                    '-',
+                    '',
                     region.gene.get('ensembl_genes', {}).get('GRch37', {}).get('82', {}).get('ensembl_id', '-') if region.gene else '',
                     region.gene.get('ensembl_genes', {}).get('GRch38', {}).get('90', {}).get('ensembl_id', '-') if region.gene else '',
                     region.gene.get('hgnc_id', '-') if region.gene else '',
@@ -191,11 +201,13 @@ class DownloadPanelTSVMixin(PanelMixin, DetailView):
                     region.position_37.upper,
                     region.position_38.lower,
                     region.position_38.upper,
-                    '-',
-                    '-',
-                    '-',
+                    '',
+                    '',
+                    '',
                     region.haploinsufficiency_score,
-                    region.triplosensitivity_score
+                    region.triplosensitivity_score,
+                    region.type_of_variants,
+                    region.verbose_name
                 )
                 writer.writerow(export_region)
 

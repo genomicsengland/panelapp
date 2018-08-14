@@ -278,25 +278,62 @@ class GenePanelTest(LoginGELUser):
     def test_import_panel(self):
         GeneFactory(gene_symbol="ABCC5-AS1")
         GeneFactory(gene_symbol="A1CF")
+        GeneFactory(gene_symbol="STR_1")
 
         file_path = os.path.join(os.path.dirname(__file__), 'import_panel_data.tsv')
         test_panel_file = os.path.abspath(file_path)
 
         with open(test_panel_file) as f:
             url = reverse_lazy('panels:upload_panels')
-            self.client.post(url, {'panel_list': f})
+            res = self.client.post(url, {'panel_list': f})
 
         gp = GenePanel.objects.get(name="Panel One")
         active_panel = gp.active_panel
         entries = active_panel.get_all_genes
         assert entries.count() == 2
 
+    def test_import_regions(self):
+        GeneFactory(gene_symbol="ABCC5-AS1")
+        GeneFactory(gene_symbol="A1CF")
+        GeneFactory(gene_symbol="STR_1")
+
+        file_path = os.path.join(os.path.dirname(__file__), 'import_panel_data.tsv')
+        test_panel_file = os.path.abspath(file_path)
+
+        with open(test_panel_file) as f:
+            url = reverse_lazy('panels:upload_panels')
+            res = self.client.post(url, {'panel_list': f})
+
+        gp = GenePanel.objects.get(name="Panel One")
+        active_panel = gp.active_panel
+        self.assertEqual(active_panel.get_all_regions.count(), 1)
+
+    def test_import_strs(self):
+        GeneFactory(gene_symbol="ABCC5-AS1")
+        GeneFactory(gene_symbol="A1CF")
+        GeneFactory(gene_symbol="STR_1")
+
+        file_path = os.path.join(os.path.dirname(__file__), 'import_panel_data.tsv')
+        test_panel_file = os.path.abspath(file_path)
+
+        with open(test_panel_file) as f:
+            url = reverse_lazy('panels:upload_panels')
+            res = self.client.post(url, {'panel_list': f})
+
+        self.assertEqual(GenePanel.objects.count(), 2)
+        gp = GenePanel.objects.get(name="TestPanel")
+        active_panel = gp.active_panel
+        self.assertEqual(active_panel.get_all_strs.count(), 1)
+
     def test_import_panel_sources(self):
         gene = GeneFactory(gene_symbol="ABCC5-AS1")
         GeneFactory(gene_symbol="A1CF")
+        GeneFactory(gene_symbol="STR_1")
 
         gps = GenePanelSnapshotFactory()
         gps.panel.name = "Panel One"
+        gps.level4title.name = gps.panel.name
+        gps.level4title.save()
         gps.panel.save()
         evidence = EvidenceFactory.create(name="Expert Review Amber")
         GenePanelEntrySnapshotFactory.create(gene_core=gene, panel=gps, evaluation=(None,), evidence=(evidence,))
