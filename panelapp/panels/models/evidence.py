@@ -9,7 +9,6 @@ class Evidence(TimeStampedModel):
         indexes = [
             models.Index(fields=['name']),
             models.Index(fields=['rating']),
-            models.Index(fields=['reviewer_id'])
         ]
 
     HIGH_CONFIDENCE_SOURCES = [

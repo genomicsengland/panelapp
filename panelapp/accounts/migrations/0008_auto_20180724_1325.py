@@ -17,7 +17,7 @@ def add_paneltype_permissions(apps, schema_editor):
     paneltype_content_type = ContentType.objects.get_for_model(PanelType)
     site_editor = Group.objects.get(name=site_editor_group)
     site_editor.permissions.set(
-        Permission.objects.filter(content_type=paneltype_content_type)
+        list(Permission.objects.filter(content_type=paneltype_content_type).values_list('id', flat=True))
     )
 
 
@@ -29,7 +29,7 @@ def remove_paneltype_permissions(apps, schema_editor):
     try:
         site_editor = Group.objects.get(name=site_editor_group)
         site_editor.permissions.remove(
-            Permission.objects.filter(content_type=paneltype_content_type)
+            *list(Permission.objects.filter(content_type=paneltype_content_type).values_list('id', flat=True))
         )
     except Group.DoesNotExist:
         pass

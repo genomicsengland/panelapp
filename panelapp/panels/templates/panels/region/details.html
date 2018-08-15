@@ -79,8 +79,8 @@
             </dd>
             <dt>Penetrance</dt>
             <dd>{{ entity.penetrance }}</dd>
-            <dt>Type of variants</dt>
-            <dd>{{ entity.type_of_variants }}</dd>
+            <dt>Variant types</dt>
+            <dd>{{ entity.type_of_variants|human_variant_types }}</dd>
             {% if entity.publications %}
             <dt>Publications</dt>
             <dd>

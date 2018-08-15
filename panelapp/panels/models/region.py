@@ -93,9 +93,9 @@ class Region(AbstractEntity, TimeStampedModel):
 
     VARIANT_TYPES = Choices(
         ('small', 'Small variants'),
-        ('cnv_loss', 'CNV_LOSS'),
-        ('cnv_gain', 'CNV_GAIN'),
-        ('cnv_both', 'CNV_BOTH')
+        ('cnv_loss', 'CNV Loss'),
+        ('cnv_gain', 'CNV Gain'),
+        ('cnv_both', 'CNV Both gain and loss'),
     )
 
     DOSAGE_SENSITIVITY_SCORES = (
@@ -111,8 +111,6 @@ class Region(AbstractEntity, TimeStampedModel):
         get_latest_by = "created"
         ordering = ['-saved_gel_status', ]
         indexes = [
-            models.Index(fields=['panel_id']),
-            models.Index(fields=['gene_core_id']),
             models.Index(fields=['name'])
         ]
 
