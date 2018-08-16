@@ -6,8 +6,9 @@ from setuptools import find_packages, setup
 # allow setup.py to be run from any path
 os.chdir(os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir)))
 
+dir_path = os.path.dirname(os.path.realpath(__file__))
 
-with open('./VERSION', 'r') as version_file:
+with open(os.path.join(dir_path, './VERSION'), 'r') as version_file:
     version = str(version_file.readline()).strip()
 
 
