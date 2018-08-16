@@ -29,7 +29,7 @@ setup(
         'Programming Language :: Python :: 3.5',
         'Topic :: Scientific/Engineering',
     ],
-    packages=find_packages(),
+    packages=['panelapp', ],
     include_package_data=True,
     setup_requires=[
         'pytest-runner'
