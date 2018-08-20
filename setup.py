@@ -59,7 +59,7 @@ setup(
         'django-tables2==1.21.2',
         'django-filter==1.1.0',
         'django-cors-headers==2.1.0',
-        'django-autocomplete-light==3.2.10',
+        'django-autocomplete-light==3.3.0',
         'django-markdown-deux==1.0.5',
         'django-bootstrap3==10.0.1',
         'django-markdownx==2.0.23',

@@ -15,8 +15,10 @@
             <dd>{{ entity.verbose_name }}</dd>
             <dt>Chromosome</dt>
             <dd>{{ entity.chromosome }}</dd>
+            {% if entity.position_37 %}
             <dt>GRCh37 Coordinates</dt>
             <dd>{{ entity.position_37.lower }}-{{ entity.position_37.upper }}</dd>
+            {% endif %}
             <dt>GRCh38 Coordinates</dt>
             <dd>{{ entity.position_38.lower }}-{{ entity.position_38.upper }}</dd>
             <dt>Haploinsufficiency Score</dt>

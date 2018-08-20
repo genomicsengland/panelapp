@@ -2,12 +2,12 @@
 
 {% load staticfiles %}
 
-{% block title %}Genes{% endblock %}
+{% block title %}Genes and Genomic Entities{% endblock %}
 
 {% block content %}
   {% if tag_filter %}
     <ol class="breadcrumb">
-      <li><a href="?">Entities</a></li>
+      <li><a href="?">Genes and Genomic Entities</a></li>
       <li class="active">{{ tag_filter }}</li>
     </ol>
   {% endif %}
@@ -16,10 +16,10 @@
 
   <h1 class="add-bottom-margin">
     {% if tag_filter %}
-      <div class="text-muted normal add-label-margin"><span id="entities-filter-count" class="text-muted"></span>{{ entities_length }} entities tagged</div>
+      <div class="text-muted normal add-label-margin"><span id="entities-filter-count" class="text-muted"></span>{{ entities_length }} genes and genomic entities tagged</div>
       “{{ tag_filter}}”
     {% else %}
-        <span id="entities-filter-count" class="text-muted"></span>{{ entities_length }} entities
+        <span id="entities-filter-count" class="text-muted"></span>{{ entities_length }} genes and genomic entities
     {% endif %}
   </h1>
     <div class="row">
@@ -27,18 +27,18 @@
         <div data-module="filterable-list">
           <div class="panel panel-default">
             <div class="panel-heading">
-              Find an entity
+              Find a gene or genomic entity
             </div>
             <div class="panel-body" data-module="filter-entities-type" data-count="{{ entities_length }}">
               <form class="add-bottom-margin">
                 <label for="gene-filter">
-                  Entity name
+                  Gene or Genomic Entity Name
                   <br /><span class="text-muted normal">Enter a gene symbol, STR name, Region name, or the beginning of one, eg “CD” or “CD19”</span>
                 </label><br />
                 <div class="input-group">
-                  <input id="gene-filter" type="text" autofocus class="form-control normal js-filter-list-input" placeholder="Filter entities">
-                  <span class="input-group-addon js-filter-list-count" data-singular="entity" data-plural="entities">
-                    {{ entities_length }} entities
+                  <input id="gene-filter" type="text" autofocus class="form-control normal js-filter-list-input" placeholder="Filter genes and genomic entities">
+                  <span class="input-group-addon js-filter-list-count" data-singular="entity" data-plural="genes and genomic entities">
+                    {{ entities_length }} genes and genomic entities
                   </span>
                 </div>
                 <div>

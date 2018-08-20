@@ -119,7 +119,7 @@ class Region(AbstractEntity, TimeStampedModel):
     name = models.CharField(max_length=128, help_text="Region ID")
     verbose_name = models.CharField(max_length=256, blank=True, null=True, help_text='Region Name')
     chromosome = models.CharField(max_length=8, choices=CHROMOSOMES)
-    position_37 = IntegerRangeField()
+    position_37 = IntegerRangeField(blank=True, null=True)
     position_38 = IntegerRangeField()
     haploinsufficiency_score = models.CharField(max_length=2, choices=DOSAGE_SENSITIVITY_SCORES)
     triplosensitivity_score = models.CharField(max_length=2, choices=DOSAGE_SENSITIVITY_SCORES)

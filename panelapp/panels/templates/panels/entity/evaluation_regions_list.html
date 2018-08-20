@@ -46,7 +46,8 @@
               title="{{ entity|gene_list_name }}"
           ></i>
       {% endif %}
-      {{ entry.name }}
+      {{ entity.verbose_name }}<br />
+      {{ entity.name }}
       <span
           class="pull-right text-muted"
           data-toggle="tooltip"
