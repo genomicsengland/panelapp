@@ -186,10 +186,14 @@ class GenePanelSnapshotManager(models.Manager):
         if not gps:
             return []
 
-        genes = [(g.get('gene_symbol'), g.get('gene_symbol')) for g in gps.cached_genes.values_list('gene', flat=True)]
-        strs = [(n, n) for n in gps.cached_strs.values_list('name', flat=True)]
+        genes = [(g.get('gene_symbol'), 'Gene: {}'.format(g.get('gene_symbol'))) for g in
+                 gps.cached_genes.values_list('gene', flat=True)]
+        strs = [(n, 'STR: {}'.format(n)) for n in gps.cached_strs.values_list('name', flat=True)]
+        regions = [(n.get('name'), 'Region: {} - {}'.format(n.get('name'), n.get('verbose_name'))) for n in
+                   gps.cached_regions.values('name', 'verbose_name')]
 
-        return list(genes) + list(strs)
+        entities = list(genes) + list(strs) + list(regions)
+        return sorted(entities, key=lambda e: e[0].lower())
 
 
 class GenePanelSnapshot(TimeStampedModel):
