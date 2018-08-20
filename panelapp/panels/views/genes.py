@@ -74,6 +74,7 @@ class DownloadPanelTSVMixin(PanelMixin, DetailView):
             "STR Pathogenic Repeats",
             "Region Haploinsufficiency Score",
             "Region Triplosensitivity Score",
+            "Region Required Overlap Percentage"
             "Region Variant Type",
             "Region Verbose Name",
         ))
@@ -119,7 +120,8 @@ class DownloadPanelTSVMixin(PanelMixin, DetailView):
                     '',
                     '',
                     '',
-                    ''
+                    '',
+                    '',
                 )
                 writer.writerow(export_gpentry)
 
@@ -163,7 +165,8 @@ class DownloadPanelTSVMixin(PanelMixin, DetailView):
                     '',
                     '',
                     '',
-                    ''
+                    '',
+                    '',
                 )
                 writer.writerow(export_strentry)
 
@@ -206,6 +209,7 @@ class DownloadPanelTSVMixin(PanelMixin, DetailView):
                     '',
                     region.haploinsufficiency_score,
                     region.triplosensitivity_score,
+                    region.required_overlap_percentage,
                     region.type_of_variants,
                     region.verbose_name
                 )

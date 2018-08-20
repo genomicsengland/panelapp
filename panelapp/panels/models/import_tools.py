@@ -328,7 +328,8 @@ class UploadedPanelList(TimeStampedModel):
                     item = list(set([i.strip() for i in item.split(';') if i.strip()]))
 
                 entity_data[item_mapping['name']] = item
-        except (IndexError, ValueError):
+        except (IndexError, ValueError) as e:
+            logger.exception(e, exc_info=True)
             raise TSVIncorrectFormat(str(key + 2))
 
         if entity_data.get('entity_type') not in ['gene', 'region', 'str']:
@@ -344,10 +345,14 @@ class UploadedPanelList(TimeStampedModel):
             raise TSVIncorrectFormat(str(key + 2))
 
         if entity_data['entity_type'] in ['str', 'region']:
-            entity_data['position_37'] = [
-                entity_data['position_37_start'],
-                entity_data['position_37_end']
-            ]
+            if entity_data['position_37_start'] and entity_data['position_37_end']:
+                entity_data['position_37'] = [
+                    entity_data['position_37_start'],
+                    entity_data['position_37_end']
+                ]
+            else:
+                entity_data['position_37'] = None
+
             entity_data['position_38'] = [
                 entity_data['position_38_start'],
                 entity_data['position_38_end']
@@ -435,6 +440,7 @@ class UploadedPanelList(TimeStampedModel):
                             level4title=level4_object,
                             old_panels=[]
                         )
+                        panel.add_activity(user, "Added panel {}".format(panel.name))
                         self._cached_panels[line_data['level4']] = active_panel
 
                 for key, line in enumerate(lines):

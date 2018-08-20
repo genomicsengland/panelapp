@@ -56,8 +56,8 @@ class STRTest(LoginGELUser):
         gene_data = {
             'name': 'SomeSTR',
             'chromosome': '1',
-            'position_37_0': '12345',
-            'position_37_1': '12346',
+            'position_37_0': '',
+            'position_37_1': '',
             'position_38_0': '12345',
             'position_38_1': '123456',
             'repeated_sequence': 'ATAT',

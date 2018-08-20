@@ -27,7 +27,7 @@ class RegionTest(LoginGELUser):
         region = active_panel.add_region(self.gel_user, 'ABC', {
             'gene': gpes.gene_core,
             'chromosome': '1',
-            'position_37': (12345, 12346),
+            'position_37': None,
             'position_38': (12345, 12346),
             'haploinsufficiency_score': choice(Region.DOSAGE_SENSITIVITY_SCORES)[0],
             'triplosensitivity_score': choice(Region.DOSAGE_SENSITIVITY_SCORES)[0],
@@ -55,8 +55,8 @@ class RegionTest(LoginGELUser):
         region_data = {
             'name': 'SomeRegion',
             'chromosome': '1',
-            'position_37_0': '12345',
-            'position_37_1': '12346',
+            'position_37_0': '',
+            'position_37_1': '',
             'position_38_0': '12345',
             'position_38_1': '123456',
             'haploinsufficiency_score': choice(Region.DOSAGE_SENSITIVITY_SCORES)[0],

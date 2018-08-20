@@ -1105,17 +1105,18 @@ class GenePanelSnapshot(TimeStampedModel):
             description
         ))
 
-        tags = Tag.objects.filter(pk__in=entity_data.get('tags', []))
-        entity.tags.add(*entity_data.get('tags', []))
+        if entity_data.get('tags', []):
+            tags = Tag.objects.filter(pk__in=entity_data.get('tags', []))
+            entity.tags.add(*entity_data.get('tags', []))
 
-        description = "{} tags were added to {}.".format(
-            ', '.join([str(tag) for tag in tags]),
-            entity_name
-        )
-        tracks.append((
-            TrackRecord.ISSUE_TYPES.AddedTag,
-            description
-        ))
+            description = "{} tags were added to {}.".format(
+                ', '.join([str(tag) for tag in tags]),
+                entity_name
+            )
+            tracks.append((
+                TrackRecord.ISSUE_TYPES.AddedTag,
+                description
+            ))
 
         if entity.gene and entity.gene.get('gene_symbol', '').startswith("MT-"):
             entity.moi = "MITOCHONDRIAL"
@@ -1392,7 +1393,7 @@ class GenePanelSnapshot(TimeStampedModel):
                 gene.type_of_variants = gene_data.get('type_of_variants')
 
             phenotypes = gene_data.get('phenotypes')
-            if phenotypes:
+            if phenotypes and gene.phenotypes != phenotypes:
                 current_phenotypes = [ph.strip() for ph in gene.phenotypes]
 
                 add_phenotypes = [
@@ -1490,7 +1491,7 @@ class GenePanelSnapshot(TimeStampedModel):
                     ))
                     gene.tags.add(tag)
 
-                    description = "{} was added to {}. Panel: {}".format(
+                    description = "{} tag was added to {}. Panel: {}".format(
                         tag,
                         gene_symbol,
                         self.panel.name,

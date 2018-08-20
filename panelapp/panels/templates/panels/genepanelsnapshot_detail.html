@@ -43,7 +43,9 @@
         <div class="lead">
             {% if entity.is_str %}
                 Chromosome: {{ entity.chromosome }}<br />
+                {% if entity.position_37 %}
                 GRCh37 Position: {{ entity.position_37.lower }}-{{ entity.position_37.upper }}<br />
+                {% endif %}
                 GRCh38 Position: {{ entity.position_38.lower }}-{{ entity.position_38.upper }}<br />
                 Repeated Sequence: {{ entity.repeated_sequence }}<br />
                 Normal Number of Repeats: &lt; or = {{ entity.normal_repeats }}<br />
@@ -51,7 +53,9 @@
                 <br />
             {% elif entity.is_region %}
                 Chromosome: {{ entity.chromosome }}<br />
+                {% if entity.position_37 %}
                 GRCh37 Position: {{ entity.position_37.lower }}-{{ entity.position_37.upper }}<br />
+                {% endif %}
                 GRCh38 Position: {{ entity.position_38.lower }}-{{ entity.position_38.upper }}<br />
                 Haploinsufficiency Score: {{ entity.human_haploinsufficiency_score }}<br />
                 Triplosensitivity Score: {{ entity.human_triplosensitivity_score }}<br />

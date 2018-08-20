@@ -103,7 +103,7 @@ class STR(AbstractEntity, TimeStampedModel):
     name = models.CharField(max_length=128)
     repeated_sequence = models.CharField(max_length=128)
     chromosome = models.CharField(max_length=8, choices=CHROMOSOMES)
-    position_37 = IntegerRangeField()
+    position_37 = IntegerRangeField(blank=True, null=True)
     position_38 = IntegerRangeField()
     normal_repeats = models.IntegerField(help_text="=< Maximum normal number of repeats", verbose_name="Normal")
     pathogenic_repeats = models.IntegerField(help_text=">= Minimum fully penetrant pathogenic number of repeats",
@@ -155,7 +155,7 @@ class STR(AbstractEntity, TimeStampedModel):
         return {
             "name": self.name,
             "chromosome": self.chromosome,
-            "position_37": (self.position_37.lower, self.position_37.upper),
+            "position_37": (self.position_37.lower, self.position_37.upper) if self.position_37 else None,
             "position_38": (self.position_38.lower, self.position_38.upper),
             "repeated_sequence": self.repeated_sequence,
             "normal_repeats": self.normal_repeats,

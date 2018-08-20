@@ -100,13 +100,13 @@
 <td>
     <h5 class="gene-cell-title">
         <a href="{{ entry.get_absolute_url }}" class="link-inherit gel-text {{ entry.gene_list_class }} js-open-on-submit">
-            {{ entry.name }}
+            {% if entry.entity_type == 'region' %}{{ entry.verbose_name }}{% else %}{{ entry.name }}{% endif %}
         </a>
     </h5>
     {% if entry.entity_type == 'str' %}
         <span class="label label-default">STR</span>
     {% elif entry.entity_type == 'region' %}
-        {{ entry.verbose_name }}
+        {{ entry.name }}<br />
         <span class="label label-default">Region</span>
     {% endif %}
     {% if is_super_panel %}
