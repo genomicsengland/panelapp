@@ -249,7 +249,7 @@ class GenePanelSpanshotView(EntityMixin, DetailView):
 
         ctx['panel_genes'] = list(self.panel.get_all_genes_extra.values('pk', 'gene', 'evaluators', 'number_of_evaluations', 'saved_gel_status'))
         ctx['panel_strs'] = list(self.panel.get_all_strs_extra.values('pk', 'gene', 'name', 'evaluators', 'number_of_evaluations', 'saved_gel_status'))
-        ctx['panel_regions'] = list(self.panel.get_all_regions_extra.values('pk', 'gene', 'name', 'evaluators', 'number_of_evaluations', 'saved_gel_status'))
+        ctx['panel_regions'] = list(self.panel.get_all_regions_extra.values('pk', 'gene', 'name', 'verbose_name', 'evaluators', 'number_of_evaluations', 'saved_gel_status'))
 
         if self.is_gene():
             ctx = self.get_context_data_gene(ctx)

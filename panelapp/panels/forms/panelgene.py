@@ -83,7 +83,6 @@ class PanelGeneForm(forms.ModelForm):
             'mode_of_pathogenicity',
             'moi',
             'penetrance',
-            'type_of_variants',
             'publications',
             'phenotypes',
         )
@@ -104,7 +103,6 @@ class PanelGeneForm(forms.ModelForm):
         self.fields['moi'] = original_fields.get('moi')
         self.fields['moi'].required = False
         self.fields['penetrance'] = original_fields.get('penetrance')
-        self.fields['type_of_variants'] = original_fields.get('type_of_variants')
         self.fields['publications'] = original_fields.get('publications')
         self.fields['phenotypes'] = original_fields.get('phenotypes')
         if self.request.user.is_authenticated and self.request.user.reviewer.is_GEL():

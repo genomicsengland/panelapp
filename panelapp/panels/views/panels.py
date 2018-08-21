@@ -105,15 +105,6 @@ class UpdatePanelView(GELReviewerRequiredMixin, PanelMixin, UpdateView):
     def form_valid(self, form):
         self.instance = form.instance
         ret = super().form_valid(form)
-
-        if 'status' in form.changed_data:
-            self.instance.add_activity(self.request.user,
-                                       'changed panel status to: {}'.format(self.instance.panel.status))
-
-        if 'old_panels' in form.changed_data:
-            self.instance.add_activity(self.request.user,
-                                       'changed related panels to: {}'.format(', '.join(self.instance.old_panels)))
-
         messages.success(self.request, "Successfully updated the panel")
         return ret
 

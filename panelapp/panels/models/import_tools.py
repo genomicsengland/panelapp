@@ -319,7 +319,7 @@ class UploadedPanelList(TimeStampedModel):
                     item = item.lower() == 'true'
                 elif item_mapping['type'] in [str, int]:
                     if item == '':
-                        item = None
+                        item = ''
                     else:
                         item = item_mapping['type'](item)
                         for modifier in item_mapping.get('modifiers', []):

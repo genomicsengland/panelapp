@@ -121,7 +121,6 @@ class GenePanelEntrySnapshotFactory(factory.django.DjangoModelFactory):
     phenotypes = factory.Faker('sentences', nb=3)
     moi = Evaluation.MODES_OF_INHERITANCE.Unknown
     mode_of_pathogenicity = Evaluation.MODES_OF_PATHOGENICITY.Other
-    type_of_variants = GenePanelEntrySnapshot.VARIANT_TYPES.small
     saved_gel_status = 0
     gene = factory.LazyAttribute(lambda g: g.gene_core.dict_tr())
 

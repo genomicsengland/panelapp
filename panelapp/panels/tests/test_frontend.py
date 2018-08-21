@@ -38,7 +38,6 @@ class TestActivities(LoginReviewerUser):
             "rating": Evaluation.RATINGS.AMBER,
             "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)][0],
             "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][randint(1, 2)][0],
-            "type_of_variants": GenePanelEntrySnapshot.VARIANT_TYPES.small,
             "penetrance": GenePanelEntrySnapshot.PENETRANCE.Incomplete,
         }
         req = self.client.post(url, gene_data)
@@ -58,7 +57,6 @@ class TestActivities(LoginReviewerUser):
             "rating": Evaluation.RATINGS.AMBER,
             "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)][0],
             "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][randint(1, 2)][0],
-            "type_of_variants": GenePanelEntrySnapshot.VARIANT_TYPES.small,
             "penetrance": GenePanelEntrySnapshot.PENETRANCE.Incomplete,
         }
         self.client.post(url, gene_data)
@@ -79,7 +77,6 @@ class TestActivities(LoginReviewerUser):
             "rating": Evaluation.RATINGS.AMBER,
             "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)][0],
             "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][randint(1, 2)][0],
-            "type_of_variants": GenePanelEntrySnapshot.VARIANT_TYPES.small,
             "penetrance": GenePanelEntrySnapshot.PENETRANCE.Incomplete,
         }
         req = self.client.post(url, gene_data)
@@ -104,7 +101,6 @@ class TestActivities(LoginReviewerUser):
             "rating": Evaluation.RATINGS.AMBER,
             "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)][0],
             "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][randint(1, 2)][0],
-            "type_of_variants": GenePanelEntrySnapshot.VARIANT_TYPES.small,
             "penetrance": GenePanelEntrySnapshot.PENETRANCE.Incomplete,
         }
         req = self.client.post(url, gene_data)
@@ -129,7 +125,6 @@ class TestActivities(LoginReviewerUser):
             "rating": Evaluation.RATINGS.AMBER,
             "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)][0],
             "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][randint(1, 2)][0],
-            "type_of_variants": GenePanelEntrySnapshot.VARIANT_TYPES.small,
             "penetrance": GenePanelEntrySnapshot.PENETRANCE.Incomplete,
         }
         self.client.post(url, gene_data)
@@ -154,7 +149,6 @@ class TestActivities(LoginReviewerUser):
             "rating": Evaluation.RATINGS.AMBER,
             "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)][0],
             "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][randint(1, 2)][0],
-            "type_of_variants": GenePanelEntrySnapshot.VARIANT_TYPES.small,
             "penetrance": GenePanelEntrySnapshot.PENETRANCE.Incomplete,
         }
         self.client.post(url, gene_data)
@@ -189,7 +183,6 @@ class TestExportActivities(LoginGELUser):
             "rating": Evaluation.RATINGS.AMBER,
             "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)][0],
             "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][randint(1, 2)][0],
-            "type_of_variants": GenePanelEntrySnapshot.VARIANT_TYPES.small,
             "penetrance": GenePanelEntrySnapshot.PENETRANCE.Incomplete,
         }
         self.client.post(url, gene_data)

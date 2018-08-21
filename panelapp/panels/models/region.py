@@ -99,6 +99,7 @@ class Region(AbstractEntity, TimeStampedModel):
     )
 
     DOSAGE_SENSITIVITY_SCORES = (
+        ('', ''),
         ('3', 'Sufficient evidence suggesting dosage sensitivity is associated with clinical phenotype'),
         ('2', 'Emerging evidence suggesting dosage sensitivity is associated with clinical phenotype'),
         ('1', 'Little evidence suggesting dosage sensitivity is associated with clinical phenotype'),
@@ -121,8 +122,8 @@ class Region(AbstractEntity, TimeStampedModel):
     chromosome = models.CharField(max_length=8, choices=CHROMOSOMES)
     position_37 = IntegerRangeField(blank=True, null=True)
     position_38 = IntegerRangeField()
-    haploinsufficiency_score = models.CharField(max_length=2, choices=DOSAGE_SENSITIVITY_SCORES)
-    triplosensitivity_score = models.CharField(max_length=2, choices=DOSAGE_SENSITIVITY_SCORES)
+    haploinsufficiency_score = models.CharField(max_length=2, choices=DOSAGE_SENSITIVITY_SCORES, blank=True, null=True)
+    triplosensitivity_score = models.CharField(max_length=2, choices=DOSAGE_SENSITIVITY_SCORES, blank=True, null=True)
     required_overlap_percentage = models.IntegerField(help_text='Required percent of overlap',
                                                       validators=[validators.MinValueValidator(0),
                                                                   validators.MaxValueValidator(100)])
@@ -167,7 +168,7 @@ class Region(AbstractEntity, TimeStampedModel):
         return 'Region: {name}'.format(name=self.name)
 
     def get_absolute_url(self):
-        """Returns absolute url for this STR in a panel"""
+        """Returns absolute url for this Region in a panel"""
 
         return reverse('panels:evaluation', args=(self.panel.panel.pk, 'region', self.name))
 

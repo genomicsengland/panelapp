@@ -107,10 +107,18 @@ class PanelForm(forms.ModelForm):
             if level4title.dict_tr() != new_level4.dict_tr():
                 data_changed = True
                 new_level4.save()
-                activities.append("Panel name changed from {} to {}".format(
-                    level4title.name,
-                    new_level4.name
-                ))
+                if level4title.name != new_level4.name:
+                    activities.append("Panel name changed from {} to {}".format(
+                        level4title.name,
+                        new_level4.name
+                    ))
+
+                if level4title.hpo != new_level4.hpo:
+                    activities.append("HPO terms changed from {} to {}".format(
+                        ', '.join(level4title.hpo),
+                        ', '.join(new_level4.hpo)
+                    ))
+
                 self.instance.level4title = new_level4
                 self.instance.panel.name = new_level4.name
 
