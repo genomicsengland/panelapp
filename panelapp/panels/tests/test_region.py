@@ -38,7 +38,7 @@ class RegionTest(LoginGELUser):
             'publications': None,
             'phenotypes': None,
             'sources': [],
-            "type_of_variants": GenePanelEntrySnapshot.VARIANT_TYPES.small,
+            "type_of_variants": Region.VARIANT_TYPES.small,
         })
 
         assert active_panel.has_region(region.name)
@@ -70,9 +70,9 @@ class RegionTest(LoginGELUser):
             "rating": Evaluation.RATINGS.AMBER,
             "comments": fake.sentence(),
             "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)][0],
-            "penetrance": GenePanelEntrySnapshot.PENETRANCE.Incomplete,
+            "penetrance": Region.PENETRANCE.Incomplete,
             "current_diagnostic": "True",
-            "type_of_variants": GenePanelEntrySnapshot.VARIANT_TYPES.small,
+            "type_of_variants": Region.VARIANT_TYPES.small,
         }
         res = self.client.post(url, region_data)
 
@@ -112,9 +112,9 @@ class RegionTest(LoginGELUser):
             "rating": Evaluation.RATINGS.AMBER,
             "comments": fake.sentence(),
             "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)][0],
-            "penetrance": GenePanelEntrySnapshot.PENETRANCE.Incomplete,
+            "penetrance": Region.PENETRANCE.Incomplete,
             "current_diagnostic": "True",
-            "type_of_variants": GenePanelEntrySnapshot.VARIANT_TYPES.small,
+            "type_of_variants": Region.VARIANT_TYPES.small,
         }
         res = self.client.post(url, region_data)
 
@@ -147,8 +147,8 @@ class RegionTest(LoginGELUser):
             "rating": Evaluation.RATINGS.AMBER,
             "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)][0],
             "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][randint(1, 2)][0],
-            "penetrance": GenePanelEntrySnapshot.PENETRANCE.Incomplete,
-            "type_of_variants": GenePanelEntrySnapshot.VARIANT_TYPES.small,
+            "penetrance": Region.PENETRANCE.Incomplete,
+            "type_of_variants": Region.VARIANT_TYPES.small,
         }
         self.client.post(url, region_data)
         panel = gps.panel.active_panel
@@ -202,8 +202,8 @@ class RegionTest(LoginGELUser):
             "publications": ";".join([publication, fake.sentence()]),
             "phenotypes": ";".join([phenotype, fake.sentence(), fake.sentence()]),
             "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)][0],
-            "penetrance": GenePanelEntrySnapshot.PENETRANCE.Incomplete,
-            "type_of_variants": GenePanelEntrySnapshot.VARIANT_TYPES.small,
+            "penetrance": Region.PENETRANCE.Incomplete,
+            "type_of_variants": Region.VARIANT_TYPES.small,
         }
         res = self.client.post(url, region_data)
         assert res.status_code == 302
@@ -251,8 +251,8 @@ class RegionTest(LoginGELUser):
             "publications": ";".join([publication, fake.sentence()]),
             "phenotypes": ";".join([phenotype, fake.sentence(), fake.sentence()]),
             "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)][0],
-            "penetrance": GenePanelEntrySnapshot.PENETRANCE.Incomplete,
-            "type_of_variants": GenePanelEntrySnapshot.VARIANT_TYPES.small,
+            "penetrance": Region.PENETRANCE.Incomplete,
+            "type_of_variants": Region.VARIANT_TYPES.small,
         }
         res = self.client.post(url, region_data)
         assert res.status_code == 302
@@ -292,8 +292,8 @@ class RegionTest(LoginGELUser):
             "publications": ";".join([publication for publication in region.publications]),
             "phenotypes": ";".join([phenotype for phenotype in region.phenotypes]),
             "moi": region.moi,
-            "type_of_variants": GenePanelEntrySnapshot.VARIANT_TYPES.small,
-            "penetrance": GenePanelEntrySnapshot.PENETRANCE.Complete,
+            "type_of_variants": Region.VARIANT_TYPES.small,
+            "penetrance": Region.PENETRANCE.Complete,
         }
         res = self.client.post(url, region_data)
         assert res.status_code == 302
@@ -304,7 +304,7 @@ class RegionTest(LoginGELUser):
         """Set tags via edit gene detail section"""
 
         region = RegionFactory(
-            penetrance=GenePanelEntrySnapshot.PENETRANCE.Incomplete
+            penetrance=Region.PENETRANCE.Incomplete
         )
         url = reverse_lazy('panels:edit_entity', kwargs={
             'pk': region.panel.panel.pk,
@@ -330,9 +330,9 @@ class RegionTest(LoginGELUser):
             "tags": [tag.pk for tag in region.tags.all()] + [tag.pk, ],
             "publications": ";".join([publication for publication in region.publications]),
             "phenotypes": ";".join([phenotype for phenotype in region.phenotypes]),
-            "type_of_variants": GenePanelEntrySnapshot.VARIANT_TYPES.small,
+            "type_of_variants": Region.VARIANT_TYPES.small,
             "moi": region.moi,
-            "penetrance": GenePanelEntrySnapshot.PENETRANCE.Complete,
+            "penetrance": Region.PENETRANCE.Complete,
         }
         res = self.client.post(url, region_data)
         assert res.status_code == 302
@@ -343,7 +343,7 @@ class RegionTest(LoginGELUser):
         """Remove tags via edit gene detail section"""
 
         region = RegionFactory(
-            penetrance=GenePanelEntrySnapshot.PENETRANCE.Incomplete
+            penetrance=Region.PENETRANCE.Incomplete
         )
 
         tag = TagFactory(name='some tag')
@@ -371,9 +371,9 @@ class RegionTest(LoginGELUser):
             "tags": [],
             "publications": ";".join([publication for publication in region.publications]),
             "phenotypes": ";".join([phenotype for phenotype in region.phenotypes]),
-            "type_of_variants": GenePanelEntrySnapshot.VARIANT_TYPES.small,
+            "type_of_variants": Region.VARIANT_TYPES.small,
             "moi": region.moi,
-            "penetrance": GenePanelEntrySnapshot.PENETRANCE.Complete,
+            "penetrance": Region.PENETRANCE.Complete,
         }
         res = self.client.post(url, region_data)
         assert res.status_code == 302
@@ -384,7 +384,7 @@ class RegionTest(LoginGELUser):
         """Test if a curator can change Gene penetrance"""
 
         region = RegionFactory(
-            penetrance=GenePanelEntrySnapshot.PENETRANCE.Incomplete
+            penetrance=Region.PENETRANCE.Incomplete
         )
         url = reverse_lazy('panels:edit_entity', kwargs={
             'pk': region.panel.panel.pk,
@@ -408,9 +408,9 @@ class RegionTest(LoginGELUser):
             "tags": [tag.name for tag in region.tags.all()],
             "publications": ";".join([publication for publication in region.publications]),
             "phenotypes": ";".join([phenotype for phenotype in region.phenotypes]),
-            "type_of_variants": GenePanelEntrySnapshot.VARIANT_TYPES.small,
+            "type_of_variants": Region.VARIANT_TYPES.small,
             "moi": region.moi,
-            "penetrance": GenePanelEntrySnapshot.PENETRANCE.Complete,
+            "penetrance": Region.PENETRANCE.Complete,
         }
         res = self.client.post(url, region_data)
         assert res.status_code == 302
@@ -421,7 +421,7 @@ class RegionTest(LoginGELUser):
         """Add a publication to a gene panel entry"""
 
         region = RegionFactory(
-            penetrance=GenePanelEntrySnapshot.PENETRANCE.Incomplete
+            penetrance=Region.PENETRANCE.Incomplete
         )
         region.publications = []
         region.save()
@@ -448,9 +448,9 @@ class RegionTest(LoginGELUser):
             "tags": [tag.name for tag in region.tags.all()],
             "publications": ";".join([fake.sentence(), fake.sentence()]),
             "phenotypes": ";".join([phenotype for phenotype in region.phenotypes]),
-            "type_of_variants": GenePanelEntrySnapshot.VARIANT_TYPES.small,
+            "type_of_variants": Region.VARIANT_TYPES.small,
             "moi": region.moi,
-            "penetrance": GenePanelEntrySnapshot.PENETRANCE.Complete,
+            "penetrance": Region.PENETRANCE.Complete,
         }
 
         res = self.client.post(url, region_data)
@@ -462,7 +462,7 @@ class RegionTest(LoginGELUser):
         """Remove a publication to a gene panel entry"""
 
         region = RegionFactory(
-            penetrance=GenePanelEntrySnapshot.PENETRANCE.Incomplete
+            penetrance=Region.PENETRANCE.Incomplete
         )
         region.publications = [fake.sentence(), fake.sentence()]
         region.save()
@@ -489,9 +489,9 @@ class RegionTest(LoginGELUser):
             "tags": [tag.name for tag in region.tags.all()],
             "publications": ";".join(region.publications[:1]),
             "phenotypes": ";".join([phenotype for phenotype in region.phenotypes]),
-            "type_of_variants": GenePanelEntrySnapshot.VARIANT_TYPES.small,
+            "type_of_variants": Region.VARIANT_TYPES.small,
             "moi": region.moi,
-            "penetrance": GenePanelEntrySnapshot.PENETRANCE.Complete,
+            "penetrance": Region.PENETRANCE.Complete,
         }
         res = self.client.post(url, region_data)
         assert res.status_code == 302
@@ -570,8 +570,8 @@ class RegionTest(LoginGELUser):
             "publications": ";".join([publication, fake.sentence()]),
             "phenotypes": ";".join([phenotype, fake.sentence(), fake.sentence()]),
             "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)][0],
-            "type_of_variants": GenePanelEntrySnapshot.VARIANT_TYPES.small,
-            "penetrance": GenePanelEntrySnapshot.PENETRANCE.Incomplete,
+            "type_of_variants": Region.VARIANT_TYPES.small,
+            "penetrance": Region.PENETRANCE.Incomplete,
         }
         res = self.client.post(url, gene_data)
         assert res.status_code == 302

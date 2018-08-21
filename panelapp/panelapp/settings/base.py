@@ -64,7 +64,8 @@ CUSTOM_APPS = [
     'rest_framework',
     'rest_framework.authtoken',
     'django_admin_listfilter_dropdown',
-    'drf_yasg'
+    'drf_yasg',
+    'qurl_templatetag',
 ]
 
 PROJECT_APPS = [

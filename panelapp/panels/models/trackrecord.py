@@ -39,6 +39,9 @@ class TrackRecord(TimeStampedModel):
         ("ChangedRepeatedSequence", "Changed Repeated Sequence"),
         ('ChangedEffectTypes', 'Changed Effect Types'),
         ('ChangedVariantType', 'Changed Variant Types'),
+        ('ChangedHaploinsufficiencyScore', 'Changed Haploinsufficiency Score'),
+        ('ChangedTriplosensitivityScore', 'Changed Triplosensitivity Score'),
+        ('ChangedRequiredOverlapPercentage', 'Changed Required Overlap Percentage'),
     )
 
     class Meta:

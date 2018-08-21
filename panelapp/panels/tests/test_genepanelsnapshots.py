@@ -1,14 +1,17 @@
 from random import randint
 from django.urls import reverse_lazy
 from faker import Factory
+from random import choice
 from accounts.tests.setup import LoginGELUser
 from accounts.tests.setup import LoginReviewerUser
 from panels.models import GenePanelEntrySnapshot
+from panels.models import Region
 from panels.models import GenePanelSnapshot
 from panels.models import Evidence
 from panels.models import GenePanel
 from panels.models import Evaluation
 from panels.tests.factories import GeneFactory
+from panels.tests.factories import RegionFactory
 from panels.tests.factories import GenePanelSnapshotFactory
 from panels.tests.factories import GenePanelEntrySnapshotFactory
 from panels.tests.factories import TagFactory
@@ -34,7 +37,6 @@ class GenePanelSnapshotReviewerTest(LoginReviewerUser):
             "rating": Evaluation.RATINGS.AMBER,
             "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)][0],
             "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][randint(1, 2)][0],
-            "type_of_variants": GenePanelEntrySnapshot.VARIANT_TYPES.small,
             "penetrance": GenePanelEntrySnapshot.PENETRANCE.Incomplete,
         }
         self.client.post(url, gene_data)
@@ -55,7 +57,6 @@ class GenePanelSnapshotReviewerTest(LoginReviewerUser):
             "rating": Evaluation.RATINGS.AMBER,
             "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)][0],
             "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][randint(1, 2)][0],
-            "type_of_variants": GenePanelEntrySnapshot.VARIANT_TYPES.small,
             "penetrance": GenePanelEntrySnapshot.PENETRANCE.Incomplete,
         }
         self.client.post(url, gene_data)
@@ -84,7 +85,6 @@ class GenePanelSnapshotTest(LoginGELUser):
             "comments": fake.sentence(),
             "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)][0],
             "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][randint(1, 2)][0],
-            "type_of_variants": GenePanelEntrySnapshot.VARIANT_TYPES.small,
             "penetrance": GenePanelEntrySnapshot.PENETRANCE.Incomplete,
             "current_diagnostic": "True"
         }
@@ -110,7 +110,6 @@ class GenePanelSnapshotTest(LoginGELUser):
             "rating": Evaluation.RATINGS.AMBER,
             "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)][0],
             "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][randint(1, 2)][0],
-            "type_of_variants": GenePanelEntrySnapshot.VARIANT_TYPES.small,
             "penetrance": GenePanelEntrySnapshot.PENETRANCE.Incomplete,
         }
         self.client.post(url, gene_data)
@@ -157,7 +156,6 @@ class GenePanelSnapshotTest(LoginGELUser):
             "phenotypes": ";".join([phenotype, fake.sentence(), fake.sentence()]),
             "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)][0],
             "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][randint(1, 2)][0],
-            "type_of_variants": GenePanelEntrySnapshot.VARIANT_TYPES.small,
             "penetrance": GenePanelEntrySnapshot.PENETRANCE.Incomplete,
         }
         res = self.client.post(url, gene_data)
@@ -188,7 +186,6 @@ class GenePanelSnapshotTest(LoginGELUser):
             "phenotypes": ";".join([phenotype for phenotype in gpes.phenotypes]),
             "moi": gpes.moi,
             "mode_of_pathogenicity": gpes.mode_of_pathogenicity,
-            "type_of_variants": GenePanelEntrySnapshot.VARIANT_TYPES.small,
             "penetrance": GenePanelEntrySnapshot.PENETRANCE.Complete,
         }
         res = self.client.post(url, gene_data)
@@ -219,7 +216,6 @@ class GenePanelSnapshotTest(LoginGELUser):
             "phenotypes": ";".join([phenotype for phenotype in gpes.phenotypes]),
             "moi": gpes.moi,
             "mode_of_pathogenicity": gpes.mode_of_pathogenicity,
-            "type_of_variants": GenePanelEntrySnapshot.VARIANT_TYPES.small,
             "penetrance": GenePanelEntrySnapshot.PENETRANCE.Complete,
         }
         res = self.client.post(url, gene_data)
@@ -252,7 +248,6 @@ class GenePanelSnapshotTest(LoginGELUser):
             "phenotypes": ";".join([phenotype for phenotype in gpes.phenotypes]),
             "moi": gpes.moi,
             "mode_of_pathogenicity": gpes.mode_of_pathogenicity,
-            "type_of_variants": GenePanelEntrySnapshot.VARIANT_TYPES.small,
             "penetrance": GenePanelEntrySnapshot.PENETRANCE.Complete,
         }
         res = self.client.post(url, gene_data)
@@ -285,7 +280,6 @@ class GenePanelSnapshotTest(LoginGELUser):
             "phenotypes": ";".join([phenotype for phenotype in gpes.phenotypes]),
             "moi": gpes.moi,
             "mode_of_pathogenicity": gpes.mode_of_pathogenicity,
-            "type_of_variants": GenePanelEntrySnapshot.VARIANT_TYPES.small,
             "penetrance": GenePanelEntrySnapshot.PENETRANCE.Complete,
         }
         res = self.client.post(url, gene_data)
@@ -317,7 +311,6 @@ class GenePanelSnapshotTest(LoginGELUser):
             "phenotypes": ";".join([phenotype for phenotype in gpes.phenotypes]),
             "moi": gpes.moi,
             "mode_of_pathogenicity": gpes.mode_of_pathogenicity,
-            "type_of_variants": GenePanelEntrySnapshot.VARIANT_TYPES.small,
             "penetrance": GenePanelEntrySnapshot.PENETRANCE.Complete,
         }
         res = self.client.post(url, gene_data)
@@ -349,7 +342,6 @@ class GenePanelSnapshotTest(LoginGELUser):
             "phenotypes": ";".join([phenotype for phenotype in gpes.phenotypes]),
             "moi": gpes.moi,
             "mode_of_pathogenicity": gpes.mode_of_pathogenicity,
-            "type_of_variants": GenePanelEntrySnapshot.VARIANT_TYPES.small,
             "penetrance": GenePanelEntrySnapshot.PENETRANCE.Complete,
         }
         res = self.client.post(url, gene_data)
@@ -380,7 +372,6 @@ class GenePanelSnapshotTest(LoginGELUser):
             "phenotypes": ";".join(gpes.phenotypes),
             "moi": gpes.moi,
             "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][randint(1, 2)][0],
-            "type_of_variants": GenePanelEntrySnapshot.VARIANT_TYPES.cnv_gain,
             "penetrance": GenePanelEntrySnapshot.PENETRANCE.Incomplete,
         }
         res = self.client.post(url, gene_data)
@@ -458,7 +449,6 @@ class GenePanelSnapshotTest(LoginGELUser):
             "phenotypes": ";".join([phenotype, fake.sentence(), fake.sentence()]),
             "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)][0],
             "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][randint(1, 2)][0],
-            "type_of_variants": GenePanelEntrySnapshot.VARIANT_TYPES.small,
             "penetrance": GenePanelEntrySnapshot.PENETRANCE.Incomplete,
         }
         res = self.client.post(url, gene_data)
@@ -474,20 +464,37 @@ class GenePanelSnapshotTest(LoginGELUser):
         assert old_gps.has_gene(old_gene_symbol) is True
 
     def test_type_of_variants_added(self):
-        gene = GeneFactory()
+        region = RegionFactory()
         gps = GenePanelSnapshotFactory()
-        url = reverse_lazy('panels:add_entity', kwargs={'pk': gps.panel.pk, 'entity_type': 'gene'})
-        gene_data = {
-            "gene": gene.pk,
-            "source": Evidence.OTHER_SOURCES[0],
-            "phenotypes": "{};{};{}".format(*fake.sentences(nb=3)),
-            "rating": Evaluation.RATINGS.AMBER,
+        url = reverse_lazy('panels:add_entity', kwargs={'pk': gps.panel.pk, 'entity_type': 'region'})
+
+        source = region.evidence.last().name
+        publication = region.publications[0]
+        phenotype = region.publications[1]
+
+        region_data = {
+            'name': region.name,
+            'chromosome': '1',
+            'position_37_0': '12345',
+            'position_37_1': '12346',
+            'position_38_0': '12345',
+            'position_38_1': '123456',
+            'haploinsufficiency_score': choice(Region.DOSAGE_SENSITIVITY_SCORES)[0],
+            'triplosensitivity_score': '',
+            'required_overlap_percentage': randint(0, 100),
+            "gene": region.gene_core.pk,
+            "gene_name": "Other name",
+            "source": set([source, Evidence.ALL_SOURCES[randint(0, 9)]]),
+            "tags": [TagFactory().pk, ] + [tag.name for tag in region.tags.all()],
+            "publications": ";".join([publication, fake.sentence()]),
+            "phenotypes": ";".join([phenotype, fake.sentence(), fake.sentence()]),
             "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)][0],
-            "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][randint(1, 2)][0],
-            "type_of_variants": GenePanelEntrySnapshot.VARIANT_TYPES.cnv_loss,
-            "penetrance": GenePanelEntrySnapshot.PENETRANCE.Incomplete,
+            "type_of_variants": Region.VARIANT_TYPES.small,
+            "penetrance": Region.PENETRANCE.Incomplete,
+
         }
-        self.client.post(url, gene_data)
+        res = self.client.post(url, region_data)
+        self.assertEqual(res.status_code, 302)
         panel = gps.panel.active_panel
 
-        assert panel.get_gene(gene.gene_symbol).type_of_variants == gene_data['type_of_variants']
+        assert panel.get_region(region.name).type_of_variants == region_data['type_of_variants']

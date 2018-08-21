@@ -1,4 +1,5 @@
 {% extends "default.html" %}
+{% load qurl %}
 {% load staticfiles %}
 {% load panel_helpers %}
 {% load bootstrap3 %}
@@ -13,7 +14,7 @@
     <h4>Filter</h4>
     {% bootstrap_form filter_form %}
     <div>
-      <button type="reset" class="btn btn-default">Cancel</button>
+      <a href="{% url 'panels:activity' %}" class="btn btn-default">Cancel</a>
       <button type="submit" class="btn btn-primary">Filter</button>
         {% if request.user.is_authenticated and request.user.reviewer.is_GEL %}
         <button type="submit" value="csv" name="format" class="btn btn-default">CSV Export</button>
@@ -28,19 +29,6 @@
         <th style="width: 25%">Panel</th>
         <th style="width: 8%">Item</th>
         <th>Activity</th>
-      </tr>
-      <tr class="if-no-js-hide table-header-secondary">
-        <td colspan="100">
-          <form>
-            <label for="gene-filter" class="rm">Filter genes</label>
-            <div class="input-group">
-              <input id="gene-filter" type="text" class="form-control normal js-filter-table-input" placeholder="Filter genes">
-              <span class="input-group-addon js-filter-table-count" data-singular="action" data-plural="actions">
-                {{ activities|length }} actions
-              </span>
-            </div>
-          </form>
-        </td>
       </tr>
     </thead>
     <tbody>
@@ -71,7 +59,7 @@
   <div class="pagination">
     <span class="step-links">
       {% if page_obj.has_previous %}
-        <a href="?page={{ page_obj.previous_page_number }}">Previous page</a>
+        <a href="{% qurl request.get_full_path page=page_obj.previous_page_number %}">Previous page</a>
       {% endif %}
 
       <span class="current">
@@ -79,7 +67,7 @@
       </span>
 
       {% if page_obj.has_next %}
-        <a href="?page={{ page_obj.next_page_number }}">Next page</a>
+        <a href="{% qurl request.get_full_path page=page_obj.next_page_number %}">Next page</a>
       {% endif %}
     </span>
   </div>

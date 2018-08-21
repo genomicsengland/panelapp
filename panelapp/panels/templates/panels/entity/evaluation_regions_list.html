@@ -30,8 +30,8 @@
         {% if entity == entry %}id="gene-nav-active-item"{% endif %}
     >
       <a
-         href="{{ entity.get_absolute_url }}{% if entity.name in panel.current_genes_duplicates %}?pk={{ entity.pk }}{% endif %}"
-         title="{{ entity.verbose_name }}"
+         href="{{ entry.get_absolute_url }}{% if entry.name in panel.current_genes_duplicates %}?pk={{ entry.pk }}{% endif %}"
+         title="{{ entry.verbose_name }}"
       >
       {% if request.user.pk in entity.evaluators %}
           <i
@@ -41,19 +41,19 @@
           ></i>
       {% else %}
           <i
-              class="fa fa-circle gel-badge add-right-margin pull-left {{ entity|gene_list_class }}"
+              class="fa fa-circle gel-badge add-right-margin pull-left {{ entry|gene_list_class }}"
               data-toggle="tooltip"
-              title="{{ entity|gene_list_name }}"
+              title="{{ entry|gene_list_name }}"
           ></i>
       {% endif %}
-      {{ entity.verbose_name }}<br />
-      {{ entity.name }}
+      {{ entry.verbose_name }}<br />
+      {{ entry.name }}
       <span
           class="pull-right text-muted"
           data-toggle="tooltip"
           data-placement="left"
-          title="{{ entity.number_of_evaluations }} review{{entity.number_of_evaluations|pluralize}}"
-      >{{ entity.number_of_evaluations }}</span>
+          title="{{ entity.number_of_evaluations }} review{{entry.number_of_evaluations|pluralize}}"
+      >{{ entry.number_of_evaluations }}</span>
       </a>
 
     </li>

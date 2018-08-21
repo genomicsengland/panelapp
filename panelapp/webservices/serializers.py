@@ -75,7 +75,6 @@ class PanelSerializer(EnsembleIdMixin, serializers.BaseSerializer):
                 "Publications": make_null(gene.publications),
                 "Phenotypes": make_null(gene.phenotypes),
                 "ModeOfPathogenicity": make_null(gene.mode_of_pathogenicity),
-                "TypeOfVariants": gene.type_of_variants,
                 "LevelOfConfidence": convert_gel_status(gene.saved_gel_status),
                 "Evidences": [ev.name for ev in gene.evidence.all()],
             })
@@ -154,7 +153,6 @@ class GenesSerializer(EnsembleIdMixin, serializers.BaseSerializer):
                 "Publications": make_null(gene.publications),
                 "Phenotypes": make_null(gene.phenotypes),
                 "ModeOfPathogenicity": make_null(gene.mode_of_pathogenicity),
-                "TypeOfVariants": gene.type_of_variants,
                 "LevelOfConfidence": convert_gel_status(gene.saved_gel_status),
                 "version":  panel.version,
                 "SpecificDiseaseName": panel.level4title.name,
@@ -180,7 +178,6 @@ class GenesSerializer(EnsembleIdMixin, serializers.BaseSerializer):
                         "Publications": make_null(gene.publications),
                         "Phenotypes": make_null(gene.phenotypes),
                         "ModeOfPathogenicity": make_null(gene.mode_of_pathogenicity),
-                        "TypeOfVariants": gene.type_of_variants,
                         "LevelOfConfidence": convert_gel_status(gene.saved_gel_status),
                         "version": parent_panel.version,
                         "SpecificDiseaseName": parent_panel.level4title.name,

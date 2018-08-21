@@ -74,7 +74,7 @@ class DownloadPanelTSVMixin(PanelMixin, DetailView):
             "STR Pathogenic Repeats",
             "Region Haploinsufficiency Score",
             "Region Triplosensitivity Score",
-            "Region Required Overlap Percentage"
+            "Region Required Overlap Percentage",
             "Region Variant Type",
             "Region Verbose Name",
         ))

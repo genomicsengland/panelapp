@@ -71,13 +71,6 @@ class GenePanelEntrySnapshotManager(EntityManager):
 
 
 class GenePanelEntrySnapshot(AbstractEntity, TimeStampedModel):
-    VARIANT_TYPES = Choices(
-        ('small', 'Small variants'),
-        ('cnv_loss', 'CNV Loss'),
-        ('cnv_gain', 'CNV Gain'),
-        ('cnv_both', 'CNV Both gain and loss'),
-    )
-
     class Meta:
         get_latest_by = "created"
         ordering = ['-saved_gel_status', ]
@@ -93,7 +86,6 @@ class GenePanelEntrySnapshot(AbstractEntity, TimeStampedModel):
     evaluation = models.ManyToManyField(Evaluation, db_index=True)
     moi = models.CharField("Mode of inheritance", choices=Evaluation.MODES_OF_INHERITANCE, max_length=255)
     penetrance = models.CharField(choices=AbstractEntity.PENETRANCE, max_length=255, blank=True, null=True)
-    type_of_variants = models.CharField(max_length=32, choices=VARIANT_TYPES, default=VARIANT_TYPES.small)
     track = models.ManyToManyField(TrackRecord)
     publications = ArrayField(models.TextField(), blank=True, null=True)
     phenotypes = ArrayField(models.TextField(), blank=True, null=True)
