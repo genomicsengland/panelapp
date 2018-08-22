@@ -84,5 +84,6 @@ setup(
         'drf-nested-routers==0.90.2',
         'django-array-field-select==0.2.0',
         'django-autoslug-iplweb==1.9.4',
+        'django-qurl-templatetag==0.0.13',
     ]
 )
