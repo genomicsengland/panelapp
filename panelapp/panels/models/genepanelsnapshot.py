@@ -556,7 +556,7 @@ class GenePanelSnapshot(TimeStampedModel):
                 track_promoted = TrackRecord(
                     curator_status=user.reviewer.is_GEL(),
                     issue_description=issue_description,
-                    gel_status=new_entity.status,
+                    gel_status=entity.status,
                     issue_type=issue_type,
                     user=user
                 )
