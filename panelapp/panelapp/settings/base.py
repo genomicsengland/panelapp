@@ -266,4 +266,4 @@ SWAGGER_SETTINGS = {
     },
 }
 
-DEFAULT_PANEL_TYPES = os.getenv('DEFAULT_PANEL_TYPES', 'rare_disease-100k').split(',')
+DEFAULT_PANEL_TYPES = os.getenv('DEFAULT_PANEL_TYPES', 'rare-disease-100k').split(',')

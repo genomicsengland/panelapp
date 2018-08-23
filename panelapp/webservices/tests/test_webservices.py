@@ -35,7 +35,7 @@ class TestWebservices(TransactionTestCase):
         self.assertEqual(r.status_code, 200)
 
     def test_list_100k_rd_type(self):
-        panel_type = PanelTypeFactory(slug='rare_disease-100k')
+        panel_type = PanelTypeFactory(slug='rare-disease-100k')
         self.gps.panel.types.add(panel_type)
         url = reverse_lazy('webservices:list_panels')
         r = self.client.get(url)
