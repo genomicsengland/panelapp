@@ -79,7 +79,7 @@ class GenePanelSnapshotManager(models.Manager):
                           | Q(panel__name__icontains=name)
             qs = qs.filter(filters)
 
-        return qs.prefetch_related('panel', 'level4title')\
+        return qs.prefetch_related('panel', 'panel__types', 'level4title')\
             .order_by('panel__name', '-major_version', '-minor_version')
 
     def get_active_annotated(self, all=False, deleted=False, internal=False, name=None, panel_types=None):

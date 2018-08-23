@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import DatabaseError
 from django.db.models import Q
 from django.utils.functional import cached_property
@@ -169,7 +170,10 @@ def list_panels(request):
         filters["panel__name__icontains"] = request.GET["Name"]
 
     if "Types" in request.GET:
-        filters["panel__types__slug__in"] = request.GET["Types"].split(',')
+        if request.GET["Types"] != 'all':
+            filters["panel__types__slug__in"] = request.GET["Types"].split(',')
+    else:
+        filters["panel__types__slug__in"] = settings.DEFAULT_PANEL_TYPES
 
     if request.GET.get('Retired', '').lower() == 'true':
         queryset = GenePanelSnapshot.objects.get_active_annotated(all=True).filter(**filters)

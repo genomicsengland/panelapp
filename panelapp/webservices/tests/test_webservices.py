@@ -30,8 +30,16 @@ class TestWebservices(TransactionTestCase):
 
     def test_list_panels_name(self):
         url = reverse_lazy('webservices:list_panels')
-        r = self.client.get(url)
+        r = self.client.get("{}?Types=all".format(url))
         self.assertEqual(len(r.json()['result']), 4)
+        self.assertEqual(r.status_code, 200)
+
+    def test_list_100k_rd_type(self):
+        panel_type = PanelTypeFactory(slug='rare_disease-100k')
+        self.gps.panel.types.add(panel_type)
+        url = reverse_lazy('webservices:list_panels')
+        r = self.client.get(url)
+        self.assertEqual(len(r.json()['result']), 1)
         self.assertEqual(r.status_code, 200)
 
     def test_list_panels_filter_type(self):
@@ -49,13 +57,13 @@ class TestWebservices(TransactionTestCase):
         self.gps.panel.status = GenePanel.STATUS.deleted
         self.gps.panel.save()
 
-        r = self.client.get(url)
+        r = self.client.get("{}?Types=all".format(url))
         self.assertEqual(len(r.json()['result']), 3)
         self.assertEqual(r.status_code, 200)
 
         # Test deleted panels
         url = reverse_lazy('webservices:list_panels')
-        r = self.client.get("{}?Retired=True".format(url))
+        r = self.client.get("{}?Retired=True&Types=all".format(url))
         self.assertEqual(len(r.json()['result']), 4)  # one for gpes via factory, 2nd - retired
         self.assertEqual(r.status_code, 200)
 
@@ -64,7 +72,7 @@ class TestWebservices(TransactionTestCase):
         self.gps_public.panel.save()
 
         url = reverse_lazy('webservices:list_panels')
-        r = self.client.get("{}?Retired=True".format(url))
+        r = self.client.get("{}?Retired=True&Types=all".format(url))
         self.assertEqual(len(r.json()['result']), 3)  # only retired panel will be visible
         self.assertEqual(r.status_code, 200)
 
@@ -125,7 +133,7 @@ class TestWebservices(TransactionTestCase):
     def test_panel_created_timestamp(self):
         self.gpes.panel.increment_version()
         url = reverse_lazy('webservices:list_panels')
-        res = self.client.get(url)
+        res = self.client.get("{}?Types=all".format(url))
         # find gps panel
         title = self.gps_public.panel.name
         current_time = str(self.gps_public.created).replace('+00:00', 'Z').replace(' ', 'T')
