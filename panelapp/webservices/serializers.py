@@ -215,7 +215,8 @@ class ListPanelSerializer(serializers.BaseSerializer):
                 "Number_of_Regions": panel.stats.get('number_of_regions'),
                 "Panel_Id": panel.panel.old_pk if panel.panel.old_pk else str(panel.panel.pk),
                 "Relevant_disorders": filter(filter_empty, panel.old_panels),
-                "Status": panel.panel.status
+                "Status": panel.panel.status,
+                "PanelTypes": panel.panel.types.values_list('slug', flat=True)
             })
         return result
 
