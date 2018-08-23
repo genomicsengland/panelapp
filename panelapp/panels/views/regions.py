@@ -19,6 +19,8 @@ class DownloadAllRegions(GELReviewerRequiredMixin, View):
             "Position GRCh38 end",
             "Haploinsufficiency Score",
             "Triplosensitivity Score",
+            "Required region overlap",
+            "Variant types",
             "Symbol",
             "Panel Id",
             "Panel Name",
@@ -50,19 +52,21 @@ class DownloadAllRegions(GELReviewerRequiredMixin, View):
                 if isinstance(entry.phenotypes, list):
                     phenotypes = ';'.join(entry.phenotypes)
                 else:
-                    phenotypes = '-'
+                    phenotypes = ''
 
                 row = [
                     entry.name,
                     entry.verbose_name,
                     entry.chromosome,
-                    entry.position_37.lower,
-                    entry.position_37.upper,
+                    entry.position_37.lower if entry.position_37 else '',
+                    entry.position_37.upper if entry.position_37 else '',
                     entry.position_38.lower,
                     entry.position_38.upper,
-                    entry.haploinsufficiency_score,
-                    entry.triplosensitivity_score,
-                    entry.gene.get('gene_symbol') if entry.gene else '-',
+                    entry.haploinsufficiency_score if entry.haploinsufficiency_score else '',
+                    entry.triplosensitivity_score if entry.triplosensitivity_score else '',
+                    entry.required_overlap_percentage,
+                    entry.type_of_variants,
+                    entry.gene.get('gene_symbol') if entry.gene else '',
                     entry.panel.panel.pk,
                     entry.panel.level4title.name,
                     entry.panel.version,
@@ -71,12 +75,12 @@ class DownloadAllRegions(GELReviewerRequiredMixin, View):
                     ';'.join([evidence.name for evidence in entry.evidence.all()]),
                     entry.moi,
                     ';'.join([tag.name for tag in entry.tags.all()]),
-                    entry.gene.get('ensembl_genes', {}).get('GRch37', {}).get('82', {}).get('ensembl_id', '-') if entry.gene else '-',
-                    entry.gene.get('ensembl_genes', {}).get('GRch38', {}).get('90', {}).get('ensembl_id', '-') if entry.gene else '-',
+                    entry.gene.get('ensembl_genes', {}).get('GRch37', {}).get('82', {}).get('ensembl_id', '') if entry.gene else '',
+                    entry.gene.get('ensembl_genes', {}).get('GRch38', {}).get('90', {}).get('ensembl_id', '') if entry.gene else '',
                     entry.gene.get('biotype', '-') if entry.gene else '-',
                     phenotypes,
-                    entry.gene.get('ensembl_genes', {}).get('GRch37', {}).get('82', {}).get('location', '-') if entry.gene else '-',
-                    entry.gene.get('ensembl_genes', {}).get('GRch38', {}).get('90', {}).get('location', '-') if entry.gene else '-',
+                    entry.gene.get('ensembl_genes', {}).get('GRch37', {}).get('82', {}).get('location', '') if entry.gene else '',
+                    entry.gene.get('ensembl_genes', {}).get('GRch38', {}).get('90', {}).get('location', '') if entry.gene else '',
                 ]
                 yield row
 

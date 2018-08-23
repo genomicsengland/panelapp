@@ -593,3 +593,12 @@ class RegionTest(LoginGELUser):
         res = self.client.get(reverse_lazy('panels:download_panel_tsv', args=(gps.panel.pk, '01234')))
         self.assertEqual(res.status_code, 200)
         self.assertTrue(res.content.find(b'region') != 1)
+
+    def test_download_all_regions(self):
+        gpes = GenePanelEntrySnapshotFactory()
+        gps = gpes.panel
+        region = RegionFactory(panel=gps)
+
+        res = self.client.get(reverse_lazy('panels:download_regions'))
+        self.assertEqual(res.status_code, 200)
+        self.assertTrue(b"".join(res.streaming_content).find(region.verbose_name.encode()) != 1)
