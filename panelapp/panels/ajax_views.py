@@ -457,7 +457,7 @@ class UpdateEntityTagsAjaxView(GELReviewerRequiredMixin, UpdateEvaluationsMixin)
     def process(self):
         form = self.form_class(instance=self.object, data=self.request.POST)
         if form.is_valid():
-            form.save()
+            form.save(user=self.request.user)
             del self.panel
             del self.object
             return self.return_data()

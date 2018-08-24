@@ -100,6 +100,8 @@ class PanelForm(forms.ModelForm):
         activities = []
 
         if self.instance.id:
+            current_instance = GenePanelSnapshot.objects.get(pk=self.instance.id)
+
             panel = self.instance.panel
             level4title = self.instance.level4title
 
@@ -123,15 +125,15 @@ class PanelForm(forms.ModelForm):
                 self.instance.panel.name = new_level4.name
 
             if 'old_panels' in self.changed_data:
-                activities.append("List of old panels changed from {} to {}".format(
-                    "; ".join(self.instance.old_panels),
+                activities.append("List of related panels changed from {} to {}".format(
+                    "; ".join(current_instance.old_panels),
                     "; ".join(self.cleaned_data['old_panels'])
                 ))
                 self.instance.old_panels = self.cleaned_data['old_panels']
             
             if 'status' in self.changed_data:
                 activities.append("Panel status changed from {} to {}".format(
-                    self.instance.panel.status,
+                    current_instance.panel.status,
                     self.cleaned_data['status']
                 ))
                 self.instance.panel.status = self.cleaned_data['status']
@@ -164,7 +166,7 @@ class PanelForm(forms.ModelForm):
 
             activities.append("Added Panel {}".format(panel.name))
             if self.cleaned_data['old_panels']:
-                activities.append("Set list of old panels to {}".format(
+                activities.append("Set list of related panels to {}".format(
                     "; ".join(self.cleaned_data['old_panels'])))
 
             self.instance.panel = panel
@@ -177,12 +179,12 @@ class PanelForm(forms.ModelForm):
                 self.instance.save(update_fields=['major_version', ])
                 self.instance.update_saved_stats()
                 activities.append("Set child panels to: {}".format(
-                    self.instance.child_panels.values_list('panel__name', flat=True)
+                    '; '.join(list(self.instance.child_panels.values_list('panel__name', flat=True)))
                 ))
             if self.cleaned_data.get('types'):
                 panel.types.set(self.cleaned_data['types'])
                 activities.append("Set panel types to: {}".format(
-                    panel.types.values_list('name', flat=True)
+                    '; '.join(panel.types.values_list('name', flat=True))
                 ))
 
         if activities:
