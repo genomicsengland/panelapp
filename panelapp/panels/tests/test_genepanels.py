@@ -420,7 +420,7 @@ class GenePanelTest(LoginGELUser):
         evaluations2 = sorted(gpes2.evaluation.all().values_list('pk', flat=True))
 
         gps = gps.increment_version()
-        gps.update_gene(self.gel_user, gpes.gene_core.gene_symbol, {'phenotypes': 'abra'})
+        gps.update_gene(self.gel_user, gpes.gene_core.gene_symbol, {'phenotypes': ['abra', ]})
         current_ev2 = sorted(gps.panel.active_panel.get_gene(gpes2.gene_core.gene_symbol).evaluation.all().values_list('pk', flat=True))
 
         self.assertNotEqual(evaluations2, current_ev2)

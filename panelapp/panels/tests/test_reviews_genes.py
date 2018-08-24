@@ -307,6 +307,21 @@ class GeneReviewTest(LoginGELUser):
         assert gene.phenotypes == phenotypes_array
         assert gene.panel.version != gpes.panel.version
 
+    def test_update_phenotypes_add_only(self):
+        gpes = GenePanelEntrySnapshotFactory()
+
+        phenotypes_array = [fake.word(), fake.word()]
+
+        old_phenotypes = gpes.phenotypes
+        data = {
+            'phenotypes': phenotypes_array
+        }
+
+        ap = GenePanel.objects.get(pk=gpes.panel.panel.pk).active_panel
+        ap.update_gene(self.gel_user, gpes.gene.get('gene_symbol'), data, append_only=True)
+        gene = GenePanel.objects.get(pk=gpes.panel.panel.pk).active_panel.get_gene(gpes.gene.get('gene_symbol'))
+        assert gene.phenotypes == list(set(old_phenotypes + phenotypes_array))
+
     def test_update_publications(self):
         gpes = GenePanelEntrySnapshotFactory()
         gpes.evaluation.all().delete()
