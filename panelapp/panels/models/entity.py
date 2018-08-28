@@ -341,6 +341,60 @@ class AbstractEntity:
         self.panel.add_activity(user, "Marked {} as ready".format(self.label), self)
         self.save()
 
+    def update_tags(self, user, tags):
+        current_tags = [tag.pk for tag in self.tags.all()]
+        if tags or current_tags:
+            tracks = []
+
+            if not tags:
+                tags = []
+
+            new_tags = [tag.pk for tag in tags]
+            add_tags = [
+                tag for tag in tags
+                if tag.pk not in current_tags
+            ]
+            delete_tags = [
+                tag for tag in current_tags
+                if tag not in new_tags
+            ]
+
+            for tag in delete_tags:
+                tag = self.tags.get(pk=tag)
+                self.tags.remove(tag)
+                description = "Tag {} was removed from {}.".format(
+                    tag,
+                    self.label,
+                )
+                tracks.append((
+                    TrackRecord.ISSUE_TYPES.RemovedTag,
+                    description
+                ))
+
+            for tag in add_tags:
+                self.tags.add(tag)
+
+                description = "Tag {} tag was added to {}.".format(
+                    tag,
+                    self.label,
+                )
+                tracks.append((
+                    TrackRecord.ISSUE_TYPES.AddedTag,
+                    description
+                ))
+
+            if tracks:
+                description = "\n".join([t[1] for t in tracks])
+                track = TrackRecord.objects.create(
+                    gel_status=self.status,
+                    curator_status=0,
+                    user=user,
+                    issue_type=",".join([t[0] for t in tracks]),
+                    issue_description=description
+                )
+                self.track.add(track)
+                self.panel.add_activity(user, description, self)
+
     def update_moi(self, moi, user, moi_comment=None):
         old_moi = self.moi
         self.moi = moi
@@ -368,10 +422,9 @@ class AbstractEntity:
             )
 
     def update_pathogenicity(self, mop, user, mop_comment=None):
+        description = "Mode of pathogenicity for {} was changed from {} to {}".format(self.label, self.mode_of_pathogenicity, mop)
         self.mode_of_pathogenicity = mop
         self.save()
-
-        description = "Mode of pathogenicity for {} was changed to {}".format(self.label, mop)
         track = TrackRecord.objects.create(
             gel_status=self.status,
             curator_status=0,
@@ -389,10 +442,13 @@ class AbstractEntity:
             )
 
     def update_phenotypes(self, phenotypes, user, phenotypes_comment=None):
+        description = "Phenotypes for {} were changed from {} to {}".format(
+            self.label,
+            "; ".join(self.phenotypes),
+            "; ".join(phenotypes)
+        )
         self.phenotypes = phenotypes
         self.save()
-
-        description = "Phenotypes for {} were set to {}".format(self.label, "; ".join(phenotypes))
         track = TrackRecord.objects.create(
             gel_status=self.status,
             curator_status=0,
@@ -410,10 +466,13 @@ class AbstractEntity:
             )
 
     def update_publications(self, publications, user, publications_comment=None):
+        description = "Publications for {} were set to {}".format(
+            self.label,
+            "; ".join(self.publications),
+            "; ".join(publications)
+        )
         self.publications = publications
         self.save()
-
-        description = "Publications for {} were set to {}".format(self.label, "; ".join(publications))
         track = TrackRecord.objects.create(
             gel_status=self.status,
             curator_status=0,

@@ -1376,38 +1376,30 @@ class GenePanelSnapshot(TimeStampedModel):
                 ))
 
             phenotypes = gene_data.get('phenotypes')
-            if phenotypes and gene.phenotypes != phenotypes:
-                current_phenotypes = [ph.strip() for ph in gene.phenotypes]
+            if phenotypes:
+                logging.debug("Updating phenotypes for {} in panel:{}".format(gene.label, self))
 
-                add_phenotypes = [
-                    phenotype.strip() for phenotype in phenotypes
-                    if phenotype not in current_phenotypes
-                ]
+                description = None
 
-                delete_phenotypes = [
-                    phenotype.strip() for phenotype in current_phenotypes
-                    if phenotype not in phenotypes
-                ]
+                if append_only:
+                    description = "Added phenotypes {} for {}".format(
+                        '; '.join(phenotypes),
+                        gene.label,
+                    )
+                    gene.phenotypes = list(set(gene.phenotypes + phenotypes))
+                elif phenotypes != gene.phenotypes:
+                    description = "Phenotypes for {} were changed from {} to {}".format(
+                        gene.label,
+                        '; '.join(gene.phenotypes),
+                        '; '.join(phenotypes),
+                    )
+                    gene.phenotypes = phenotypes
 
-                logging.debug("Updating phenotypes for gene:{} in panel:{}".format(gene_symbol, self))
-
-                if not append_only:
-                    for phenotype in delete_phenotypes:
-                        current_phenotypes.remove(phenotype)
-
-                for phenotype in add_phenotypes:
-                    current_phenotypes.append(phenotype)
-
-                description = "Phenotypes for gene {} were set from {} to {}".format(
-                    gene_symbol,
-                    '; '.join(gene.phenotypes),
-                    '; '.join(current_phenotypes)
-                )
-                gene.phenotypes = current_phenotypes
-                tracks.append((
-                    TrackRecord.ISSUE_TYPES.SetPenetrance,
-                    description
-                ))
+                if description:
+                    tracks.append((
+                        TrackRecord.ISSUE_TYPES.SetPhenotypes,
+                        description
+                    ))
 
             penetrance = gene_data.get('penetrance')
             if penetrance and gene.penetrance != penetrance:
@@ -2035,18 +2027,30 @@ class GenePanelSnapshot(TimeStampedModel):
                 ))
 
             phenotypes = str_data.get('phenotypes')
-            if phenotypes and str_item.phenotypes != phenotypes:
+            if phenotypes:
                 logging.debug("Updating phenotypes for {} in panel:{}".format(str_item.label, self))
-                description = "Phenotypes for {} were changed from {} to {}".format(
-                    str_item.label,
-                    '; '.join(str_item.phenotypes),
-                    '; '.join(phenotypes)
-                )
-                str_item.phenotypes = phenotypes
-                tracks.append((
-                    TrackRecord.ISSUE_TYPES.SetPenetrance,
-                    description
-                ))
+
+                description = None
+
+                if append_only:
+                    description = "Added phenotypes {} for {}".format(
+                        '; '.join(phenotypes),
+                        str_item.label,
+                    )
+                    str_item.phenotypes = list(set(str_item.phenotypes + phenotypes))
+                elif phenotypes != str_item.phenotypes:
+                    description = "Phenotypes for {} were changed from {} to {}".format(
+                        str_item.label,
+                        '; '.join(str_item.phenotypes),
+                        '; '.join(phenotypes),
+                    )
+                    str_item.phenotypes = phenotypes
+
+                if description:
+                    tracks.append((
+                        TrackRecord.ISSUE_TYPES.SetPhenotypes,
+                        description
+                    ))
 
             penetrance = str_data.get('penetrance')
             if penetrance and str_item.penetrance != penetrance:
@@ -2565,7 +2569,7 @@ class GenePanelSnapshot(TimeStampedModel):
                 ]
                 delete_evidences = [
                     source for source in evidences_names
-                    if source not in Evidence.EXPERT_REVIEWS and not source in region_data.get('sources')
+                    if source not in Evidence.EXPERT_REVIEWS and source not in region_data.get('sources')
                 ]
 
                 if not append_only:
@@ -2621,16 +2625,28 @@ class GenePanelSnapshot(TimeStampedModel):
             phenotypes = region_data.get('phenotypes')
             if phenotypes:
                 logging.debug("Updating phenotypes for {} in panel:{}".format(region.label, self))
-                description = "Phenotypes for {} were changed from {} to {}".format(
-                    region.label,
-                    '; '.join(region.phenotypes),
-                    '; '.join(phenotypes),
-                )
-                region.phenotypes = phenotypes
-                tracks.append((
-                    TrackRecord.ISSUE_TYPES.SetPenetrance,
-                    description
-                ))
+
+                description = None
+
+                if append_only:
+                    description = "Added phenotypes {} for {}".format(
+                        '; '.join(phenotypes),
+                        region.label,
+                    )
+                    region.phenotypes = list(set(region.phenotypes + phenotypes))
+                elif phenotypes != region.phenotypes:
+                    description = "Phenotypes for {} were changed from {} to {}".format(
+                        region.label,
+                        '; '.join(region.phenotypes),
+                        '; '.join(phenotypes),
+                    )
+                    region.phenotypes = phenotypes
+
+                if description:
+                    tracks.append((
+                        TrackRecord.ISSUE_TYPES.SetPhenotypes,
+                        description
+                    ))
 
             penetrance = region_data.get('penetrance')
             if penetrance and region.penetrance != penetrance:

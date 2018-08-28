@@ -18,6 +18,10 @@ class UpdateGeneTagsForm(forms.ModelForm):
         required=False
     )
 
+    def save(self, *args, **kwargs):
+        if 'tags' in self.changed_data:
+            self.instance.update_tags(kwargs['user'], self.cleaned_data['tags'])
+
 
 class UpdateGeneMOPForm(forms.ModelForm):
     comment = forms.CharField(required=False, widget=forms.Textarea)
