@@ -39,7 +39,7 @@ class DownloadAllRegions(GELReviewerRequiredMixin, View):
         )
 
         for gps in GenePanelSnapshot.objects.get_active(all=True, internal=True).iterator():
-            for entry in gps.get_all_regions_extra:
+            for entry in gps.get_all_regions_extra.prefetch_related('evidence'):
                 if entry.flagged:
                     colour = "grey"
                 elif entry.status < 2:
@@ -69,7 +69,7 @@ class DownloadAllRegions(GELReviewerRequiredMixin, View):
                     entry.gene.get('gene_symbol') if entry.gene else '',
                     gps.panel.pk,
                     gps.level4title.name,
-                    entry.panel.version,
+                    gps.version,
                     str(gps.panel.status).upper(),
                     colour,
                     ';'.join([evidence.name for evidence in entry.evidence.all()]),
