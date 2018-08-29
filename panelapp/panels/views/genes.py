@@ -406,7 +406,7 @@ class DownloadAllGenes(GELReviewerRequiredMixin, View):
             "GeneLocation((GRch38)"
         )
 
-        for gps in GenePanelSnapshot.objects.get_active(all=True, internal=True):
+        for gps in GenePanelSnapshot.objects.get_active(all=True, internal=True).iterator():
             for entry in gps.get_all_genes_extra:
                 if entry.flagged:
                     colour = "grey"
