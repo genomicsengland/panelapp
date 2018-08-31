@@ -263,8 +263,8 @@ class UploadedPanelList(TimeStampedModel):
         {'name': 'repeated_sequence', 'type': str},
         {'name': 'normal_repeats', 'type': int},
         {'name': 'pathogenic_repeats', 'type': int},
-        {'name': 'haploinsufficiency_score', 'type': int},
-        {'name': 'triplosensitivity_score', 'type': int},
+        {'name': 'haploinsufficiency_score', 'type': str},
+        {'name': 'triplosensitivity_score', 'type': str},
         {'name': 'required_overlap_percentage', 'type': int},
         {'name': 'type_of_variants', 'type': str},
         {'name': 'verbose_name', 'type': str},
@@ -378,7 +378,7 @@ class UploadedPanelList(TimeStampedModel):
 
             getattr(panel, methods['add'])(user, entity_data['entity_name'], entity_data, False)
         else:
-            getattr(panel, methods['update'])(user, entity_data['entity_name'], entity_data, False)
+            getattr(panel, methods['update'])(user, entity_data['entity_name'], entity_data, True)
 
     def get_panel(self, line_data):
         return self._cached_panels[line_data['level4']]

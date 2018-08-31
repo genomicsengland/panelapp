@@ -1,5 +1,6 @@
 import logging
 import itertools
+from psycopg2.extras import NumericRange
 from copy import deepcopy
 from django.core.cache import cache
 from django.db import models
@@ -79,7 +80,7 @@ class GenePanelSnapshotManager(models.Manager):
                           | Q(panel__name__icontains=name)
             qs = qs.filter(filters)
 
-        return qs.prefetch_related('panel', 'panel__types', 'level4title')\
+        return qs.prefetch_related('panel', 'panel__types', 'child_panels', 'level4title')\
             .order_by('panel__name', '-major_version', '-minor_version')
 
     def get_active_annotated(self, all=False, deleted=False, internal=False, name=None, panel_types=None):
@@ -1858,6 +1859,9 @@ class GenePanelSnapshot(TimeStampedModel):
                 str_item.chromosome = str_data.get('chromosome')
 
             position_37 = str_data.get('position_37')
+            if isinstance(position_37, list):
+                position_37 = NumericRange(position_37[0], position_37[1])
+
             if position_37 != str_item.position_37:
                 logging.debug("GRCh37 position for {} was changed from {} to {} panel:{}".format(
                     str_item.label,
@@ -1867,9 +1871,13 @@ class GenePanelSnapshot(TimeStampedModel):
                 ))
 
                 if position_37:
-                    old_position = "{}-{}".format(str_item.position_37.lower,
-                                                  str_item.position_37.upper) if str_item.position_37 else '-'
-                    new_position = "{}-{}".format(position_37.lower, position_37.upper) if position_37 else '-'
+                    if str_item.position_37:
+                        old_position = "{}-{}".format(str_item.position_37.lower, str_item.position_37.upper)
+                    else:
+                        old_position = '-'
+
+                    new_position = "{}-{}".format(position_37.lower, position_37.upper)
+
                     description = "GRCh37 position for {} was changed from {} to {}.".format(
                         str_item.name,
                         old_position,
@@ -1888,17 +1896,25 @@ class GenePanelSnapshot(TimeStampedModel):
                 str_item.position_37 = position_37
 
             position_38 = str_data.get('position_38')
+            if isinstance(position_38, list):
+                position_38 = NumericRange(position_38[0], position_38[1])
+
             if position_38 and position_38 != str_item.position_38:
+                if str_item.position_38:
+                    old_position = "{}-{}".format(str_item.position_38.lower, str_item.position_38.upper)
+                else:
+                    old_position = '-'
+
+                new_position = "{}-{}".format(position_38.lower, position_38.upper)
+
                 logging.debug("GRCh38 position for {} was changed from {} to {} panel:{}".format(
                     str_item.label, str_item.position_38, str_data.get('position_38'), self
                 ))
 
-                description = "GRCh38 position for {} was changed from {}-{} to {}-{}.".format(
+                description = "GRCh38 position for {} was changed from {} to {}.".format(
                     str_item.name,
-                    str_item.position_38.lower,
-                    str_item.position_38.upper,
-                    str_data.get('position_38').lower,
-                    str_data.get('position_38').upper,
+                    old_position,
+                    new_position,
                 )
 
                 tracks.append((
@@ -2027,7 +2043,7 @@ class GenePanelSnapshot(TimeStampedModel):
                 ))
 
             phenotypes = str_data.get('phenotypes')
-            if phenotypes:
+            if phenotypes and phenotypes != str_item.phenotypes:
                 logging.debug("Updating phenotypes for {} in panel:{}".format(str_item.label, self))
 
                 description = None
@@ -2434,6 +2450,8 @@ class GenePanelSnapshot(TimeStampedModel):
                 region.chromosome = region_data.get('chromosome')
 
             position_37 = region_data.get('position_37')
+            if isinstance(position_37, list):
+                position_37 = NumericRange(position_37[0], position_37[1])
             if position_37 != region.position_37:
                 logging.debug("GRCh37 position for {} was changed from {} to {} panel:{}".format(
                     region.label,
@@ -2443,8 +2461,13 @@ class GenePanelSnapshot(TimeStampedModel):
                 ))
 
                 if position_37:
-                    old_position = "{}-{}".format(region.position_37.lower, region.position_37.upper) if region.position_37 else '-'
-                    new_position = "{}-{}".format(position_37.lower, position_37.upper) if position_37 else '-'
+                    if region.position_37:
+                        old_position = "{}-{}".format(region.position_37.lower, region.position_37.upper)
+                    else:
+                        old_position = '-'
+
+                    new_position = "{}-{}".format(position_37.lower, position_37.upper)
+
                     description = "GRCh37 position for {} was changed from {} to {}.".format(
                         region.name,
                         old_position,
@@ -2452,7 +2475,7 @@ class GenePanelSnapshot(TimeStampedModel):
                     )
                 else:
                     description = "GRCh37 position for {} was removed.".format(
-                        region.name
+                        region.label
                     )
 
                 tracks.append((
@@ -2460,20 +2483,28 @@ class GenePanelSnapshot(TimeStampedModel):
                     description
                 ))
 
-                region.position_37 = region_data.get('position_37')
+                region.position_37 = position_37
 
             position_38 = region_data.get('position_38')
+            if isinstance(position_38, list):
+                position_38 = NumericRange(position_38[0], position_38[1])
+
             if position_38 and position_38 != region.position_38:
+                if region.position_38:
+                    old_position = "{}-{}".format(region.position_38.lower, region.position_38.upper)
+                else:
+                    old_position = '-'
+
+                new_position = "{}-{}".format(position_38.lower, position_38.upper)
+
                 logging.debug("GRCh38 position for {} was changed from {} to {} panel:{}".format(
                     region.label, region.position_38, region_data.get('position_38'), self
                 ))
 
-                description = "GRCh38 position for {} was changed from {}-{} to {}-{}.".format(
+                description = "GRCh38 position for {} was changed from {} to {}.".format(
                     region.name,
-                    region.position_38.lower,
-                    region.position_38.upper,
-                    region_data.get('position_38').lower,
-                    region_data.get('position_38').upper,
+                    old_position,
+                    new_position,
                 )
 
                 tracks.append((
@@ -2481,7 +2512,7 @@ class GenePanelSnapshot(TimeStampedModel):
                     description
                 ))
 
-                region.position_38 = region_data.get('position_38')
+                region.position_38 = position_38
 
             type_of_variants = region_data.get('type_of_variants')
             if type_of_variants and type_of_variants != region.type_of_variants:
@@ -2623,7 +2654,7 @@ class GenePanelSnapshot(TimeStampedModel):
                 ))
 
             phenotypes = region_data.get('phenotypes')
-            if phenotypes:
+            if phenotypes and phenotypes != region.phenotypes:
                 logging.debug("Updating phenotypes for {} in panel:{}".format(region.label, self))
 
                 description = None
