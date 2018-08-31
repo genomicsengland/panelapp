@@ -207,7 +207,7 @@ class PromotePanelView(GELReviewerRequiredMixin, GenePanelView, UpdateView):
 class ActivityListView(ListView):
     model = Activity
     context_object_name = 'activities'
-    paginate_by = 100
+    paginate_by = 3000
 
     def get(self, request, *args, **kwargs):
         if request.GET.get('format', '').lower() == 'csv' and request.user.is_authenticated and request.user.reviewer.is_GEL:
@@ -294,7 +294,8 @@ class ActivityListView(ListView):
         qs = qs.filter(**filter_kwargs)
 
         if self.request.GET.get('entity'):
-            qs = qs.filter(Q(extra_data__entity_name=self.request.GET.get('entity')) | Q(entity_name=self.request.GET.get('entity')))
+            entity = self.request.GET.get('entity')
+            qs = qs.filter(Q(extra_data__entity_name=entity) | Q(entity_name=entity) | Q(text__icontains=entity))
 
         return qs.prefetch_related('user', 'panel', 'user__reviewer')
 
