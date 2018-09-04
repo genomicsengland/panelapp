@@ -85,5 +85,6 @@ setup(
         'django-array-field-select==0.2.0',
         'django-autoslug-iplweb==1.9.4',
         'django-qurl-templatetag==0.0.13',
+        'django-click==2.1.0',
     ]
 )
