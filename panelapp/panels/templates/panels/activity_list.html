@@ -30,6 +30,19 @@
         <th style="width: 8%">Item</th>
         <th>Activity</th>
       </tr>
+      <tr class="if-no-js-hide table-header-secondary">
+        <td colspan="100">
+          <form>
+            <label for="gene-filter" class="rm">Filter activities</label>
+            <div class="input-group">
+              <input id="gene-filter" type="text" class="form-control normal js-filter-table-input" placeholder="Filter activities">
+              <span class="input-group-addon js-filter-table-count" data-singular="action" data-plural="actions">
+                {{ activities|length }} actions
+              </span>
+            </div>
+          </form>
+        </td>
+      </tr>
     </thead>
     <tbody>
       {% for activity in activities %}
