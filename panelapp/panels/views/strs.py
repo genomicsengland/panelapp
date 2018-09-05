@@ -55,8 +55,8 @@ class DownloadAllSTRs(GELReviewerRequiredMixin, View):
                 row = [
                     entry.name,
                     entry.chromosome,
-                    entry.position_37.lower,
-                    entry.position_37.upper,
+                    entry.position_37.lower if entry.position_37 else '',
+                    entry.position_37.upper if entry.position_37 else '',
                     entry.position_38.lower,
                     entry.position_38.upper,
                     entry.repeated_sequence,

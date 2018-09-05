@@ -8,6 +8,7 @@ from panels.models import GenePanel
 from panels.models import GenePanelEntrySnapshot
 from panels.tasks import email_panel_promoted
 from panels.tests.factories import GeneFactory
+from panels.tests.factories import STRFactory
 from panels.tests.factories import EvidenceFactory
 from panels.tests.factories import GenePanelSnapshotFactory
 from panels.tests.factories import GenePanelEntrySnapshotFactory
@@ -213,6 +214,8 @@ class GenePanelTest(LoginGELUser):
         gps2 = GenePanelSnapshotFactory(panel__status=GenePanel.STATUS.public)
         GenePanelEntrySnapshotFactory.create_batch(2, panel=gps2)  # random genes
         GenePanelEntrySnapshotFactory.create(gene_core=gene, panel=gps2)
+
+        STRFactory(panel=gps, position_37=None)
 
         return gene, gps, gps2
 
