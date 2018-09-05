@@ -1097,7 +1097,7 @@ class GenePanelSnapshot(TimeStampedModel):
 
         tracks.append((
             TrackRecord.ISSUE_TYPES.Created,
-            "{} was added by {}".format(entity_name, user.get_full_name())
+            "{} was added".format(entity_name)
         ))
 
         description = "{} was added to {}. Sources: {}".format(
@@ -1131,6 +1131,85 @@ class GenePanelSnapshot(TimeStampedModel):
             )
             tracks.append((
                 TrackRecord.ISSUE_TYPES.SetModeofInheritance,
+                description
+            ))
+        else:
+            description = "Mode of inheritance for {} was set to {}".format(
+                entity.label,
+                entity.moi
+            )
+            tracks.append((
+                TrackRecord.ISSUE_TYPES.SetModeofInheritance,
+                description
+            ))
+
+        if entity_data.get('publications'):
+            description = "Publications for {} were set to {}".format(
+                entity.label,
+                '; '.join(entity.publications),
+            )
+            tracks.append((
+                TrackRecord.ISSUE_TYPES.SetPublications,
+                description
+            ))
+
+        if entity_data.get('phenotypes'):
+            description = "Phenotypes for {} were set to {}".format(
+                entity.label,
+                '; '.join(entity.phenotypes),
+            )
+
+            tracks.append((
+                TrackRecord.ISSUE_TYPES.SetPhenotypes,
+                description
+            ))
+
+        if entity_data.get('penetrance'):
+            description = "Penetrance for {} were set to {}".format(
+                entity.label,
+                entity.penetrance,
+            )
+
+            tracks.append((
+                TrackRecord.ISSUE_TYPES.SetPenetrance,
+                description
+            ))
+
+        if entity_data.get('mode_of_pathogenicity'):
+            description = "Mode of pathogenicity for {} was set to {}".format(
+                entity.label,
+                entity.mode_of_pathogenicity,
+            )
+            tracks.append((
+                TrackRecord.ISSUE_TYPES.SetModeofPathogenicity,
+                description
+            ))
+
+        if entity_data.get('rating'):
+            description = "Review for {} was set to {}".format(
+                entity.label,
+                entity_data.get('rating'),
+            )
+            tracks.append((
+                None,
+                description
+            ))
+
+        if entity_data.get('clinically_relevant'):
+            description = "{} was marked as clinically relevant".format(
+                entity.label
+            )
+            tracks.append((
+                None,
+                description
+            ))
+
+        if entity_data.get('current_diagnostic'):
+            description = "{} was marked as current diagnostic".format(
+                entity.label
+            )
+            tracks.append((
+                None,
                 description
             ))
 
@@ -1167,7 +1246,7 @@ class GenePanelSnapshot(TimeStampedModel):
                 gel_status=evidence_status,
                 curator_status=0,
                 user=user,
-                issue_type=",".join([t[0] for t in tracks]),
+                issue_type=",".join([t[0] for t in tracks if t[0]]),
                 issue_description=description
             )
             entity.track.add(track)
