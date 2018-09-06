@@ -50,14 +50,14 @@ class STRTest(LoginGELUser):
         gene = GeneFactory()
         gps = GenePanelSnapshotFactory()
 
-        number_of_strs = gps.number_of_strs
+        number_of_strs = gps.stats.get('number_of_strs', 0)
 
         url = reverse_lazy('panels:add_entity', kwargs={'pk': gps.panel.pk, 'entity_type': 'str'})
         gene_data = {
             'name': 'SomeSTR',
             'chromosome': '1',
-            'position_37_0': '12345',
-            'position_37_1': '12346',
+            'position_37_0': '',
+            'position_37_1': '',
             'position_38_0': '12345',
             'position_38_1': '123456',
             'repeated_sequence': 'ATAT',
@@ -76,7 +76,7 @@ class STRTest(LoginGELUser):
         }
         res = self.client.post(url, gene_data)
 
-        new_current_number = gps.panel.active_panel.number_of_strs
+        new_current_number = gps.panel.active_panel.stats.get('number_of_strs')
 
         assert gps.panel.active_panel.version != gps.version
 
@@ -92,7 +92,7 @@ class STRTest(LoginGELUser):
 
         gps = GenePanelSnapshotFactory()
 
-        number_of_strs = gps.number_of_strs
+        number_of_strs = gps.stats.get('number_of_strs', 0)
 
         url = reverse_lazy('panels:add_entity', kwargs={'pk': gps.panel.pk, 'entity_type': 'str'})
         gene_data = {
@@ -117,7 +117,7 @@ class STRTest(LoginGELUser):
         }
         res = self.client.post(url, gene_data)
 
-        new_current_number = gps.panel.active_panel.number_of_strs
+        new_current_number = gps.panel.active_panel.stats.get('number_of_strs')
 
         assert gps.panel.active_panel.version != gps.version
 
@@ -171,7 +171,7 @@ class STRTest(LoginGELUser):
             'entity_name': str_item.name
         })
 
-        number_of_strs = str_item.panel.number_of_strs
+        number_of_strs = str_item.panel.stats.get('number_of_strs')
 
         # make sure new data has at least 1 of the same items
         source = str_item.evidence.last().name
@@ -196,17 +196,17 @@ class STRTest(LoginGELUser):
             "gene": str_item.gene_core.pk,
             "gene_name": "Gene name",
             "source": set([source, new_evidence]),
-            "tags": [TagFactory().pk, ] + [tag.name for tag in str_item.tags.all()],
+            "tags": [TagFactory().pk, ] + [tag.pk for tag in str_item.tags.all()],
             "publications": ";".join([publication, fake.sentence()]),
             "phenotypes": ";".join([phenotype, fake.sentence(), fake.sentence()]),
-            "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)],
+            "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)][0],
             "penetrance": GenePanelEntrySnapshot.PENETRANCE.Incomplete,
         }
         res = self.client.post(url, str_data)
         assert res.status_code == 302
         new_str = GenePanel.objects.get(pk=str_item.panel.panel.pk).active_panel.get_str(str_item.name)
         assert str_item.panel.panel.active_panel.version != str_item.panel.version
-        new_current_number = new_str.panel.panel.active_panel.number_of_strs
+        new_current_number = new_str.panel.panel.active_panel.stats.get('number_of_strs')
         assert number_of_strs == new_current_number
         self.assertEqual(int(str_data['position_37_1']), new_str.position_37.upper)
 
@@ -218,7 +218,7 @@ class STRTest(LoginGELUser):
             'entity_name': str_item.name
         })
 
-        number_of_strs = str_item.panel.number_of_strs
+        number_of_strs = str_item.panel.stats.get('number_of_strs')
 
         # make sure new data has at least 1 of the same items
         source = str_item.evidence.last().name
@@ -243,10 +243,10 @@ class STRTest(LoginGELUser):
             "gene": str_item.gene_core.pk,
             "gene_name": "Gene name",
             "source": set([source, new_evidence]),
-            "tags": [TagFactory().pk, ] + [tag.name for tag in str_item.tags.all()],
+            "tags": [TagFactory().pk, ] + [tag.pk for tag in str_item.tags.all()],
             "publications": ";".join([publication, fake.sentence()]),
             "phenotypes": ";".join([phenotype, fake.sentence(), fake.sentence()]),
-            "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)],
+            "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)][0],
             "penetrance": GenePanelEntrySnapshot.PENETRANCE.Incomplete,
         }
         res = self.client.post(url, str_data)
@@ -262,7 +262,7 @@ class STRTest(LoginGELUser):
             'entity_name': str_item.name
         })
 
-        number_of_strs = str_item.panel.number_of_strs
+        number_of_strs = str_item.panel.stats.get('number_of_strs')
 
         # make sure new data has at least 1 of the same items
         source = str_item.evidence.last().name
@@ -287,10 +287,10 @@ class STRTest(LoginGELUser):
             "gene": str_item.gene_core.pk,
             "gene_name": "Gene name",
             "source": set([source, new_evidence]),
-            "tags": [TagFactory().pk, ] + [tag.name for tag in str_item.tags.all()],
+            "tags": [TagFactory().pk, ] + [tag.pk for tag in str_item.tags.all()],
             "publications": ";".join([publication, fake.sentence()]),
             "phenotypes": ";".join([phenotype, fake.sentence(), fake.sentence()]),
-            "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)],
+            "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)][0],
             "penetrance": GenePanelEntrySnapshot.PENETRANCE.Incomplete,
         }
         res = self.client.post(url, str_data)
@@ -307,7 +307,7 @@ class STRTest(LoginGELUser):
             'entity_name': str_item.name
         })
 
-        number_of_strs = str_item.panel.number_of_strs
+        number_of_strs = str_item.panel.stats.get('number_of_strs', 0)
 
         # make sure new data has at least 1 of the same items
         source = str_item.evidence.last().name
@@ -331,10 +331,10 @@ class STRTest(LoginGELUser):
             'pathogenic_repeats': '5',
             "gene_name": "Gene name",
             "source": set([source, new_evidence]),
-            "tags": [TagFactory().pk, ] + [tag.name for tag in str_item.tags.all()],
+            "tags": [TagFactory().pk, ] + [tag.pk for tag in str_item.tags.all()],
             "publications": ";".join([publication, fake.sentence()]),
             "phenotypes": ";".join([phenotype, fake.sentence(), fake.sentence()]),
-            "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)],
+            "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)][0],
             "penetrance": GenePanelEntrySnapshot.PENETRANCE.Incomplete,
         }
         res = self.client.post(url, str_data)
@@ -343,7 +343,7 @@ class STRTest(LoginGELUser):
         assert not new_str.gene_core
         assert not new_str.gene
         assert str_item.panel.panel.active_panel.version != str_item.panel.version
-        new_current_number = new_str.panel.panel.active_panel.number_of_strs
+        new_current_number = new_str.panel.panel.active_panel.stats.get('number_of_strs')
         assert number_of_strs == new_current_number
 
     def test_remove_sources(self):
@@ -371,7 +371,7 @@ class STRTest(LoginGELUser):
             "gene": str_item.gene_core.pk,
             "gene_name": "Gene name",
             "source": set([ev.name for ev in str_item.evidence.all()[1:]]),
-            "tags": [tag.name for tag in str_item.tags.all()],
+            "tags": [tag.pk for tag in str_item.tags.all()],
             "publications": ";".join([publication for publication in str_item.publications]),
             "phenotypes": ";".join([phenotype for phenotype in str_item.phenotypes]),
             "moi": str_item.moi,
@@ -418,7 +418,7 @@ class STRTest(LoginGELUser):
         res = self.client.post(url, str_data)
         assert res.status_code == 302
         new_str = GenePanel.objects.get(pk=str_item.panel.panel.pk).active_panel.get_str(str_item.name)
-        assert sorted(list(new_str.tags.all())) != sorted(list(str_item.tags.all()))
+        assert sorted(list(new_str.tags.values_list('pk'))) != sorted(list(str_item.tags.values_list('pk')))
 
     def test_remove_tag_via_edit_details(self):
         """Remove tags via edit gene detail section"""
@@ -485,7 +485,7 @@ class STRTest(LoginGELUser):
             "gene": str_item.gene_core.pk,
             "gene_name": "Gene name",
             "source": set([ev.name for ev in str_item.evidence.all()]),
-            "tags": [tag.name for tag in str_item.tags.all()],
+            "tags": [tag.pk for tag in str_item.tags.all()],
             "publications": ";".join([publication for publication in str_item.publications]),
             "phenotypes": ";".join([phenotype for phenotype in str_item.phenotypes]),
             "moi": str_item.moi,
@@ -524,7 +524,7 @@ class STRTest(LoginGELUser):
             "gene": str_item.gene_core.pk,
             "gene_name": "Gene name",
             "source": set([ev.name for ev in str_item.evidence.all()]),
-            "tags": [tag.name for tag in str_item.tags.all()],
+            "tags": [tag.pk for tag in str_item.tags.all()],
             "publications": ";".join([fake.sentence(), fake.sentence()]),
             "phenotypes": ";".join([phenotype for phenotype in str_item.phenotypes]),
             "moi": str_item.moi,
@@ -563,7 +563,7 @@ class STRTest(LoginGELUser):
             "gene": str_item.gene_core.pk,
             "gene_name": "Gene name",
             "source": set([ev.name for ev in str_item.evidence.all()]),
-            "tags": [tag.name for tag in str_item.tags.all()],
+            "tags": [tag.pk for tag in str_item.tags.all()],
             "publications": ";".join(str_item.publications[:1]),
             "phenotypes": ";".join([phenotype for phenotype in str_item.phenotypes]),
             "moi": str_item.moi,
@@ -642,10 +642,10 @@ class STRTest(LoginGELUser):
             "gene": str_item.gene_core.pk,
             "gene_name": "Other name",
             "source": set([source, Evidence.ALL_SOURCES[randint(0, 9)]]),
-            "tags": [TagFactory().pk, ] + [tag.name for tag in str_item.tags.all()],
+            "tags": [TagFactory().pk, ] + [tag.pk for tag in str_item.tags.all()],
             "publications": ";".join([publication, fake.sentence()]),
             "phenotypes": ";".join([phenotype, fake.sentence(), fake.sentence()]),
-            "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)],
+            "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)][0],
             "penetrance": GenePanelEntrySnapshot.PENETRANCE.Incomplete,
         }
         res = self.client.post(url, gene_data)

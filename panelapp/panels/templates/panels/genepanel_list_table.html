@@ -49,9 +49,9 @@
       <tbody id="panel_records">
       {% for entry in view_panels %}
           <tr
-              data-reviewers = "{{ entry.number_of_reviewers }}"
+              data-reviewers = "{{ entry.stats.number_of_reviewers }}"
               data-panel = "{{ entry.panel.name }}"
-              data-evaluated = "{% if entry.number_of_genes %}{% widthratio entry.number_of_evaluated_genes entry.number_of_genes 100 %}{% else %}0{% endif %}"
+              data-evaluated = "{% if entry.stats.number_of_genes %}{% widthratio entry.stats.number_of_evaluated_entities entry.stats.number_of_entities 100 %}{% else %}0{% endif %}"
               data-pk="{{ entry.pk }}"
               data-version="{{ entry.major_version }}.{{ entry.minor_version }}"
           >
@@ -78,20 +78,23 @@
                   </p>
               </td>
               <td>
-                  {% if entry.number_of_genes %}
-                      {{ entry.number_of_evaluated_genes  }} of {{ entry.number_of_genes }}<br >
-                      <span class="text-muted">{% if entry.number_of_genes %}{% widthratio entry.number_of_evaluated_genes entry.number_of_genes 100 %}{% else %}0{% endif %}%</span><br />
+                  {% if entry.stats.number_of_genes %}
+                      {{ entry.stats.number_of_evaluated_entities }} of {{ entry.stats.number_of_entities }}<br >
+                      <span class="text-muted">{% if entry.stats.number_of_entities %}{% widthratio entry.stats.number_of_evaluated_entities entry.stats.number_of_entities 100 %}{% else %}0{% endif %}%</span><br />
                   {% else %}
                   0<br>
                   <span class="text-muted">0%</span><br>
                   {% endif %}
-                {% if entry.number_of_strs %}
-                    <br />STRs: {{ entry.number_of_strs }}
+                {% if entry.stats.number_of_strs %}
+                    <br />STRs: {{ entry.stats.number_of_strs }}
+                {% endif %}
+                {% if entry.stats.number_of_regions %}
+                    <br />Regions: {{ entry.stats.number_of_regions }}
                 {% endif %}
               </td>
               <td>
-                  {% if entry.number_of_reviewers != None %}
-                      {{ entry.number_of_reviewers }} reviewer{{ entry.number_of_reviewers|pluralize }}
+                  {% if entry.stats.number_of_reviewers != None %}
+                      {{ entry.stats.number_of_reviewers }} reviewer{{ entry.stats.number_of_reviewers|pluralize }}
                   {% endif %}
               </td>
               <td class="nowrap">

@@ -14,7 +14,7 @@ class TrackRecord(TimeStampedModel):
         ("RemovedSource", "Removed Source"),
         ("ChangedGeneName", "Changed Gene Name"),
         ("SetPhenotypes", "Set Phenotypes"),
-        ("SetModelofInheritance", "Set Model of Inheritance"),
+        ("SetModelofInheritance", "Set Mode of Inheritance"),
         ("ClearSources", "Clear Sources"),
         ("SetModeofPathogenicity", "Set mode of pathogenicity"),
         ("GeneClassifiedbyGenomicsEnglandCurator", "Gene classified by Genomics England curator"),
@@ -28,6 +28,7 @@ class TrackRecord(TimeStampedModel):
         ("UploadGeneInformation", "Upload gene information"),
         ("RemovedTag", "Removed Tag"),
         ("AddedTag", "Added Tag"),
+        ("ChangedName", "Changed Name"),
         ("ChangedSTRName", "Changed STR Name"),
         ("ChangedChromosome", "Changed Chromosome"),
         ("ChangedPosition37", "Changed GRCh37"),
@@ -35,7 +36,12 @@ class TrackRecord(TimeStampedModel):
         ("ChangedNormalRepeats", "Changed Normal Number of Repeats"),
         ("ChangedPathogenicRepeats", "Changed Pathogenic Number of Repeats"),
         ("RemovedGene", "Removed Gene from the STR"),
-        ("ChangedRepeatedSequence", "Changed Repeated Sequence")
+        ("ChangedRepeatedSequence", "Changed Repeated Sequence"),
+        ('ChangedEffectTypes', 'Changed Effect Types'),
+        ('ChangedVariantType', 'Changed Variant Types'),
+        ('ChangedHaploinsufficiencyScore', 'Changed Haploinsufficiency Score'),
+        ('ChangedTriplosensitivityScore', 'Changed Triplosensitivity Score'),
+        ('ChangedRequiredOverlapPercentage', 'Changed Required Overlap Percentage'),
     )
 
     class Meta:
@@ -43,7 +49,7 @@ class TrackRecord(TimeStampedModel):
 
     issue_type = models.CharField(choices=ISSUE_TYPES, max_length=512)  # can this be standartized?
     issue_description = models.TextField()
-    user = models.ForeignKey(User)
+    user = models.ForeignKey(User, on_delete=models.PROTECT)
     curator_status = models.IntegerField(default=0)  # Boolean maybe?
     gel_status = models.IntegerField(default=0)
 

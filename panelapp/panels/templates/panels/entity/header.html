@@ -5,6 +5,9 @@
 <h1 class="remove-top-margin">
     <p class="text-muted normal add-label-margin" style="font-size: 18px">{{ panel.panel.name }}</p>
     {{ entity.label|capfirst }}
+    {% if entity.is_region %}
+        <p class="text-muted">{{ entity.verbose_name }}</p>
+    {% endif %}
 </h1>
 <span id="gene-banner-heading"><span class="gel-banner {{ entity|gene_list_class }}">{{ entity|gene_list_name }}</span></span>
 {% if entity.ready and request.user.is_authenticated and request.user.reviewer.is_GEL %}

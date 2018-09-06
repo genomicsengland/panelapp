@@ -7,11 +7,15 @@ from panels.models import GenePanel
 from .panel import PanelForm  # noqa
 from .promotepanel import PromotePanelForm  # noqa
 from .panelgene import PanelGeneForm  # noqa
-from .str import PanelSTRForm  # noqa
 from .genereview import GeneReviewForm  # noqa
 from .geneready import GeneReadyForm  # noqa
+from .str import PanelSTRForm  # noqa
 from .strreview import STRReviewForm  # noqa
 from .str_ready import STRReadyForm  # noqa
+from .activity import ActivityFilterForm
+from .region import PanelRegionForm  # noqa
+from .region_review import RegionReviewForm  # noqa
+from .region_ready import RegionReadyForm  # noqa
 from panels.models import ProcessingRunCode
 from panels.exceptions import UserDoesNotExist
 from panels.exceptions import GeneDoesNotExist
@@ -19,6 +23,7 @@ from panels.exceptions import TSVIncorrectFormat
 from panels.exceptions import UsersDoNotExist
 from panels.exceptions import GenesDoNotExist
 from panels.exceptions import IncorrectGeneRating
+from panels.exceptions import IsSuperPanelException
 from panels.tasks import background_copy_reviews
 
 
@@ -48,6 +53,8 @@ class UploadPanelsForm(forms.Form):
             message = "Can't find following genes: {}, please check it and try again.".format(e)
         except TSVIncorrectFormat as e:
             message = "Line: {} is not properly formatted, please check it and try again.".format(e)
+        except IsSuperPanelException as e:
+            message = "One of the panels contains child panels"
 
         if message:
             raise forms.ValidationError(message)
@@ -71,6 +78,8 @@ class UploadReviewsForm(forms.Form):
             message = "Can't find following genes: {}, please check it and try again.".format(e)
         except TSVIncorrectFormat as e:
             message = "Line: {} is not properly formatted, please check it and try again.".format(e)
+        except IsSuperPanelException as e:
+            message = "One of the panels contains child panels"
         except IncorrectGeneRating as e:
             message = e
         if message:

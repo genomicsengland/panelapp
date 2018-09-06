@@ -3,7 +3,6 @@ import re
 import csv
 import logging
 from datetime import datetime
-from more_itertools import unique_everseen
 from django.db import models
 from django.db import transaction
 from model_utils.models import TimeStampedModel
@@ -17,12 +16,12 @@ from panels.exceptions import GeneDoesNotExist
 from panels.exceptions import UsersDoNotExist
 from panels.exceptions import GenesDoNotExist
 from panels.exceptions import IncorrectGeneRating
+from panels.exceptions import IsSuperPanelException
 from .gene import Gene
 from .genepanel import GenePanel
 from .genepanelsnapshot import GenePanelSnapshot
 from .Level4Title import Level4Title
 from .codes import ProcessingRunCode
-from .evaluation import Evaluation
 
 
 logger = logging.getLogger(__name__)
@@ -230,74 +229,159 @@ class UploadedPanelList(TimeStampedModel):
     panel_list = models.FileField(upload_to='panels', max_length=255)
     import_log = models.TextField(default='')
 
-    def process_line(self, key, aline, user, active_panel=None, increment_version=False):
-        gene_symbol = re.sub("[^0-9a-zA-Z~#_@-]", '', aline[0])
-        if aline[1].lower() == 'str':
-            # we don't support STRs at the moment
-            return
+    _map_tsv_to_kw = [
+        {'name': 'entity_name', 'type': str},
+        {'name': 'entity_type', 'type': str},
+        {'name': 'gene_symbol', 'type': str, 'modifiers': [
+            lambda value: re.sub("[^0-9a-zA-Z~#_@-]", '', value)
+        ]},
+        {'name': 'sources', 'type': 'unique-list'},
+        {'name': 'level4', 'type': str},
+        {'name': 'level3', 'type': str},
+        {'name': 'level2', 'type': str},
+        {'name': 'moi', 'type': str},
+        {'name': 'phenotypes', 'type': 'unique-list'},
+        {'name': 'omim', 'type': 'unique-list'},
+        {'name': 'oprahanet', 'type': 'unique-list'},
+        {'name': 'hpo', 'type': 'unique-list'},
+        {'name': 'publications', 'type': 'unique-list'},
+        {'name': 'description', 'type': 'str'},
+        {'name': 'flagged', 'type': 'boolean'},
+        {'name': 'gel_status', 'ignore': True},
+        {'name': 'user_ratings', 'ignore': True},
+        {'name': 'version', 'ignore': True},
+        {'name': 'ready', 'ignore': True},
+        {'name': 'mode_of_pathogenicity', 'type': str},
+        {'name': 'EnsemblId(GRch37)', 'ignore': True},
+        {'name': 'EnsemblId(GRch38)', 'ignore': True},
+        {'name': 'HGNC', 'ignore': True},
+        {'name': 'chromosome', 'type': str},
+        {'name': 'position_37_start', 'type': int},
+        {'name': 'position_37_end', 'type': int},
+        {'name': 'position_38_start', 'type': int},
+        {'name': 'position_38_end', 'type': int},
+        {'name': 'repeated_sequence', 'type': str},
+        {'name': 'normal_repeats', 'type': int},
+        {'name': 'pathogenic_repeats', 'type': int},
+        {'name': 'haploinsufficiency_score', 'type': str},
+        {'name': 'triplosensitivity_score', 'type': str},
+        {'name': 'required_overlap_percentage', 'type': int},
+        {'name': 'type_of_variants', 'type': str},
+        {'name': 'verbose_name', 'type': str},
+    ]
 
-        source = list(unique_everseen([a for a in aline[2].split(";") if a != '']))
-        level4 = aline[3].strip(" ")
-        level3 = aline[4]
-        level2 = aline[5]
-        model_of_inheritance = aline[6]
-        phenotype = list(unique_everseen([a for a in aline[7].split(";") if a != '']))
-        omim = [a for a in aline[8].split(";") if a != '']
-        oprahanet = [a for a in aline[9].split(";") if a != '']
-        hpo = [a for a in aline[10].split(";") if a != '']
-        publication = list(unique_everseen([a for a in aline[11].split(";") if a != '']))
-        description = aline[12]
-        flagged = True if aline[13] == 'TRUE' else False
+    _required_line_length = {
+        'gene': 15,
+        'str': 31,
+        'region': 35
+    }
 
-        if level4:
-            fresh_panel = False
-            if not active_panel:
-                panel = GenePanel.objects.filter(name=level4).first()
-                if not panel:
-                    level4_object = Level4Title.objects.create(
-                        level2title=level2,
-                        level3title=level3,
-                        name=level4,
-                        description=description,
-                        omim=omim,
-                        hpo=hpo,
-                        orphanet=oprahanet
-                    )
-                    panel = GenePanel.objects.create(
-                        name=level4
-                    )
-                    GenePanelSnapshot.objects.create(
-                        panel=panel,
-                        level4title=level4_object,
-                        old_panels=[]
-                    )
-                    fresh_panel = True
+    _map_type_to_methods = {
+        'gene': {
+            'check_exists': 'current_genes',
+            'add': 'add_gene',
+            'update': 'update_gene'
+        },
+        'str': {
+            'check_exists': 'current_strs',
+            'add': 'add_str',
+            'update': 'update_str'
+        },
+        'region': {
+            'check_exists': 'current_regions',
+            'add': 'add_region',
+            'update': 'update_region'
+        }
+    }
 
-                active_panel = panel.active_panel_extra
-                if not fresh_panel and increment_version:
-                    active_panel = active_panel.increment_version()
+    _cached_panels = {}
 
-            gene_data = {
-                'moi': model_of_inheritance,
-                'phenotypes': phenotype,
-                'publications': publication,
-                'sources': source,
-                'gene_symbol': gene_symbol,
-                'flagged': flagged,
-                'omim': omim
-            }
+    def get_entity_data(self, key, line):
+        """Translate TSV line to the dictionary values
 
-            if gene_symbol not in active_panel.current_genes:
-                try:
-                    Gene.objects.get(gene_symbol=gene_symbol, active=True)
-                except Gene.DoesNotExist:
-                    raise GeneDoesNotExist("{}, Gene: {}".format(key + 2, gene_symbol))
-                active_panel.add_gene(user, gene_symbol, gene_data, False)
-            else:
-                active_panel.update_gene(user, gene_symbol, gene_data, append_only=True)
-            return active_panel
-        else:
+        Also convert it into the correct types, check if we have all data
+        for each type, and do some processing depending on the data
+        type.
+
+        :param key: TSV line number
+        :param line: TSV line data
+        :return: dict
+        """
+        entity_data = {}
+
+        try:
+            for index, item in enumerate(line):
+                item_mapping = self._map_tsv_to_kw[index]
+
+                if item_mapping.get('ignore', False):
+                    item = None
+                elif item_mapping['type'] == 'boolean':
+                    item = item.lower() == 'true'
+                elif item_mapping['type'] in [str, int]:
+                    if item == '':
+                        item = ''
+                    else:
+                        item = item_mapping['type'](item)
+                        for modifier in item_mapping.get('modifiers', []):
+                            item = modifier(item)
+                elif item_mapping['type'] == 'unique-list':
+                    item = list(set([i.strip() for i in item.split(';') if i.strip()]))
+
+                entity_data[item_mapping['name']] = item
+        except (IndexError, ValueError) as e:
+            logger.exception(e, exc_info=True)
             raise TSVIncorrectFormat(str(key + 2))
+
+        if entity_data.get('entity_type') not in ['gene', 'region', 'str']:
+            logger.error('TSV Import. Line: {} Incorrect entity type: {}'.format(
+                str(key + 2),
+                entity_data.get('entity_type')))
+            raise TSVIncorrectFormat(str(key + 2))
+
+        if len(entity_data.keys()) < self._required_line_length[entity_data['entity_type']]:
+            logger.error('TSV Import. Line: {} Incorrect line length: {}'.format(
+                str(key + 2),
+                len(entity_data.keys())))
+            raise TSVIncorrectFormat(str(key + 2))
+
+        if entity_data['entity_type'] in ['str', 'region']:
+            if entity_data['position_37_start'] and entity_data['position_37_end']:
+                entity_data['position_37'] = [
+                    entity_data['position_37_start'],
+                    entity_data['position_37_end']
+                ]
+            else:
+                entity_data['position_37'] = None
+
+            entity_data['position_38'] = [
+                entity_data['position_38_start'],
+                entity_data['position_38_end']
+            ]
+        entity_data['name'] = entity_data['entity_name']
+
+        return entity_data
+
+    def process_line(self, key, line, user):
+        entity_data = self.get_entity_data(key, line)
+
+        panel = self.get_panel(entity_data)
+
+        # Add or update entity
+        methods = self._map_type_to_methods[entity_data['entity_type']]
+        if entity_data['entity_name'] not in getattr(panel, methods['check_exists']):
+            if entity_data['entity_type'] == 'gene' or entity_data['gene_symbol']:
+                # Check if we want to add a gene which doesn't exist in our database
+                try:
+                    Gene.objects.get(gene_symbol=entity_data['gene_symbol'], active=True)
+                except Gene.DoesNotExist:
+                    raise GeneDoesNotExist("{}, Gene: {}".format(key + 2, entity_data['gene_symbol']))
+
+            getattr(panel, methods['add'])(user, entity_data['entity_name'], entity_data, False)
+        else:
+            getattr(panel, methods['update'])(user, entity_data['entity_name'], entity_data, True)
+
+    def get_panel(self, line_data):
+        return self._cached_panels[line_data['level4']]
 
     def process_file(self, user, background=False):
         """Process uploaded file
@@ -310,45 +394,73 @@ class UploadedPanelList(TimeStampedModel):
         with open(self.panel_list.path, encoding='utf-8', errors="ignore") as file:
             logger.info('Started importing list of genes')
             reader = csv.reader(file, delimiter='\t')
-            header = next(reader)  # noqa
+            _ = next(reader)  # noqa
+
+            lines = [line for line in reader]
+
+            unique_panels = {l[4]: i for i, l in enumerate(lines)}
+
+            errors = {
+                'invalid_genes': [],
+                'invalid_lines': []
+            }
+
             with transaction.atomic():
-                active_panel = None
-                lines = [line for line in reader]
-
                 # check the number of genes in a panel
-                gp = GenePanel.objects.filter(name=lines[0][2].strip(" ")).first()
-                number_of_genes = gp.active_panel.number_of_genes if gp else 0
+                for panel_name, index in unique_panels.items():
+                    gp = GenePanel.objects.filter(name=panel_name).first()
+                    if gp:
+                        if gp.active_panel.is_super_panel:
+                            raise IsSuperPanelException
+                        else:
+                            number_of_entities = gp.active_panel.stats.get('number_of_entities', 0)
 
-                if not background and (len(lines) > 200 or number_of_genes > 200):  # panel is too big, process in the background
-                    import_panel.delay(user.pk, self.pk)
-                    return ProcessingRunCode.PROCESS_BACKGROUND
+                            if not background and (len(lines) > 200 or number_of_entities > 200):
+                                # panel is too big, process in the background
+                                import_panel.delay(user.pk, self.pk)
+                                return ProcessingRunCode.PROCESS_BACKGROUND
 
-                first_line = lines[0]
-                active_panel = self.process_line(0, first_line, user, active_panel, increment_version=True)
+                            self._cached_panels[panel_name] = gp.active_panel.increment_version()
+                    else:
+                        line_data = self.get_entity_data(index, lines[index])
+                        level4_object = Level4Title.objects.create(
+                            level2title=line_data['level2'],
+                            level3title=line_data['level3'],
+                            name=line_data['level4'],
+                            description=line_data['description'],
+                            omim=line_data['omim'],
+                            hpo=line_data['hpo'],
+                            orphanet=line_data['oprahanet']
+                        )
+                        panel = GenePanel.objects.create(
+                            name=line_data['level4']
+                        )
+                        active_panel = GenePanelSnapshot.objects.create(
+                            panel=panel,
+                            level4title=level4_object,
+                            old_panels=[]
+                        )
+                        panel.add_activity(user, "Added panel {}".format(panel.name))
+                        self._cached_panels[line_data['level4']] = active_panel
 
-                errors = {
-                    'invalid_genes': [],
-                    'invalid_lines': []
-                }
-
-                for key, line in enumerate(lines[1:]):
+                for key, line in enumerate(lines):
                     try:
-                        active_panel = self.process_line(key + 1, line, user, active_panel)
+                        self.process_line(key + 1, line, user)
                     except GeneDoesNotExist as gene_error:
                         errors['invalid_genes'].append(str(gene_error))
                     except TSVIncorrectFormat as line_error:
                         errors['invalid_lines'].append(str(line_error))
 
-                if errors['invalid_genes']:
-                    raise GenesDoNotExist(', '.join(errors['invalid_genes']))
+            if errors['invalid_genes']:
+                raise GenesDoNotExist(', '.join(errors['invalid_genes']))
 
-                if errors['invalid_lines']:
-                    raise TSVIncorrectFormat(', '.join(errors['invalid_lines']))
+            if errors['invalid_lines']:
+                raise TSVIncorrectFormat(', '.join(errors['invalid_lines']))
 
-                active_panel.update_saved_stats()
-                self.imported = True
-                self.save()
-                return ProcessingRunCode.PROCESSED
+            self.imported = True
+            self.save()
+
+        return ProcessingRunCode.PROCESSED
 
 
 class UploadedReviewsList(TimeStampedModel):
@@ -368,7 +480,7 @@ class UploadedReviewsList(TimeStampedModel):
         if len(aline) < 21:
             raise TSVIncorrectFormat(str(key + 2))
 
-        gene_symbol = re.sub("[^0-9a-zA-Z~#_@-]", '', aline[0])
+        gene_symbol = re.sub("[^0-9a-zA-Z~#_@-]", '', aline[0])  # TODO (Oleg) should be unified (in settings?)
         # source = aline[1].split(";")
         level4 = aline[2].rstrip(" ")
         # level3 = aline[3]
@@ -434,7 +546,7 @@ class UploadedReviewsList(TimeStampedModel):
         with open(self.reviews.path, encoding='utf-8', errors="ignore") as file:
             logger.info('Started importing list of genes')
             reader = csv.reader(file, delimiter='\t')
-            header = next(reader)  # noqa
+            next(reader)  # skip header
 
             with transaction.atomic():
                 lines = [line for line in reader]
@@ -445,6 +557,7 @@ class UploadedReviewsList(TimeStampedModel):
                 if len(non_existing_users) > 0:
                     raise UsersDoNotExist(", ".join(non_existing_users))
 
+                # TODO (Oleg) replace with a constant
                 genes = set([re.sub("[^0-9a-zA-Z~#_@-]", '', line[0]) for line in lines])
                 database_genes = Gene.objects.filter(gene_symbol__in=genes).values_list('gene_symbol', flat=True)
                 non_existing_genes = genes.symmetric_difference(database_genes)
@@ -454,6 +567,8 @@ class UploadedReviewsList(TimeStampedModel):
                 panel_names = set([line[2] for line in lines])
                 self.panels = {panel.name: panel for panel in GenePanel.objects.filter(name__in=panel_names)}
                 for panel in self.panels.values():
+                    if panel.active_panel.is_super_panel:
+                        raise IsSuperPanelException
                     panel = panel.active_panel.increment_version().panel
 
                 if not background and len(lines) > 20:  # panel is too big, process in the background

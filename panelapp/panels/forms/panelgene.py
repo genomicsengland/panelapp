@@ -2,7 +2,7 @@
 
 from collections import OrderedDict
 from django import forms
-from django.contrib.postgres.forms import SimpleArrayField
+from .helpers import GELSimpleArrayField
 from dal_select2.widgets import ModelSelect2
 from dal_select2.widgets import Select2Multiple
 from dal_select2.widgets import ModelSelect2Multiple
@@ -57,13 +57,13 @@ class PanelGeneForm(forms.ModelForm):
         widget=ModelSelect2Multiple(url="autocomplete-tags")
     )
 
-    publications = SimpleArrayField(
+    publications = GELSimpleArrayField(
         forms.CharField(),
         label="Publications (PMID: 1234;4321)",
         delimiter=";",
         required=False
     )
-    phenotypes = SimpleArrayField(
+    phenotypes = GELSimpleArrayField(
         forms.CharField(),
         label="Phenotypes (separate using a semi-colon - ;)",
         delimiter=";",

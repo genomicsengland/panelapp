@@ -1,11 +1,19 @@
+from base64 import b64decode, b64encode
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.contrib.auth.models import BaseUserManager
+from django.core import signing
+from django.conf import settings
+from django.urls import reverse
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from rest_framework.authtoken.models import Token
 
 from model_utils import Choices
 from model_utils.models import TimeStampedModel
 
 from .tasks import revierwer_confirmed_email
+from .tasks import send_verification_email
 
 
 class UserManager(BaseUserManager):
@@ -44,9 +52,17 @@ class UserManager(BaseUserManager):
 
         return self._create_user(username, email, password, **extra_fields)
 
+    def get_by_base64_email(self, base64_email):
+        return super().get_queryset().get(email=b64decode(base64_email).decode())
+
 
 class User(AbstractUser, TimeStampedModel):
     objects = UserManager()
+
+    @property
+    def base64_email(self):
+        assert self.email
+        return b64encode(self.email.encode()).decode()
 
     def promote_to_reviewer(self):
         try:
@@ -66,6 +82,44 @@ class User(AbstractUser, TimeStampedModel):
 
     def get_recent_evaluations(self):
         return self.evaluation_set.prefetch_related('genepanelentrysnapshot_set')[:35]
+
+    def get_crypto_id(self):
+        """Returns HMAC signed base64 string of JSON with current object id
+
+        :return: HMAC signed string
+        """
+
+        assert self.pk
+        return signing.dumps({'id': self.pk})
+
+    def verify_crypto_id(self, payload):
+        """Check if payload contains the same PK as this object.
+
+        :param payload: HMAC signed string
+        :return: True if payload is valid (with respect to max age), False otherwise
+        """
+        try:
+            return self.pk and signing.loads(payload, max_age=settings.ACCOUNT_EMAIL_VERIFICATION_PERIOD)\
+                .get('id', None) == self.pk
+        except (signing.SignatureExpired, signing.BadSignature):
+            return False
+
+    def get_email_verification_url(self):
+        return reverse('accounts:verify_email', kwargs={
+            'b64_email': self.base64_email,
+            'crypto_id': self.get_crypto_id()
+        })
+
+    def send_verification_email(self):
+        send_verification_email.delay(self.pk)
+
+    def activate(self):
+        """Mark user as active
+
+        :return: None
+        """
+        self.is_active = True
+        self.save(update_fields=['is_active', ])
 
 
 class Reviewer(models.Model):
@@ -106,7 +160,7 @@ class Reviewer(models.Model):
         "Other",
     )
 
-    user = models.OneToOneField(User)
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
     user_type = models.CharField(max_length=255, choices=TYPES, default=TYPES.EXTERNAL)
     affiliation = models.CharField(max_length=1024)
     workplace = models.CharField(max_length=255, choices=WORKPLACES)
@@ -124,3 +178,9 @@ class Reviewer(models.Model):
 
     def is_verified(self):
         return True if self.is_GEL() or self.is_REVIEWER() else False
+
+
+@receiver(post_save, sender=settings.AUTH_USER_MODEL)
+def create_auth_token(sender, instance=None, created=False, **kwargs):
+    if created:
+        Token.objects.create(user=instance)

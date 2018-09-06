@@ -22,5 +22,17 @@ class GeneDoesNotExist(ImportException):
     pass
 
 
+class STRDoesNotExist(ImportException):
+    pass
+
+
+class RegionDoesNotExist(ImportException):
+    pass
+
+
 class IncorrectGeneRating(ImportException):
+    pass
+
+
+class IsSuperPanelException(Exception):
     pass

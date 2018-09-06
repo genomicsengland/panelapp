@@ -36,7 +36,7 @@ class DownloadAllSTRs(GELReviewerRequiredMixin, View):
             "GeneLocation(GRch38)"
         )
 
-        for gps in GenePanelSnapshot.objects.get_active(all=True, internal=True):
+        for gps in GenePanelSnapshot.objects.get_active(all=True, internal=True).iterator():
             for entry in gps.get_all_strs_extra:
                 if entry.flagged:
                     colour = "grey"
@@ -55,8 +55,8 @@ class DownloadAllSTRs(GELReviewerRequiredMixin, View):
                 row = [
                     entry.name,
                     entry.chromosome,
-                    entry.position_37.lower,
-                    entry.position_37.upper,
+                    entry.position_37.lower if entry.position_37 else '',
+                    entry.position_37.upper if entry.position_37 else '',
                     entry.position_38.lower,
                     entry.position_38.upper,
                     entry.repeated_sequence,

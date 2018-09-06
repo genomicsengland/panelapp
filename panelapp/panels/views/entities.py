@@ -1,5 +1,6 @@
 from django.http import Http404
 from django.contrib import messages
+from django.core.cache import cache
 from django.views.generic import DetailView
 from django.views.generic import RedirectView
 from django.views.generic import CreateView
@@ -18,6 +19,9 @@ from panels.forms import PanelGeneForm
 from panels.forms import GeneReadyForm
 from panels.forms import PanelSTRForm
 from panels.forms import STRReadyForm
+from panels.forms import PanelRegionForm
+from panels.forms import RegionReviewForm
+from panels.forms import RegionReadyForm
 from panels.forms.ajax import UpdateGeneTagsForm
 from panels.forms.ajax import UpdateGeneMOPForm
 from panels.forms.ajax import UpdateGeneMOIForm
@@ -29,11 +33,17 @@ from panels.forms.ajax import UpdateSTRMOIForm
 from panels.forms.ajax import UpdateSTRPhenotypesForm
 from panels.forms.ajax import UpdateSTRPublicationsForm
 from panels.forms.ajax import UpdateSTRRatingForm
+from panels.forms.ajax import UpdateRegionTagsForm
+from panels.forms.ajax import UpdateRegionMOIForm
+from panels.forms.ajax import UpdateRegionPhenotypesForm
+from panels.forms.ajax import UpdateRegionPublicationsForm
+from panels.forms.ajax import UpdateRegionRatingForm
 from panels.mixins import PanelMixin
 from panels.mixins import ActAndRedirectMixin
 from panels.models import STR
 from panels.models import Tag
 from panels.models import Gene
+from panels.models import Region
 from panels.models import GenePanel
 from panels.models import GenePanelSnapshot
 from panels.models import GenePanelEntrySnapshot
@@ -51,6 +61,9 @@ class EntityMixin:
     def is_str(self):
         return 'str' == self.kwargs['entity_type']
 
+    def is_region(self):
+        return 'region' == self.kwargs['entity_type']
+
     def get_object(self):
         try:
             if self.is_gene():
@@ -60,6 +73,8 @@ class EntityMixin:
                     return self.panel.get_gene(self.kwargs['entity_name'], prefetch_extra=True)
             elif self.is_str():
                 return self.panel.get_str(self.kwargs['entity_name'], prefetch_extra=True)
+            elif self.is_region():
+                return self.panel.get_region(self.kwargs['entity_name'], prefetch_extra=True)
         except GenePanelEntrySnapshot.DoesNotExist:
             raise Http404
 
@@ -102,7 +117,7 @@ class GenePanelSpanshotView(EntityMixin, DetailView):
         ctx['edit_entity_publications_form'] = UpdateGenePublicationsForm(instance=self.object)
         ctx['edit_entity_rating_form'] = UpdateGeneRatingForm(instance=self.object)
 
-        cgi = ctx['panel_genes'].index(self.object)
+        cgi = [g.get('pk') for g in ctx['panel_genes']].index(self.object.pk)
         ctx['next_gene'] = None if cgi == len(ctx['panel_genes']) - 1 else ctx['panel_genes'][cgi + 1]
         ctx['prev_gene'] = None if cgi == 0 else ctx['panel_genes'][cgi - 1]
 
@@ -149,9 +164,55 @@ class GenePanelSpanshotView(EntityMixin, DetailView):
         ctx['edit_entity_publications_form'] = UpdateSTRPublicationsForm(instance=self.object)
         ctx['edit_entity_rating_form'] = UpdateSTRRatingForm(instance=self.object)
 
-        cgi = ctx['panel_strs'].index(self.object)
+        cgi = [g.get('pk') for g in ctx['panel_strs']].index(self.object.pk)
         ctx['next_str'] = None if cgi == len(ctx['panel_strs']) - 1 else ctx['panel_strs'][cgi + 1]
         ctx['prev_str'] = None if cgi == 0 else ctx['panel_strs'][cgi - 1]
+
+        ctx['feedback_review_parts'] = [
+            'Rating',
+            'Mode of inheritance',
+            'Publications',
+            'Phenotypes'
+        ]
+
+        return ctx
+
+    def get_context_data_region(self, ctx):
+        form_initial = {}
+        if self.request.user.is_authenticated:
+            user_review = self.object.review_by_user(self.request.user)
+            if user_review:
+                form_initial = user_review.dict_tr()
+                form_initial['comments'] = None
+
+        ctx['form'] = RegionReviewForm(
+            panel=self.panel,
+            request=self.request,
+            region=self.object,
+            initial=form_initial
+        )
+        ctx['form_edit'] = PanelRegionForm(
+            instance=self.object,
+            initial=self.object.get_form_initial(),
+            panel=self.panel,
+            request=self.request
+        )
+
+        ctx['entity_ready_form'] = RegionReadyForm(
+            instance=self.object,
+            initial={},
+            request=self.request,
+        )
+
+        ctx['edit_entity_tags_form'] = UpdateRegionTagsForm(instance=self.object)
+        ctx['edit_entity_moi_form'] = UpdateRegionMOIForm(instance=self.object)
+        ctx['edit_entity_phenotypes_form'] = UpdateRegionPhenotypesForm(instance=self.object)
+        ctx['edit_entity_publications_form'] = UpdateRegionPublicationsForm(instance=self.object)
+        ctx['edit_entity_rating_form'] = UpdateRegionRatingForm(instance=self.object)
+
+        cgi = [g.get('pk') for g in ctx['panel_regions']].index(self.object.pk)
+        ctx['next_region'] = None if cgi == len(ctx['panel_regions']) - 1 else ctx['panel_regions'][cgi + 1]
+        ctx['prev_region'] = None if cgi == 0 else ctx['panel_regions'][cgi - 1]
 
         ctx['feedback_review_parts'] = [
             'Rating',
@@ -169,6 +230,10 @@ class GenePanelSpanshotView(EntityMixin, DetailView):
         ctx['entity_name'] = self.kwargs['entity_name']
         ctx['next_str'] = None
         ctx['prev_str'] = None
+        ctx['next_gene'] = None
+        ctx['prev_gene'] = None
+        ctx['next_region'] = None
+        ctx['prev_region'] = None
 
         is_admin = self.request.user.is_authenticated and self.request.user.reviewer.is_GEL()
 
@@ -182,13 +247,16 @@ class GenePanelSpanshotView(EntityMixin, DetailView):
         else:
             ctx['sharing_panels'] = []
 
-        ctx['panel_genes'] = list(self.panel.get_all_genes_extra)
-        ctx['panel_strs'] = list(self.panel.get_all_strs_extra)
+        ctx['panel_genes'] = list(self.panel.get_all_genes_extra.values('pk', 'gene', 'evaluators', 'number_of_evaluations', 'saved_gel_status'))
+        ctx['panel_strs'] = list(self.panel.get_all_strs_extra.values('pk', 'gene', 'name', 'evaluators', 'number_of_evaluations', 'saved_gel_status'))
+        ctx['panel_regions'] = list(self.panel.get_all_regions_extra.values('pk', 'gene', 'name', 'verbose_name', 'evaluators', 'number_of_evaluations', 'saved_gel_status'))
 
         if self.is_gene():
             ctx = self.get_context_data_gene(ctx)
         elif self.is_str():
             ctx = self.get_context_data_str(ctx)
+        elif self.is_region():
+            ctx = self.get_context_data_region(ctx)
 
         ctx['updated'] = False
 
@@ -207,6 +275,8 @@ class ModifyEntityCommonMixin(EntityMixin):
             return PanelGeneForm
         elif self.is_str():
             return PanelSTRForm
+        elif self.is_region():
+            return PanelRegionForm
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
@@ -239,6 +309,8 @@ class PanelAddEntityView(ModifyEntityCommonMixin, VerifiedReviewerRequiredMixin,
             return "panels/genepanel_add_gene.html"
         elif self.is_str():
             return "panels/genepanel_add_str.html"
+        elif self.is_region():
+            return "panels/genepanel_add_region.html"
 
     def form_valid(self, form):
         label = ''
@@ -246,10 +318,16 @@ class PanelAddEntityView(ModifyEntityCommonMixin, VerifiedReviewerRequiredMixin,
             form.save_gene()
             self.entity_name = form.cleaned_data['gene'].gene_symbol
             label = 'gene: {}'.format(self.entity_name)
+
         elif self.is_str():
             form.save_str()
             self.entity_name = form.cleaned_data['name']
             label = 'STR: {}'.format(self.entity_name)
+
+        elif self.is_region():
+            form.save_region()
+            self.entity_name = form.cleaned_data['name']
+            label = 'Region: {}'.format(self.entity_name)
 
         ret = super().form_valid(form)
         msg = "Successfully added a new {} to the panel {}".format(label,
@@ -264,6 +342,8 @@ class PanelEditEntityView(ModifyEntityCommonMixin, GELReviewerRequiredMixin, Upd
             return "panels/gene_edit.html"
         elif self.is_str():
             return "panels/str_edit.html"
+        elif self.is_region():
+            return "panels/region_edit.html"
 
     def form_valid(self, form):
         label = ''
@@ -275,6 +355,10 @@ class PanelEditEntityView(ModifyEntityCommonMixin, GELReviewerRequiredMixin, Upd
             form.save_str()
             self.entity_name = form.cleaned_data['name']
             label = 'STR: {}'.format(self.entity_name)
+        elif self.is_region():
+            form.save_region()
+            self.entity_name = form.cleaned_data['name']
+            label = 'region: {}'.format(self.entity_name)
         ret = super().form_valid(form)
         msg = "Successfully changed gene information for panel {}".format(label, self.panel.panel.name)
         messages.success(self.request, msg)
@@ -344,18 +428,19 @@ class EntityReviewView(VerifiedReviewerRequiredMixin, EntityMixin, UpdateView):
             return GeneReviewForm
         elif self.is_str():
             return STRReviewForm
+        elif self.is_region():
+            return RegionReviewForm
 
     def get_template_names(self):
-        if self.is_gene():
-            return "panels/gene_edit.html"
-        elif self.is_str():
-            return "panels/str_edit.html"
+        return "panels/entity/evaluation_create.html"
 
     def get_object(self):
         if self.is_gene():
             return self.panel.get_gene(self.kwargs['entity_name'], prefetch_extra=True)
         elif self.is_str():
             return self.panel.get_str(self.kwargs['entity_name'], prefetch_extra=True)
+        elif self.is_region():
+            return self.panel.get_region(self.kwargs['entity_name'], prefetch_extra=True)
 
     @cached_property
     def panel(self):
@@ -370,6 +455,8 @@ class EntityReviewView(VerifiedReviewerRequiredMixin, EntityMixin, UpdateView):
             kwargs['gene'] = self.object
         elif self.is_str():
             kwargs['str_item'] = self.object
+        elif self.is_region():
+            kwargs['region'] = self.object
 
         if not kwargs['initial']:
             kwargs['initial'] = {}
@@ -384,6 +471,8 @@ class EntityReviewView(VerifiedReviewerRequiredMixin, EntityMixin, UpdateView):
     def get_context_data(self, *args, **kwargs):
         ctx = super().get_context_data(*args, **kwargs)
         ctx['panel'] = self.panel.panel
+        ctx['entity_name'] = self.kwargs['entity_name']
+        ctx['entity_type'] = self.kwargs['entity_type']
         return ctx
 
     def form_valid(self, form):
@@ -392,6 +481,8 @@ class EntityReviewView(VerifiedReviewerRequiredMixin, EntityMixin, UpdateView):
             msg = "Successfully reviewed gene {}".format(self.kwargs['entity_name'])
         elif self.is_str():
             msg = "Successfully reviewed STR {}".format(self.kwargs['entity_name'])
+        elif self.is_region():
+            msg = "Successfully reviewed region {}".format(self.kwargs['entity_name'])
         messages.success(self.request, msg)
         return ret
 
@@ -420,7 +511,11 @@ class EntityDetailView(DetailView):
             return self.model.objects.get(gene_symbol=self.kwargs['slug'])
         except self.model.DoesNotExist:
             # try STR
-            return get_list_or_404(STR, name=self.kwargs['slug'])[0]
+            try:
+                return get_list_or_404(STR, name=self.kwargs['slug'])[0]
+            except Http404:
+                # try region
+                return get_list_or_404(Region, name=self.kwargs['slug'])[0]
 
     def get_context_data(self, *args, **kwargs):
         """Context data for Gene Detail page"""
@@ -443,7 +538,13 @@ class EntityDetailView(DetailView):
             # we couldn't find a gene linked to this STR, lookup by name
             entries_strs = STR.objects.get_str_panels(name=self.kwargs['slug'], pks=gps)
         else:
-            entries_strs = STR.objects.get_str_gene_panels(gene_symbol=self.kwargs['slug'], pks=gps)
+            entries_strs = STR.objects.get_gene_panels(gene_symbol=self.kwargs['slug'], pks=gps)
+
+        if isinstance(self.object, Region):
+            # we couldn't find a gene linked to this STR, lookup by name
+            entries_regions = Region.objects.get_region_panels(name=self.kwargs['slug'], pks=gps)
+        else:
+            entries_regions = Region.objects.get_gene_panels(gene_symbol=self.kwargs['slug'], pks=gps)
 
         if not self.request.user.is_authenticated or not self.request.user.reviewer.is_GEL():
             entries_genes = entries_genes.filter(
@@ -452,15 +553,20 @@ class EntityDetailView(DetailView):
             entries_strs = entries_strs.filter(
                 Q(panel__panel__status=GenePanel.STATUS.public) |
                 Q(panel__panel__status=GenePanel.STATUS.promoted))
+            entries_regions = entries_regions.filter(
+                Q(panel__panel__status=GenePanel.STATUS.public) |
+                Q(panel__panel__status=GenePanel.STATUS.promoted))
 
         if tag_filter:
             entries_genes = entries_genes.filter(tag__name=tag_filter)
             entries_strs = entries_strs.filter(tag__name=tag_filter)
+            entries_regions = entries_regions.filter(tag__name=tag_filter)
 
         ctx['entries_genes'] = entries_genes
         ctx['entries_strs'] = entries_strs
+        ctx['entries_regions'] = entries_regions
 
-        ctx['entries'] = list(entries_genes) + list(entries_strs)
+        ctx['entries'] = list(entries_genes) + list(entries_strs) + list(entries_regions)
 
         return ctx
 
@@ -472,30 +578,42 @@ class EntitiesListView(ListView):
 
     def get_queryset(self, *args, **kwargs):
         is_admin_user = self.request.user.is_authenticated and self.request.user.reviewer.is_GEL()
-        panel_ids = GenePanelSnapshot.objects.get_active(all=is_admin_user, internal=is_admin_user)\
-            .values_list('pk', flat=True)
 
-        qs = GenePanelEntrySnapshot.objects.filter(
-            gene_core__active=True,
-            panel__in=panel_ids
-        )
+        cache_key = 'entities_admin' if is_admin_user else 'entities'
 
-        strs_qs = STR.objects.filter(panel__in=panel_ids)
+        cached_entities = cache.get(cache_key)
+        if cached_entities:
+            return cached_entities
+        else:
+            panel_ids = GenePanelSnapshot.objects.get_active(all=is_admin_user, internal=is_admin_user)\
+                .values_list('pk', flat=True)
 
-        tag_filter = self.request.GET.get('tag')
-        if tag_filter:
-            qs = qs.filter(tags__name=tag_filter)
-            strs_qs = strs_qs.filter(tags__name=tag_filter)
+            qs = GenePanelEntrySnapshot.objects.filter(
+                gene_core__active=True,
+                panel__in=panel_ids
+            )
 
-        entities = []
-        for gene in qs.order_by().distinct('gene_core__gene_symbol').values_list('gene_core__gene_symbol', flat=True):
-            entities.append(('gene', gene, gene))
+            strs_qs = STR.objects.filter(panel__in=panel_ids)
+            regions_qs = Region.objects.filter(panel__in=panel_ids)
 
-        for str_item in strs_qs.values_list('name', 'gene_core__gene_symbol'):
-            entities.append(('str', str_item[0], str_item[1]))
+            tag_filter = self.request.GET.get('tag')
+            if tag_filter:
+                qs = qs.filter(tags__name=tag_filter)
+                strs_qs = strs_qs.filter(tags__name=tag_filter)
+                regions_qs = regions_qs.filter(tags__name=tag_filter)
 
-        sorted_entities = sorted(entities, key=lambda i: i[1].lower())
+            entities = []
+            for gene in qs.order_by().distinct('gene_core__gene_symbol').values_list('gene_core__gene_symbol', flat=True).iterator():
+                entities.append(('gene', gene, gene))
 
+            for str_item in strs_qs.values_list('name', 'gene_core__gene_symbol').iterator():
+                entities.append(('str', str_item[0], str_item[1]))
+
+            for region in regions_qs.values_list('name', 'gene_core__gene_symbol').iterator():
+                entities.append(('region', region[0], region[1]))
+
+            sorted_entities = sorted(entities, key=lambda i: i[1].lower())
+            cache.set(cache_key, sorted_entities)
         return sorted_entities
 
     def get_context_data(self, *args, **kwargs):

@@ -49,7 +49,7 @@ class PanelSTRForm(forms.ModelForm):
         )
     )
 
-    position_37 = IntegerRangeField(require_all_fields=True, required=True)
+    position_37 = IntegerRangeField(require_all_fields=True, required=False)
     position_38 = IntegerRangeField(require_all_fields=True, required=True)
 
     gene_name = forms.CharField(required=False)

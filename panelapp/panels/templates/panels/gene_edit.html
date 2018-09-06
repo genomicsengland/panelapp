@@ -23,7 +23,7 @@
 </h1>
 
 {% if request.user.is_authenticated and request.user.reviewer.is_GEL %}
-    <form class="row add-top-margin" method="post">
+    <form class="row add-top-margin remove-empty-array-val" method="post">
         {% csrf_token %}
         <div class="col-md-8">
             <div class="well">

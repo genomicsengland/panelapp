@@ -6,12 +6,15 @@ from setuptools import find_packages, setup
 # allow setup.py to be run from any path
 os.chdir(os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir)))
 
-from panelapp.panelapp import get_package_version
+dir_path = os.path.dirname(os.path.realpath(__file__))
+
+with open(os.path.join(dir_path, './VERSION'), 'r') as version_file:
+    version = str(version_file.readline()).strip()
 
 
 setup(
     name='panelapp',
-    version=get_package_version(),
+    version=version,
     author='Antonio Rueda-Martin,Oleg Gerasimenko',
     author_email='antonio.rueda-martin@genomicsengland.co.uk,oleg.gerasimenko@genomicsengland.co.uk',
     url='https://github.com/genomicsengland/PanelApp2',
@@ -26,43 +29,62 @@ setup(
         'Programming Language :: Python :: 3.5',
         'Topic :: Scientific/Engineering',
     ],
-    packages=find_packages(),
+    packages=['panelapp', ],
     include_package_data=True,
     setup_requires=[
         'pytest-runner'
     ],
     tests_require=[
-        'pytest==3.2.1',
-        'pytest-django==3.1.2',
-        'flake8==3.4.1',
-        'faker==0.7.18',
-        'factory_boy==2.9.2',
+        'pytest==3.7.1',
+        'pytest-django==3.3.3',
+        'flake8==3.5.0',
+        'faker==0.8.15',
+        'factory_boy==2.11.1',
         'pytest-cov==2.5.1'
     ],
+    dev_requires=[
+        'django-debug-toolbar==1.9.1',
+        'django-extensions==2.1.0',
+        'ipython==6.4.0'
+    ],
     install_requires=[
-        'django==1.11.6',
+        'django==2.0.8',
         'simplejson==3.8.2',
-        'psycopg2==2.7.3',
-        'dj-database-url==0.4.2',
-        'django-model-utils==3.0.0',
-        'djangoajax==2.3.7',
-        'djangorestframework==3.6.4',
-        'django-tables2==1.10.0',
-        'django-filter==1.0.4',
+        'PyYAML==3.13',
+        'psycopg2-binary==2.7.4',
+        'dj-database-url==0.5.0',
+        'django-model-utils==3.1.2',
+        'djangoajax==3.0.2',
+        'djangorestframework==3.8.2',
+        'django-tables2==1.21.2',
+        'django-filter==1.1.0',
         'django-cors-headers==2.1.0',
-        'django-autocomplete-light==3.2.9',
+        'django-autocomplete-light==3.3.0',
         'django-markdown-deux==1.0.5',
-        'django-bootstrap3==9.0.0',
-        'django-markdownx==2.0.21',
-        'Markdown==2.6.9',
+        'django-bootstrap3==10.0.1',
+        'django-markdownx==2.0.23',
+        'Markdown==2.6.11',
         'django-object-actions==0.10.0',
         'django-mathfilters==0.4.0',
-        'celery==4.1.0',
-        'more-itertools==3.2.0',
-        'requests==2.18.4',
+        'celery==4.2.1',
+        'more-itertools==4.2.0',
+        'requests==2.19.1',
         'uwsgi==2.0.15',
         'ijson==2.3',
         'ujson==1.35',
-        'django-admin-list-filter-dropdown==1.0.1'
+        'django-admin-list-filter-dropdown==1.0.1',
+        'pytz==2018.4',
+        'gunicorn==19.9.0',
+        'pytz==2018.4',
+        'django-array-field-select==0.2.0',
+        'drf-yasg==1.9.0',
+        'flex==6.13.2',
+        'swagger-spec-validator==2.3.1',
+        'djangorestframework-jsonapi==2.4.0',
+        'drf-nested-routers==0.90.2',
+        'django-array-field-select==0.2.0',
+        'django-autoslug-iplweb==1.9.4',
+        'django-qurl-templatetag==0.0.13',
+        'django-click==2.1.0',
     ]
 )

@@ -1,14 +1,17 @@
 from random import randint
 from django.urls import reverse_lazy
 from faker import Factory
+from random import choice
 from accounts.tests.setup import LoginGELUser
 from accounts.tests.setup import LoginReviewerUser
 from panels.models import GenePanelEntrySnapshot
+from panels.models import Region
 from panels.models import GenePanelSnapshot
 from panels.models import Evidence
 from panels.models import GenePanel
 from panels.models import Evaluation
 from panels.tests.factories import GeneFactory
+from panels.tests.factories import RegionFactory
 from panels.tests.factories import GenePanelSnapshotFactory
 from panels.tests.factories import GenePanelEntrySnapshotFactory
 from panels.tests.factories import TagFactory
@@ -69,7 +72,7 @@ class GenePanelSnapshotTest(LoginGELUser):
         gene = GeneFactory()
         gps = GenePanelSnapshotFactory()
 
-        number_of_genes = gps.number_of_genes
+        number_of_genes = gps.stats.get('number_of_genes', 0)
 
         url = reverse_lazy('panels:add_entity', kwargs={'pk': gps.panel.pk, 'entity_type': 'gene'})
         gene_data = {
@@ -87,7 +90,7 @@ class GenePanelSnapshotTest(LoginGELUser):
         }
         res = self.client.post(url, gene_data)
 
-        new_current_number = gps.panel.active_panel.number_of_genes
+        new_current_number = gps.panel.active_panel.stats.get('number_of_genes', 0)
 
         assert gps.panel.active_panel.version != gps.version
 
@@ -132,7 +135,7 @@ class GenePanelSnapshotTest(LoginGELUser):
             'entity_name': gpes.gene.get('gene_symbol')
         })
 
-        number_of_genes = gpes.panel.number_of_genes
+        number_of_genes = gpes.panel.stats.get('number_of_genes')
 
         # make sure new data has at least 1 of the same items
         source = gpes.evidence.last().name
@@ -148,18 +151,18 @@ class GenePanelSnapshotTest(LoginGELUser):
             "gene": gpes.gene_core.pk,
             "gene_name": "Gene name",
             "source": set([source, new_evidence]),
-            "tags": [TagFactory().pk, ] + [tag.name for tag in gpes.tags.all()],
+            "tags": [TagFactory().pk, ] + [tag.pk for tag in gpes.tags.all()],
             "publications": ";".join([publication, fake.sentence()]),
             "phenotypes": ";".join([phenotype, fake.sentence(), fake.sentence()]),
-            "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)],
-            "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][randint(1, 2)],
+            "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)][0],
+            "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][randint(1, 2)][0],
             "penetrance": GenePanelEntrySnapshot.PENETRANCE.Incomplete,
         }
         res = self.client.post(url, gene_data)
         assert res.status_code == 302
         gene = GenePanel.objects.get(pk=gpes.panel.panel.pk).active_panel.get_gene(gpes.gene_core.gene_symbol)
         assert gpes.panel.panel.active_panel.version != gpes.panel.version
-        new_current_number = gpes.panel.panel.active_panel.number_of_genes
+        new_current_number = gpes.panel.panel.active_panel.stats.get('number_of_genes', 0)
         assert number_of_genes == new_current_number
 
     def test_remove_sources(self):
@@ -178,7 +181,7 @@ class GenePanelSnapshotTest(LoginGELUser):
             "gene": gpes.gene_core.pk,
             "gene_name": "Gene name",
             "source": set([ev.name for ev in gpes.evidence.all()[1:]]),
-            "tags": [tag.name for tag in gpes.tags.all()],
+            "tags": [tag.pk for tag in gpes.tags.all()],
             "publications": ";".join([publication for publication in gpes.publications]),
             "phenotypes": ";".join([phenotype for phenotype in gpes.phenotypes]),
             "moi": gpes.moi,
@@ -218,7 +221,7 @@ class GenePanelSnapshotTest(LoginGELUser):
         res = self.client.post(url, gene_data)
         assert res.status_code == 302
         gene = GenePanel.objects.get(pk=gpes.panel.panel.pk).active_panel.get_gene(gpes.gene_core.gene_symbol)
-        assert sorted(list(gene.tags.all())) != sorted(list(gpes.tags.all()))
+        assert sorted(list(gene.tags.values_list('pk'))) != sorted(list(gpes.tags.values_list('pk')))
 
     def test_remove_tag_via_edit_details(self):
         """Remove tags via edit gene detail section"""
@@ -258,6 +261,10 @@ class GenePanelSnapshotTest(LoginGELUser):
         gpes = GenePanelEntrySnapshotFactory(
             penetrance=GenePanelEntrySnapshot.PENETRANCE.Incomplete
         )
+
+        comment = CommentFactory(user=self.verified_user)
+        gpes.comments.add(comment)
+
         url = reverse_lazy('panels:edit_entity', kwargs={
             'pk': gpes.panel.panel.pk,
             'entity_type': 'gene',
@@ -268,7 +275,7 @@ class GenePanelSnapshotTest(LoginGELUser):
             "gene": gpes.gene_core.pk,
             "gene_name": "Gene name",
             "source": set([ev.name for ev in gpes.evidence.all()]),
-            "tags": [tag.name for tag in gpes.tags.all()],
+            "tags": [tag.pk for tag in gpes.tags.all()],
             "publications": ";".join([publication for publication in gpes.publications]),
             "phenotypes": ";".join([phenotype for phenotype in gpes.phenotypes]),
             "moi": gpes.moi,
@@ -299,7 +306,7 @@ class GenePanelSnapshotTest(LoginGELUser):
             "gene": gpes.gene_core.pk,
             "gene_name": "Gene name",
             "source": set([ev.name for ev in gpes.evidence.all()]),
-            "tags": [tag.name for tag in gpes.tags.all()],
+            "tags": [tag.pk for tag in gpes.tags.all()],
             "publications": ";".join([fake.sentence(), fake.sentence()]),
             "phenotypes": ";".join([phenotype for phenotype in gpes.phenotypes]),
             "moi": gpes.moi,
@@ -330,7 +337,7 @@ class GenePanelSnapshotTest(LoginGELUser):
             "gene": gpes.gene_core.pk,
             "gene_name": "Gene name",
             "source": set([ev.name for ev in gpes.evidence.all()]),
-            "tags": [tag.name for tag in gpes.tags.all()],
+            "tags": [tag.pk for tag in gpes.tags.all()],
             "publications": ";".join(gpes.publications[:1]),
             "phenotypes": ";".join([phenotype for phenotype in gpes.phenotypes]),
             "moi": gpes.moi,
@@ -360,11 +367,11 @@ class GenePanelSnapshotTest(LoginGELUser):
             "gene": gpes.gene_core.pk,
             "gene_name": "Gene name",
             "source": [ev.name for ev in gpes.evidence.all()],
-            "tags": [TagFactory().pk, ] + [tag.name for tag in gpes.tags.all()],
+            "tags": [TagFactory().pk, ] + [tag.pk for tag in gpes.tags.all()],
             "publications": ";".join(gpes.publications),
             "phenotypes": ";".join(gpes.phenotypes),
             "moi": gpes.moi,
-            "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][randint(1, 2)],
+            "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][randint(1, 2)][0],
             "penetrance": GenePanelEntrySnapshot.PENETRANCE.Incomplete,
         }
         res = self.client.post(url, gene_data)
@@ -437,11 +444,11 @@ class GenePanelSnapshotTest(LoginGELUser):
             "gene": new_gene.pk,
             "gene_name": "Other name",
             "source": set([source, Evidence.ALL_SOURCES[randint(0, 9)]]),
-            "tags": [TagFactory().pk, ] + [tag.name for tag in gpes.tags.all()],
+            "tags": [TagFactory().pk, ] + [tag.pk for tag in gpes.tags.all()],
             "publications": ";".join([publication, fake.sentence()]),
             "phenotypes": ";".join([phenotype, fake.sentence(), fake.sentence()]),
-            "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)],
-            "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][randint(1, 2)],
+            "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)][0],
+            "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][randint(1, 2)][0],
             "penetrance": GenePanelEntrySnapshot.PENETRANCE.Incomplete,
         }
         res = self.client.post(url, gene_data)
@@ -455,3 +462,39 @@ class GenePanelSnapshotTest(LoginGELUser):
 
         # test previous panel contains old gene
         assert old_gps.has_gene(old_gene_symbol) is True
+
+    def test_type_of_variants_added(self):
+        region = RegionFactory()
+        gps = GenePanelSnapshotFactory()
+        url = reverse_lazy('panels:add_entity', kwargs={'pk': gps.panel.pk, 'entity_type': 'region'})
+
+        source = region.evidence.last().name
+        publication = region.publications[0]
+        phenotype = region.publications[1]
+
+        region_data = {
+            'name': region.name,
+            'chromosome': '1',
+            'position_37_0': '12345',
+            'position_37_1': '12346',
+            'position_38_0': '12345',
+            'position_38_1': '123456',
+            'haploinsufficiency_score': choice(Region.DOSAGE_SENSITIVITY_SCORES)[0],
+            'triplosensitivity_score': '',
+            'required_overlap_percentage': randint(0, 100),
+            "gene": region.gene_core.pk,
+            "gene_name": "Other name",
+            "source": set([source, Evidence.ALL_SOURCES[randint(0, 9)]]),
+            "tags": [TagFactory().pk, ] + [tag.name for tag in region.tags.all()],
+            "publications": ";".join([publication, fake.sentence()]),
+            "phenotypes": ";".join([phenotype, fake.sentence(), fake.sentence()]),
+            "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)][0],
+            "type_of_variants": Region.VARIANT_TYPES.small,
+            "penetrance": Region.PENETRANCE.Incomplete,
+
+        }
+        res = self.client.post(url, region_data)
+        self.assertEqual(res.status_code, 302)
+        panel = gps.panel.active_panel
+
+        assert panel.get_region(region.name).type_of_variants == region_data['type_of_variants']

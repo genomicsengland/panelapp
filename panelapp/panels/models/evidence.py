@@ -5,6 +5,12 @@ from accounts.models import Reviewer
 
 
 class Evidence(TimeStampedModel):
+    class Meta:
+        indexes = [
+            models.Index(fields=['name']),
+            models.Index(fields=['rating']),
+        ]
+
     HIGH_CONFIDENCE_SOURCES = [
         "Radboud University Medical Center, Nijmegen",
         "Illumina TruGenome Clinical Sequencing Services",
@@ -34,7 +40,7 @@ class Evidence(TimeStampedModel):
     rating = models.IntegerField()
     comment = models.CharField(max_length=255)
 
-    reviewer = models.ForeignKey(Reviewer, null=True)
+    reviewer = models.ForeignKey(Reviewer, null=True, on_delete=models.PROTECT)
     legacy_type = models.CharField(max_length=255, null=True)
 
     def __str__(self):

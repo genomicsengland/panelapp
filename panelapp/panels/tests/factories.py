@@ -1,4 +1,5 @@
 import factory
+from uuid import uuid1
 from random import randint
 from random import choice
 from panels.models import Gene
@@ -12,14 +13,19 @@ from panels.models import Level4Title
 from panels.models import GenePanel
 from panels.models import GenePanelSnapshot
 from panels.models import STR
+from panels.models import Region
+from panels.models import PanelType
 from psycopg2.extras import NumericRange
+
+from faker import Faker
+fake = Faker()
 
 
 class Level4TitleFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Level4Title
 
-    name = factory.Faker('sentence', nb_words=6, variable_nb_words=True)
+    name = factory.LazyAttribute(lambda x: fake.sentence(nb_words=6, variable_nb_words=True).strip('.'))
     description = factory.Faker('sentence', nb_words=6, variable_nb_words=True)
     level3title = factory.Faker('sentence', nb_words=6, variable_nb_words=True)
     level2title = factory.Faker('sentence', nb_words=6, variable_nb_words=True)
@@ -38,13 +44,28 @@ class GenePanelSnapshotFactory(factory.django.DjangoModelFactory):
     minor_version = 0
     old_panels = factory.Faker('sentences', nb=3)
 
+    @factory.post_generation
+    def stats(self, create, stats, **kwargs):
+        if not create:
+            return
+
+        self.update_saved_stats()
+
 
 class GenePanelFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = GenePanel
 
-    name = factory.Faker('sentence')
+    name = factory.LazyAttribute(lambda x: fake.sentence(nb_words=6, variable_nb_words=True).strip('.'))
     genepanelsnapshot = factory.RelatedFactory(GenePanelSnapshotFactory)
+
+
+class PanelTypeFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = PanelType
+
+    name = factory.Faker('word')
+    description = factory.Faker('sentences', nb=3)
 
 
 class GeneFactory(factory.django.DjangoModelFactory):
@@ -81,7 +102,7 @@ class TagFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Tag
 
-    name = factory.Faker('word')
+    name = factory.LazyAttribute(lambda o: uuid1().hex)
 
 
 class CommentFactory(factory.django.DjangoModelFactory):
@@ -99,7 +120,7 @@ class GenePanelEntrySnapshotFactory(factory.django.DjangoModelFactory):
     publications = factory.Faker('sentences', nb=3)
     phenotypes = factory.Faker('sentences', nb=3)
     moi = Evaluation.MODES_OF_INHERITANCE.Unknown
-    mode_of_pathogenicity = Evaluation.MODES_OF_PATHOGENICITY['Other - please provide details in the comments']
+    mode_of_pathogenicity = Evaluation.MODES_OF_PATHOGENICITY.Other
     saved_gel_status = 0
     gene = factory.LazyAttribute(lambda g: g.gene_core.dict_tr())
 
@@ -127,6 +148,25 @@ class GenePanelEntrySnapshotFactory(factory.django.DjangoModelFactory):
         for evidence in evidences:
             if evidence:
                 self.evidence.add(evidence)
+
+    @factory.post_generation
+    def tags(self, create, tags, **kwargs):
+        if not create:
+            return
+
+        if not tags:
+            tags = TagFactory.create_batch(1)
+
+        for tag in tags:
+            if tag:
+                self.tags.add(tag)
+
+    @factory.post_generation
+    def stats(self, create, stats, **kwargs):
+        if not create:
+            return
+
+        self.panel.update_saved_stats()
 
 
 class FakeRange:
@@ -168,6 +208,18 @@ class STRFactory(factory.django.DjangoModelFactory):
                 self.evaluation.add(evaluation)
 
     @factory.post_generation
+    def tags(self, create, tags, **kwargs):
+        if not create:
+            return
+
+        if not tags:
+            tags = TagFactory.create_batch(1)
+
+        for tag in tags:
+            if tag:
+                self.tags.add(tag)
+
+    @factory.post_generation
     def evidence(self, create, extracted, **kwargs):
         if not create:
             return
@@ -179,3 +231,65 @@ class STRFactory(factory.django.DjangoModelFactory):
         for evidence in evidences:
             if evidence:
                 self.evidence.add(evidence)
+
+    @factory.post_generation
+    def stats(self, create, stats, **kwargs):
+        if not create:
+            return
+
+        self.panel.update_saved_stats()
+
+
+class RegionFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Region
+        django_get_or_create = False
+
+    name = factory.Faker('word')
+    verbose_name = factory.Faker('word')
+    chromosome = factory.LazyAttribute(lambda s: choice(STR.CHROMOSOMES)[0])
+    position_37 = factory.LazyAttribute(lambda s: NumericRange(randint(1, 10), randint(11, 20)))
+    position_38 = factory.LazyAttribute(lambda s: NumericRange(randint(1, 10), randint(11, 20)))
+    haploinsufficiency_score = factory.LazyAttribute(lambda s: choice(Region.DOSAGE_SENSITIVITY_SCORES)[0])
+    triplosensitivity_score = factory.LazyAttribute(lambda s: choice(Region.DOSAGE_SENSITIVITY_SCORES)[0],)
+    type_of_variants = Region.VARIANT_TYPES.cnv_gain
+    required_overlap_percentage = factory.LazyAttribute(lambda s: randint(0, 100))
+    panel = factory.SubFactory(GenePanelSnapshotFactory)
+    gene_core = factory.SubFactory(GeneFactory)
+    publications = factory.Faker('sentences', nb=3)
+    phenotypes = factory.Faker('sentences', nb=3)
+    moi = Evaluation.MODES_OF_INHERITANCE.Unknown
+    saved_gel_status = 0
+    gene = factory.LazyAttribute(lambda g: g.gene_core.dict_tr())
+
+    @factory.post_generation
+    def evaluation(self, create, evaluations, **kwargs):
+        if not create:
+            return
+
+        if not evaluations:
+            evaluations = EvaluationFactory.create_batch(4)
+
+        for evaluation in evaluations:
+            if evaluation:
+                self.evaluation.add(evaluation)
+
+    @factory.post_generation
+    def evidence(self, create, extracted, **kwargs):
+        if not create:
+            return
+
+        evidences = extracted
+        if not extracted:
+            evidences = EvidenceFactory.create_batch(4)
+
+        for evidence in evidences:
+            if evidence:
+                self.evidence.add(evidence)
+
+    @factory.post_generation
+    def stats(self, create, stats, **kwargs):
+        if not create:
+            return
+
+        self.panel.update_saved_stats()

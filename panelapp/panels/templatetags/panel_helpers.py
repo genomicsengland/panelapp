@@ -28,12 +28,16 @@ class GeneDataType(Enum):
     SHORT = 2
 
 
-def get_gene_list_data(gene, list_type):
-    if gene.status > 2:
+def get_gene_list_data(gene, list_type, saved_gel_status=None):
+    if saved_gel_status is not None:
+        value = saved_gel_status
+    else:
+        value = gene.get('saved_gel_status') if isinstance(gene, dict) else gene.status
+    if value > 2:
         return gene_list_data[GeneStatus.GREEN.value][list_type]
-    elif gene.status == 2:
+    elif value == 2:
         return gene_list_data[GeneStatus.AMBER.value][list_type]
-    elif gene.status == 1:
+    elif value == 1:
         return gene_list_data[GeneStatus.RED.value][list_type]
     else:
         return gene_list_data[GeneStatus.NOLIST.value][list_type]
@@ -115,3 +119,9 @@ def pubmed_link(publication):
 @register.filter
 def remove_special(seq):
     return re.sub('\W+', '', seq)
+
+
+@register.filter
+def human_variant_types(variant_type):
+    from panels.models import Region
+    return Region.VARIANT_TYPES[variant_type]

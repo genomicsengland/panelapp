@@ -1,14 +1,13 @@
 from django.db import models
 from django.db.models import Sum
-from django.db.models import Count
 from django.db.models import Case
 from django.db.models import When
 from django.db.models import Value
-from django.contrib.postgres.aggregates import ArrayAgg
 from django.urls import reverse
 from django.utils.functional import cached_property
 from model_utils import Choices
 from model_utils.models import TimeStampedModel
+from .panel_types import PanelType
 
 
 class GenePanelManager(models.Manager):
@@ -34,12 +33,17 @@ class GenePanel(TimeStampedModel):
     old_pk = models.CharField(max_length=24, null=True, blank=True, db_index=True)  # Mongo ObjectID hex string
     name = models.CharField(max_length=255, db_index=True)
     status = models.CharField(choices=STATUS, default=STATUS.internal, max_length=36, db_index=True)
+    types = models.ManyToManyField(PanelType)
 
     objects = GenePanelManager()
 
     def __str__(self):
         ap = self.active_panel
         return "{} version {}.{}".format(self.name, ap.major_version, ap.minor_version)
+
+    @property
+    def unique_id(self):
+        return self.old_pk if self.old_pk else str(self.pk)
 
     def approve(self):
         self.status = GenePanel.STATUS.public
@@ -50,6 +54,9 @@ class GenePanel(TimeStampedModel):
 
     def is_public(self):
         return self.status in [GenePanel.STATUS.public, GenePanel.STATUS.promoted]
+
+    def is_deleted(self):
+        return self.status == GenePanel.STATUS.deleted
 
     def reject(self):
         self.status = GenePanel.STATUS.internal
@@ -66,6 +73,7 @@ class GenePanel(TimeStampedModel):
                 'panel',
                 'level4title',
                 'str_set',
+                'region_set',
                 'genepanelentrysnapshot_set__evaluation__user',
                 'genepanelentrysnapshot_set__evaluation__user__reviewer'
             ).annotate(
@@ -127,3 +135,8 @@ class GenePanel(TimeStampedModel):
             major_version=int(major_version),
             minor_version=int(minor_version)
         ).first()
+
+    def add_activity(self, user, text, entity=None):
+        """Adds activity for this panel"""
+
+        self.active_panel.add_activity(user, text)

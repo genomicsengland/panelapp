@@ -29,7 +29,7 @@ def reviewer_confirmation_requset_email(user_id):
 
     ctx = {
         'user': user,
-        'link': '{}/GeL-admin/accounts/user/{}/change/'.format(settings.PANEL_APP_BASE_URL, user.pk),
+        'link': '{}/GeL-admin/accounts/user/{}/actions/confirm_reviewer/'.format(settings.PANEL_APP_BASE_URL, user.pk),
         'settings': settings
     }
     text = render_to_string('registration/emails/reviewer_check_email.txt', ctx)
@@ -52,3 +52,19 @@ def revierwer_confirmed_email(user_id):
     }
     text = render_to_string('registration/emails/reviewer_approved.txt', ctx)
     send_email(user.email, "Congratulations, you have been approved please authenticate your account", text)
+
+
+@shared_task
+def send_verification_email(user_id):
+    from .models import User
+
+    user = User.objects.get(pk=user_id)
+    site = Site.objects.get_current()
+
+    ctx = {
+        'user': user,
+        'site': site,
+        'settings': settings
+    }
+    text = render_to_string('registration/emails/verify_email.txt', ctx)
+    send_email(user.email, "Please verify your email address", text)

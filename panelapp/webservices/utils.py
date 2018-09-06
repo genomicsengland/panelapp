@@ -32,7 +32,7 @@ def convert_moi(moi, back=False):
 
 def convert_mop(mop, back=False):
     short_terms = {
-        'Loss-of-function variants (as defined in pop up message) DO NOT cause this phenotype - please provide details in the comments': 'loss_of_function',  # noqa
+        'Loss-of-function variants (as defined in pop up message) DO NOT cause this phenotype - please provide details in the comments': 'no_loss_of_function',  # noqa
         'Other - please provide details in the comments': 'other'
     }
 
@@ -89,6 +89,20 @@ def convert_gel_status(gel_status):
         return "NoList"
     else:
         return "LowEvidence"
+
+
+def convert_confidence_level(conf_level):
+    map_levels = {
+        'HighEvidence': 3,
+        'ModerateEvidence': 2,
+        'LowEvidence': 1,
+        'NoList': 0
+    }
+
+    if conf_level in map_levels:
+        return map_levels[conf_level]
+    else:
+        return 0
 
 
 def make_null(value):

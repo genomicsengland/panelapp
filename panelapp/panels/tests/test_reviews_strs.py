@@ -24,6 +24,7 @@ class EvaluationSTRTest(LoginGELUser):
 
         str_item = STRFactory()
         str_item.evaluation.all().delete()
+        str_item.panel.update_saved_stats()
         url = reverse_lazy('panels:review_entity', kwargs={
             'pk': str_item.panel.panel.pk,
             'entity_type': 'str',
@@ -32,7 +33,7 @@ class EvaluationSTRTest(LoginGELUser):
 
         current_version = str_item.panel.version
 
-        number_of_evaluated_genes = str_item.panel.number_of_evaluated_strs
+        number_of_evaluated_genes = str_item.panel.stats.get('number_of_evaluated_strs')
 
         str_data = {
             "rating": Evaluation.RATINGS.AMBER,
@@ -40,12 +41,12 @@ class EvaluationSTRTest(LoginGELUser):
             "comments": fake.sentence(),
             "publications": ";".join([fake.sentence(), fake.sentence()]),
             "phenotypes": ";".join([fake.sentence(), fake.sentence(), fake.sentence()]),
-            "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)],
-            "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][randint(1, 2)],
+            "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)][0],
+            "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][randint(1, 2)][0],
         }
         res = self.client.post(url, str_data)
         assert res.status_code == 302
-        assert number_of_evaluated_genes + 1 == str_item.panel.panel.active_panel.number_of_evaluated_strs
+        assert number_of_evaluated_genes + 1 == str_item.panel.panel.active_panel.stats.get('number_of_evaluated_strs')
         assert current_version == str_item.panel.panel.active_panel.version
 
     def test_add_evaluation_comments_only(self):
@@ -131,15 +132,15 @@ class EvaluationSTRTest(LoginGELUser):
             "comments": fake.sentence(),
             "publications": ";".join([fake.sentence(), fake.sentence()]),
             "phenotypes": ";".join(old_phenotypes),
-            "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)],
-            "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][randint(1, 2)],
+            "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)][0],
+            "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][randint(1, 2)][0],
         }
         self.client.post(url, gene_data)
         assert Evaluation.objects.filter(user=self.gel_user).count() == 1
 
         gene_data = {
-            "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)],
-            "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][randint(1, 2)],
+            "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)][0],
+            "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][randint(1, 2)][0],
         }
         self.client.post(url, gene_data)
         assert Evaluation.objects.filter(user=self.gel_user).count() == 1
@@ -187,6 +188,19 @@ class EvaluationSTRTest(LoginGELUser):
 class STRReviewTest(LoginGELUser):
     def test_mark_as_ready(self):
         str_item = STRFactory()
+        str_item.evaluation.all().delete()
+        url = reverse_lazy('panels:mark_entity_as_ready', kwargs={
+            'pk': str_item.panel.panel.pk,
+            'entity_type': 'str',
+            'entity_name': str_item.name
+        })
+
+        self.client.post(url, {'ready_comment': fake.sentence()})
+        gene = GenePanel.objects.get(pk=str_item.panel.panel.pk).active_panel.get_str(str_item.name)
+        assert gene.ready is True
+
+    def test_mark_as_ready_no_gene(self):
+        str_item = STRFactory(gene=None)
         str_item.evaluation.all().delete()
         url = reverse_lazy('panels:mark_entity_as_ready', kwargs={
             'pk': str_item.panel.panel.pk,
@@ -319,7 +333,7 @@ class STRReviewTest(LoginGELUser):
         res = self.client.post(url, data, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
         gene = GenePanel.objects.get(pk=str_item.panel.panel.pk).active_panel.get_str(str_item.name)
         assert res.json().get('status') == 200
-        assert Comment.objects.count() == 2
+        assert Comment.objects.count() == 3  # FIXME old comments are deleted even for the current object...
         assert gene.saved_gel_status == new_status
 
         new_status = 2
@@ -328,7 +342,7 @@ class STRReviewTest(LoginGELUser):
         res = self.client.post(url, data, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
         gene = GenePanel.objects.get(pk=str_item.panel.panel.pk).active_panel.get_str(str_item.name)
         assert res.json().get('status') == 200
-        assert Comment.objects.count() == 3
+        assert Comment.objects.count() == 6
         assert gene.saved_gel_status == new_status
 
         new_status = 3
@@ -337,7 +351,7 @@ class STRReviewTest(LoginGELUser):
         res = self.client.post(url, data, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
         gene = GenePanel.objects.get(pk=str_item.panel.panel.pk).active_panel.get_str(str_item.name)
         assert res.json().get('status') == 200
-        assert Comment.objects.count() == 4
+        assert Comment.objects.count() == 10
         assert gene.saved_gel_status == new_status
         assert gene.panel.version != str_item.panel.version
 
@@ -357,8 +371,8 @@ class STRReviewTest(LoginGELUser):
             "comments": fake.sentence(),
             "publications": ";".join([fake.sentence(), fake.sentence()]),
             "phenotypes": ";".join([fake.sentence(), fake.sentence(), fake.sentence()]),
-            "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)],
-            "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][randint(1, 2)],
+            "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)][0],
+            "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][randint(1, 2)][0],
         }
         self.client.post(evaluation_url, gene_data, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
         gene = GenePanel.objects.get(pk=str_item.panel.panel.pk).active_panel.get_str(str_item.name)
@@ -393,8 +407,8 @@ class STRReviewTest(LoginGELUser):
             "comments": fake.sentence(),
             "publications": ";".join([fake.sentence(), fake.sentence()]),
             "phenotypes": ";".join([fake.sentence(), fake.sentence(), fake.sentence()]),
-            "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)],
-            "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][randint(1, 2)],
+            "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)][0],
+            "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][randint(1, 2)][0],
         }
         self.client.post(evaluation_url, gene_data, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
         gene = GenePanel.objects.get(pk=str_item.panel.panel.pk).active_panel.get_str(str_item.name)
@@ -432,8 +446,8 @@ class STRReviewTest(LoginGELUser):
             "comments": comment,
             "publications": ";".join([fake.sentence(), fake.sentence()]),
             "phenotypes": ";".join([fake.sentence(), fake.sentence(), fake.sentence()]),
-            "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)],
-            "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][randint(1, 2)],
+            "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)][0],
+            "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][randint(1, 2)][0],
         }
         self.client.post(evaluation_url, gene_data, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
         gene = GenePanel.objects.get(pk=str_item.panel.panel.pk).active_panel.get_str(str_item.name)

@@ -74,7 +74,12 @@ class UserAdmin(DjangoObjectActions, BaseUserAdmin):
     fieldsets = (
         (None, {'fields': ('email', 'password')}),
         ('Personal info', {'fields': ('first_name', 'last_name',)}),
-        ('Permissions', {'fields': ('is_staff', 'is_superuser', 'is_active',)}),
+        ('Permissions', {'fields': ('is_staff', 'is_active', 'groups',)}),
+    )
+    superuser_fieldsets = (
+        (None, {'fields': ('email', 'password')}),
+        ('Personal info', {'fields': ('first_name', 'last_name',)}),
+        ('Permissions', {'fields': ('is_staff', 'is_superuser', 'is_active', 'groups',)}),
     )
     add_fieldsets = (
         (None, {
@@ -89,6 +94,16 @@ class UserAdmin(DjangoObjectActions, BaseUserAdmin):
     inlines = [
         ReviewerInline,
     ]
+
+    def get_fieldsets(self, request, obj=None):
+        """
+        Hook for specifying fieldsets.
+        """
+
+        if request.user.is_superuser:
+            return self.superuser_fieldsets
+        else:
+            return self.fieldsets
 
     def is_reviewer(self, obj):
         try:
@@ -110,7 +125,7 @@ class UserAdmin(DjangoObjectActions, BaseUserAdmin):
 
         try:
             obj = self.model.objects.get(pk=object_id)
-            if obj.reviewer.is_REVIEWER():
+            if obj.reviewer.is_REVIEWER() or obj.reviewer.is_GEL():
                 return []
         except Reviewer.DoesNotExist:
             return []
@@ -131,4 +146,3 @@ class ReviewerAdmin(admin.ModelAdmin):
 
 admin.site.register(Reviewer, ReviewerAdmin)
 admin.site.register(User, UserAdmin)
-admin.site.unregister(Group)

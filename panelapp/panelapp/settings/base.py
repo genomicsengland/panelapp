@@ -28,7 +28,7 @@ SECRET_KEY = os.getenv('SECRET_KEY', '-0-&v=+ghegh&l51=rdmvz_5hlf1t-^e&#5d8f07io
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = [host for host in os.getenv('ALLOWED_HOSTS', '').split(';')]
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '').split(';')
 
 PANEL_APP_BASE_URL = os.getenv('PANEL_APP_BASE_URL', 'https://panelapp.extge.co.uk')
 EMAIL_HOST = os.getenv("EMAIL_HOST", None)
@@ -62,7 +62,10 @@ CUSTOM_APPS = [
     'mathfilters',
     'django_ajax',
     'rest_framework',
-    'django_admin_listfilter_dropdown'
+    'rest_framework.authtoken',
+    'django_admin_listfilter_dropdown',
+    'drf_yasg',
+    'qurl_templatetag',
 ]
 
 PROJECT_APPS = [
@@ -70,8 +73,8 @@ PROJECT_APPS = [
     'accounts',
     'panels',
     'webservices',
-    'v2import',
     'v1rewrites',
+    'api'
 ]
 
 INSTALLED_APPS = DJANGO_APPS + CUSTOM_APPS + PROJECT_APPS
@@ -122,6 +125,7 @@ DATABASES = {
 # Auth
 AUTH_USER_MODEL = 'accounts.User'
 LOGIN_REDIRECT_URL = 'home'
+ACCOUNT_EMAIL_VERIFICATION_PERIOD = 24 * 60 * 60 * 3  # 3 days
 
 # Logging
 
@@ -165,7 +169,7 @@ AUTH_PASSWORD_VALIDATORS = [
 # https://docs.djangoproject.com/en/1.11/topics/i18n/
 
 LANGUAGE_CODE = 'en-gb'
-TIME_ZONE = 'Europe/London'
+TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_L10N = True
 USE_TZ = True
@@ -212,11 +216,54 @@ CELL_BASE_CONNECTOR_REST = os.getenv(
     "CELL_BASE_CONNECTOR_REST",
     "http://bioinfo.hpc.cam.ac.uk/cellbase/webservices/rest/"
 )
-HEALTH_CHECK_TOKEN = os.getenv('HEALTH_CHECK_TOKEN', None)
+
+HEALTH_ACCESS_TOKEN_LOCATION = os.getenv('HEALTH_ACCESS_TOKEN_LOCATION', None)
+HEALTH_CHECK_TOKEN = None
+if HEALTH_ACCESS_TOKEN_LOCATION and os.path.isfile(HEALTH_ACCESS_TOKEN_LOCATION):
+    with open(HEALTH_ACCESS_TOKEN_LOCATION, 'r') as f:
+        HEALTH_CHECK_TOKEN = f.readline().strip()
+
+HEALTH_MAINTENANCE_LOCATION = os.getenv('HEALTH_MAINTENANCE_LOCATION', None)
+
+HEALTH_CHECK_SERVICES = os.getenv('HEALTH_CHECK_SERVICES', 'database,rabbitmq,email,celery,maintenance').split(',')
 
 # CORS headers support
 CORS_ORIGIN_ALLOW_ALL = True
-CORS_URLS_REGEX = r'^/WebServices/.*$'
+CORS_URLS_REGEX = r'^/(WebServices|api/v1)/.*$'
 CORS_ALLOW_METHODS = ('GET',)
 
+CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', 'pyamqp://localhost:5672/')
+
 PACKAGE_VERSION = panelapp.__version__
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'pa-cache-1',
+        'TIMEOUT': None
+    }
+}
+
+REST_FRAMEWORK = {
+    'PAGE_SIZE': 100,
+    'DEFAULT_VERSIONING_CLASS': 'rest_framework.versioning.NamespaceVersioning',
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'DEFAULT_VERSION': 'v1',
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.TokenAuthentication',
+    )
+}
+
+SWAGGER_SETTINGS = {
+    'SECURITY_DEFINITIONS': {
+        'api_key': {
+            'type': 'apiKey',
+            'in': 'header',
+            'name': 'Authorization',
+            'description': 'Format: "Token <strong>your token</strong>". You can find API token in your <a href="/accounts/profile/">profile page</a>'
+        }
+    },
+}
+
+DEFAULT_PANEL_TYPES = os.getenv('DEFAULT_PANEL_TYPES', 'rare-disease-100k').split(',')

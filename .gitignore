@@ -112,3 +112,4 @@ ENV/
 _mediafiles
 _staticfiles
 temp_dump_data
+.pytest_cache

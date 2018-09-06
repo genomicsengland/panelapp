@@ -1,20 +1,9 @@
 """panelapp URL Configuration
 
-The `urlpatterns` list routes URLs to views. For more information please see:
-    https://docs.djangoproject.com/en/1.11/topics/http/urls/
-Examples:
-Function views
-    1. Add an import:  from my_app import views
-    2. Add a URL to urlpatterns:  url(r'^$', views.home, name='home')
-Class-based views
-    1. Add an import:  from other_app.views import Home
-    2. Add a URL to urlpatterns:  url(r'^$', Home.as_view(), name='home')
-Including another URLconf
-    1. Import the include() function: from django.conf.urls import url, include
-    2. Add a URL to urlpatterns:  url(r'^blog/', include('blog.urls'))
 """
 from django.conf import settings
 from django.conf.urls import url
+from django.urls import path
 from django.conf.urls import include
 from django.contrib import admin
 from .views import Homepage
@@ -23,21 +12,48 @@ from .views import VersionView
 from .autocomplete import GeneAutocomplete
 from .autocomplete import SourceAutocomplete
 from .autocomplete import TagsAutocomplete
+from .autocomplete import SimplePanelsAutocomplete
+from .autocomplete import SimplePanelTypesAutocomplete
+
+
+from django.urls import re_path
+from rest_framework import permissions
+from drf_yasg.views import get_schema_view
+from drf_yasg import openapi
+
+schema_view = get_schema_view(
+    openapi.Info(
+        title="PanelApp API",
+        default_version='v1',
+        description="PanelApp API",
+        terms_of_service="https://panelapp.genomicsengland.co.uk/policies/terms/",
+        contact=openapi.Contact(email="panelapp@genomicsengland.co.uk"),
+    ),
+    patterns=[path('api/', include('api.urls')), ],  # exclude old webservices
+    validators=['flex', 'ssv'],
+    public=True,
+    permission_classes=(permissions.AllowAny,),  #  FIXME(Oleg) we need read only.
+)
 
 
 urlpatterns = [
-    url(r'^$', Homepage.as_view(), name="home"),
-    url(r'^accounts/', include('accounts.urls', namespace="accounts")),
-    url(r'^panels/', include('panels.urls', namespace="panels")),
-    url(r'^crowdsourcing/', include('v1rewrites.urls', namespace="v1rewrites")),
-    url(r'^WebServices/', include('webservices.urls', namespace="webservices")),
-    url(r'^markdownx/', include('markdownx.urls')),
-    url(r'^GeL-admin/', admin.site.urls),
-    url(r'^autocomplete/gene/$', GeneAutocomplete.as_view(), name="autocomplete-gene"),
-    url(r'^autocomplete/source/$', SourceAutocomplete.as_view(), name="autocomplete-source"),
-    url(r'^autocomplete/tags/$', TagsAutocomplete.as_view(), name="autocomplete-tags"),
-    url(r'^health/$', HealthCheckView.as_view(), name="health_check"),
-    url(r'^version/$', VersionView.as_view(), name="version")
+    path('', Homepage.as_view(), name="home"),
+    path('accounts/', include('accounts.urls', namespace="accounts")),
+    path('panels/', include('panels.urls', namespace="panels")),
+    path('crowdsourcing/', include('v1rewrites.urls', namespace="v1rewrites")),
+    re_path(r'^api/docs(?P<format>\.json|\.yaml)$', schema_view.without_ui(cache_timeout=None), name='schema-json'),
+    re_path(r'^api/docs/$', schema_view.with_ui('swagger', cache_timeout=None), name='schema-swagger-ui'),
+    path('api/', include('api.urls', namespace='api')),
+    path('WebServices/', include('webservices.urls', namespace="webservices")),
+    path('markdownx/', include('markdownx.urls')),
+    path('GeL-admin/', admin.site.urls),
+    path('autocomplete/gene/', GeneAutocomplete.as_view(), name="autocomplete-gene"),
+    path('autocomplete/source/', SourceAutocomplete.as_view(), name="autocomplete-source"),
+    path('autocomplete/tags/', TagsAutocomplete.as_view(), name="autocomplete-tags"),
+    path('autocomplete/panels/simple/', SimplePanelsAutocomplete.as_view(), name="autocomplete-simple-panels"),
+    path('autocomplete/panels/type/', SimplePanelTypesAutocomplete.as_view(), name="autocomplete-simple-panel-types"),
+    path('health_check/', HealthCheckView.as_view(), name="health_check"),
+    path('version/', VersionView.as_view(), name="version")
 ]
 
 if settings.DEBUG:

@@ -28,6 +28,7 @@ from .views import DownloadAllGenes
 from .views import DownloadAllPanels
 from .views import ActivityListView
 from .views import DownloadAllSTRs
+from .views import DownloadAllRegions
 from .views import GeneDetailRedirectView
 from .views import RedirectGenesToEntities
 from .views import OldCodeURLRedirect
@@ -50,10 +51,13 @@ from .ajax_views import DeleteEntityEvaluationAjaxView
 from .ajax_views import GetEntityCommentFormAjaxView
 from .ajax_views import DeleteEntityCommentAjaxView
 from .ajax_views import SubmitEntityCommentFormAjaxView
-from .ajax_views import ApproveGeneAjaxView
+from .ajax_views import ApproveEntityAjaxView
 
+
+app_name = 'panels'
 
 entity_regex = '[\w\-\.\$\~\@\#\ ]+'
+entity_types = 'gene|str|region'
 
 urlpatterns = [
     url(r'^$', PanelsIndexView.as_view(), name="index"),
@@ -65,7 +69,7 @@ urlpatterns = [
     url(r'^(?P<pk>[0-9]+)/$', GenePanelView.as_view(), name="detail"),
     url(r'^(?P<pk>[0-9]+)/update$', UpdatePanelView.as_view(), name="update"),
     url(r'^(?P<pk>[0-9]+)/promote$', PromotePanelView.as_view(), name="promote"),
-    url(r'^(?P<pk>[0-9]+)/(?P<entity_type>(gene|str))/add', PanelAddEntityView.as_view(), name="add_entity"),
+    url(r'^(?P<pk>[0-9]+)/(?P<entity_type>({types}))/add'.format(types=entity_types), PanelAddEntityView.as_view(), name="add_entity"),
     url(r'^(?P<pk>[0-9]+)/delete$', DeletePanelAjaxView.as_view(), name="delete_panel"),
     url(r'^(?P<pk>[0-9]+)/reject$', RejectPanelAjaxView.as_view(), name="reject_panel"),
     url(r'^(?P<pk>[0-9]+)/approve$', ApprovePanelAjaxView.as_view(), name="approve_panel"),
@@ -74,48 +78,48 @@ urlpatterns = [
     url(r'^(?P<pk>[0-9]+)/download_version/$',
         DownloadPanelVersionTSVView.as_view(), name="download_old_panel_tsv"),
     url(r'^(?P<pk>[0-9]+)/(?P<entity_name>{})/$'.format(entity_regex), RedirectGenesToEntities.as_view(), name="redirect_previous_structure"),
-    url(r'^(?P<pk>[0-9]+)/(?P<entity_type>(gene|str))/(?P<entity_name>{})/$'.format(entity_regex), GenePanelSpanshotView.as_view(), name="evaluation"),
-    url(r'^(?P<pk>[0-9]+)/(?P<entity_type>(gene|str))/(?P<entity_name>{})/edit$'.format(entity_regex), PanelEditEntityView.as_view(), name="edit_entity"),
-    url(r'^(?P<pk>[0-9]+)/(?P<entity_type>(gene|str))/(?P<entity_name>{})/review$'.format(entity_regex), EntityReviewView.as_view(), name="review_entity"),
-    url(r'^(?P<pk>[0-9]+)/(?P<entity_type>(gene|str))/(?P<entity_name>{})/mark_as_ready$'.format(entity_regex),
+    url(r'^(?P<pk>[0-9]+)/(?P<entity_type>({types}))/(?P<entity_name>{regex})/$'.format(types=entity_types, regex=entity_regex), GenePanelSpanshotView.as_view(), name="evaluation"),
+    url(r'^(?P<pk>[0-9]+)/(?P<entity_type>({types}))/(?P<entity_name>{regex})/edit$'.format(types=entity_types, regex=entity_regex), PanelEditEntityView.as_view(), name="edit_entity"),
+    url(r'^(?P<pk>[0-9]+)/(?P<entity_type>({types}))/(?P<entity_name>{regex})/review$'.format(types=entity_types, regex=entity_regex), EntityReviewView.as_view(), name="review_entity"),
+    url(r'^(?P<pk>[0-9]+)/(?P<entity_type>({types}))/(?P<entity_name>{regex})/mark_as_ready$'.format(types=entity_types, regex=entity_regex),
         MarkEntityReadyView.as_view(), name="mark_entity_as_ready"),
-    url(r'^(?P<pk>[0-9]+)/(?P<entity_type>(gene|str))/(?P<entity_name>{})/mark_as_not_ready$'.format(entity_regex),
+    url(r'^(?P<pk>[0-9]+)/(?P<entity_type>({types}))/(?P<entity_name>{regex})/mark_as_not_ready$'.format(types=entity_types, regex=entity_regex),
         MarkGeneNotReadyView.as_view(), name="mark_entity_as_not_ready"),
 
     # AJAX endpoints
-    url(r'^(?P<pk>[0-9]+)/(?P<entity_type>(gene|str))/(?P<entity_name>{})/delete$'.format(entity_regex), DeleteEntityAjaxView.as_view(), name="delete_entity"),
-    url(r'^(?P<pk>[0-9]+)/(?P<entity_type>(gene|str))/(?P<entity_name>{})/approve$'.format(entity_regex), ApproveGeneAjaxView.as_view(), name="approve_entity"),
-    url(r'^(?P<pk>[0-9]+)/(?P<entity_type>(gene|str))/(?P<entity_name>{})/clear_entity_sources$'.format(entity_regex),
+    url(r'^(?P<pk>[0-9]+)/(?P<entity_type>({types}))/(?P<entity_name>{regex})/delete$'.format(types=entity_types, regex=entity_regex), DeleteEntityAjaxView.as_view(), name="delete_entity"),
+    url(r'^(?P<pk>[0-9]+)/(?P<entity_type>({types}))/(?P<entity_name>{regex})/approve$'.format(types=entity_types, regex=entity_regex), ApproveEntityAjaxView.as_view(), name="approve_entity"),
+    url(r'^(?P<pk>[0-9]+)/(?P<entity_type>({types}))/(?P<entity_name>{regex})/clear_entity_sources$'.format(types=entity_types, regex=entity_regex),
         ClearSourcesAjaxView.as_view(), name="clear_entity_sources"),
-    url(r'^(?P<pk>[0-9]+)/(?P<entity_type>(gene|str))/(?P<entity_name>{})/clear_entity_source/(?P<source>(.*))/$'.format(entity_regex),
+    url(r'^(?P<pk>[0-9]+)/(?P<entity_type>({types}))/(?P<entity_name>{regex})/clear_entity_source/(?P<source>(.*))/$'.format(types=entity_types, regex=entity_regex),
         ClearSingleSourceAjaxView.as_view(), name="clear_entity_source"),
-    url(r'^(?P<pk>[0-9]+)/(?P<entity_type>(gene|str))/(?P<entity_name>{})/clear_entity_phenotypes$'.format(entity_regex),
+    url(r'^(?P<pk>[0-9]+)/(?P<entity_type>({types}))/(?P<entity_name>{regex})/clear_entity_phenotypes$'.format(types=entity_types, regex=entity_regex),
         ClearPhoenotypesAjaxView.as_view(), name="clear_entity_phenotypes"),
-    url(r'^(?P<pk>[0-9]+)/(?P<entity_type>(gene|str))/(?P<entity_name>{})/clear_entity_publications$'.format(entity_regex),
+    url(r'^(?P<pk>[0-9]+)/(?P<entity_type>({types}))/(?P<entity_name>{regex})/clear_entity_publications$'.format(types=entity_types, regex=entity_regex),
         ClearPublicationsAjaxView.as_view(), name="clear_entity_publications"),
-    url(r'^(?P<pk>[0-9]+)/(?P<entity_type>(gene|str))/(?P<entity_name>{})/clear_entity_mode_of_pathogenicity$'.format(entity_regex),
+    url(r'^(?P<pk>[0-9]+)/(?P<entity_type>({types}))/(?P<entity_name>{regex})/clear_entity_mode_of_pathogenicity$'.format(types=entity_types, regex=entity_regex),
         ClearModeOfPathogenicityAjaxView.as_view(), name="clear_entity_mode_of_pathogenicity"),
 
     # AJAX Review endpoints
-    url(r'^(?P<pk>[0-9]+)/(?P<entity_type>(gene|str))/(?P<entity_name>{})/update_entity_tags/$'.format(entity_regex),
+    url(r'^(?P<pk>[0-9]+)/(?P<entity_type>({types}))/(?P<entity_name>{regex})/update_entity_tags/$'.format(types=entity_types, regex=entity_regex),
         UpdateEntityTagsAjaxView.as_view(), name="update_entity_tags"),
-    url(r'^(?P<pk>[0-9]+)/(?P<entity_type>(gene|str))/(?P<entity_name>{})/update_entity_rating/$'.format(entity_regex),
+    url(r'^(?P<pk>[0-9]+)/(?P<entity_type>({types}))/(?P<entity_name>{regex})/update_entity_rating/$'.format(types=entity_types, regex=entity_regex),
         UpdateEntityRatingAjaxView.as_view(), name="update_entity_rating"),
-    url(r'^(?P<pk>[0-9]+)/(?P<entity_type>(gene|str))/(?P<entity_name>{})/update_entity_moi/$'.format(entity_regex),
+    url(r'^(?P<pk>[0-9]+)/(?P<entity_type>({types}))/(?P<entity_name>{regex})/update_entity_moi/$'.format(types=entity_types, regex=entity_regex),
         UpdateEntityMOIAjaxView.as_view(), name="update_entity_moi"),
-    url(r'^(?P<pk>[0-9]+)/(?P<entity_type>(gene|str))/(?P<entity_name>{})/update_entity_mop/$'.format(entity_regex),
+    url(r'^(?P<pk>[0-9]+)/(?P<entity_type>({types}))/(?P<entity_name>{regex})/update_entity_mop/$'.format(types=entity_types, regex=entity_regex),
         UpdateEntityMOPAjaxView.as_view(), name="update_entity_mop"),
-    url(r'^(?P<pk>[0-9]+)/(?P<entity_type>(gene|str))/(?P<entity_name>{})/update_entity_phenotypes/$'.format(entity_regex),
+    url(r'^(?P<pk>[0-9]+)/(?P<entity_type>({types}))/(?P<entity_name>{regex})/update_entity_phenotypes/$'.format(types=entity_types, regex=entity_regex),
         UpdateEntityPhenotypesAjaxView.as_view(), name="update_entity_phenotypes"),
-    url(r'^(?P<pk>[0-9]+)/(?P<entity_type>(gene|str))/(?P<entity_name>{})/update_entity_publications/$'.format(entity_regex),
+    url(r'^(?P<pk>[0-9]+)/(?P<entity_type>({types}))/(?P<entity_name>{regex})/update_entity_publications/$'.format(types=entity_types, regex=entity_regex),
         UpdateEntityPublicationsAjaxView.as_view(), name="update_entity_publications"),
-    url(r'^(?P<pk>[0-9]+)/(?P<entity_type>(gene|str))/(?P<entity_name>{})/delete_evaluation/(?P<evaluation_pk>[0-9]+)/$'.format(entity_regex),
+    url(r'^(?P<pk>[0-9]+)/(?P<entity_type>({types}))/(?P<entity_name>{regex})/delete_evaluation/(?P<evaluation_pk>[0-9]+)/$'.format(types=entity_types, regex=entity_regex),
         DeleteEntityEvaluationAjaxView.as_view(), name="delete_evaluation_by_user"),
-    url(r'^(?P<pk>[0-9]+)/(?P<entity_type>(gene|str))/(?P<entity_name>{})/edit_comment/(?P<comment_pk>[0-9]+)/$'.format(entity_regex),
+    url(r'^(?P<pk>[0-9]+)/(?P<entity_type>({types}))/(?P<entity_name>{regex})/edit_comment/(?P<comment_pk>[0-9]+)/$'.format(types=entity_types, regex=entity_regex),
         GetEntityCommentFormAjaxView.as_view(), name="edit_comment_by_user"),
-    url(r'^(?P<pk>[0-9]+)/(?P<entity_type>(gene|str))/(?P<entity_name>{})/submit_edit_comment/(?P<comment_pk>[0-9]+)/$'.format(entity_regex),
+    url(r'^(?P<pk>[0-9]+)/(?P<entity_type>({types}))/(?P<entity_name>{regex})/submit_edit_comment/(?P<comment_pk>[0-9]+)/$'.format(types=entity_types, regex=entity_regex),
         SubmitEntityCommentFormAjaxView.as_view(), name="submit_edit_comment_by_user"),
-    url(r'^(?P<pk>[0-9]+)/(?P<entity_type>(gene|str))/(?P<entity_name>{})/delete_comment/(?P<comment_pk>[0-9]+)/$'.format(entity_regex),
+    url(r'^(?P<pk>[0-9]+)/(?P<entity_type>({types}))/(?P<entity_name>{regex})/delete_comment/(?P<comment_pk>[0-9]+)/$'.format(types=entity_types, regex=entity_regex),
         DeleteEntityCommentAjaxView.as_view(), name="delete_comment_by_user"),
 
     url(r'^(?P<pk>[0-9]+)/mark_not_ready$'.format(entity_regex), PanelMarkNotReadyView.as_view(), name="mark_not_ready"),
@@ -124,8 +128,8 @@ urlpatterns = [
 
     url(r'^entities/$', EntitiesListView.as_view(), name="entities_list"),
     url(r'^genes/$', RedirectView.as_view(url='/panels/entities'), name="genes_list"),
-    url(r'^entities/(?P<slug>{})$'.format(entity_regex), EntityDetailView.as_view(), name="entity_detail"),
-    url(r'^genes/(?P<slug>{})$'.format(entity_regex), GeneDetailRedirectView.as_view()),
+    url(r'^entities/(?P<slug>{regex})$'.format(types=entity_types, regex=entity_regex), EntityDetailView.as_view(), name="entity_detail"),
+    url(r'^genes/(?P<slug>{regex})$'.format(types=entity_types, regex=entity_regex), GeneDetailRedirectView.as_view()),
 
     url(r'^activity/$', ActivityListView.as_view(), name="activity"),
 
@@ -133,6 +137,7 @@ urlpatterns = [
     url(r'^upload_genes/', AdminUploadGenesView.as_view(), name="upload_genes"),
     url(r'^download_genes/', DownloadAllGenes.as_view(), name="download_genes"),
     url(r'^download_strs/', DownloadAllSTRs.as_view(), name="download_strs"),
+    url(r'^download_regions/', DownloadAllRegions.as_view(), name="download_regions"),
     url(r'^upload_panel/', AdminUploadPanelsView.as_view(), name="upload_panels"),
     url(r'^download_panel/', DownloadAllPanels.as_view(), name="download_panels"),
     url(r'^upload_reviews/', AdminUploadReviewsView.as_view(), name="upload_reviews"),

@@ -8,9 +8,11 @@ from panels.models import GenePanel
 from panels.models import GenePanelEntrySnapshot
 from panels.tasks import email_panel_promoted
 from panels.tests.factories import GeneFactory
+from panels.tests.factories import STRFactory
 from panels.tests.factories import EvidenceFactory
 from panels.tests.factories import GenePanelSnapshotFactory
 from panels.tests.factories import GenePanelEntrySnapshotFactory
+from panels.tests.factories import PanelTypeFactory
 
 
 fake = Factory.create()
@@ -135,12 +137,12 @@ class GenePanelTest(LoginGELUser):
         genes = GenePanelEntrySnapshotFactory.create_batch(5, panel=gps)
         gene_symbol = genes[2].gene['gene_symbol']
 
-        number_of_genes = gps.number_of_genes
+        number_of_genes = gps.stats.get('number_of_genes')
 
         assert gps.has_gene(gene_symbol) is True
         gps.delete_gene(gene_symbol)
         assert gps.panel.active_panel.has_gene(gene_symbol) is False
-        assert number_of_genes - 1 == gps.panel.active_panel.number_of_genes  # 4 is due to create_batch
+        assert number_of_genes - 1 == gps.panel.active_panel.stats.get('number_of_genes')  # 4 is due to create_batch
 
         old_gps = GenePanel.objects.get(pk=gps.panel.pk).genepanelsnapshot_set.last()
         assert old_gps.version != gps.version
@@ -162,7 +164,7 @@ class GenePanelTest(LoginGELUser):
         genes = GenePanelEntrySnapshotFactory.create_batch(5, panel=gps)
         gene_symbol = genes[2].gene['gene_symbol']
 
-        number_of_genes = gps.number_of_genes
+        number_of_genes = gps.stats.get('number_of_genes')
 
         url = reverse_lazy('panels:delete_entity', kwargs={
             'pk': gps.panel.pk,
@@ -173,7 +175,7 @@ class GenePanelTest(LoginGELUser):
 
         new_gps = GenePanel.objects.get(pk=gps.panel.pk).active_panel
         assert new_gps.has_gene(gene_symbol) is False
-        assert number_of_genes - 1 == new_gps.number_of_genes  # 4 is due to create_batch
+        assert number_of_genes - 1 == new_gps.stats.get('number_of_genes')  # 4 is due to create_batch
         assert res.json().get('status') == 200
         assert res.json().get('content').get('inner-fragments')
 
@@ -212,6 +214,8 @@ class GenePanelTest(LoginGELUser):
         gps2 = GenePanelSnapshotFactory(panel__status=GenePanel.STATUS.public)
         GenePanelEntrySnapshotFactory.create_batch(2, panel=gps2)  # random genes
         GenePanelEntrySnapshotFactory.create(gene_core=gene, panel=gps2)
+
+        STRFactory(panel=gps, position_37=None)
 
         return gene, gps, gps2
 
@@ -277,25 +281,62 @@ class GenePanelTest(LoginGELUser):
     def test_import_panel(self):
         GeneFactory(gene_symbol="ABCC5-AS1")
         GeneFactory(gene_symbol="A1CF")
+        GeneFactory(gene_symbol="STR_1")
 
         file_path = os.path.join(os.path.dirname(__file__), 'import_panel_data.tsv')
         test_panel_file = os.path.abspath(file_path)
 
         with open(test_panel_file) as f:
             url = reverse_lazy('panels:upload_panels')
-            self.client.post(url, {'panel_list': f})
+            res = self.client.post(url, {'panel_list': f})
 
         gp = GenePanel.objects.get(name="Panel One")
         active_panel = gp.active_panel
         entries = active_panel.get_all_genes
         assert entries.count() == 2
 
+    def test_import_regions(self):
+        GeneFactory(gene_symbol="ABCC5-AS1")
+        GeneFactory(gene_symbol="A1CF")
+        GeneFactory(gene_symbol="STR_1")
+
+        file_path = os.path.join(os.path.dirname(__file__), 'import_panel_data.tsv')
+        test_panel_file = os.path.abspath(file_path)
+
+        with open(test_panel_file) as f:
+            url = reverse_lazy('panels:upload_panels')
+            res = self.client.post(url, {'panel_list': f})
+
+        gp = GenePanel.objects.get(name="Panel One")
+        active_panel = gp.active_panel
+        self.assertEqual(active_panel.get_all_regions.count(), 1)
+
+    def test_import_strs(self):
+        GeneFactory(gene_symbol="ABCC5-AS1")
+        GeneFactory(gene_symbol="A1CF")
+        GeneFactory(gene_symbol="STR_1")
+
+        file_path = os.path.join(os.path.dirname(__file__), 'import_panel_data.tsv')
+        test_panel_file = os.path.abspath(file_path)
+
+        with open(test_panel_file) as f:
+            url = reverse_lazy('panels:upload_panels')
+            res = self.client.post(url, {'panel_list': f})
+
+        self.assertEqual(GenePanel.objects.count(), 2)
+        gp = GenePanel.objects.get(name="TestPanel")
+        active_panel = gp.active_panel
+        self.assertEqual(active_panel.get_all_strs.count(), 1)
+
     def test_import_panel_sources(self):
         gene = GeneFactory(gene_symbol="ABCC5-AS1")
         GeneFactory(gene_symbol="A1CF")
+        GeneFactory(gene_symbol="STR_1")
 
         gps = GenePanelSnapshotFactory()
         gps.panel.name = "Panel One"
+        gps.level4title.name = gps.panel.name
+        gps.level4title.save()
         gps.panel.save()
         evidence = EvidenceFactory.create(name="Expert Review Amber")
         GenePanelEntrySnapshotFactory.create(gene_core=gene, panel=gps, evaluation=(None,), evidence=(evidence,))
@@ -373,3 +414,48 @@ class GenePanelTest(LoginGELUser):
         self.assertEqual(res.status_code, 301)
         self.assertEqual(res.url + '/', reverse_lazy('panels:evaluation', args=(
             gpes.panel.panel.id, 'gene', gpes.gene.get('gene_symbol'))))
+
+    def test_evaluation_stays(self):
+        gps = GenePanelSnapshotFactory()
+        gpes = GenePanelEntrySnapshotFactory(panel=gps)
+        evaluations = gpes.evaluation.all()
+        gpes2 = GenePanelEntrySnapshotFactory(panel=gps)
+        evaluations2 = sorted(gpes2.evaluation.all().values_list('pk', flat=True))
+
+        gps = gps.increment_version()
+        gps.update_gene(self.gel_user, gpes.gene_core.gene_symbol, {'phenotypes': ['abra', ]})
+        current_ev2 = sorted(gps.panel.active_panel.get_gene(gpes2.gene_core.gene_symbol).evaluation.all().values_list('pk', flat=True))
+
+        self.assertNotEqual(evaluations2, current_ev2)
+
+    def test_evaluation_single_panel(self):
+        gps = GenePanelSnapshotFactory()
+        gpes = GenePanelEntrySnapshotFactory(panel=gps)
+        gps = gps.increment_version()
+        gps = gps.increment_version()
+
+        gene_symbol = gpes.gene_core.gene_symbol
+
+        # check we copy evaluation rather than assign it
+        current_count = gps.panel.active_panel.get_all_genes[0].evaluation.first().genepanelentrysnapshot_set.count()
+        self.assertEqual(current_count, 1)
+
+        # check if deleting gene preserves it in the previous versions
+        gp = gps.panel
+        gps.delete_gene(gene_symbol)
+        v1 = gp.genepanelsnapshot_set.get(major_version=0, minor_version=1)
+        self.assertTrue(v1.has_gene(gene_symbol))
+
+    def test_panel_types(self):
+        panel_type = PanelTypeFactory()
+        gpes = GenePanelEntrySnapshotFactory()
+
+        panel_data = self.panel_data
+        panel_data['types'] = [panel_type.pk, ]
+        res = self.client.post(reverse_lazy('panels:create'), panel_data)
+        self.assertEqual(res.status_code, 302)
+
+        gp = GenePanel.objects.get(name=self.panel_data['level4'])
+        self.assertEqual(gp.types.first(), panel_type)
+        r = self.client.get(reverse_lazy('panels:detail', args=(gp.pk,)))
+        self.assertIn(panel_type.name.encode(), r.content)

@@ -1,0 +1,149 @@
+{% load bootstrap3 %}
+{% load panel_helpers %}
+
+<h3>Details</h3>
+<div class="panel panel-default panel-details">
+    <div class="panel-body">
+        <dl class="dl-separated">
+            {% if request.user.is_authenticated and request.user.reviewer.is_GEL %}
+                <dt>GEL status</dt>
+                <dd>{{ entity.status }}</dd>
+            {% endif %}
+            <dt>ISCA ID</dt>
+            <dd>{{ entity.name }}</dd>
+            <dt>ISCA Region Name</dt>
+            <dd>{{ entity.verbose_name }}</dd>
+            <dt>Chromosome</dt>
+            <dd>{{ entity.chromosome }}</dd>
+            {% if entity.position_37 %}
+            <dt>GRCh37 Coordinates</dt>
+            <dd>{{ entity.position_37.lower }}-{{ entity.position_37.upper }}</dd>
+            {% endif %}
+            <dt>GRCh38 Coordinates</dt>
+            <dd>{{ entity.position_38.lower }}-{{ entity.position_38.upper }}</dd>
+            <dt>Haploinsufficiency Score</dt>
+            <dd>{{ entity.human_haploinsufficiency_score }}</dd>
+            <dt>Triplosensitivity Score</dt>
+            <dd>{{ entity.human_triplosensitivity_score }}</dd>
+            <dt>Required percent of overlap</dt>
+            <dd>{{ entity.required_overlap_percentage }}%</dd>
+            {% if entity.moi %}
+            <dt>Mode of Inheritance</dt>
+            <dd>{{ entity.moi }}</dd>
+            {% endif %}
+            {% if entity.evidence.all %}
+            <dt>Sources</dt>
+            <dd>
+                <ul>
+                    {% for ev in entity.evidence.all %}
+                        {% if ev.is_GEL %}
+                            <li>{{ ev.name }}</li>
+                        {% endif %}
+                    {% endfor %}
+                </ul>
+                {% if request.user.is_authenticated and request.user.reviewer.is_GEL %}
+                    <a class="link-muted" href="{% url 'panels:clear_entity_sources' panel.panel_id entity_type entity_name %}" data-ajax="true" data-success="djangoAjaxHandler">Clear Sources</a>
+                {% endif %}
+            </dd>
+            {% endif %}
+            {% if entity.phenotypes %}
+                <dt>Phenotypes</dt>
+                <dd>
+                    <ul>
+                        {% for phenotype in entity.phenotypes %}
+                            {% if phenotype %}
+                                <li>{{ phenotype }}</li>
+                            {% endif %}
+                        {% endfor %}
+                    </ul>
+                    {% if request.user.is_authenticated and request.user.reviewer.is_GEL %}
+                        <a href="{% url 'panels:clear_entity_phenotypes' panel.panel_id entity_type entity_name %}" class="link-muted" data-ajax="true" data-success="djangoAjaxHandler">
+                            Clear phenotypes
+                        </a>
+                    {% endif %}
+                </dd>
+            {% endif %}
+            {% if entity.tags.all %}
+                <dt>Tags</dt>
+                <dd class="tag-list">
+                    {% for tag in entity.tags.all %}
+                        <span class="label label-default">{{ tag.name }}</span>
+                    {% endfor %}
+                </dd>
+            {% endif %}
+            {% if entity.gene.omim_gene|length > 0 %}
+            <dt>OMIM</dt>
+            <dd><a href="http://omim.org/entry/{{ entity.gene.omim_gene.0 }}" target="_blank">{{ entity.gene.omim_gene.0 }}</a></dd>
+            {% endif %}
+            <dt>Clinvar variants</dt>
+            <dd>
+                <a href="http://www.ncbi.nlm.nih.gov/clinvar?term={{ entity.gene.gene_symbol }}%5BGene%20Name%5D" target="_blank"> Variants in {{ entity.gene.gene_symbol }}</a>
+            </dd>
+            <dt>Penetrance</dt>
+            <dd>{{ entity.penetrance }}</dd>
+            <dt>Variant types</dt>
+            <dd>{{ entity.type_of_variants|human_variant_types }}</dd>
+            {% if entity.publications %}
+            <dt>Publications</dt>
+            <dd>
+                <ul>
+                {% for publication in entity.publications %}
+                    <li>{{ publication|pubmed_link|join:'' }}</li>
+                {% endfor %}
+                </ul>
+
+                {% if request.user.is_authenticated and request.user.reviewer.is_GEL %}
+                    <a href="{% url 'panels:clear_entity_publications' panel.panel_id entity_type entity_name %}" class="link-muted" data-ajax="true" data-success="djangoAjaxHandler">
+                        Clear publications
+                    </a>
+                {% endif %}
+            </dd>
+            {% endif %}
+        </dl>
+    </div>
+  {% if request.user.is_authenticated and request.user.reviewer.is_GEL %}
+  <div class="panel-footer">
+    <a href="{% url 'panels:edit_entity' panel.panel_id entity_type entity_name %}" class="btn btn-info" data-module="showhide" data-show=".edit-region-form" data-hide=".panel.panel-details">
+      <i class="fa fa-edit"></i> Edit Region
+    </a>
+  </div>
+  {% endif %}
+</div>
+{% if request.user.is_authenticated and request.user.reviewer.is_GEL %}
+<form class="edit-region-form form row hidden" action="{% url 'panels:edit_entity' panel.panel_id entity_type entity_name %}#!details" method="post">
+  {% csrf_token %}
+  <div class="col-md-12">
+    <div class="well">
+      <fieldset>
+        <legend>Edit Region</legend>
+        {% for field in form_edit %}
+          <div class="form-group">
+            {% if field.errors %}
+              {% for error in field.errors %}
+                <span class="label label-danger">{{ error|escape }}</span>
+              {% endfor %}
+            {% endif %}
+
+            {% if field.name == "mode_of_pathogenicity" %}
+                {{ field.label_tag }} <a data-toggle="modal" data-target="#model_of_path" ><i class="fa fa-question-circle"></i></a>
+            {% elif field.name == "moi" %}
+                {{ field.label_tag }} <a data-toggle="modal" data-target="#moi" ><i class="fa fa-question-circle"></i></a>
+            {% else %}
+                {{ field.label_tag }}
+            {% endif %}
+
+            {% if field.help_text %}
+                <div class="text-muted">{{ field.help_text }}</div>
+            {% endif %}
+
+            {% bootstrap_field field show_label=False show_help=False %}
+          </div>
+        {% endfor %}
+        <a href="{{ entity.get_absolute_url }}" class="btn btn-default">Cancel</a>
+        <button type="submit" class="btn btn-primary">Save</button>
+      </fieldset>
+  </div>
+  </div>
+</form>
+{{ form_edit.media }}
+{% endif %}

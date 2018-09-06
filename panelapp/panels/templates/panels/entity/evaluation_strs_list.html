@@ -3,8 +3,8 @@
 <div class="panel-heading">STRs in panel</div>
 <div class="btn-group btn-group-justified" role="group" data-module="gene-nav">
     {% if prev_str %}
-        <a href="{{ prev_str.get_absolute_url }}"
-           class="gene-nav-prev btn btn-default" title="{{ prev_str.gene.gene_symbol }}">
+        <a href="{% url 'panels:evaluation' panel.panel_id 'str' next_str.name %}"
+           class="gene-nav-prev btn btn-default" title="{{ prev_str.name }}">
             <i class="fa fa-arrow-up add-right-margin"></i>Prev
         </a>
     {% else %}
@@ -13,8 +13,8 @@
         </span>
     {% endif %}
     {% if next_str %}
-        <a href="{{ next_str.get_absolute_url }}"
-           class="gene-nav-next btn btn-default" title="{{ next_str.gene.gene_symbol }}">
+        <a href="{% url 'panels:evaluation' panel.panel_id 'str' next_str.name %}"
+           class="gene-nav-next btn btn-default" title="{{ next_str.name }}">
             Next<i class="fa fa-arrow-down add-left-margin"></i>
         </a>
     {% else %}
@@ -29,7 +29,7 @@
         class="list-group-item {% if entity == entry %}list-group-item-active{% endif %}"
         {% if entity == entry %}id="gene-nav-active-item"{% endif %}
     >
-      <a href="{{ entry.get_absolute_url }}{% if entry.name in panel.current_genes_duplicates %}?pk={{ entry.pk }}{% endif %}">
+      <a href="{% url 'panels:evaluation' panel.panel_id 'str' entry.name %}{% if entry.name in panel.current_genes_duplicates %}?pk={{ entry.pk }}{% endif %}">
       {% if request.user.pk in entry.evaluators %}
           <i
               class="fa fa-check-circle {{ entry|gene_list_class }} add-right-margin gel-badge pull-left"

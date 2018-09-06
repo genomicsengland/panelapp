@@ -5,14 +5,58 @@ Author: Oleg Gerasimenko
 (c) 2018 Genomics England
 """
 
+from django.db.models import Manager
+from django.db.models import Count
+from django.db.models import Subquery
 from model_utils import Choices
 
 from .evaluation import Evaluation
 from .comment import Comment
 from .trackrecord import TrackRecord
 from .evidence import Evidence
+from .genepanel import GenePanel
 from panels.templatetags.panel_helpers import get_gene_list_data
 from panels.templatetags.panel_helpers import GeneDataType
+
+
+class EntityManager(Manager):
+    """Entity Objects manager."""
+
+    def get_latest_ids(self, deleted=False):
+        """Get latest GenePanelSnapshot ids"""
+
+        qs = super().get_queryset()
+        if not deleted:
+            qs = qs.exclude(panel__panel__status=GenePanel.STATUS.deleted)
+
+        return qs.distinct('panel__panel__pk') \
+            .values_list('panel__pk', flat=True) \
+            .order_by('panel__panel__pk', '-panel__major_version', '-panel__minor_version')
+
+    def get_active(self, deleted=False, gene_symbol=None, name=None, pks=None):
+        """Get active Entities"""
+
+        if pks:
+            qs = super().get_queryset().filter(panel__pk__in=pks)
+        else:
+            qs = super().get_queryset().filter(panel__pk__in=Subquery(self.get_latest_ids(deleted)))
+        if name:
+            qs = qs.filter(name=name)
+        if gene_symbol:
+            qs = qs.filter(gene__gene_symbol=gene_symbol)
+
+        return qs.annotate(
+            number_of_reviewers=Count('evaluation__user', distinct=True),
+            number_of_evaluated_entities=Count('evaluation'),
+            number_of_entities=Count('pk'),
+        ) \
+            .prefetch_related('evaluation', 'tags', 'evidence', 'panel', 'panel__level4title', 'panel__panel') \
+            .order_by('panel__pk', '-panel__major_version', '-panel__minor_version')
+
+    def get_gene_panels(self, gene_symbol, deleted=False, pks=None):
+        """Get panels for the specified Gene"""
+
+        return self.get_active(deleted=deleted, gene_symbol=gene_symbol, pks=pks)
 
 
 class AbstractEntity:
@@ -69,10 +113,15 @@ class AbstractEntity:
         return gel_status
 
     def is_str(self):
-        return self.entity_type == 'str'
+        # TODO (Oleg) enums... we need enums
+        return self._entity_type == 'str'
 
     def is_gene(self):
-        return self.entity_type == 'gene'
+        # TODO (Oleg) enum all the things
+        return self._entity_type == 'gene'
+
+    def is_region(self):
+        return self._entity_type == 'region'
 
     @property
     def status(self):
@@ -126,19 +175,27 @@ class AbstractEntity:
             )
             self.evaluation.add(evaluation)
         evaluation.comments.add(comment)
+        self.panel.add_activity(user, 'Added comment: {}'.format(comment.comment), self)
 
-    def delete_evaluation(self, evaluation_pk):
+    def delete_evaluation(self, evaluation_pk, user=None):
         self.evaluation.get(pk=evaluation_pk).delete()
+        if user:
+            self.panel.add_activity(user, 'Deleted their review', self)
 
-    def delete_comment(self, comment_pk):
+    def delete_comment(self, comment_pk, user=None):
         evaluation = self.evaluation.get(comments__pk=comment_pk)
         evaluation.comments.get(pk=comment_pk).delete()
+        if user:
+            self.panel.add_activity(user, 'Deleted their comment', self)
 
-    def edit_comment(self, comment_pk, new_comment):
+    def edit_comment(self, comment_pk, new_comment, user=None):
         evaluation = self.evaluation.get(comments__pk=comment_pk)
         comment = evaluation.comments.get(pk=comment_pk)
+        old_comment = comment.comment
         comment.comment = new_comment
         comment.save()
+        if user:
+            self.panel.add_activity(user, 'changed review comment from: {}; to: {}'.format(old_comment, new_comment), self)
 
     def aggregate_ratings(self):
         """Gets stats about the gene, i.e. % of green, red, amber evaluations"""
@@ -216,6 +273,7 @@ class AbstractEntity:
                 issue_description=description
             )
             self.track.add(track_sources)
+            self.panel.add_activity(user, description, self)
 
         return True
 
@@ -261,6 +319,7 @@ class AbstractEntity:
             issue_description=issue_description
         )
         self.track.add(track)
+        self.panel.add_activity(user, issue_description, self)
         self.saved_gel_status = status
         self.save()
         return True
@@ -279,12 +338,62 @@ class AbstractEntity:
                 "Comment when marking as ready: {}".format(ready_comment)
             )
 
-        gene = self.gene.get('gene_symbol')
-        args = [user, self.gene.get('gene_symbol'), "marked {} as ready".format(self.label)]
-        if gene != self.name:
-            args.append(self.name)
-        self.panel.add_activity(*args)
+        self.panel.add_activity(user, "Marked {} as ready".format(self.label), self)
         self.save()
+
+    def update_tags(self, user, tags):
+        current_tags = [tag.pk for tag in self.tags.all()]
+        if tags or current_tags:
+            tracks = []
+
+            if not tags:
+                tags = []
+
+            new_tags = [tag.pk for tag in tags]
+            add_tags = [
+                tag for tag in tags
+                if tag.pk not in current_tags
+            ]
+            delete_tags = [
+                tag for tag in current_tags
+                if tag not in new_tags
+            ]
+
+            for tag in delete_tags:
+                tag = self.tags.get(pk=tag)
+                self.tags.remove(tag)
+                description = "Tag {} was removed from {}.".format(
+                    tag,
+                    self.label,
+                )
+                tracks.append((
+                    TrackRecord.ISSUE_TYPES.RemovedTag,
+                    description
+                ))
+
+            for tag in add_tags:
+                self.tags.add(tag)
+
+                description = "Tag {} tag was added to {}.".format(
+                    tag,
+                    self.label,
+                )
+                tracks.append((
+                    TrackRecord.ISSUE_TYPES.AddedTag,
+                    description
+                ))
+
+            if tracks:
+                description = "\n".join([t[1] for t in tracks])
+                track = TrackRecord.objects.create(
+                    gel_status=self.status,
+                    curator_status=0,
+                    user=user,
+                    issue_type=",".join([t[0] for t in tracks]),
+                    issue_description=description
+                )
+                self.track.add(track)
+                self.panel.add_activity(user, description, self)
 
     def update_moi(self, moi, user, moi_comment=None):
         old_moi = self.moi
@@ -304,6 +413,7 @@ class AbstractEntity:
             issue_description=description
         )
         self.track.add(track)
+        self.panel.add_activity(user, description, self)
 
         if moi_comment:
             self.add_review_comment(
@@ -312,10 +422,9 @@ class AbstractEntity:
             )
 
     def update_pathogenicity(self, mop, user, mop_comment=None):
+        description = "Mode of pathogenicity for {} was changed from {} to {}".format(self.label, self.mode_of_pathogenicity, mop)
         self.mode_of_pathogenicity = mop
         self.save()
-
-        description = "Mode of pathogenicity for {} was changed to {}".format(self.label, mop)
         track = TrackRecord.objects.create(
             gel_status=self.status,
             curator_status=0,
@@ -324,6 +433,7 @@ class AbstractEntity:
             issue_description=description
         )
         self.track.add(track)
+        self.panel.add_activity(user, description, self)
 
         if mop_comment:
             self.add_review_comment(
@@ -332,10 +442,13 @@ class AbstractEntity:
             )
 
     def update_phenotypes(self, phenotypes, user, phenotypes_comment=None):
+        description = "Phenotypes for {} were changed from {} to {}".format(
+            self.label,
+            "; ".join(self.phenotypes),
+            "; ".join(phenotypes)
+        )
         self.phenotypes = phenotypes
         self.save()
-
-        description = "Phenotypes for {} were set to {}".format(self.label, "; ".join(phenotypes))
         track = TrackRecord.objects.create(
             gel_status=self.status,
             curator_status=0,
@@ -344,6 +457,7 @@ class AbstractEntity:
             issue_description=description
         )
         self.track.add(track)
+        self.panel.add_activity(user, description, self)
 
         if phenotypes_comment:
             self.add_review_comment(
@@ -352,10 +466,13 @@ class AbstractEntity:
             )
 
     def update_publications(self, publications, user, publications_comment=None):
+        description = "Publications for {} were set to {}".format(
+            self.label,
+            "; ".join(self.publications),
+            "; ".join(publications)
+        )
         self.publications = publications
         self.save()
-
-        description = "Publications for {} were set to {}".format(self.label, "; ".join(publications))
         track = TrackRecord.objects.create(
             gel_status=self.status,
             curator_status=0,
@@ -364,6 +481,7 @@ class AbstractEntity:
             issue_description=description
         )
         self.track.add(track)
+        self.panel.add_activity(user, description, self)
 
         if publications_comment:
             self.add_review_comment(
@@ -384,13 +502,7 @@ class AbstractEntity:
 
         human_status = get_gene_list_data(self, GeneDataType.LONG.value)
 
-        gene = self.gene.get('gene_symbol')
-        args = [user, gene, "classified {} as {}".format(gene, human_status)]
-        if gene != self.name:
-            # in case the name isn't gene symbol consider it to be STR
-            # we'd need to refactor it once we have other entities
-            args.append(self.name)
-        self.panel.add_activity(*args)
+        self.panel.add_activity(user, "Classified {} as {}".format(self.label, human_status), self)
 
     def update_evaluation(self, user, evaluation_data):
         """
@@ -415,6 +527,8 @@ class AbstractEntity:
             Evaluation: new or updated evaluation
         """
 
+        activities = []
+
         try:
             evaluation = self.evaluation.get(user=user)
 
@@ -426,58 +540,61 @@ class AbstractEntity:
                     comment=evaluation_data.get('comment')
                 )
                 evaluation.comments.add(comment)
+                activities.append("Added comment: {}".format(evaluation_data.get('comment')))
 
             rating = evaluation_data.get('rating')
             if rating and evaluation.rating != rating:
                 changed = True
                 evaluation.rating = rating
+                activities.append("Changed rating: {}".format(rating))
 
             mop = evaluation_data.get('mode_of_pathogenicity')
             if mop and evaluation.mode_of_pathogenicity != mop:
                 changed = True
                 evaluation.mode_of_pathogenicity = mop
+                activities.append("Changed mode of pathogenicity: {}".format(mop))
 
             publications = evaluation_data.get('publications')
             if publications and evaluation.publications != publications:
                 changed = True
                 evaluation.publications = publications
+                activities.append("Changed publications: {}".format(', '.join(publications)))
 
             phenotypes = evaluation_data.get('phenotypes')
             if phenotypes and evaluation.phenotypes != phenotypes:
                 changed = True
                 evaluation.phenotypes = phenotypes
+                activities.append("Changed phenotypes: {}".format(', '.join(phenotypes)))
 
             moi = evaluation_data.get('moi')
             if moi and evaluation.moi != moi:
                 changed = True
                 evaluation.moi = moi
+                activities.append("Changed mode of inheritance: {}".format(moi))
 
             current_diagnostic = evaluation_data.get('current_diagnostic')
             if current_diagnostic and evaluation.current_diagnostic != current_diagnostic:
                 changed = True
                 evaluation.current_diagnostic = current_diagnostic
+                activities.append("Set current diagnostic: {}".format('yes' if current_diagnostic else 'no'))
 
             clinically_relevant = evaluation_data.get('clinically_relevant')
             if self.is_str() and evaluation.clinically_relevant != clinically_relevant:
                 changed = True
                 evaluation.clinically_relevant = clinically_relevant
+                activities.append("Set clinically relevant: {}".format('yes' if clinically_relevant else 'no'))
 
             evaluation.version = self.panel.version
 
-            is_str = self.gene.get('gene_symbol') != self.name if self.gene else True  # STRs might not have genes
             activity_text = None
 
-            args = [user, self.gene.get('gene_symbol') if self.gene else None]
             if changed:
-                activity_text = "edited their review of {}".format(self.label)
+                activity_text = "edited their review of {}: {}".format(self.label, "; ".join(activities))
             elif evaluation_data.get('comment'):
-                activity_text = "commented on {}".format(self.label)
+                activity_text = "commented on {}: {}".format(self.label, evaluation_data.get('comment'))
 
             if activity_text:
-                args.append(activity_text)
-                if is_str:
-                    args.append(self.name)
-                self.panel.add_activity(*args)
+                self.panel.add_activity(user, activity_text, self)
 
             evaluation.save()
             return evaluation
@@ -503,13 +620,33 @@ class AbstractEntity:
                 )
                 evaluation.comments.add(comment)
 
-            str_label = self.name if self.gene and self.gene.get('gene_symbol') != self.name else None
-
             if evaluation.is_comment_without_review():
                 activity_text = "commented on {}".format(self.label)
             else:
-                activity_text = "reviewed {}".format(self.label)
+                activities = [
+                    "Rating: {}".format(evaluation_data.get('rating')),
+                    "Mode of pathogenicity: {}".format(evaluation_data.get('mode_of_pathogenicity')),
+                    "Publications: {}".format(', '.join(evaluation_data.get('publications'))),
+                    "Phenotypes: {}".format(', '.join(evaluation_data.get('phenotypes'))),
+                    "Mode of inheritance: {}".format(evaluation_data.get('moi')),
+                ]
+                if evaluation_data.get('current_diagnostic'):
+                    activities.append("Current diagnostic: {}".format('yes' if evaluation_data.get('current_diagnostic') else 'no'))
+                if evaluation_data.get('clinically_relevant'):
+                    activities.append("Clinically relevant: {}".format('yes' if evaluation_data.get('clinically_relevant') else 'no'))
+                activity_text = "reviewed {}: {}".format(self.label, '; '.join(activities))
 
-            self.panel.add_activity(user, self.gene.get('gene_symbol'), activity_text, str_label)
-
+            self.panel.add_activity(user, activity_text, self)
             return evaluation
+
+    @property
+    def gene_list_class(self):
+        return get_gene_list_data(None, GeneDataType.CLASS.value, self.saved_gel_status)
+
+    @property
+    def gene_list_name(self):
+        return get_gene_list_data(None, GeneDataType.LONG.value, self.saved_gel_status)
+
+    @property
+    def gene_list_short_name(self):
+        return get_gene_list_data(None, GeneDataType.SHORT.value, self.saved_gel_status)

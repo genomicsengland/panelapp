@@ -21,4 +21,4 @@ def send_mass_email(messages):
 @app.task
 def ping():
     logging.info('Pong')
-    return
+    return 'pong'

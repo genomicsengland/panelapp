@@ -28,3 +28,4 @@ from .entities import EntitiesListView
 from .entities import GeneDetailRedirectView
 from .entities import RedirectGenesToEntities
 from .strs import DownloadAllSTRs
+from .regions import DownloadAllRegions
