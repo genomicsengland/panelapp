@@ -83,7 +83,7 @@ class PanelSerializer(EnsembleIdMixin, serializers.BaseSerializer):
             result["result"]["STRs"].append({
                 "Name": str_item.name,
                 "Chromosome": str_item.chromosome,
-                "GRCh37Coordinates": [str_item.position_37.lower, str_item.position_37.upper],
+                "GRCh37Coordinates": [str_item.position_37.lower, str_item.position_37.upper] if str_item.position_37 else None,
                 "GRCh38Coordinates": [str_item.position_38.lower, str_item.position_38.upper],
                 "RepeatedSequence": str_item.repeated_sequence,
                 "NormalRepeats": str_item.normal_repeats,
@@ -103,7 +103,7 @@ class PanelSerializer(EnsembleIdMixin, serializers.BaseSerializer):
                 "Name": region.name,
                 "VerboseName": region.verbose_name,
                 "Chromosome": region.chromosome,
-                "GRCh37Coordinates": [region.position_37.lower, region.position_37.upper],
+                "GRCh37Coordinates": [region.position_37.lower, region.position_37.upper] if region.position_37 else None,
                 "GRCh38Coordinates": [region.position_38.lower, region.position_38.upper],
                 "HaploinsufficiencyScore": region.haploinsufficiency_score,
                 "TriplosensitivityScore": region.triplosensitivity_score,
@@ -259,7 +259,7 @@ class EntitySerializer(EnsembleIdMixin, serializers.BaseSerializer):
         elif entity.entity_type == 'str':
             out["Name"] = entity.name
             out["Chromosome"] = entity.chromosome
-            out["GRCh37Coordinates"] = [entity.position_37.lower, entity.position_37.upper]
+            out["GRCh37Coordinates"] = [entity.position_37.lower, entity.position_37.upper] if entity.position_37 else None
             out["GRCh38Coordinates"] = [entity.position_38.lower, entity.position_38.upper]
             out["RepeatedSequence"] = entity.repeated_sequence
             out["NormalRepeats"] = entity.normal_repeats
@@ -268,7 +268,7 @@ class EntitySerializer(EnsembleIdMixin, serializers.BaseSerializer):
             out["Name"] = entity.name
             out["VerboseName"] = entity.verbose_name
             out["Chromosome"] = entity.chromosome
-            out["GRCh37Coordinates"] = [entity.position_37.lower, entity.position_37.upper]
+            out["GRCh37Coordinates"] = [entity.position_37.lower, entity.position_37.upper] if entity.position_37 else None
             out["GRCh38Coordinates"] = [entity.position_38.lower, entity.position_38.upper]
             out["HaploinsufficiencyScore"] = entity.haploinsufficiency_score
             out["TriplosensitivityScore"] = entity.triplosensitivity_score

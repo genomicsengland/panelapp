@@ -23,6 +23,7 @@ class TestWebservices(TransactionTestCase):
         self.genes = GenePanelEntrySnapshotFactory.create_batch(4, panel=self.gps)
         self.str = STRFactory(panel__panel__status=GenePanel.STATUS.public)
         self.region = RegionFactory(panel__panel__status=GenePanel.STATUS.public)
+        self.region2 = RegionFactory(panel__panel__status=GenePanel.STATUS.public, position_37=None)
 
     def test_list_panels(self):
         r = self.client.get(reverse_lazy('webservices:list_panels'))
@@ -31,7 +32,7 @@ class TestWebservices(TransactionTestCase):
     def test_list_panels_name(self):
         url = reverse_lazy('webservices:list_panels')
         r = self.client.get("{}?Types=all".format(url))
-        self.assertEqual(len(r.json()['result']), 4)
+        self.assertEqual(len(r.json()['result']), 5)
         self.assertEqual(r.status_code, 200)
 
     def test_list_100k_rd_type(self):
@@ -58,13 +59,13 @@ class TestWebservices(TransactionTestCase):
         self.gps.panel.save()
 
         r = self.client.get("{}?Types=all".format(url))
-        self.assertEqual(len(r.json()['result']), 3)
+        self.assertEqual(len(r.json()['result']), 4)
         self.assertEqual(r.status_code, 200)
 
         # Test deleted panels
         url = reverse_lazy('webservices:list_panels')
         r = self.client.get("{}?Retired=True&Types=all".format(url))
-        self.assertEqual(len(r.json()['result']), 4)  # one for gpes via factory, 2nd - retired
+        self.assertEqual(len(r.json()['result']), 5)  # one for gpes via factory, 2nd - retired
         self.assertEqual(r.status_code, 200)
 
         # Test for unapproved panels
@@ -73,7 +74,7 @@ class TestWebservices(TransactionTestCase):
 
         url = reverse_lazy('webservices:list_panels')
         r = self.client.get("{}?Retired=True&Types=all".format(url))
-        self.assertEqual(len(r.json()['result']), 3)  # only retired panel will be visible
+        self.assertEqual(len(r.json()['result']), 4)  # only retired panel will be visible
         self.assertEqual(r.status_code, 200)
 
     def test_internal_panel(self):
@@ -220,6 +221,16 @@ class TestWebservices(TransactionTestCase):
         self.assertEqual(r.json()['result']['Regions'][0]['TriplosensitivityScore'], self.region.triplosensitivity_score)
         self.assertEqual(r.json()['result']['Regions'][0]['TypeOfVariants'], self.region.type_of_variants)
 
+    def test_region_in_panel_empty_pos37(self):
+        r = self.client.get(reverse_lazy('webservices:get_panel', args=(self.region2.panel.panel.pk,)))
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.json()['result']['Regions'][0]['Name'], self.region2.name)
+        self.assertEqual(r.json()['result']['Regions'][0]['GRCh37Coordinates'], None)
+        self.assertEqual(r.json()['result']['Regions'][0]['GRCh38Coordinates'],
+                         [self.region2.position_38.lower, self.region2.position_38.upper])
+        self.assertEqual(r.json()['result']['Regions'][0]['TriplosensitivityScore'], self.region2.triplosensitivity_score)
+        self.assertEqual(r.json()['result']['Regions'][0]['TypeOfVariants'], self.region2.type_of_variants)
+
     def test_region_filters(self):
         url = reverse_lazy('webservices:get_panel', args=(self.region.panel.panel.pk,))
         r = self.client.get("{}?HaploinsufficiencyScore={}".format(url, self.region.haploinsufficiency_score)).json()
@@ -233,6 +244,6 @@ class TestWebservices(TransactionTestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         res = r.json()
-        self.assertEqual(len(res['results']), 7)
+        self.assertEqual(len(res['results']), 8)
         self.assertEqual(len([r for r in res['results'] if r['EntityType'] == 'str']), 1)
-        self.assertEqual(len([r for r in res['results'] if r['EntityType'] == 'region']), 1)
+        self.assertEqual(len([r for r in res['results'] if r['EntityType'] == 'region']), 2)
