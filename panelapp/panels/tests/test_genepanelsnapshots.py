@@ -42,7 +42,28 @@ class GenePanelSnapshotReviewerTest(LoginReviewerUser):
         self.client.post(url, gene_data)
         panel = gps.panel.active_panel
 
-        assert panel.get_gene(gene.gene_symbol).saved_gel_status == 0
+        self.assertEqual(panel.get_gene(gene.gene_symbol).saved_gel_status, 0)
+
+    def test_reviewer_source_visible(self):
+        """When a reviewer adds a gene source should be displayed"""
+
+        gene = GeneFactory()
+        gps = GenePanelSnapshotFactory()
+        url = reverse_lazy('panels:add_entity', kwargs={'pk': gps.panel.pk, 'entity_type': 'gene'})
+        gene_data = {
+            "gene": gene.pk,
+            "source": Evidence.OTHER_SOURCES[2],
+            "phenotypes": "{};{};{}".format(*fake.sentences(nb=3)),
+            "rating": Evaluation.RATINGS.AMBER,
+            "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)][0],
+            "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][randint(1, 2)][0],
+            "penetrance": GenePanelEntrySnapshot.PENETRANCE.Incomplete,
+        }
+        self.client.post(url, gene_data)
+
+        url = reverse_lazy('panels:detail', kwargs={'pk': gps.panel.pk})
+        res = self.client.get(url)
+        self.assertContains(res, gene_data['source'])
 
     def test_add_gene_to_panel(self):
         """When a reviewer adds a gene it shouldn't increment the version of a panel"""

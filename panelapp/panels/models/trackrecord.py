@@ -24,7 +24,7 @@ class TrackRecord(TimeStampedModel):
         ("SetPublications", "Set publications"),
         ("ApprovedGene", "Approved Gene"),
         ("ApprovedEntity", "Approved Entity"),
-        ("GelStatusUpdate", "Gel Status Update"),
+        ("GelStatusUpdate", "Status Update"),
         ("UploadGeneInformation", "Upload gene information"),
         ("RemovedTag", "Removed Tag"),
         ("AddedTag", "Added Tag"),

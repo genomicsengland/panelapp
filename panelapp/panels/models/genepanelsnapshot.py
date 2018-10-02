@@ -1393,7 +1393,7 @@ class GenePanelSnapshot(TimeStampedModel):
                         ))
 
                 for source in add_evidences:
-                    logging.debug("Adding new evidence:{} for gene:{} panel:{}".format(
+                    logging.debug("Adding new source:{} for gene:{} panel:{}".format(
                         source, gene_symbol, self
                     ))
                     evidence = Evidence.objects.create(
@@ -1558,7 +1558,34 @@ class GenePanelSnapshot(TimeStampedModel):
 
             if tracks:
                 logging.debug("Adding tracks for gene:{} in panel:{}".format(gene_symbol, self))
+                current_status = gene.saved_gel_status
                 status = gene.evidence_status(True)
+
+                if current_status != status:
+                    if current_status > 3:
+                        current_status = 3
+                    elif current_status < 0:
+                        current_status = 0
+
+                    current_status_human = gene.GEL_STATUS[current_status]
+
+                    if status > 3:
+                        status = 3
+                    elif status < 0:
+                        status = 0
+
+                    status_human = gene.GEL_STATUS[status]
+
+                    description = 'Rating Changed from {current_status_human} to {status_human}'.format(
+                        current_status_human=current_status_human,
+                        status_human=status_human
+                    )
+
+                    tracks.append((
+                        TrackRecord.ISSUE_TYPES.GelStatusUpdate,
+                        description
+                    ))
+
                 description = "\n".join([t[1] for t in tracks])
                 track = TrackRecord.objects.create(
                     gel_status=status,
@@ -2270,7 +2297,34 @@ class GenePanelSnapshot(TimeStampedModel):
 
             if tracks:
                 logging.debug("Adding tracks for {} in panel:{}".format(str_item.label, self))
+                current_status = str_item.saved_gel_status
                 status = str_item.evidence_status(True)
+
+                if current_status != status:
+                    if current_status > 3:
+                        current_status = 3
+                    elif current_status < 0:
+                        current_status = 0
+
+                    current_status_human = str_item.GEL_STATUS[current_status]
+
+                    if status > 3:
+                        status = 3
+                    elif status < 0:
+                        status = 0
+
+                    status_human = str_item.GEL_STATUS[status]
+
+                    description = 'Rating Changed from {current_status_human} to {status_human}'.format(
+                        current_status_human=current_status_human,
+                        status_human=status_human
+                    )
+
+                    tracks.append((
+                        TrackRecord.ISSUE_TYPES.GelStatusUpdate,
+                        description
+                    ))
+
                 description = "\n".join([t[1] for t in tracks])
                 track = TrackRecord.objects.create(
                     gel_status=status,
@@ -2883,7 +2937,33 @@ class GenePanelSnapshot(TimeStampedModel):
 
             if tracks:
                 logging.debug("Adding tracks for {} in panel:{}".format(region.label, self))
+                current_status = region.saved_gel_status
                 status = region.evidence_status(True)
+
+                if current_status != status:
+                    if current_status > 3:
+                        current_status = 3
+                    elif current_status < 0:
+                        current_status = 0
+
+                    current_status_human = region.GEL_STATUS[current_status]
+
+                    if status > 3:
+                        status = 3
+                    elif status < 0:
+                        status = 0
+
+                    status_human = region.GEL_STATUS[status]
+
+                    description = 'Rating Changed from {current_status_human} to {status_human}'.format(
+                        current_status_human=current_status_human,
+                        status_human=status_human
+                    )
+
+                    tracks.append((
+                        TrackRecord.ISSUE_TYPES.GelStatusUpdate,
+                        description
+                    ))
                 description = "\n".join([t[1] for t in tracks])
                 track = TrackRecord.objects.create(
                     gel_status=status,

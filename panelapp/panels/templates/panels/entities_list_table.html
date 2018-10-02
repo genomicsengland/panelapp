@@ -152,7 +152,6 @@
       <h6 class="add-label-margin remove-top-margin">Sources</h6>
       <ul>
         {% for ev in entry.evidence.all %}
-          {% if ev.is_GEL %}
             <li>
                 {{ ev.name }}
 
@@ -160,7 +159,6 @@
                 <a type="url" href="{% url 'panels:clear_entity_source' panel.panel_id entry.entity_type entry.name ev.name %}" class="hidden delete_source_{{ entry.name }}" data-ajax="true"> <i class="fa fa-times-circle-o"></i></a>
                 {% endif %}
             </li>
-          {% endif %}
         {% endfor %}
       </ul>
     {% endif %}
