@@ -351,6 +351,29 @@ class GenePanelTest(LoginGELUser):
         ap = GenePanel.objects.get(name="Panel One").active_panel
         assert ap.get_gene(gene.gene_symbol).evidence.first().name == "Expert Review Green"
 
+    def test_import_incorrect_position(self):
+        GeneFactory(gene_symbol="STR_1")
+
+        file_path = os.path.join(os.path.dirname(__file__), 'import_panel_data_error.tsv')
+        test_panel_file = os.path.abspath(file_path)
+
+        with open(test_panel_file) as f:
+            url = reverse_lazy('panels:upload_panels')
+            res = self.client.post(url, {'panel_list': f})
+            messages = [str(m) for m in res.wsgi_request._messages]
+            expected_messages = ['Line: 3, 4 is not properly formatted, please check it and try again.']
+            self.assertEqual(expected_messages, messages)
+
+        self.assertEqual(GenePanel.objects.count(), 2)
+
+        gp = GenePanel.objects.get(name="TestPanel")
+        active_panel = gp.active_panel
+        self.assertEqual(active_panel.get_all_strs.count(), 0)
+
+        gp = GenePanel.objects.get(name="Panel One")
+        active_panel = gp.active_panel
+        self.assertEqual(active_panel.get_all_regions.count(), 0)
+
     def test_import_wrong_panel(self):
         file_path = os.path.join(os.path.dirname(__file__), 'import_panel_data.tsv')
         test_panel_file = os.path.abspath(file_path)
