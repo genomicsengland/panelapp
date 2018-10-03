@@ -35,7 +35,7 @@ def command(csv_file):
             click.secho('Created new versions for {} panels'.format(len(panels)), fg='green')
 
             for line in lines:
-                should_change = line[0]
+                should_change = line[8].lower() == 'true'
                 if should_change:
                     panel = panels[line[1]]
                     entity_type = line[4].strip().lower()
@@ -63,6 +63,10 @@ def command(csv_file):
                                         keep_evidence = evidence          # Remove duplicate
                                 else:
                                     remove_sources.append(evidence)       # Remove export review
+
+                        if not remove_sources:
+                            click.secho('Skipping {}: nothing to remove'.format(panel), fg='red')
+                            continue
 
                         for evidence in remove_sources:
                             entity.evidence.remove(evidence)
