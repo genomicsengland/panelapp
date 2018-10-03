@@ -1374,12 +1374,14 @@ class GenePanelSnapshot(TimeStampedModel):
                     # just remove expert review
                     expert_reviews = [source for source in evidences_names if source in Evidence.EXPERT_REVIEWS]
                     for expert_review in expert_reviews:
-                        ev = gene.evidence.filter(name=expert_review).first()
-                        gene.evidence.remove(ev)
+                        evs = gene.evidence.filter(name=expert_review)
+                        for ev in evs:
+                            gene.evidence.remove(ev)
                 elif not append_only:
                     for source in delete_evidences:
-                        ev = gene.evidence.filter(name=source).first()
-                        gene.evidence.remove(ev)
+                        evs = gene.evidence.filter(name=source)
+                        for ev in evs:
+                            gene.evidence.remove(ev)
                         logging.debug("Removing evidence:{} for gene:{} panel:{}".format(
                             source, gene_symbol, self
                         ))
@@ -2095,23 +2097,38 @@ class GenePanelSnapshot(TimeStampedModel):
                     source.strip() for source in str_data.get('sources')
                     if source not in evidences_names
                 ]
+
+                has_expert_review = any([evidence in Evidence.EXPERT_REVIEWS for evidence in add_evidences])
+
                 delete_evidences = [
                     source for source in evidences_names
-                    if source not in Evidence.EXPERT_REVIEWS and not source in str_data.get('sources')
+                    if (has_expert_review or source not in Evidence.EXPERT_REVIEWS)
+                       and source not in str_data.get('sources')
                 ]
 
-                if not append_only:
+                if append_only and has_expert_review:
+                    # just remove expert review
+                    expert_reviews = [source for source in evidences_names if source in Evidence.EXPERT_REVIEWS]
+                    for expert_review in expert_reviews:
+                        evs = str_item.evidence.filter(name=expert_review)
+                        for ev in evs:
+                            str_item.evidence.remove(ev)
+                elif not append_only:
                     for source in delete_evidences:
-                        ev = str_item.evidence.filter(name=source).first()
+                        evs = str_item.evidence.filter(name=source)
+                        for ev in evs:
+                            str_item.evidence.remove(ev)
+                        logging.debug("Removing evidence:{} for {} panel:{}".format(
+                            source, str_item.label, self
+                        ))
                         description = "Source {} was removed from {}.".format(
                             source,
-                            str_item.label,
+                            str_item.label
                         )
                         tracks.append((
                             TrackRecord.ISSUE_TYPES.RemovedSource,
                             description
                         ))
-                        str_item.evidence.remove(ev)
 
                 for source in add_evidences:
                     logging.debug("Adding new evidence:{} for {} panel:{}".format(
@@ -2731,25 +2748,38 @@ class GenePanelSnapshot(TimeStampedModel):
                     source.strip() for source in region_data.get('sources')
                     if source not in evidences_names
                 ]
+
+                has_expert_review = any([evidence in Evidence.EXPERT_REVIEWS for evidence in add_evidences])
+
                 delete_evidences = [
                     source for source in evidences_names
-                    if source not in Evidence.EXPERT_REVIEWS and source not in region_data.get('sources')
+                    if (has_expert_review or source not in Evidence.EXPERT_REVIEWS)
+                       and source not in region_data.get('sources')
                 ]
 
-                if not append_only:
+                if append_only and has_expert_review:
+                    # just remove expert review
+                    expert_reviews = [source for source in evidences_names if source in Evidence.EXPERT_REVIEWS]
+                    for expert_review in expert_reviews:
+                        evs = region.evidence.filter(name=expert_review)
+                        for ev in evs:
+                            region.evidence.remove(ev)
+                elif not append_only:
                     for source in delete_evidences:
-                        ev = region.evidence.filter(name=source).first()
-                        region.evidence.remove(ev)
-
+                        evs = region.evidence.filter(name=source)
+                        for ev in evs:
+                            region.evidence.remove(ev)
+                        logging.debug("Removing evidence:{} for {} panel:{}".format(
+                            source, region.label, self
+                        ))
                         description = "Source {} was removed from {}.".format(
                             source,
-                            region.label,
+                            region.label
                         )
                         tracks.append((
                             TrackRecord.ISSUE_TYPES.RemovedSource,
                             description
                         ))
-                        region.evidence.remove(ev)
 
                 for source in add_evidences:
                     logging.debug("Adding new evidence:{} for {} panel:{}".format(
