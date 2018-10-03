@@ -340,6 +340,7 @@ class GenePanelTest(LoginGELUser):
         gps.panel.save()
         evidence = EvidenceFactory.create(name="Expert Review Amber")
         GenePanelEntrySnapshotFactory.create(gene_core=gene, panel=gps, evaluation=(None,), evidence=(evidence,))
+        self.assertEqual(gps.get_gene(gene.gene_symbol).evidence.first().name, "Expert Review Amber")
 
         file_path = os.path.join(os.path.dirname(__file__), 'import_panel_data.tsv')
         test_panel_file = os.path.abspath(file_path)
@@ -349,7 +350,8 @@ class GenePanelTest(LoginGELUser):
             self.client.post(url, {'panel_list': f})
 
         ap = GenePanel.objects.get(name="Panel One").active_panel
-        assert ap.get_gene(gene.gene_symbol).evidence.first().name == "Expert Review Green"
+        self.assertEqual(ap.get_gene(gene.gene_symbol).evidence.first().name, "Expert Review Green")
+        self.assertEqual(ap.get_gene(gene.gene_symbol).evidence.count(), 1)
 
     def test_import_incorrect_position(self):
         GeneFactory(gene_symbol="STR_1")
