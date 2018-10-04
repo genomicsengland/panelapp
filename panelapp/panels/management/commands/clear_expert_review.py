@@ -23,12 +23,13 @@ def command(csv_file):
 
         lines = [line for line in reader if len(line) > 9]
 
-        unique_panels = list({line[1] for line in lines})  # list of panel IDs
+        unique_panels = list({line[1] for line in lines})  # list of unique panel IDs
 
         with transaction.atomic():
             # go through each panel and create a new version
             panels = {}
-            for p in GenePanelSnapshot.objects.get_active_annotated(True, True, True).filter(panel__id__in=unique_panels):
+            qs = GenePanelSnapshot.objects.get_active_annotated(True, True, True).filter(panel__id__in=unique_panels)
+            for p in qs.iterator():
                 click.secho('Creating a new version for {}'.format(p), fg='green')
                 panels[str(p.panel.id)] = p.increment_version()
 
