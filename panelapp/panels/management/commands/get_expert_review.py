@@ -28,7 +28,7 @@ def command():
     writer = csv.writer(sys.stdout)
     writer.writerow(header)
 
-    for gps in GenePanelSnapshot.objects.get_active_annotated(True, True, True):
+    for gps in GenePanelSnapshot.objects.get_active_annotated(True, True, True).exclude(is_super_panel=True).iterator():
         panel_info = [
             gps.panel.name,
             gps.panel.id,
