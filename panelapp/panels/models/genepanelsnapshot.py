@@ -529,7 +529,7 @@ class GenePanelSnapshot(TimeStampedModel):
             if not ignore_entity or (ignore_entity and ignore_entity != e.entity_name)
         }
 
-        for entity in current_entities:
+        for entity in current_entities.prefetch_related('gene_core', 'track'):
             if ignore_entity and ignore_entity == entity.entity_name:
                 continue
 
@@ -572,7 +572,7 @@ class GenePanelSnapshot(TimeStampedModel):
                 comment.pk = None
             entities[entity.entity_name]['comments'] = comments
 
-            new_entity = entity
+            new_entity = deepcopy(entity)
             new_entity.gene_core = entity.gene_core
             if major:
                 new_entity.ready = False
