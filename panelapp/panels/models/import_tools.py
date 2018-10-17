@@ -365,7 +365,14 @@ class UploadedPanelList(TimeStampedModel):
             else:
                 entity_data['position_37'] = None
 
-            if entity_data['position_38_start'] >= entity_data['position_38_end']:
+            if not entity_data['position_38_start'] or not entity_data['position_38_end']:
+                logger.error('TSV Import. Line: {} Incorrect Post 38: {}'.format(
+                    str(key + 2),
+                    len(entity_data.keys())))
+
+                if not suppress_errors:
+                    raise TSVIncorrectFormat(str(key + 2))
+            elif entity_data['position_38_start'] >= entity_data['position_38_end']:
                 logger.error('TSV Import. Line: {} Incorrect Post 38: {}'.format(
                     str(key + 2),
                     len(entity_data.keys())))
