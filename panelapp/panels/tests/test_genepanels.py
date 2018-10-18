@@ -366,15 +366,7 @@ class GenePanelTest(LoginGELUser):
             expected_messages = ['Line: 3, 4, 5 is not properly formatted, please check it and try again.']
             self.assertEqual(expected_messages, messages)
 
-        self.assertEqual(GenePanel.objects.count(), 2)
-
-        gp = GenePanel.objects.get(name="TestPanel")
-        active_panel = gp.active_panel
-        self.assertEqual(active_panel.get_all_strs.count(), 0)
-
-        gp = GenePanel.objects.get(name="Panel One")
-        active_panel = gp.active_panel
-        self.assertEqual(active_panel.get_all_regions.count(), 0)
+        self.assertEqual(GenePanel.objects.count(), 0)
 
     def test_import_wrong_panel(self):
         file_path = os.path.join(os.path.dirname(__file__), 'import_panel_data.tsv')
