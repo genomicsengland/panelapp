@@ -477,11 +477,11 @@ class UploadedPanelList(TimeStampedModel):
                     except TSVIncorrectFormat as line_error:
                         errors['invalid_lines'].append(str(line_error))
 
-            if errors['invalid_genes']:
-                raise GenesDoNotExist(', '.join(errors['invalid_genes']))
+                if errors['invalid_genes']:
+                    raise GenesDoNotExist(', '.join(errors['invalid_genes']))
 
-            if errors['invalid_lines']:
-                raise TSVIncorrectFormat(', '.join(errors['invalid_lines']))
+                if errors['invalid_lines']:
+                    raise TSVIncorrectFormat(', '.join(errors['invalid_lines']))
 
             self.imported = True
             self.save()
