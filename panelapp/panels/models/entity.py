@@ -29,17 +29,17 @@ class EntityManager(Manager):
         if not deleted:
             qs = qs.exclude(panel__panel__status=GenePanel.STATUS.deleted)
 
-        return qs.distinct('panel__panel__pk') \
-            .values_list('panel__pk', flat=True) \
-            .order_by('panel__panel__pk', '-panel__major_version', '-panel__minor_version')
+        return qs.distinct('panel__panel_id') \
+            .values_list('panel_id', flat=True) \
+            .order_by('panel__panel_id', '-panel__major_version', '-panel__minor_version')
 
     def get_active(self, deleted=False, gene_symbol=None, name=None, pks=None):
         """Get active Entities"""
 
         if pks:
-            qs = super().get_queryset().filter(panel__pk__in=pks)
+            qs = super().get_queryset().filter(panel_id__in=pks)
         else:
-            qs = super().get_queryset().filter(panel__pk__in=Subquery(self.get_latest_ids(deleted)))
+            qs = super().get_queryset().filter(panel_id__in=Subquery(self.get_latest_ids(deleted)))
         if name:
             qs = qs.filter(name=name)
         if gene_symbol:
@@ -51,7 +51,7 @@ class EntityManager(Manager):
             number_of_entities=Count('pk'),
         ) \
             .prefetch_related('evaluation', 'tags', 'evidence', 'panel', 'panel__level4title', 'panel__panel') \
-            .order_by('panel__pk', '-panel__major_version', '-panel__minor_version')
+            .order_by('panel_id', '-panel__major_version', '-panel__minor_version')
 
     def get_gene_panels(self, gene_symbol, deleted=False, pks=None):
         """Get panels for the specified Gene"""
@@ -183,13 +183,13 @@ class AbstractEntity:
             self.panel.add_activity(user, 'Deleted their review', self)
 
     def delete_comment(self, comment_pk, user=None):
-        evaluation = self.evaluation.get(comments__pk=comment_pk)
+        evaluation = self.evaluation.get(comments=comment_pk)
         evaluation.comments.get(pk=comment_pk).delete()
         if user:
             self.panel.add_activity(user, 'Deleted their comment', self)
 
     def edit_comment(self, comment_pk, new_comment, user=None):
-        evaluation = self.evaluation.get(comments__pk=comment_pk)
+        evaluation = self.evaluation.get(comments=comment_pk)
         comment = evaluation.comments.get(pk=comment_pk)
         old_comment = comment.comment
         comment.comment = new_comment
@@ -230,7 +230,7 @@ class AbstractEntity:
             QuerySet: List of evaluation comments
         """
 
-        return Comment.objects.filter(evaluation__pk__in=self.evaluation.values_list('pk', flat=True)).prefetch_related(
+        return Comment.objects.filter(evaluation__in=self.evaluation.values_list('pk', flat=True)).prefetch_related(
             'user',
             'user__reviewer'
         )

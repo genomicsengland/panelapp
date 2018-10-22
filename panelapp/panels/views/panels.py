@@ -322,6 +322,7 @@ class DownloadAllPanels(GELReviewerRequiredMixin, View):
             .get_active_annotated(all=True, internal=True)\
             .prefetch_related(
                 'panel',
+                'level4title',
                 'panel__types',
                 'genepanelentrysnapshot_set',
                 'genepanelentrysnapshot_set__evaluation',
@@ -336,9 +337,8 @@ class DownloadAllPanels(GELReviewerRequiredMixin, View):
             rate = "{} of {} genes reviewed".format(panel.stats.get('number_of_evaluated_genes'), panel.stats.get('number_of_genes'))
             reviewers = panel.contributors
             contributors = [
-                "{} {} ({})".format(user[0], user[1], user[3]) if user[0] else user[4]
+                "{} {} ({})".format(user.first_name, user.last_name, user.email) if user.first_name else user.username
                 for user in reviewers
-                if user[4]
             ]
 
             yield (
@@ -351,7 +351,7 @@ class DownloadAllPanels(GELReviewerRequiredMixin, View):
                 rate,
                 len(reviewers),
                 ";".join(contributors),  # aff
-                ";".join([user[2] for user in reviewers if user[2]]),  # email
+                ";".join([user.email for user in reviewers if user.email]),  # email
                 panel.panel.status.upper(),
                 ";".join(panel.old_panels),
                 ";".join(panel.panel.types.values_list('name', flat=True)),

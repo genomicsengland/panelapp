@@ -84,7 +84,7 @@ class DownloadPanelTSVMixin(PanelMixin, DetailView):
             if not gpentry.flagged and str(gpentry.status) in categories:
                 amber_perc, green_perc, red_prec = gpentry.aggregate_ratings()
 
-                evidence = ";".join([evidence.name for evidence in gpentry.evidence.all()])
+                evidence = ";".join([ev for ev in gpentry.entity_evidences if ev])
                 export_gpentry = (
                     gpentry.gene.get('gene_symbol'),
                     'gene',
@@ -429,10 +429,10 @@ class DownloadAllGenes(GELReviewerRequiredMixin, View):
                     entry.panel.version,
                     str(entry.panel.panel.status).upper(),
                     colour,
-                    ';'.join([evidence.name for evidence in entry.evidence.all()]),
+                    ';'.join([ev for ev in entry.entity_evidences if ev]),
                     entry.moi,
                     entry.mode_of_pathogenicity,
-                    ';'.join([tag.name for tag in entry.tags.all()]),
+                    ';'.join([tag for tag in entry.entity_tags if tag]),
                     entry.gene.get('ensembl_genes', {}).get('GRch37', {}).get('82', {}).get('ensembl_id', '-'),
                     entry.gene.get('ensembl_genes', {}).get('GRch38', {}).get('90', {}).get('ensembl_id', '-'),
                     entry.gene.get('hgnc_id', '-'),

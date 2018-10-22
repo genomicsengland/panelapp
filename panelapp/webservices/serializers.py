@@ -216,7 +216,7 @@ class ListPanelSerializer(serializers.BaseSerializer):
                 "Panel_Id": panel.panel.old_pk if panel.panel.old_pk else str(panel.panel.pk),
                 "Relevant_disorders": filter(filter_empty, panel.old_panels),
                 "Status": panel.panel.status,
-                "PanelTypes": panel.panel.types.values_list('slug', flat=True)
+                "PanelTypes": panel.panel_type_slugs
             })
         return result
 

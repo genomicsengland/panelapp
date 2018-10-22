@@ -85,8 +85,9 @@ class TestWebservices(TransactionTestCase):
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.json(), ["Query Error: {} not found.".format(self.gps.panel.pk)])
 
-        self.gps.increment_version()
-        self.gps.increment_version()
+        self.gps.panel.active_panel.increment_version()
+        del self.gps.panel.active_panel
+        self.gps.panel.active_panel.increment_version()
         r = self.client.get("{}?version=0.1".format(url))
         self.assertEqual(r.status_code, 200)
         self.assertIsNot(type(r.json()), list)
@@ -117,7 +118,8 @@ class TestWebservices(TransactionTestCase):
 
     def test_get_panel_version(self):
         self.gpes.panel.increment_version()
-        self.gpes.panel.increment_version()
+        del self.gpes.panel.panel.active_panel
+        self.gpes.panel.panel.active_panel.increment_version()
 
         url = reverse_lazy('webservices:get_panel', args=(self.gpes.panel.panel.pk,))
         r = self.client.get("{}?version=0.1".format(url))
