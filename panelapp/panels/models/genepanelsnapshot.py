@@ -468,7 +468,6 @@ class GenePanelSnapshot(TimeStampedModel):
                 else:
                     self.minor_version += 1
 
-                # child_panels = list(self.child_panels.values_list('pk', flat=True))
                 self.save()
 
                 child_panels = list(
