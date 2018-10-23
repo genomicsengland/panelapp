@@ -140,7 +140,9 @@ class GenePanelTest(LoginGELUser):
         number_of_genes = gps.stats.get('number_of_genes')
 
         assert gps.has_gene(gene_symbol) is True
+        gps = gps.panel.active_panel
         gps.delete_gene(gene_symbol)
+        gps = gps.panel.active_panel
         assert gps.panel.active_panel.has_gene(gene_symbol) is False
         assert number_of_genes - 1 == gps.panel.active_panel.stats.get('number_of_genes')  # 4 is due to create_batch
 
@@ -186,19 +188,24 @@ class GenePanelTest(LoginGELUser):
 
         gps = GenePanelSnapshotFactory(panel__status=GenePanel.STATUS.public)
         gps2 = GenePanelSnapshotFactory(panel__status=GenePanel.STATUS.public)
-        gps.increment_version()
-        gps.increment_version()
-        gps.increment_version()
-        gps.increment_version()
-        gps.increment_version()
+        gps.panel.active_panel.increment_version()
+        gps.panel.active_panel.increment_version()
+        gps.panel.active_panel.increment_version()
+        gps.panel.active_panel.increment_version()
+        gps.panel.active_panel.increment_version()
+        gps = gps.panel.active_panel
 
         assert gps.minor_version == 5
 
         gp = GenePanel.objects.get(pk=gps.panel.pk)
         assert gp.active_panel == gps
 
-        gps2.increment_version()
-        gps2.increment_version()
+        gps2.panel.active_panel.increment_version()
+        del gps2.panel.active_panel
+        gps2.panel.active_panel.increment_version()
+
+        del gps2.panel.active_panel
+        gps2 = gps2.panel.active_panel
 
         assert gps2.minor_version == 2
         gp2 = GenePanel.objects.get(pk=gps2.panel.pk)
@@ -441,6 +448,7 @@ class GenePanelTest(LoginGELUser):
 
         gps = gps.increment_version()
         gps.update_gene(self.gel_user, gpes.gene_core.gene_symbol, {'phenotypes': ['abra', ]})
+        del gps.panel.active_panel
         current_ev2 = sorted(gps.panel.active_panel.get_gene(gpes2.gene_core.gene_symbol).evaluation.all().values_list('pk', flat=True))
 
         self.assertNotEqual(evaluations2, current_ev2)
@@ -448,8 +456,9 @@ class GenePanelTest(LoginGELUser):
     def test_evaluation_single_panel(self):
         gps = GenePanelSnapshotFactory()
         gpes = GenePanelEntrySnapshotFactory(panel=gps)
-        gps = gps.increment_version()
-        gps = gps.increment_version()
+        gps.panel.active_panel.increment_version()
+        gps.panel.active_panel.increment_version()
+        gps = gps.panel.active_panel
 
         gene_symbol = gpes.gene_core.gene_symbol
 

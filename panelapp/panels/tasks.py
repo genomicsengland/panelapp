@@ -125,11 +125,11 @@ def email_panel_promoted(panel_pk):
     messages = []
 
     for contributor in active_panel.contributors:
-        if contributor[2]:  # check if we have an email in the database
+        if contributor.email:  # check if we have an email in the database
             text = render_to_string(
                 'panels/emails/panel_promoted.txt',
                 {
-                    'first_name': contributor[0],
+                    'first_name': contributor.first_name,
                     'panel_name': active_panel.panel,
                     'panel_id': panel_pk,
                     'settings': settings
@@ -140,7 +140,7 @@ def email_panel_promoted(panel_pk):
                 subject,
                 text,
                 settings.DEFAULT_FROM_EMAIL,
-                [contributor[2]]
+                [contributor.email]
             )
             messages.append(message)
 

@@ -41,6 +41,7 @@ class RegionTest(LoginGELUser):
             "type_of_variants": Region.VARIANT_TYPES.small,
         })
 
+        active_panel = active_panel.panel.active_panel
         assert active_panel.has_region(region.name)
         active_panel.increment_version()
         assert active_panel.panel.active_panel.has_region(region.name)

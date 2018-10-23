@@ -21,6 +21,7 @@ from django.contrib.postgres.aggregates import ArrayAgg
 from django.utils.functional import cached_property
 from model_utils.models import TimeStampedModel
 
+from accounts.models import User
 from panels.tasks import email_panel_promoted
 from panels.exceptions import IsSuperPanelException
 from .activity import Activity
@@ -74,7 +75,7 @@ class GenePanelSnapshotManager(models.Manager):
 
         if name:
             if name.isdigit():
-                filters = Q(panel__pk=name)
+                filters = Q(panel_id=name)
             else:
                 filters = Q(panel__old_pk=name) | Q(panel__name=name) | Q(old_panels__contains=[name])\
                           | Q(panel__name__icontains=name)
@@ -87,8 +88,11 @@ class GenePanelSnapshotManager(models.Manager):
         """This method adds additional values to the queryset, such as number_of_genes, etc and returns active panels"""
 
         return self.get_active(all, deleted, internal, name, panel_types)\
-            .annotate(child_panels_count=Count('child_panels')) \
-            .annotate(superpanels_count=Count('genepanelsnapshot')) \
+            .annotate(
+                child_panels_count=Count('child_panels'),
+                superpanels_count=Count('genepanelsnapshot'),
+                panel_type_slugs=ArrayAgg('panel__types__slug', distinct=True)
+            ) \
             .annotate(
                 is_super_panel=Case(
                     When(child_panels_count__gt=0, then=Value(True)),
@@ -113,7 +117,7 @@ class GenePanelSnapshotManager(models.Manager):
         major_version, minor_version = version.split('.')
 
         if name.isdigit():
-            filters = Q(panel__pk=name)
+            filters = Q(panel_id=name)
         else:
             filters = Q(panel__old_pk=name) | Q(panel__name=name) | Q(old_panels__contains=[name])\
                       | Q(panel__name__icontains=name)
@@ -249,12 +253,8 @@ class GenePanelSnapshot(TimeStampedModel):
         """
         return bool(self.child_panels.count())
 
-    def _get_stats(self):
+    def _get_stats(self, use_db=True):
         """Get stats for a panel, i.e. number of reviewers, genes, evaluated genes, etc"""
-
-        pks = [self.pk, ]
-        if self.is_super_panel:
-            pks = list(self.child_panels.values_list('pk', flat=True))
 
         keys = [
             'gene_reviewers',
@@ -274,108 +274,121 @@ class GenePanelSnapshot(TimeStampedModel):
             'number_of_green_regions',
         ]
 
+        pks = [self.pk, ]
+        if self.is_super_panel:
+            if use_db:
+                pks = self.child_panels.values_list('pk', flat=True)
+            else:
+                stats_list = self.child_panels.values_list('stats', flat=True)
+                # combine stats
+                combined_stats = {}
+                for stats in stats_list:
+                    for key, value in stats.items():
+                        if key in combined_stats:
+                            if isinstance(combined_stats[key], list):
+                                combined_stats[key] = list(set(combined_stats[key] + stats[key]))
+                            elif isinstance(combined_stats[key], int):
+                                combined_stats[key] = combined_stats[key] + stats[key]
+                        else:
+                            combined_stats[key] = stats[key]
+                return combined_stats
+
+        # another way to refactor below info: when copying data, just count the numbers...
+
+        info = GenePanelSnapshot.objects.filter(pk__in=pks)\
+            .aggregate(
+                gene_reviewers=ArrayAgg('genepanelentrysnapshot__evaluation__user', distinct=True),
+                number_of_evaluated_genes=Count(Case(
+                    # Count unique genes if that gene has more than 1 evaluation
+                    When(
+                        genepanelentrysnapshot__evaluation__isnull=False,
+                        then=models.F('genepanelentrysnapshot')
+                    )
+                ), distinct=True),
+                number_of_genes=Count('genepanelentrysnapshot', distinct=True),
+                number_of_ready_genes=Count(
+                    Case(
+                        When(
+                            genepanelentrysnapshot__ready=True,
+                            then=models.F('genepanelentrysnapshot')
+                        )
+                    ),
+                    distinct=True
+                ),
+                number_of_green_genes=Count(
+                    Case(
+                        When(
+                            genepanelentrysnapshot__saved_gel_status__gte=3,
+                            then=models.F('genepanelentrysnapshot')
+                        )
+                    ),
+                    distinct=True
+                ),
+                str_reviewers=ArrayAgg('str__evaluation__user', distinct=True),
+                number_of_evaluated_strs=Count(Case(
+                    # Count unique genes if that gene has more than 1 evaluation
+                    When(
+                        str__evaluation__isnull=False,
+                        then=models.F('str')
+                    )
+                ), distinct=True),
+                number_of_strs=Count('str', distinct=True),
+                number_of_ready_strs=Count(
+                    Case(
+                        When(
+                            str__ready=True,
+                            then=models.F('str')
+                        )
+                    ),
+                    distinct=True
+                ),
+                number_of_green_strs=Count(
+                    Case(
+                        When(
+                            str__saved_gel_status__gte=3,
+                            then=models.F('str')
+                        )
+                    ),
+                    distinct=True
+                ),
+
+                region_reviewers=ArrayAgg('region__evaluation__user', distinct=True),
+                number_of_evaluated_regions=Count(Case(
+                    # Count unique genes if that gene has more than 1 evaluation
+                    When(
+                        region__evaluation__isnull=False,
+                        then=models.F('region')
+                    )
+                ), distinct=True),
+                number_of_regions=Count('region', distinct=True),
+                number_of_ready_regions=Count(
+                    Case(
+                        When(
+                            region__ready=True,
+                            then=models.F('region')
+                        )
+                    ),
+                    distinct=True
+                ),
+                number_of_green_region=Count(
+                    Case(
+                        When(
+                            region__saved_gel_status__gte=3,
+                            then=models.F('region')
+                        )
+                    ),
+                    distinct=True
+                ),
+            )
+
         out = {
             'gene_reviewers': [],
             'str_reviewers': [],
             'region_reviewers': []
         }
 
-        for pk in pks:
-            # This is ~ 3000x faster than `.filter(pk__in=pks)`. Not a typo: 24 seconds vs 4ms per pk
-            info = GenePanelSnapshot.objects.filter(pk=pk)\
-                .prefetch_related('str',
-                                  'str__evaluation',
-                                  'str__evaluation__user',
-                                  'genepanelentrysnapshot',
-                                  'genepanelentrysnapshot__evaluation',
-                                  'genepanelentrysnapshot__evaluation__user')\
-                .aggregate(
-                    gene_reviewers=ArrayAgg('genepanelentrysnapshot__evaluation__user__pk', distinct=True),
-                    number_of_evaluated_genes=Count(Case(
-                        # Count unique genes if that gene has more than 1 evaluation
-                        When(
-                            genepanelentrysnapshot__evaluation__isnull=False,
-                            then=models.F('genepanelentrysnapshot__pk')
-                        )
-                    ), distinct=True),
-                    number_of_genes=Count('genepanelentrysnapshot__pk', distinct=True),
-                    number_of_ready_genes=Count(
-                        Case(
-                            When(
-                                genepanelentrysnapshot__ready=True,
-                                then=models.F('genepanelentrysnapshot__pk')
-                            )
-                        ),
-                        distinct=True
-                    ),
-                    number_of_green_genes=Count(
-                        Case(
-                            When(
-                                genepanelentrysnapshot__saved_gel_status__gte=3,
-                                then=models.F('genepanelentrysnapshot__pk')
-                            )
-                        ),
-                        distinct=True
-                    ),
-                    str_reviewers=ArrayAgg('str__evaluation__user__pk', distinct=True),
-                    number_of_evaluated_strs=Count(Case(
-                        # Count unique genes if that gene has more than 1 evaluation
-                        When(
-                            str__evaluation__isnull=False,
-                            then=models.F('str__pk')
-                        )
-                    ), distinct=True),
-                    number_of_strs=Count('str__pk', distinct=True),
-                    number_of_ready_strs=Count(
-                        Case(
-                            When(
-                                str__ready=True,
-                                then=models.F('str__pk')
-                            )
-                        ),
-                        distinct=True
-                    ),
-                    number_of_green_strs=Count(
-                        Case(
-                            When(
-                                str__saved_gel_status__gte=3,
-                                then=models.F('str__pk')
-                            )
-                        ),
-                        distinct=True
-                    ),
-
-                    region_reviewers=ArrayAgg('region__evaluation__user__pk', distinct=True),
-                    number_of_evaluated_regions=Count(Case(
-                        # Count unique genes if that gene has more than 1 evaluation
-                        When(
-                            region__evaluation__isnull=False,
-                            then=models.F('region__pk')
-                        )
-                    ), distinct=True),
-                    number_of_regions=Count('region__pk', distinct=True),
-                    number_of_ready_regions=Count(
-                        Case(
-                            When(
-                                region__ready=True,
-                                then=models.F('region__pk')
-                            )
-                        ),
-                        distinct=True
-                    ),
-                    number_of_green_region=Count(
-                        Case(
-                            When(
-                                region__saved_gel_status__gte=3,
-                                then=models.F('region__pk')
-                            )
-                        ),
-                        distinct=True
-                    ),
-                )
-
-            for key in keys:
-                out[key] = out.get(key, 0) + info.get(key, 0)
+        for key in keys:
+            out[key] = out.get(key, 0) + info.get(key, 0)
 
         out['gene_reviewers'] = list(set([r for r in out['gene_reviewers'] if r]))  #  remove None
         out['str_reviewers'] = list(set([r for r in out['str_reviewers'] if r]))  # remove None
@@ -389,14 +402,20 @@ class GenePanelSnapshot(TimeStampedModel):
                                           out['number_of_ready_regions']
         out['number_of_green_entities'] = out['number_of_green_genes'] + out['number_of_green_strs'] +\
                                           out['number_of_green_regions']
-
         return out
 
-    def update_saved_stats(self):
+    def update_saved_stats(self, use_db=True):
         """Get the new values from the database"""
 
-        self.stats = self._get_stats()
+        self.stats = self._get_stats(use_db=use_db)
         self.save(update_fields=['stats', ])
+
+        super_genepanels = set(self.genepanelsnapshot_set.values_list('panel_id', flat=True))
+        if super_genepanels:
+            super_panels = GenePanelSnapshot.objects.filter(panel_id__in=super_genepanels).distinct('panel_id')\
+                .order_by('panel_id', '-major_version', '-minor_version')
+            for super_panel in super_panels:
+                super_panel.update_saved_stats(use_db=False)
 
     @property
     def version(self):
@@ -421,7 +440,7 @@ class GenePanelSnapshot(TimeStampedModel):
         if panels_changed:
             self.child_panels.set(updated_child_panels)
 
-    def increment_version(self, major=False, user=None, comment=None, ignore_gene=None, ignore_str=None, ignore_region=None):
+    def increment_version(self, major=False, user=None, comment=None, ignore_gene=None, ignore_str=None, ignore_region=None, remove_child=None):
         """Creates a new version of the panel.
 
         This script copies all genes, all information for these genes, and also
@@ -432,37 +451,96 @@ class GenePanelSnapshot(TimeStampedModel):
         snapshot and not the new one.
         """
 
+        if self != self.panel.active_panel:
+            raise Exception('Cannot increment non recent version')
+
         with transaction.atomic():
-            current_genes = deepcopy(self.get_all_genes_extra)  # cache the results
-            current_strs = deepcopy(self.get_all_strs_extra)
-            current_regions = deepcopy(self.get_all_regions_extra)
-            child_panels = list(self.child_panels.values_list('pk', flat=True))
-            super_panels = list(self.genepanelsnapshot_set.values_list('pk', flat=True))
-
-            old_pk = self.pk
-            self.pk = None
-
-            if major:
-                self.major_version += 1
-                self.minor_version = 0
-            else:
-                self.minor_version += 1
-
-            self.save()
-
             if self.is_super_panel:
+                distinct_child_panels = set(self.child_panels.values_list('panel_id', flat=True))
+
+                self.pk = None
+                self.created = timezone.now()
+                self.modified = timezone.now()
+
+                if major:
+                    self.major_version += 1
+                    self.minor_version = 0
+                else:
+                    self.minor_version += 1
+
+                self.save()
+
+                child_panels = list(
+                    GenePanelSnapshot.objects.filter(panel_id__in=distinct_child_panels)
+                        .order_by('panel_id', '-major_version', '-minor_version')
+                        .distinct('panel_id').values_list('pk', flat=True))
+
                 # copy child panels
                 self.child_panels.through.objects.bulk_create([
                     self.child_panels.through(**{
                         'to_genepanelsnapshot_id': child_panel,
                         'from_genepanelsnapshot_id': self.pk
-                    }) for child_panel in child_panels
+                    }) for child_panel in child_panels if remove_child != child_panel
                 ])
             else:
+                current_genes = deepcopy(self.get_all_genes_extra.prefetch_related(
+                    'comments',
+                    'evidence',
+                    'evidence__reviewer',
+                    'evaluation',
+                    'evaluation__user',
+                    'evaluation__comments',
+                    'evaluation__user__reviewer',
+                    'tags'
+                ))  # cache the results
+                current_strs = deepcopy(self.get_all_strs_extra.prefetch_related(
+                    'comments',
+                    'evidence',
+                    'evidence__reviewer',
+                    'evaluation',
+                    'evaluation__user',
+                    'evaluation__comments',
+                    'evaluation__user__reviewer',
+                    'tags'
+                ))
+                current_regions = deepcopy(self.get_all_regions_extra.prefetch_related(
+                    'comments',
+                    'evidence',
+                    'evidence__reviewer',
+                    'evaluation',
+                    'evaluation__user',
+                    'evaluation__comments',
+                    'evaluation__user__reviewer',
+                    'tags'
+                ))
+
+                # get latest versions for super panels
+                super_genepanels = set(self.genepanelsnapshot_set.values_list('panel_id', flat=True))
+
+                old_pk = self.pk
+                self.pk = None
+                self.created = timezone.now()
+                self.modified = timezone.now()
+
+                if major:
+                    self.major_version += 1
+                    self.minor_version = 0
+                else:
+                    self.minor_version += 1
+
+                self.save()
+
+                super_panels = list(
+                    GenePanelSnapshot.objects.filter(panel_id__in=super_genepanels).distinct('panel_id')
+                        .order_by('panel_id', '-major_version', '-minor_version')
+                        .values_list('pk', flat=True)
+                )
+
                 self._increment_version_entities('genepanelentrysnapshot', current_genes, major, user, comment,
                                                  ignore_gene)
                 self._increment_version_entities('str', current_strs, major, user, comment, ignore_str)
                 self._increment_version_entities('region', current_regions, major, user, comment, ignore_region)
+                self.clear_cache()
 
                 if major:
                     email_panel_promoted.delay(self.panel.pk)
@@ -481,21 +559,11 @@ class GenePanelSnapshot(TimeStampedModel):
 
                 # check if there are any parent panels
                 if super_panels:
-                    new_super_panels = []
                     for panel in GenePanelSnapshot.objects.filter(pk__in=super_panels):
-                        panel.increment_version(major=major)
-                        panel.child_panels.remove(old_pk)
-                        new_super_panels.append(panel.pk)
+                        panel.increment_version(major=major, remove_child=old_pk)
 
-                    self.child_panels.through.objects.bulk_create([
-                        self.child_panels.through(**{
-                            'to_genepanelsnapshot_id': self.pk,
-                            'from_genepanelsnapshot_id': super_panel
-                        }) for super_panel in new_super_panels
-                    ])
-
-                    for panel in self.genepanelsnapshot_set.all():
-                        panel.update_saved_stats()
+            if getattr(self.panel, 'active_panel'):
+                del self.panel.active_panel
 
             return self.panel.active_panel
 
@@ -577,6 +645,8 @@ class GenePanelSnapshot(TimeStampedModel):
             if major:
                 new_entity.ready = False
             new_entity.pk = None
+            new_entity.created = timezone.now()
+            new_entity.modified = timezone.now()
             new_entity.panel = self
             entities[entity.entity_name]['entity'] = new_entity
 
@@ -667,9 +737,7 @@ class GenePanelSnapshot(TimeStampedModel):
 
         model.comments.through.objects.bulk_create(entity_comments)
 
-        self.clear_cache()
-
-    @property
+    @cached_property
     def contributors(self):
         """Returns a tuple with user data
 
@@ -677,37 +745,13 @@ class GenePanelSnapshot(TimeStampedModel):
             A tuple with the user first and last name, email, and reviewer affiliation
         """
 
-        genes_contributors = list(self.cached_genes
-                                      .distinct('evaluation__user')
-                                      .values_list(
-                                        'evaluation__user__first_name',
-                                        'evaluation__user__last_name',
-                                        'evaluation__user__email',
-                                        'evaluation__user__reviewer__affiliation',
-                                        'evaluation__user__username'
-                                      ).order_by('evaluation__user'))
+        gene_contributors = list(self.genepanelentrysnapshot_set.values_list('evaluation__user_id', flat=True).distinct())
+        strs_contributors = list(self.str_set.values_list('evaluation__user_id', flat=True).distinct())
+        region_contributors = list(self.region_set.values_list('evaluation__user_id', flat=True).distinct())
 
-        strs_contributors = list(self.cached_strs
-                                     .distinct('evaluation__user')
-                                     .values_list(
-                                        'evaluation__user__first_name',
-                                        'evaluation__user__last_name',
-                                        'evaluation__user__email',
-                                        'evaluation__user__reviewer__affiliation',
-                                        'evaluation__user__username'
-                                     ).order_by('evaluation__user'))
-
-        region_contributors = list(self.cached_regions
-                                       .distinct('evaluation__user')
-                                       .values_list(
-                                           'evaluation__user__first_name',
-                                           'evaluation__user__last_name',
-                                           'evaluation__user__email',
-                                           'evaluation__user__reviewer__affiliation',
-                                           'evaluation__user__username'
-                                       ).order_by('evaluation__user'))
-
-        return list(set(strs_contributors + genes_contributors + region_contributors))
+        combined_contributors = set(gene_contributors + strs_contributors + region_contributors)
+        users = User.objects.filter(pk__in=combined_contributors).prefetch_related('reviewer')
+        return users
 
     def mark_entities_not_ready(self):
         """Mark entities (genes, STRs, regions) as not ready
@@ -739,10 +783,8 @@ class GenePanelSnapshot(TimeStampedModel):
     def cached_genes(self):
         if self.is_super_panel:
             child_panels = self.child_panels.values_list('pk', flat=True)
-            qs = self.genepanelentrysnapshot_set.model.objects.filter(panel__pk__in=child_panels)\
-                .all()\
-                .prefetch_related('panel', 'panel__level4title', 'panel__panel', 'evidence',
-                                  'evaluation', 'tags', 'evaluation__user__reviewer')
+            qs = self.genepanelentrysnapshot_set.model.objects.filter(panel_id__in=child_panels)\
+                .prefetch_related('panel', 'panel__level4title', 'panel__panel', 'tags', 'evidence')
         else:
             qs = self.genepanelentrysnapshot_set.all()
 
@@ -756,9 +798,7 @@ class GenePanelSnapshot(TimeStampedModel):
         if self.is_super_panel:
             child_panels = self.child_panels.values_list('pk', flat=True)
             qs = self.str_set.model.objects.filter(panel_id__in=child_panels) \
-                .all() \
-                .prefetch_related('panel', 'panel__level4title', 'panel__panel', 'evidence',
-                                  'evaluation', 'tags', 'evaluation__user__reviewer')
+                .prefetch_related('panel', 'panel__level4title', 'panel__panel', 'tags', 'evidence')
         else:
             qs = self.str_set.all()
 
@@ -771,10 +811,8 @@ class GenePanelSnapshot(TimeStampedModel):
     def cached_regions(self):
         if self.is_super_panel:
             child_panels = self.child_panels.values_list('pk', flat=True)
-            qs = self.region_set.model.objects.filter(panel__pk__in=child_panels) \
-                .all() \
-                .prefetch_related('panel', 'panel__level4title', 'panel__panel', 'evidence',
-                                  'evaluation', 'tags', 'evaluation__user__reviewer')
+            qs = self.region_set.model.objects.filter(panel_id__in=child_panels) \
+                .prefetch_related('panel', 'panel__level4title', 'panel__panel', 'tags', 'evidence')
         else:
             qs = self.region_set.all()
 
@@ -820,11 +858,11 @@ class GenePanelSnapshot(TimeStampedModel):
     @staticmethod
     def get_all(qs):
         return qs.annotate(
-                evidences=ArrayAgg('evidence__pk', distinct=True),
-                evaluations=ArrayAgg('evaluation__pk', distinct=True),
-                gene_tags=ArrayAgg('tags__pk', distinct=True),
-                tracks=ArrayAgg('track__pk', distinct=True),
-                comment_pks=ArrayAgg('comments__pk', distinct=True)
+                evidences=ArrayAgg('evidence', distinct=True),
+                evaluations=ArrayAgg('evaluation', distinct=True),
+                gene_tags=ArrayAgg('tags', distinct=True),
+                tracks=ArrayAgg('track', distinct=True),
+                comment_pks=ArrayAgg('comments', distinct=True)
             )
 
     @cached_property
@@ -839,14 +877,6 @@ class GenePanelSnapshot(TimeStampedModel):
 
         return self.get_all(self.cached_strs)
 
-    @property
-    def all_evaluations(self):
-        gene_evaluations = self.get_all_genes.aggregate(evaluations=ArrayAgg('evaluations', distinct=True))
-        str_evaluations = self.get_all_strs.aggregate(evaluations=ArrayAgg('evaluations', distinct=True))
-
-
-
-
     @cached_property
     def get_all_entities_extra(self):
         """Get all genes and annotated info, speeds up loading time"""
@@ -858,27 +888,17 @@ class GenePanelSnapshot(TimeStampedModel):
         """Returns all Regions for this panel"""
         return self.get_all(self.cached_regions)
 
-    @staticmethod
-    def get_all_extra(qs):
-        return qs.prefetch_related(
-                'comments',
-                'evidence',
-                'evidence__reviewer',
-                'evaluation',
-                'evaluation__user',
-                'evaluation__comments',
-                'evaluation__user__reviewer',
-                'tags'
-            )\
-            .annotate(
+    def get_all_extra(self, qs):
+        return qs.annotate(
+                entity_tags=ArrayAgg('tags__name', distinct=True),
                 number_of_green_evaluations=Count(Case(When(
-                    evaluation__rating="GREEN", then=models.F('evaluation__pk'))
+                    evaluation__rating="GREEN", then=models.F('evaluation'))
                 ), distinct=True),
                 number_of_red_evaluations=Count(Case(When(
-                    evaluation__rating="RED", then=models.F('evaluation__pk'))
+                    evaluation__rating="RED", then=models.F('evaluation'))
                 ), distinct=True),
-                evaluators=ArrayAgg('evaluation__user__pk'),
-                number_of_evaluations=Count('evaluation__pk', distinct=True)
+                evaluators=ArrayAgg('evaluation__user_id'),
+                number_of_evaluations=Count('evaluation', distinct=True)
             )\
             .order_by('-saved_gel_status', 'entity_name')
 
@@ -886,28 +906,57 @@ class GenePanelSnapshot(TimeStampedModel):
     def get_all_genes_extra(self):
         """Get all genes and annotated info, speeds up loading time"""
 
-        return self.get_all_extra(self.cached_genes).annotate(
+        qs = self.get_all_extra(self.cached_genes).annotate(
             entity_type=V('gene', output_field=models.CharField()),
             entity_name=models.F('gene_core__gene_symbol')
         )
+
+        if self.is_super_panel:
+            out = []
+            for item in qs.prefetch_related('evidence'):
+                item.entity_evidences = [e.name for e in item.evidence.all()]
+                out.append(item)
+            return out
+        else:
+            return qs.annotate(entity_evidences=ArrayAgg('evidence__name', distinct=True))
 
     @cached_property
     def get_all_strs_extra(self):
         """Get all strs and annotated info, speeds up loading time"""
 
-        return self.get_all_extra(self.cached_strs).annotate(
+        qs = self.get_all_extra(self.cached_strs).annotate(
             entity_type=V('str', output_field=models.CharField()),
             entity_name=models.F('name')
         )
+
+        if self.is_super_panel:
+            qs = qs.prefetch_related('evidence')
+            out = []
+            for item in qs:
+                item.entity_evidences = [e.name for e in item.evidence.all()]
+                out.append(item)
+            return out
+        else:
+            return qs.annotate(entity_evidences=ArrayAgg('evidence__name', distinct=True))
 
     @cached_property
     def get_all_regions_extra(self):
         """Get all genes and annotated info, speeds up loading time"""
 
-        return self.get_all_extra(self.cached_regions).annotate(
+        qs = self.get_all_extra(self.cached_regions).annotate(
             entity_type=V('region', output_field=models.CharField()),
             entity_name=models.F('name')
         )
+
+        if self.is_super_panel:
+            qs = qs.prefetch_related('evidence')
+            out = []
+            for item in qs:
+                item.entity_evidences = [e.name for e in item.evidence.all()]
+                out.append(item)
+            return out
+        else:
+            return qs.annotate(entity_evidences=ArrayAgg('evidence__name', distinct=True))
 
     def get_gene_by_pk(self, gene_pk, prefetch_extra=False):
         """Get a gene for a specific pk."""
@@ -927,13 +976,7 @@ class GenePanelSnapshot(TimeStampedModel):
         assert method_type in ['genes', 'strs', 'regions']
 
         if prefetch_extra:
-            qs = getattr(self, 'get_all_{}_extra'.format(method_type)).prefetch_related(
-                'evaluation__comments',
-                'evaluation__user__reviewer',
-                'track',
-                'track__user',
-                'track__user__reviewer'
-            )
+            qs = getattr(self, 'get_all_{}_extra'.format(method_type))
         else:
             qs = getattr(self, 'get_all_{}'.format(method_type))
 
@@ -992,7 +1035,8 @@ class GenePanelSnapshot(TimeStampedModel):
             'get_all_strs_extra',
             'cached_regions',
             'get_all_regions',
-            'get_all_regions_extra'
+            'get_all_regions_extra',
+            'contributors',
         ]
 
         for item in to_clear:

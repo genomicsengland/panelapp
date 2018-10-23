@@ -78,8 +78,8 @@ class TestAPIV1(LoginExternalUser):
         self.assertEqual(r.status_code, 404)
         self.assertEqual(r.json(), {'detail': 'Not found.'})
 
-        self.gps.increment_version()
-        self.gps.increment_version()
+        new_version = self.gps.increment_version()
+        self.gps.panel.active_panel.increment_version()
         r = self.client.get("{}?version=0.1".format(url))
         self.assertEqual(r.status_code, 200)
 
@@ -108,7 +108,7 @@ class TestAPIV1(LoginExternalUser):
 
     def test_get_panel_version(self):
         self.gpes.panel.increment_version()
-        self.gpes.panel.increment_version()
+        self.gpes.panel.panel.active_panel.increment_version()
 
         url = reverse_lazy('api:v1:panels-detail', args=(self.gpes.panel.panel.pk,))
         r = self.client.get("{}?version=0.1".format(url))
