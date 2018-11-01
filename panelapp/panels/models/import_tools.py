@@ -231,7 +231,9 @@ class UploadedPanelList(TimeStampedModel):
 
     _map_tsv_to_kw = [
         {'name': 'entity_name', 'type': str},
-        {'name': 'entity_type', 'type': str},
+        {'name': 'entity_type', 'type': str, 'modifiers': [
+            lambda value: value.lower() if isinstance(value, str) else value
+        ]},
         {'name': 'gene_symbol', 'type': str, 'modifiers': [
             lambda value: re.sub("[^0-9a-zA-Z~#_@-]", '', value)
         ]},
@@ -296,7 +298,7 @@ class UploadedPanelList(TimeStampedModel):
 
     _cached_panels = {}
 
-    def get_entity_data(self, key, line):
+    def get_entity_data(self, key, line, suppress_errors=False):
         """Translate TSV line to the dictionary values
 
         Also convert it into the correct types, check if we have all data
@@ -330,28 +332,52 @@ class UploadedPanelList(TimeStampedModel):
                 entity_data[item_mapping['name']] = item
         except (IndexError, ValueError) as e:
             logger.exception(e, exc_info=True)
-            raise TSVIncorrectFormat(str(key + 2))
+            if not suppress_errors:
+                raise TSVIncorrectFormat(str(key + 2))
 
-        if entity_data.get('entity_type') not in ['gene', 'region', 'str']:
+        if entity_data.get('entity_type', '') not in ['gene', 'region', 'str']:
             logger.error('TSV Import. Line: {} Incorrect entity type: {}'.format(
                 str(key + 2),
                 entity_data.get('entity_type')))
-            raise TSVIncorrectFormat(str(key + 2))
+            if not suppress_errors:
+                raise TSVIncorrectFormat(str(key + 2))
 
         if len(entity_data.keys()) < self._required_line_length[entity_data['entity_type']]:
             logger.error('TSV Import. Line: {} Incorrect line length: {}'.format(
                 str(key + 2),
                 len(entity_data.keys())))
-            raise TSVIncorrectFormat(str(key + 2))
+            if not suppress_errors:
+                raise TSVIncorrectFormat(str(key + 2))
 
         if entity_data['entity_type'] in ['str', 'region']:
             if entity_data['position_37_start'] and entity_data['position_37_end']:
+                if entity_data['position_37_start'] >= entity_data['position_37_end']:
+                    logger.error('TSV Import. Line: {} Incorrect Post 37: {}'.format(
+                        str(key + 2),
+                        len(entity_data.keys())))
+                    if not suppress_errors:
+                        raise TSVIncorrectFormat(str(key + 2))
+
                 entity_data['position_37'] = [
                     entity_data['position_37_start'],
                     entity_data['position_37_end']
                 ]
             else:
                 entity_data['position_37'] = None
+
+            if not entity_data['position_38_start'] or not entity_data['position_38_end']:
+                logger.error('TSV Import. Line: {} Incorrect Post 38: {}'.format(
+                    str(key + 2),
+                    len(entity_data.keys())))
+
+                if not suppress_errors:
+                    raise TSVIncorrectFormat(str(key + 2))
+            elif entity_data['position_38_start'] >= entity_data['position_38_end']:
+                logger.error('TSV Import. Line: {} Incorrect Post 38: {}'.format(
+                    str(key + 2),
+                    len(entity_data.keys())))
+                if not suppress_errors:
+                    raise TSVIncorrectFormat(str(key + 2))
 
             entity_data['position_38'] = [
                 entity_data['position_38_start'],
@@ -422,7 +448,7 @@ class UploadedPanelList(TimeStampedModel):
 
                             self._cached_panels[panel_name] = gp.active_panel.increment_version()
                     else:
-                        line_data = self.get_entity_data(index, lines[index])
+                        line_data = self.get_entity_data(index, lines[index], suppress_errors=True)
                         level4_object = Level4Title.objects.create(
                             level2title=line_data['level2'],
                             level3title=line_data['level3'],
@@ -451,11 +477,11 @@ class UploadedPanelList(TimeStampedModel):
                     except TSVIncorrectFormat as line_error:
                         errors['invalid_lines'].append(str(line_error))
 
-            if errors['invalid_genes']:
-                raise GenesDoNotExist(', '.join(errors['invalid_genes']))
+                if errors['invalid_genes']:
+                    raise GenesDoNotExist(', '.join(errors['invalid_genes']))
 
-            if errors['invalid_lines']:
-                raise TSVIncorrectFormat(', '.join(errors['invalid_lines']))
+                if errors['invalid_lines']:
+                    raise TSVIncorrectFormat(', '.join(errors['invalid_lines']))
 
             self.imported = True
             self.save()

@@ -72,10 +72,6 @@ class GenePanel(TimeStampedModel):
             .prefetch_related(
                 'panel',
                 'level4title',
-                'str_set',
-                'region_set',
-                'genepanelentrysnapshot_set__evaluation__user',
-                'genepanelentrysnapshot_set__evaluation__user__reviewer'
             ).annotate(
                 number_of_green_genes=Sum(Case(When(
                     genepanelentrysnapshot__saved_gel_status__gt=3, then=Value(1)),

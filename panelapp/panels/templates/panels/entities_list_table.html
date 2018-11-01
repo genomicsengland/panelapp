@@ -148,19 +148,19 @@
 </td>
 <td style="font-size: 14px">
 
-    {% if entry.evidence.all %}
+    {% if entry.entity_evidences %}
       <h6 class="add-label-margin remove-top-margin">Sources</h6>
       <ul>
-        {% for ev in entry.evidence.all %}
-          {% if ev.is_GEL %}
+        {% for ev in entry.entity_evidences %}
+            {% if ev %}
             <li>
-                {{ ev.name }}
+                {{ ev }}
 
                 {% if not panel.is_super_panel and request.user.is_authenticated and request.user.reviewer.is_GEL %}
-                <a type="url" href="{% url 'panels:clear_entity_source' panel.panel_id entry.entity_type entry.name ev.name %}" class="hidden delete_source_{{ entry.name }}" data-ajax="true"> <i class="fa fa-times-circle-o"></i></a>
+                <a type="url" href="{% url 'panels:clear_entity_source' panel.panel_id entry.entity_type entry.name ev %}" class="hidden delete_source_{{ entry.name }}" data-ajax="true"> <i class="fa fa-times-circle-o"></i></a>
                 {% endif %}
             </li>
-          {% endif %}
+            {% endif %}
         {% endfor %}
       </ul>
     {% endif %}
@@ -173,11 +173,13 @@
         </ul>
     {% endif %}
 
-    {% if entry.tags.all %}
+    {% if entry.entity_tags %}
         <h6 class="add-label-margin">Tags</h6>
         <ul class="list-inline tag-list">
-            {% for tag in entry.tags.all %}
+            {% for tag in entry.entity_tags %}
+                {% if tag %}
                 <li class="label label-default">{{ tag }}</li>
+                {% endif %}
             {% endfor %}
         </ul>
     {% endif %}

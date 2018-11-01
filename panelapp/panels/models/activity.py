@@ -52,7 +52,10 @@ class Activity(TimeStampedModel):
     @classmethod
     def log(cls, user, panel_snapshot, text, extra_info):
         extra_data = deepcopy(extra_info)
-        extra_data['user_name'] = user.get_full_name()
+
+        if user:
+            extra_data['user_name'] = user.get_full_name()
+
         extra_data['panel_name'] = panel_snapshot.panel.name
         extra_data['panel_id'] = panel_snapshot.panel_id
         extra_data['panel_version'] = panel_snapshot.version

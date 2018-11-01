@@ -40,17 +40,17 @@ class RegionManager(EntityManager):
         if not deleted:
             qs = qs.exclude(panel__panel__status=GenePanel.STATUS.deleted)
 
-        return qs.distinct('panel__panel__pk')\
-            .values_list('panel__pk', flat=True)\
-            .order_by('panel__panel__pk', '-panel__major_version', '-panel__minor_version')
+        return qs.distinct('panel__panel_id')\
+            .values_list('panel_id', flat=True)\
+            .order_by('panel__panel_id', '-panel__major_version', '-panel__minor_version')
 
     def get_active(self, deleted=False, name=None, gene_symbol=None, pks=None, panel_types=None):
         """Get active Regions"""
 
         if pks:
-            qs = super().get_queryset().filter(panel__pk__in=pks)
+            qs = super().get_queryset().filter(panel_id__in=pks)
         else:
-            qs = super().get_queryset().filter(panel__pk__in=Subquery(self.get_latest_ids(deleted)))
+            qs = super().get_queryset().filter(panel_id__in=Subquery(self.get_latest_ids(deleted)))
         if name:
             if isinstance(name, list):
                 qs = qs.filter(name__in=name)
@@ -73,7 +73,7 @@ class RegionManager(EntityManager):
                 entity_name=models.F('name')
             )\
             .prefetch_related('evaluation', 'tags', 'evidence', 'panel', 'panel__level4title', 'panel__panel')\
-            .order_by('panel__pk', '-panel__major_version', '-panel__minor_version')
+            .order_by('panel_id', '-panel__major_version', '-panel__minor_version')
 
     def get_region_panels(self, name, deleted=False, pks=None):
         """Get panels for the specified region name"""

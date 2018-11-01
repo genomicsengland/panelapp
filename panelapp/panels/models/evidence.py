@@ -6,6 +6,7 @@ from accounts.models import Reviewer
 
 class Evidence(TimeStampedModel):
     class Meta:
+        ordering = ['-created', ]
         indexes = [
             models.Index(fields=['name']),
             models.Index(fields=['rating']),

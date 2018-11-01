@@ -34,17 +34,17 @@ class GenePanelEntrySnapshotManager(EntityManager):
         if not deleted:
             qs = qs.exclude(panel__panel__status=GenePanel.STATUS.deleted)
 
-        return qs.distinct('panel__panel__pk')\
-            .values_list('panel__pk', flat=True)\
-            .order_by('panel__panel__pk', '-panel__major_version', '-panel__minor_version')
+        return qs.distinct('panel__panel_id')\
+            .values_list('panel_id', flat=True)\
+            .order_by('panel__panel_id', '-panel__major_version', '-panel__minor_version')
 
     def get_active(self, deleted=False, gene_symbol=None, pks=None, panel_types=None):
         """Get active Gene Entry Snapshots"""
 
         if pks:
-            qs = super().get_queryset().filter(panel__pk__in=pks)
+            qs = super().get_queryset().filter(panel_id__in=pks)
         else:
-            qs = super().get_queryset().filter(panel__pk__in=Subquery(self.get_latest_ids(deleted)))
+            qs = super().get_queryset().filter(panel_id__in=Subquery(self.get_latest_ids(deleted)))
         if gene_symbol:
             if type(gene_symbol) == list:
                 qs = qs.filter(gene_core__gene_symbol__in=gene_symbol)
@@ -62,7 +62,7 @@ class GenePanelEntrySnapshotManager(EntityManager):
                 entity_name=models.F('gene_core__gene_symbol')
             )\
             .prefetch_related('evaluation', 'tags', 'evidence', 'panel', 'panel__level4title', 'panel__panel')\
-            .order_by('panel__pk', '-panel__major_version', '-panel__minor_version')
+            .order_by('panel_id', '-panel__major_version', '-panel__minor_version')
 
     def get_gene_panels(self, gene_symbol, deleted=False, pks=None):
         """Get panels for the specified gene"""

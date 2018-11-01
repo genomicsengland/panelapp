@@ -140,7 +140,9 @@ class GenePanelTest(LoginGELUser):
         number_of_genes = gps.stats.get('number_of_genes')
 
         assert gps.has_gene(gene_symbol) is True
+        gps = gps.panel.active_panel
         gps.delete_gene(gene_symbol)
+        gps = gps.panel.active_panel
         assert gps.panel.active_panel.has_gene(gene_symbol) is False
         assert number_of_genes - 1 == gps.panel.active_panel.stats.get('number_of_genes')  # 4 is due to create_batch
 
@@ -186,19 +188,24 @@ class GenePanelTest(LoginGELUser):
 
         gps = GenePanelSnapshotFactory(panel__status=GenePanel.STATUS.public)
         gps2 = GenePanelSnapshotFactory(panel__status=GenePanel.STATUS.public)
-        gps.increment_version()
-        gps.increment_version()
-        gps.increment_version()
-        gps.increment_version()
-        gps.increment_version()
+        gps.panel.active_panel.increment_version()
+        gps.panel.active_panel.increment_version()
+        gps.panel.active_panel.increment_version()
+        gps.panel.active_panel.increment_version()
+        gps.panel.active_panel.increment_version()
+        gps = gps.panel.active_panel
 
         assert gps.minor_version == 5
 
         gp = GenePanel.objects.get(pk=gps.panel.pk)
         assert gp.active_panel == gps
 
-        gps2.increment_version()
-        gps2.increment_version()
+        gps2.panel.active_panel.increment_version()
+        del gps2.panel.active_panel
+        gps2.panel.active_panel.increment_version()
+
+        del gps2.panel.active_panel
+        gps2 = gps2.panel.active_panel
 
         assert gps2.minor_version == 2
         gp2 = GenePanel.objects.get(pk=gps2.panel.pk)
@@ -340,6 +347,7 @@ class GenePanelTest(LoginGELUser):
         gps.panel.save()
         evidence = EvidenceFactory.create(name="Expert Review Amber")
         GenePanelEntrySnapshotFactory.create(gene_core=gene, panel=gps, evaluation=(None,), evidence=(evidence,))
+        self.assertEqual(gps.get_gene(gene.gene_symbol).evidence.first().name, "Expert Review Amber")
 
         file_path = os.path.join(os.path.dirname(__file__), 'import_panel_data.tsv')
         test_panel_file = os.path.abspath(file_path)
@@ -349,7 +357,23 @@ class GenePanelTest(LoginGELUser):
             self.client.post(url, {'panel_list': f})
 
         ap = GenePanel.objects.get(name="Panel One").active_panel
-        assert ap.get_gene(gene.gene_symbol).evidence.first().name == "Expert Review Green"
+        self.assertEqual(ap.get_gene(gene.gene_symbol).evidence.first().name, "Expert Review Green")
+        self.assertEqual(ap.get_gene(gene.gene_symbol).evidence.count(), 1)
+
+    def test_import_incorrect_position(self):
+        GeneFactory(gene_symbol="STR_1")
+
+        file_path = os.path.join(os.path.dirname(__file__), 'import_panel_data_error.tsv')
+        test_panel_file = os.path.abspath(file_path)
+
+        with open(test_panel_file) as f:
+            url = reverse_lazy('panels:upload_panels')
+            res = self.client.post(url, {'panel_list': f})
+            messages = [str(m) for m in res.wsgi_request._messages]
+            expected_messages = ['Line: 3, 4, 5 is not properly formatted, please check it and try again.']
+            self.assertEqual(expected_messages, messages)
+
+        self.assertEqual(GenePanel.objects.count(), 0)
 
     def test_import_wrong_panel(self):
         file_path = os.path.join(os.path.dirname(__file__), 'import_panel_data.tsv')
@@ -424,6 +448,7 @@ class GenePanelTest(LoginGELUser):
 
         gps = gps.increment_version()
         gps.update_gene(self.gel_user, gpes.gene_core.gene_symbol, {'phenotypes': ['abra', ]})
+        del gps.panel.active_panel
         current_ev2 = sorted(gps.panel.active_panel.get_gene(gpes2.gene_core.gene_symbol).evaluation.all().values_list('pk', flat=True))
 
         self.assertNotEqual(evaluations2, current_ev2)
@@ -431,8 +456,9 @@ class GenePanelTest(LoginGELUser):
     def test_evaluation_single_panel(self):
         gps = GenePanelSnapshotFactory()
         gpes = GenePanelEntrySnapshotFactory(panel=gps)
-        gps = gps.increment_version()
-        gps = gps.increment_version()
+        gps.panel.active_panel.increment_version()
+        gps.panel.active_panel.increment_version()
+        gps = gps.panel.active_panel
 
         gene_symbol = gpes.gene_core.gene_symbol
 

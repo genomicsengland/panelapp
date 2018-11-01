@@ -42,8 +42,11 @@ class STRTest(LoginGELUser):
             'sources': [],
         })
 
+        active_panel = active_panel.panel.active_panel
+
         assert active_panel.has_str(str_item.name)
         active_panel.increment_version()
+        active_panel = active_panel.panel.active_panel
         assert active_panel.panel.active_panel.has_str(str_item.name)
 
     def test_add_str_to_panel(self):
