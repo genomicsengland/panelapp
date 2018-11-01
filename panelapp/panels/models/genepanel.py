@@ -94,7 +94,7 @@ class GenePanel(TimeStampedModel):
                     output_field=models.IntegerField()
                 ))
             )\
-            .order_by('-major_version', '-minor_version', '-created')
+            .order_by('-major_version', '-minor_version', '-modified', '-pk')
 
     def clear_cache(self):
         if self.active_panel:
@@ -105,9 +105,9 @@ class GenePanel(TimeStampedModel):
         """Return the panel with the largest version"""
 
         return self.genepanelsnapshot_set\
-            .order_by('-major_version', '-minor_version', '-created').first()
+            .order_by('-major_version', '-minor_version', '-modified', '-pk').first()
 
-    @property
+    @cached_property
     def active_panel_extra(self):
         """Return the panel with the largest version and related info"""
 
@@ -121,7 +121,7 @@ class GenePanel(TimeStampedModel):
                 'genepanelentrysnapshot_set__gene_core',
                 'genepanelentrysnapshot_set__evaluation__comments'
             )\
-            .order_by('-major_version', '-minor_version', '-created').first()
+            .order_by('-major_version', '-minor_version', '-modified', '-pk').first()
 
     def get_panel_version(self, version):
         """Get a specific version. Version argument should be a string"""
