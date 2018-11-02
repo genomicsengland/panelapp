@@ -36,7 +36,7 @@ class GenePanelEntrySnapshotManager(EntityManager):
 
         return qs.distinct('panel__panel_id')\
             .values_list('panel_id', flat=True)\
-            .order_by('panel__panel_id', '-panel__major_version', '-panel__minor_version')
+            .order_by('panel__panel_id', '-panel__major_version', '-panel__minor_version', '-panel__modified', '-panel_id')
 
     def get_active(self, deleted=False, gene_symbol=None, pks=None, panel_types=None):
         """Get active Gene Entry Snapshots"""
@@ -62,7 +62,7 @@ class GenePanelEntrySnapshotManager(EntityManager):
                 entity_name=models.F('gene_core__gene_symbol')
             )\
             .prefetch_related('evaluation', 'tags', 'evidence', 'panel', 'panel__level4title', 'panel__panel')\
-            .order_by('panel_id', '-panel__major_version', '-panel__minor_version')
+            .order_by('panel_id', '-panel__major_version', '-panel__minor_version', '-panel__modified', '-panel_id')
 
     def get_gene_panels(self, gene_symbol, deleted=False, pks=None):
         """Get panels for the specified gene"""

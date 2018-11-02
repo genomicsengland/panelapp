@@ -74,7 +74,7 @@ def command(csv_file):
 
                         # make sure current rating still there
                         if not entity.evidence.filter(name=keep_expert_review).count():
-                            raise Exception('Source {} is missing after cleanup {}'.format(keep_expert_review, panel.pk))
+                            raise Exception('Entity {} Source {} is missing after cleanup {}'.format(entity, keep_expert_review, panel.pk))
 
                         # add activity message
                         # not adding TrackRecord as the rating shouldn't change
