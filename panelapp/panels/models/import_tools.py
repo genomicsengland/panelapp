@@ -433,6 +433,10 @@ class UploadedPanelList(TimeStampedModel):
                 'invalid_lines': []
             }
 
+            if not background and len(lines) > 200:
+                import_panel.delay(user.pk, self.pk)
+                return ProcessingRunCode.PROCESS_BACKGROUND
+
             with transaction.atomic():
                 # check the number of genes in a panel
                 for panel_name, index in unique_panels.items():
@@ -443,7 +447,7 @@ class UploadedPanelList(TimeStampedModel):
                         else:
                             number_of_entities = gp.active_panel.stats.get('number_of_entities', 0)
 
-                            if not background and (len(lines) > 200 or number_of_entities > 200):
+                            if not background and number_of_entities > 200:
                                 # panel is too big, process in the background
                                 import_panel.delay(user.pk, self.pk)
                                 return ProcessingRunCode.PROCESS_BACKGROUND

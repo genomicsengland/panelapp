@@ -337,7 +337,7 @@ class GenePanelTest(LoginGELUser):
 
     def test_import_panel_sources(self):
         gene = GeneFactory(gene_symbol="ABCC5-AS1")
-        GeneFactory(gene_symbol="A1CF")
+        A1CF = GeneFactory(gene_symbol="A1CF")
         GeneFactory(gene_symbol="STR_1")
 
         gps = GenePanelSnapshotFactory()
@@ -359,6 +359,7 @@ class GenePanelTest(LoginGELUser):
         ap = GenePanel.objects.get(name="Panel One").active_panel
         self.assertEqual(ap.get_gene(gene.gene_symbol).evidence.first().name, "Expert Review Green")
         self.assertEqual(ap.get_gene(gene.gene_symbol).evidence.count(), 1)
+        self.assertEqual(sorted(ap.get_gene('A1CF').phenotypes), sorted(['57h', 'wef']))
 
     def test_import_incorrect_position(self):
         GeneFactory(gene_symbol="STR_1")
