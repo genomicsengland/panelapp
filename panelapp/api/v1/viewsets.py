@@ -7,9 +7,11 @@ from panels.models import GenePanelEntrySnapshot
 from panels.models import STR
 from panels.models import Region
 from panels.models import Activity
+from django import forms
 from django.db.models import Q
 from django.db.models import ObjectDoesNotExist
 from django.utils.functional import cached_property
+from django_filters import rest_framework as filters
 from .serializers import PanelSerializer
 from .serializers import ActivitySerializer
 from .serializers import GeneSerializer
@@ -30,10 +32,31 @@ class PanelTypesFilterMixin:
         return [pt for pt in self.request.query_params.get('type', '').split(',') if pt]
 
 
-class PanelsViewSet(PanelTypesFilterMixin, ReadOnlyListViewset):
+class EntityFilter(filters.FilterSet):
+    entity_name = filters.BaseInFilter(field_name='entity_name', lookup_expr='in')
+    confidence_level = filters.NumberFilter(field_name='saved_gel_status', lookup_expr='gte',
+                                            help_text="Filter by value or anything greater than")
+
+    class Meta:
+        fields = ['entity_name', 'confidence_level']
+
+
+class PanelsFilter(filters.FilterSet):
+    type = filters.BaseInFilter(field_name='panel__types__slug', lookup_expr='in')
+    version = filters.CharFilter(method='version_lookup')
+
+    class Meta:
+        fields = ['type', ]
+
+    def version_lookup(self):
+        pass # FIXME 
+
+
+class PanelsViewSet(ReadOnlyListViewset):
     permission_classes = (permissions.IsAuthenticatedOrReadOnly, )
     lookup_value_regex = '[^/]+'
     serializer_class = PanelSerializer
+    filter_class = PanelsFilter
 
     def get_serializer(self, *args, **kwargs):
         if self.action == 'retrieve':
@@ -43,7 +66,7 @@ class PanelsViewSet(PanelTypesFilterMixin, ReadOnlyListViewset):
     def get_queryset(self):
         retired = self.request.query_params.get('retired', False)
         name = self.request.query_params.get('name', None)
-        return GenePanelSnapshot.objects.get_active_annotated(all=retired, name=name, panel_types=self.panel_types_filters())
+        return GenePanelSnapshot.objects.get_active_annotated(all=retired, name=name)
 
     def get_object(self):
         version = self.request.query_params.get('version', None)
@@ -128,6 +151,7 @@ class EntityViewSet(viewsets.mixins.ListModelMixin, viewsets.GenericViewSet):
 class GeneViewSet(EntityViewSet):
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
     serializer_class = GeneSerializer
+    filter_class = EntityFilter
 
     def get_queryset(self):
         panel = self.get_panel()
@@ -150,6 +174,7 @@ class GeneEvaluationsViewSet(EntityViewSet):
 class STRViewSet(EntityViewSet):
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
     serializer_class = STRSerializer
+    filter_class = EntityFilter
 
     def get_queryset(self):
         panel = self.get_panel()
@@ -171,7 +196,9 @@ class STREvaluationsViewSet(EntityViewSet):
 
 class RegionViewSet(EntityViewSet):
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
+    filter_backends = (filters.DjangoFilterBackend,)
     serializer_class = RegionSerializer
+    filter_class = EntityFilter
 
     def get_queryset(self):
         panel = self.get_panel()
@@ -191,10 +218,18 @@ class RegionEvaluationsViewSet(EntityViewSet):
             raise Http404
 
 
-class EntitySearchViewSet(PanelTypesFilterMixin, ReadOnlyListViewset):
+class EntitySearchFilter(filters.FilterSet):
+    type = filters.BaseInFilter(field_name='panel__panel__types__slug', lookup_expr='in')
+
+    class Meta:
+        fields = ['type', ]
+
+
+class EntitySearch(ReadOnlyListViewset):
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
     lookup_field = 'entity_name'
     lookup_url_kwarg = 'entity_name'
+    filter_class = EntitySearchFilter
 
     @property
     def active_snapshot_ids(self):
@@ -216,10 +251,11 @@ class EntitySearchViewSet(PanelTypesFilterMixin, ReadOnlyListViewset):
         return qs
 
 
-class GeneSearchViewSet(EntitySearchViewSet):
+class GeneSearchViewSet(EntitySearch):
     """Search Genes"""
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
     serializer_class = GeneSerializer
+    filter_class = EntitySearchFilter
 
     def get_queryset(self):
         filters = {
@@ -235,7 +271,7 @@ class GeneSearchViewSet(EntitySearchViewSet):
         return self.list(request, *args, **kwargs)
 
 
-class STRSearchViewSet(EntitySearchViewSet):
+class STRSearchViewSet(EntitySearch):
     """Search STRs"""
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
     serializer_class = STRSerializer
@@ -254,7 +290,7 @@ class STRSearchViewSet(EntitySearchViewSet):
         return self.list(request, *args, **kwargs)
 
 
-class RegionSearchViewSet(EntitySearchViewSet):
+class RegionSearchViewSet(EntitySearch):
     """Search Regions"""
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
     serializer_class = RegionSerializer
@@ -273,7 +309,7 @@ class RegionSearchViewSet(EntitySearchViewSet):
         return self.list(request, *args, **kwargs)
 
 
-class EntitySearchViewSet(EntitySearchViewSet):
+class EntitySearchViewSet(EntitySearch):
     """Search Entities"""
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
     serializer_class = EntitySerializer

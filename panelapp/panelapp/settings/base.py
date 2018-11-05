@@ -66,6 +66,7 @@ CUSTOM_APPS = [
     'django_admin_listfilter_dropdown',
     'drf_yasg',
     'qurl_templatetag',
+    'django_filters',
 ]
 
 PROJECT_APPS = [
@@ -248,6 +249,7 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 100,
     'DEFAULT_VERSIONING_CLASS': 'rest_framework.versioning.NamespaceVersioning',
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'DEFAULT_FILTER_BACKENDS': ('django_filters.rest_framework.DjangoFilterBackend',),
     'DEFAULT_VERSION': 'v1',
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework.authentication.SessionAuthentication',
