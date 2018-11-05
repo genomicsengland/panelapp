@@ -46,7 +46,7 @@ class GenePanelSnapshotManager(models.Manager):
         return qs\
             .distinct('panel_id')\
             .values('pk')\
-            .order_by('panel_id', '-major_version', '-minor_version')
+            .order_by('panel_id', '-major_version', '-minor_version', '-modified', '-pk')
 
     def get_active(self, all=False, deleted=False, internal=False, name=None, panel_types=None):
         """Get active panels
@@ -82,7 +82,7 @@ class GenePanelSnapshotManager(models.Manager):
             qs = qs.filter(filters)
 
         return qs.prefetch_related('panel', 'panel__types', 'child_panels', 'level4title')\
-            .order_by('panel__name', '-major_version', '-minor_version')
+            .order_by('panel_id', '-major_version', '-minor_version', '-modified', '-pk')
 
     def get_active_annotated(self, all=False, deleted=False, internal=False, name=None, panel_types=None):
         """This method adds additional values to the queryset, such as number_of_genes, etc and returns active panels"""
@@ -172,7 +172,7 @@ class GenePanelSnapshotManager(models.Manager):
             qs = qs.exclude(panel__status=GenePanel.STATUS.deleted)
 
         return qs.annotate(version=Concat('major_version', V('.'), 'minor_version', output_field=CharField()))\
-                 .order_by('-major_version', '-minor_version')\
+                 .order_by('-major_version', '-minor_version', '-modified', '-pk')\
                  .values_list('version', 'version')
 
     def get_panel_entities(self, panel_id, major_version, minor_version, all=False, deleted=False, internal=False):
@@ -413,7 +413,7 @@ class GenePanelSnapshot(TimeStampedModel):
         super_genepanels = set(self.genepanelsnapshot_set.values_list('panel_id', flat=True))
         if super_genepanels:
             super_panels = GenePanelSnapshot.objects.filter(panel_id__in=super_genepanels).distinct('panel_id')\
-                .order_by('panel_id', '-major_version', '-minor_version')
+                .order_by('panel_id', '-major_version', '-minor_version', '-modified', '-pk')
             for super_panel in super_panels:
                 super_panel.update_saved_stats(use_db=False)
 
@@ -472,7 +472,7 @@ class GenePanelSnapshot(TimeStampedModel):
 
                 child_panels = list(
                     GenePanelSnapshot.objects.filter(panel_id__in=distinct_child_panels)
-                        .order_by('panel_id', '-major_version', '-minor_version')
+                        .order_by('panel_id', '-major_version', '-minor_version', '-modified', '-pk')
                         .distinct('panel_id').values_list('pk', flat=True))
 
                 # copy child panels
@@ -532,7 +532,7 @@ class GenePanelSnapshot(TimeStampedModel):
 
                 super_panels = list(
                     GenePanelSnapshot.objects.filter(panel_id__in=super_genepanels).distinct('panel_id')
-                        .order_by('panel_id', '-major_version', '-minor_version')
+                        .order_by('panel_id', '-major_version', '-minor_version', '-modified', '-pk')
                         .values_list('pk', flat=True)
                 )
 

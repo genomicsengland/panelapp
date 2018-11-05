@@ -403,6 +403,8 @@ class UploadedPanelList(TimeStampedModel):
                     raise GeneDoesNotExist("{}, Gene: {}".format(key + 2, entity_data['gene_symbol']))
 
             getattr(panel, methods['add'])(user, entity_data['entity_name'], entity_data, False)
+            del panel.panel.active_panel
+            self._cached_panels[entity_data['level4']] = panel.panel.active_panel
         else:
             getattr(panel, methods['update'])(user, entity_data['entity_name'], entity_data, True)
 
@@ -431,6 +433,10 @@ class UploadedPanelList(TimeStampedModel):
                 'invalid_lines': []
             }
 
+            if not background and len(lines) > 200:
+                import_panel.delay(user.pk, self.pk)
+                return ProcessingRunCode.PROCESS_BACKGROUND
+
             with transaction.atomic():
                 # check the number of genes in a panel
                 for panel_name, index in unique_panels.items():
@@ -441,7 +447,7 @@ class UploadedPanelList(TimeStampedModel):
                         else:
                             number_of_entities = gp.active_panel.stats.get('number_of_entities', 0)
 
-                            if not background and (len(lines) > 200 or number_of_entities > 200):
+                            if not background and number_of_entities > 200:
                                 # panel is too big, process in the background
                                 import_panel.delay(user.pk, self.pk)
                                 return ProcessingRunCode.PROCESS_BACKGROUND
@@ -542,9 +548,8 @@ class UploadedReviewsList(TimeStampedModel):
         comments = aline[20]
         username = aline[21]
 
-        panel = self.panels.get(level4)
-        if panel:
-            active_panel = panel.active_panel
+        active_panel = self.panels.get(level4)
+        if active_panel:
             if not active_panel.has_gene(gene_symbol):
                 raise GeneDoesNotExist("Line: {} Gene: {}".format(key + 2, gene_symbol))
 
@@ -590,16 +595,16 @@ class UploadedReviewsList(TimeStampedModel):
                 if len(non_existing_genes) > 0:
                     raise GenesDoNotExist(", ".join(non_existing_genes))
 
-                panel_names = set([line[2] for line in lines])
-                self.panels = {panel.name: panel for panel in GenePanel.objects.filter(name__in=panel_names)}
-                for panel in self.panels.values():
-                    if panel.active_panel.is_super_panel:
-                        raise IsSuperPanelException
-                    panel = panel.active_panel.increment_version().panel
-
                 if not background and len(lines) > 20:  # panel is too big, process in the background
                     import_reviews.delay(user.pk, self.pk)
                     return ProcessingRunCode.PROCESS_BACKGROUND
+
+                panel_names = set([line[2] for line in lines])
+                self.panels = {panel.name: panel.active_panel for panel in GenePanel.objects.filter(name__in=panel_names)}
+                for active_panel in list(self.panels.values()):
+                    if active_panel.is_super_panel:
+                        raise IsSuperPanelException
+                    self.panels[active_panel.panel.name] = active_panel.increment_version()
 
                 errors = {
                     'invalid_genes': [],
