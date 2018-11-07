@@ -87,8 +87,10 @@ class GenePanelSnapshotManager(models.Manager):
     def get_active_annotated(self, all=False, deleted=False, internal=False, name=None, panel_types=None):
         """This method adds additional values to the queryset, such as number_of_genes, etc and returns active panels"""
 
-        return self.get_active(all, deleted, internal, name, panel_types)\
-            .annotate(
+        return self.annotate_panels(self.get_active(all, deleted, internal, name, panel_types))
+
+    def annotate_panels(self, qs):
+        return qs.annotate(
                 child_panels_count=Count('child_panels'),
                 superpanels_count=Count('genepanelsnapshot'),
                 panel_type_slugs=ArrayAgg('panel__types__slug', distinct=True)
@@ -123,7 +125,7 @@ class GenePanelSnapshotManager(models.Manager):
                       | Q(panel__name__icontains=name)
         qs = qs.filter(filters)
 
-        return qs.filter(major_version=major_version, minor_version=minor_version)
+        return self.annotate_panels(qs.filter(major_version=major_version, minor_version=minor_version))
 
     def get_gene_panels(self, gene_symbol, all=False, internal=False):
         """Get all panels for a specific gene in Gene entities"""
