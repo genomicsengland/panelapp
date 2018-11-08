@@ -19,8 +19,10 @@ class TestAPIV1(LoginExternalUser):
         self.gpes_retired = GenePanelEntrySnapshotFactory(panel__panel__status=GenePanel.STATUS.retired)
         self.gpes_deleted = GenePanelEntrySnapshotFactory(panel__panel__status=GenePanel.STATUS.deleted)
         self.genes = GenePanelEntrySnapshotFactory.create_batch(4, panel=self.gps)
-        self.str = STRFactory(panel__panel__status=GenePanel.STATUS.public)
-        self.region = RegionFactory(panel__panel__status=GenePanel.STATUS.public)
+        self.str = STRFactory(panel__panel__status=GenePanel.STATUS.public, panel=self.gps)
+        STRFactory(panel__panel__status=GenePanel.STATUS.public)
+        self.region = RegionFactory(panel__panel__status=GenePanel.STATUS.public, panel=self.gps)
+        RegionFactory(panel__panel__status=GenePanel.STATUS.public)
 
     def test_list_panels(self):
         r = self.client.get(reverse_lazy('api:v1:panels-list'))
@@ -163,6 +165,77 @@ class TestAPIV1(LoginExternalUser):
                          [self.str.position_38.lower, self.str.position_38.upper])
         self.assertEqual(r.json()['strs'][0]['pathogenic_repeats'], self.str.pathogenic_repeats)
 
+    def test_genes_in_panel(self):
+        r = self.client.get(reverse_lazy('api:v1:panels-detail', args=(self.gpes.panel.panel.pk,)))
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.json()['genes'][0]['entity_name'], self.gpes.gene.get('gene_symbol'))
+        self.assertEqual(r.json()['genes'][0]['mode_of_pathogenicity'], self.gpes.mode_of_pathogenicity)
+
+    def test_genes_in_panel_version(self):
+        gene_symbol = self.gpes.gene.get('gene_symbol')
+        self.gps_public.delete_gene(gene_symbol)
+        self.gps_public = self.gps_public.panel.active_panel
+
+        r = self.client.get(reverse_lazy('api:v1:panels-detail', args=(self.gpes.panel.panel.pk,)) + '?version=0.0')
+        j = r.json()
+        self.assertEqual(r.status_code, 200)
+        gene_symbols_v0 = [g['entity_name'] for g in j['genes']]
+        self.assertTrue(gene_symbols_v0, gene_symbol)
+
+        r = self.client.get(reverse_lazy('api:v1:panels-detail', args=(self.gpes.panel.panel.pk,)) + '?version=0.1')
+        j = r.json()
+        self.assertEqual(r.status_code, 200)
+        gene_symbols_v0 = [g['entity_name'] for g in j['genes']]
+        self.assertFalse(gene_symbols_v0, gene_symbol)
+
+    def test_green_genes_panel(self):
+        # get all genes and their confidence levels counts
+        r = self.client.get(reverse_lazy('api:v1:panels_genes-list', args=(self.gps.panel_id,)) + '?confidence_level=3')
+        j = r.json()
+        green_db = [e for e in self.gps.get_all_genes if e.saved_gel_status >= 3]
+        green_api = [e for e in j['results'] if int(e.get('confidence_level')) >= 3]
+        self.assertEqual(len(green_db), len(green_api))
+
+        r = self.client.get(reverse_lazy('api:v1:panels_genes-list', args=(self.gps.panel_id,)) + '?confidence_level=2')
+        j = r.json()
+        amber_db = [e for e in self.gps.get_all_genes if e.saved_gel_status == 2]
+        amber_api = [e for e in j['results'] if int(e.get('confidence_level')) == 2]
+        self.assertEqual(len(amber_db), len(amber_api))
+
+        r = self.client.get(reverse_lazy('api:v1:panels_genes-list', args=(self.gps.panel_id,)) + '?confidence_level=1')
+        j = r.json()
+        red_db = [e for e in self.gps.get_all_genes if e.saved_gel_status == 1]
+        red_api = [e for e in j['results'] if int(e.get('confidence_level')) == 1]
+        self.assertEqual(len(red_db), len(red_api))
+
+    def test_genes_endpoint_in_panel_version(self):
+        gene_symbol = self.gpes.gene.get('gene_symbol')
+        self.gps_public.delete_gene(gene_symbol)
+        self.gps_public = self.gps_public.panel.active_panel
+
+        r = self.client.get(reverse_lazy('api:v1:panels_genes-list', args=(self.gpes.panel.panel.pk,)) + '?version=0.0')
+        j = r.json()
+        self.assertEqual(r.status_code, 200)
+        gene_symbols_v0 = [g['entity_name'] for g in j['results']]
+        self.assertTrue(gene_symbols_v0, gene_symbol)
+
+        r = self.client.get(reverse_lazy('api:v1:panels_genes-list', args=(self.gpes.panel.panel.pk,)) + '?version=0.1')
+        j = r.json()
+        self.assertEqual(r.status_code, 200)
+        gene_symbols_v0 = [g['entity_name'] for g in j['results']]
+        self.assertFalse(gene_symbols_v0, gene_symbol)
+
+    def test_genes_endpoint_entities_name(self):
+        gene_symbol1 = self.genes[0].gene.get('gene_symbol')
+        gene_symbol2 = self.genes[1].gene.get('gene_symbol')
+        r = self.client.get(reverse_lazy('api:v1:panels_genes-list', args=(self.gps.panel_id,)) + '?entity_name={},{}'.format(gene_symbol1, gene_symbol2))
+        j = r.json()
+        self.assertEqual(r.status_code, 200)
+        gene_symbols = [g['entity_name'] for g in j['results']]
+        self.assertTrue(len(j['results']), 2)
+        self.assertTrue(gene_symbol1 in gene_symbols)
+        self.assertTrue(gene_symbol2 in gene_symbols)
+
     def test_region_in_panel(self):
         r = self.client.get(reverse_lazy('api:v1:panels-detail', args=(self.region.panel.panel.pk,)))
         self.assertEqual(r.status_code, 200)
@@ -207,7 +280,7 @@ class TestAPIV1(LoginExternalUser):
         self.gps.panel.types.add(panel_type)
         r = self.client.get(reverse_lazy('api:v1:genes-list') + '?type=' + panel_type.slug)
         self.assertEqual(r.status_code, 200)
-        self.assertEqual(len(r.json()['results']), 5)
+        self.assertEqual(len(r.json()['results']), 4)
 
     def test_genes_list_filter_name(self):
         r = self.client.get(reverse_lazy('api:v1:genes-detail', args=(self.gpes.gene_core.gene_symbol, )))
@@ -217,7 +290,7 @@ class TestAPIV1(LoginExternalUser):
     def test_strs_list(self):
         r = self.client.get(reverse_lazy('api:v1:strs-list'))
         self.assertEqual(r.status_code, 200)
-        self.assertEqual(len(r.json()['results']), 1)
+        self.assertEqual(len(r.json()['results']), 2)
 
     def test_strs_list_filter_types(self):
         panel_type = PanelTypeFactory()
@@ -229,7 +302,7 @@ class TestAPIV1(LoginExternalUser):
     def test_regions_list(self):
         r = self.client.get(reverse_lazy('api:v1:regions-list'))
         self.assertEqual(r.status_code, 200)
-        self.assertEqual(len(r.json()['results']), 1)
+        self.assertEqual(len(r.json()['results']), 2)
 
     def test_regions_list_filter_types(self):
         panel_type = PanelTypeFactory()
@@ -241,7 +314,7 @@ class TestAPIV1(LoginExternalUser):
     def test_entities_list(self):
         r = self.client.get(reverse_lazy('api:v1:entities-list'))
         self.assertEqual(r.status_code, 200)
-        self.assertEqual(len(r.json()['results']), 7)
+        self.assertEqual(len(r.json()['results']), 9)
 
     def test_read_only_list_of_entities(self):
         r = self.client.post(reverse_lazy('api:v1:entities-list'), {'something': 'something'})
@@ -255,9 +328,10 @@ class TestAPIV1(LoginExternalUser):
     def test_entities_list_filter_types(self):
         panel_type = PanelTypeFactory()
         self.gps.panel.types.add(panel_type)
-        r = self.client.get(reverse_lazy('api:v1:entities-list') + '?type=' + panel_type.slug)
+        url = reverse_lazy('api:v1:entities-list') + '?type=' + panel_type.slug
+        r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        self.assertEqual(len(r.json()['results']), 4)
+        self.assertEqual(len(r.json()['results']), 6)
 
 
 class NonAuthAPIv1Request(TestCase):

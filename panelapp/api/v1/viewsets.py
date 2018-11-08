@@ -7,9 +7,11 @@ from panels.models import GenePanelEntrySnapshot
 from panels.models import STR
 from panels.models import Region
 from panels.models import Activity
+from django import forms
 from django.db.models import Q
 from django.db.models import ObjectDoesNotExist
 from django.utils.functional import cached_property
+from django_filters import rest_framework as filters
 from .serializers import PanelSerializer
 from .serializers import ActivitySerializer
 from .serializers import GeneSerializer
@@ -25,15 +27,62 @@ class ReadOnlyListViewset(viewsets.mixins.RetrieveModelMixin, viewsets.mixins.Li
     pass
 
 
-class PanelTypesFilterMixin:
-    def panel_types_filters(self):
-        return [pt for pt in self.request.query_params.get('type', '').split(',') if pt]
+CONFIDENCE_CHOICES = (
+    (3, 'Green'),
+    (2, 'Amber'),
+    (1, 'Red'),
+    (0, 'No List'),
+)
 
 
-class PanelsViewSet(PanelTypesFilterMixin, ReadOnlyListViewset):
+class NumberChoices(filters.ChoiceFilter, filters.NumberFilter):
+    pass
+
+
+class EntityFilter(filters.FilterSet):
+    entity_name = filters.BaseInFilter(field_name='entity_name', lookup_expr='in')
+    confidence_level = NumberChoices(method='filter_confidence_level', choices=CONFIDENCE_CHOICES,
+                                            help_text="Filter by confidence level: 0, 1, 2, 3")  # FIXME should be custom
+    version = filters.CharFilter(method='version_lookup', help_text="Panel version")
+    tags = filters.BaseInFilter(field_name='tags__name', lookup_expr='in')
+
+    class Meta:
+        fields = ['entity_name', 'confidence_level', 'tags']
+
+    def filter_confidence_level(self, queryset, name, value):
+        field = 'saved_gel_status'
+        try:
+            value = int(value)
+            if value >= 3:
+                value = 3
+                field = field + '__gte'
+        except ValueError:
+            raise APIException(detail='Incorrect confidence level', code='incorrect_confidence_level')
+
+        return queryset.filter(**{field: value})
+
+    def version_lookup(self, queryset, name, value):
+        try:
+            major, minor = value.split('.')
+        except ValueError:
+            raise APIException(detail='Incorrect version supplied', code='incorrect_version')
+
+        return queryset.filter(panel__major_version=major, panel__minor_version=minor)
+
+
+
+class PanelsFilter(filters.FilterSet):
+    type = filters.BaseInFilter(field_name='panel__types__slug', lookup_expr='in')
+
+    class Meta:
+        fields = ['type', ]
+
+
+class PanelsViewSet(ReadOnlyListViewset):
     permission_classes = (permissions.IsAuthenticatedOrReadOnly, )
     lookup_value_regex = '[^/]+'
     serializer_class = PanelSerializer
+    filter_class = PanelsFilter
 
     def get_serializer(self, *args, **kwargs):
         if self.action == 'retrieve':
@@ -43,7 +92,7 @@ class PanelsViewSet(PanelTypesFilterMixin, ReadOnlyListViewset):
     def get_queryset(self):
         retired = self.request.query_params.get('retired', False)
         name = self.request.query_params.get('name', None)
-        return GenePanelSnapshot.objects.get_active_annotated(all=retired, name=name, panel_types=self.panel_types_filters())
+        return GenePanelSnapshot.objects.get_active_annotated(all=retired, name=name)
 
     def get_object(self):
         version = self.request.query_params.get('version', None)
@@ -65,7 +114,12 @@ class PanelsViewSet(PanelTypesFilterMixin, ReadOnlyListViewset):
     def retrieve(self, request, *args, **kwargs):
         """Get individual Panel data
 
-        In addition to the model fields this endpoint also returns `genes`, `strs`, `regions` associated with this panel."""
+        In addition to the model fields this endpoint also returns `genes`, `strs`, `regions` associated with this panel.
+
+        Additional parameters:
+
+        ?version=1.1 - get a specific version for this panel
+        """
 
         return super().retrieve(request, *args, **kwargs)
 
@@ -110,28 +164,26 @@ class EntityViewSet(viewsets.mixins.ListModelMixin, viewsets.GenericViewSet):
     lookup_url_kwarg = 'entity_name'
 
     def get_panel(self):
-        obj = GenePanelSnapshot.objects.get_active_annotated(
-            all=True, internal=True, deleted=True, name=self.kwargs['panel_pk']).first()
+        version = self.request.query_params.get('version')
+        if version:
+            obj = GenePanelSnapshot.objects.get_panel_version(name=self.kwargs['panel_pk'], version=version).first()
+        else:
+            obj = GenePanelSnapshot.objects.get_active_annotated(
+                all=True, internal=True, deleted=True, name=self.kwargs['panel_pk']).first()
 
         if obj:
             return obj
 
         raise Http404
 
-    def filter_by_tag(self, qs):
-        tags = self.request.query_params.get('tags', '')
-        if tags:
-            qs = qs.filter(tags__name__in=tags.split(','))
-        return qs
-
 
 class GeneViewSet(EntityViewSet):
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
     serializer_class = GeneSerializer
+    filter_class = EntityFilter
 
     def get_queryset(self):
-        panel = self.get_panel()
-        return self.filter_by_tag(panel.get_all_genes)
+        return self.get_panel().get_all_genes.prefetch_related('evidence', 'tags')
 
 
 class GeneEvaluationsViewSet(EntityViewSet):
@@ -150,10 +202,10 @@ class GeneEvaluationsViewSet(EntityViewSet):
 class STRViewSet(EntityViewSet):
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
     serializer_class = STRSerializer
+    filter_class = EntityFilter
 
     def get_queryset(self):
-        panel = self.get_panel()
-        return self.filter_by_tag(panel.get_all_strs)
+        return self.get_panel().get_all_strs.prefetch_related('evidence', 'tags')
 
 
 class STREvaluationsViewSet(EntityViewSet):
@@ -171,11 +223,12 @@ class STREvaluationsViewSet(EntityViewSet):
 
 class RegionViewSet(EntityViewSet):
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
+    filter_backends = (filters.DjangoFilterBackend,)
     serializer_class = RegionSerializer
+    filter_class = EntityFilter
 
     def get_queryset(self):
-        panel = self.get_panel()
-        return self.filter_by_tag(panel.get_all_regions)
+        return self.get_panel().get_all_regions.prefetch_related('evidence', 'tags')
 
 
 class RegionEvaluationsViewSet(EntityViewSet):
@@ -191,10 +244,20 @@ class RegionEvaluationsViewSet(EntityViewSet):
             raise Http404
 
 
-class EntitySearchViewSet(PanelTypesFilterMixin, ReadOnlyListViewset):
+class EntitySearchFilter(filters.FilterSet):
+    type = filters.BaseInFilter(field_name='panel__panel__types__slug', lookup_expr='in')
+    tags = filters.BaseInFilter(field_name='tags__name', lookup_expr='in')
+    entity_name = filters.BaseInFilter(field_name='entity_name', lookup_expr='in')
+
+    class Meta:
+        fields = ['type', 'tags', 'entity_name']
+
+
+class EntitySearch(ReadOnlyListViewset):
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
     lookup_field = 'entity_name'
     lookup_url_kwarg = 'entity_name'
+    filter_class = EntitySearchFilter
 
     @property
     def active_snapshot_ids(self):
@@ -209,14 +272,25 @@ class EntitySearchViewSet(PanelTypesFilterMixin, ReadOnlyListViewset):
 
         return list(all_panels)
 
-    def filter_by_tag(self, qs):
-        tags = self.request.query_params.get('tags', '')
-        if tags:
-            qs = qs.filter(tags__name__in=tags.split(','))
-        return qs
+    @property
+    def qs_filters(self):
+        filters = {}
+
+        if self.kwargs.get('entity_name'):
+            filters['entity_name__in'] = self.kwargs['entity_name'].split(',')
+        elif self.request.query_params.get('entity_name'):
+            filters['entity_name__in'] = self.request.query_params['entity_name'].split(',')
+
+        if self.request.query_params.get('type'):
+            filters['panel__panel__types__slug__in'] = self.request.query_params['type'].split(',')
+
+        if self.request.query_params.get('tags'):
+            filters['tag__name__in'] = self.request.query_params['tags'].split(',')
+
+        return filters
 
 
-class GeneSearchViewSet(EntitySearchViewSet):
+class GeneSearchViewSet(EntitySearch):
     """Search Genes"""
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
     serializer_class = GeneSerializer
@@ -225,17 +299,14 @@ class GeneSearchViewSet(EntitySearchViewSet):
         filters = {
             'pks': self.active_snapshot_ids
         }
-        if self.kwargs.get('entity_name'):
-            filters['gene_symbol'] = self.kwargs['entity_name'].split(',')
-            filters['panel_types'] = self.panel_types_filters()
 
-        return self.filter_by_tag(GenePanelEntrySnapshot.objects.get_active(**filters))
+        return GenePanelEntrySnapshot.objects.get_active(**filters).filter(**self.qs_filters)
 
     def retrieve(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
 
-class STRSearchViewSet(EntitySearchViewSet):
+class STRSearchViewSet(EntitySearch):
     """Search STRs"""
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
     serializer_class = STRSerializer
@@ -244,17 +315,14 @@ class STRSearchViewSet(EntitySearchViewSet):
         filters = {
             'pks': self.active_snapshot_ids
         }
-        if self.kwargs.get('entity_name'):
-            filters['name'] = self.kwargs['entity_name'].split(',')
-            filters['panel_types'] = self.panel_types_filters()
 
-        return self.filter_by_tag(STR.objects.get_active(**filters))
+        return STR.objects.get_active(**filters).filter(**self.qs_filters)
 
     def retrieve(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
 
-class RegionSearchViewSet(EntitySearchViewSet):
+class RegionSearchViewSet(EntitySearch):
     """Search Regions"""
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
     serializer_class = RegionSerializer
@@ -263,20 +331,18 @@ class RegionSearchViewSet(EntitySearchViewSet):
         filters = {
             'pks': self.active_snapshot_ids
         }
-        if self.kwargs.get('entity_name'):
-            filters['name'] = self.kwargs['entity_name'].split(',')
-            filters['panel_types'] = self.panel_types_filters()
 
-        return self.filter_by_tag(Region.objects.get_active(**filters))
+        return Region.objects.get_active(**filters).filter(**self.qs_filters)
 
     def retrieve(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
 
-class EntitySearchViewSet(EntitySearchViewSet):
+class EntitySearchViewSet(EntitySearch):
     """Search Entities"""
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
     serializer_class = EntitySerializer
+    filter_class = EntitySearchFilter
 
     @cached_property
     def snapshot_ids(self):
@@ -285,31 +351,35 @@ class EntitySearchViewSet(EntitySearchViewSet):
         else:
             panel_names = None
 
-        get_active_filters = {
-            'panel_types': self.panel_types_filters()
-        }
-
         if panel_names:
-            all_panels = GenePanelSnapshot.objects.get_active_annotated(**get_active_filters)\
+            all_panels = GenePanelSnapshot.objects.get_active_annotated()\
                 .filter(panel__name__in=panel_names)
         else:
-            all_panels = GenePanelSnapshot.objects.get_active_annotated(**get_active_filters)
+            all_panels = GenePanelSnapshot.objects.get_active_annotated()
 
-        return [s.get('pk') for s in all_panels.values('pk')]
+        return all_panels.values_list('pk', flat=True)
 
     def get_queryset(self):
         filters = {}
 
         if self.kwargs.get('entity_name'):
             filters['entity_name__in'] = self.kwargs['entity_name'].split(',')
+        elif self.request.query_params.get('entity_name'):
+            filters['entity_name__in'] = self.request.query_params['entity_name'].split(',')
 
-        active_genes = GenePanelEntrySnapshot.objects.get_active(pks=self.snapshot_ids)
+        if self.request.query_params.get('type'):
+            filters['panel__panel__types__slug__in'] = self.request.query_params['type'].split(',')
+
+        if self.request.query_params.get('tags'):
+            filters['tag__name__in'] = self.request.query_params['tags'].split(',')
+
+        active_genes = GenePanelEntrySnapshot.objects.get_active_slim(pks=self.snapshot_ids)
         genes = active_genes.filter(**filters)
 
-        active_strs = STR.objects.get_active(pks=self.snapshot_ids)
+        active_strs = STR.objects.get_active_slim(pks=self.snapshot_ids)
         strs = active_strs.filter(**filters)
 
-        active_regions = Region.objects.get_active(pks=self.snapshot_ids)
+        active_regions = Region.objects.get_active_slim(pks=self.snapshot_ids)
         regions = active_regions.filter(**filters)
 
         return strs.union(genes).union(regions).values('entity_name', 'entity_type', 'pk')
@@ -319,11 +389,11 @@ class EntitySearchViewSet(EntitySearchViewSet):
 
         page = self.paginate_queryset(queryset)
 
-        genes = GenePanelEntrySnapshot.objects.get_active(pks=self.snapshot_ids) \
+        genes = GenePanelEntrySnapshot.objects.get_active() \
             .filter(pk__in=[e.get('pk') for e in page if e.get('entity_type') == 'gene'])
-        strs = STR.objects.get_active(pks=self.snapshot_ids) \
+        strs = STR.objects.get_active() \
             .filter(pk__in=[e.get('pk') for e in page if e.get('entity_type') == 'str'])
-        regions = Region.objects.get_active(pks=self.snapshot_ids) \
+        regions = Region.objects.get_active() \
             .filter(pk__in=[e.get('pk') for e in page if e.get('entity_type') == 'region'])
 
         serializer = self.get_serializer(list(genes) + list(strs) + list(regions), many=True)

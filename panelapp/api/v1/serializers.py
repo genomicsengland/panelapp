@@ -37,7 +37,9 @@ class RangeIntegerField(serializers.ListField):
 
 class EvidenceListField(serializers.ListField):
     def to_representation(self, data):
-        return data.values_list('name', flat=True) if data else []
+        if data:
+            return [e.name for e in data.all()]
+        return []
 
 
 class PanelTypeSerializer(serializers.ModelSerializer):

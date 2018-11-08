@@ -297,13 +297,13 @@ class EntitiesListView(generics.ListAPIView):
                 if convert_evidences(x, True)
             ]
 
-        active_genes = GenePanelEntrySnapshot.objects.get_active(pks=self.snapshot_ids)
+        active_genes = GenePanelEntrySnapshot.objects.get_active_slim(pks=self.snapshot_ids)
         genes = active_genes.filter(**filters)
 
-        active_strs = STR.objects.get_active(pks=self.snapshot_ids)
+        active_strs = STR.objects.get_active_slim(pks=self.snapshot_ids)
         strs = active_strs.filter(**filters)
 
-        active_regions = Region.objects.get_active(pks=self.snapshot_ids)
+        active_regions = Region.objects.get_active_slim(pks=self.snapshot_ids)
         regions = active_regions.filter(**filters)
 
         return strs.union(genes).union(regions).values('entity_name', 'entity_type', 'pk')
