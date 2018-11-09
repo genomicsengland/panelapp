@@ -57,7 +57,6 @@ setup(
         'djangoajax==3.0.2',
         'djangorestframework==3.8.2',
         'django-tables2==1.21.2',
-        'django-filter==1.1.0',
         'django-cors-headers==2.1.0',
         'django-autocomplete-light==3.3.0',
         'django-markdown-deux==1.0.5',
