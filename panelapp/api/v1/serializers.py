@@ -80,10 +80,10 @@ class PanelSerializer(serializers.ModelSerializer):
         super().__init__(*args, **kwargs)
 
         if self.include_entities:
-            self.fields['genes'] = GeneSerializer(source='get_all_genes_extra', many=True, read_only=True,
+            self.fields['genes'] = GeneSerializer(source='get_all_genes_prefetch', many=True, read_only=True,
                                                   no_panel=True)
-            self.fields['strs'] = STRSerializer(source='get_all_strs_extra', many=True, read_only=True, no_panel=True)
-            self.fields['regions'] = RegionSerializer(source='get_all_regions_extra', many=True, read_only=True,
+            self.fields['strs'] = STRSerializer(source='get_all_strs_prefetch', many=True, read_only=True, no_panel=True)
+            self.fields['regions'] = RegionSerializer(source='get_all_regions_prefetch', many=True, read_only=True,
                                                       no_panel=True)
 
 
