@@ -11,11 +11,13 @@ from panels.models import Gene
 from panels.models import GenePanel
 from panels.models import GenePanelSnapshot
 from panels.models import STR
+from panels.models import Region
 from panels.models import GenePanelEntrySnapshot
 from panels.tests.factories import GeneFactory
 from panels.tests.factories import GenePanelSnapshotFactory
 from panels.tests.factories import GenePanelEntrySnapshotFactory
 from panels.tests.factories import STRFactory
+from panels.tests.factories import RegionFactory
 
 
 fake = Factory.create()
@@ -93,12 +95,16 @@ class GeneTest(LoginGELUser):
         GenePanelEntrySnapshotFactory.create(gene_core=gene_to_update, panel=gps)
         STRFactory.create_batch(2, panel=gps)  # random STRs
         STRFactory.create(gene_core=gene_to_update, panel=gps)
+        RegionFactory.create_batch(2, panel=gps)  # random STRs
+        RegionFactory.create(gene_core=gene_to_update, panel=gps)
 
         gps = GenePanelSnapshotFactory()
         GenePanelEntrySnapshotFactory.create_batch(2, panel=gps)  # random genes
         STRFactory.create_batch(2, panel=gps)  # random STRs
         GenePanelEntrySnapshotFactory.create(gene_core=gene_to_update_symbol, panel=gps)
         STRFactory.create(gene_core=gene_to_update_symbol, panel=gps)
+        RegionFactory.create_batch(2, panel=gps)  # random STRs
+        RegionFactory.create(gene_core=gene_to_update_symbol, panel=gps)
 
         to_insert = [
             Gene(gene_symbol='A', ensembl_genes={'inserted': True}).dict_tr(),
@@ -123,28 +129,51 @@ class GeneTest(LoginGELUser):
             'delete': to_delete,
             'update_symbol': to_update_symbol
         }
+
         update_gene_collection(migration)
+
         self.assertTrue(GenePanelEntrySnapshot.objects.get_active().get(
             gene_core__gene_symbol=gene_to_update.gene_symbol).gene.get('ensembl_genes')['updated'])
+
         self.assertTrue(STR.objects.get_active().get(
+            gene_core__gene_symbol=gene_to_update.gene_symbol).gene.get('ensembl_genes')['updated'])
+
+        self.assertTrue(Region.objects.get_active().get(
             gene_core__gene_symbol=gene_to_update.gene_symbol).gene.get('ensembl_genes')['updated'])
 
         updated_not_updated = [gpes.gene['ensembl_genes'] for gpes in GenePanelEntrySnapshot.objects.filter(
             gene_core__gene_symbol=gene_to_update.gene_symbol)]
         self.assertNotEqual(updated_not_updated[0], updated_not_updated[1])
+
         updated_not_updated = [str_item.gene['ensembl_genes'] for str_item in STR.objects.filter(
             gene_core__gene_symbol=gene_to_update.gene_symbol)]
         self.assertNotEqual(updated_not_updated[0], updated_not_updated[1])
+
+        updated_not_updated = [region_item.gene['ensembl_genes'] for region_item in Region.objects.filter(
+            gene_core__gene_symbol=gene_to_update.gene_symbol)]
+        self.assertNotEqual(updated_not_updated[0], updated_not_updated[1])
+
+
         self.assertFalse(GenePanelEntrySnapshot.objects.get(
             gene_core__gene_symbol=gene_to_update_symbol.gene_symbol).gene_core.active)
+
         self.assertFalse(STR.objects.get(
             gene_core__gene_symbol=gene_to_update_symbol.gene_symbol).gene_core.active)
+
+        self.assertFalse(Region.objects.get(
+            gene_core__gene_symbol=gene_to_update_symbol.gene_symbol).gene_core.active)
+
         self.assertFalse(Gene.objects.get(gene_symbol=gene_to_update_symbol.gene_symbol).active)
         self.assertFalse(Gene.objects.get(gene_symbol=gene_to_delete.gene_symbol).active)
         self.assertTrue(Gene.objects.get(gene_symbol='A').active)
+
         self.assertTrue(GenePanelEntrySnapshot.objects.get(
             gene_core__gene_symbol='C').gene.get('ensembl_genes')['updated'])
+
         self.assertTrue(STR.objects.get(
+            gene_core__gene_symbol='C').gene.get('ensembl_genes')['updated'])
+
+        self.assertTrue(Region.objects.get(
             gene_core__gene_symbol='C').gene.get('ensembl_genes')['updated'])
 
     def test_get_panels_for_a_gene(self):

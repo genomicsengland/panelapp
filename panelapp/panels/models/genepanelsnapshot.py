@@ -36,7 +36,7 @@ from .tag import Tag
 
 
 class GenePanelSnapshotManager(models.Manager):
-    def get_latest_ids(self, deleted=False):
+    def get_latest_ids(self, deleted=False, exclude_superpanels=False):
         """Get latest versions for GenePanelsSnapshots"""
 
         qs = super().get_queryset()
@@ -48,7 +48,7 @@ class GenePanelSnapshotManager(models.Manager):
             .values('pk')\
             .order_by('panel_id', '-major_version', '-minor_version', '-modified', '-pk')
 
-    def get_active(self, all=False, deleted=False, internal=False, name=None, panel_types=None):
+    def get_active(self, all=False, deleted=False, internal=False, name=None, panel_types=None, superpanels=True):
         """Get active panels
 
         Parameters:
@@ -70,6 +70,10 @@ class GenePanelSnapshotManager(models.Manager):
 
         if not internal:
             qs = qs.exclude(panel__status=GenePanel.STATUS.internal)
+
+        if not superpanels:
+            # exclude super panels when incrementing versions for all panels
+            qs = qs.annotate(child_panels_count=Count('child_panels')).exclude(child_panels_count__gt=0)
 
         qs = qs.filter(pk__in=Subquery(self.get_latest_ids(deleted)))
 
@@ -923,6 +927,27 @@ class GenePanelSnapshot(TimeStampedModel):
             return qs.annotate(entity_evidences=ArrayAgg('evidence__name', distinct=True))
 
     @cached_property
+    def get_all_genes_prefetch(self):
+        """Get all genes and annotated info, speeds up loading time"""
+
+        qs = self.get_all_extra(self.cached_genes).annotate(
+            entity_type=V('gene', output_field=models.CharField()),
+            entity_name=models.F('gene_core__gene_symbol')
+        ).prefetch_related(
+            'evidence',
+            'tags'
+        )
+
+        if self.is_super_panel:
+            out = []
+            for item in qs:
+                item.entity_evidences = [e.name for e in item.evidence.all()]
+                out.append(item)
+            return out
+        else:
+            return qs
+
+    @cached_property
     def get_all_strs_extra(self):
         """Get all strs and annotated info, speeds up loading time"""
 
@@ -942,6 +967,27 @@ class GenePanelSnapshot(TimeStampedModel):
             return qs.annotate(entity_evidences=ArrayAgg('evidence__name', distinct=True))
 
     @cached_property
+    def get_all_strs_prefetch(self):
+        """Get all strs and annotated info, speeds up loading time"""
+
+        qs = self.get_all_extra(self.cached_strs).annotate(
+            entity_type=V('str', output_field=models.CharField()),
+            entity_name=models.F('name')
+        ).prefetch_related(
+            'evidence',
+            'tags'
+        )
+
+        if self.is_super_panel:
+            out = []
+            for item in qs:
+                item.entity_evidences = [e.name for e in item.evidence.all()]
+                out.append(item)
+            return out
+        else:
+            return qs
+
+    @cached_property
     def get_all_regions_extra(self):
         """Get all genes and annotated info, speeds up loading time"""
 
@@ -959,6 +1005,27 @@ class GenePanelSnapshot(TimeStampedModel):
             return out
         else:
             return qs.annotate(entity_evidences=ArrayAgg('evidence__name', distinct=True))
+
+    @cached_property
+    def get_all_regions_prefetch(self):
+        """Get all genes and annotated info, speeds up loading time"""
+
+        qs = self.get_all_extra(self.cached_regions).annotate(
+            entity_type=V('region', output_field=models.CharField()),
+            entity_name=models.F('name')
+        ).prefetch_related(
+            'evidence',
+            'tags'
+        )
+
+        if self.is_super_panel:
+            out = []
+            for item in qs:
+                item.entity_evidences = [e.name for e in item.evidence.all()]
+                out.append(item)
+            return out
+        else:
+            return qs
 
     def get_gene_by_pk(self, gene_pk, prefetch_extra=False):
         """Get a gene for a specific pk."""

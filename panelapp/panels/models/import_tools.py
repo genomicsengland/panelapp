@@ -19,6 +19,7 @@ from panels.exceptions import IncorrectGeneRating
 from panels.exceptions import IsSuperPanelException
 from .gene import Gene
 from .genepanel import GenePanel
+from .region import Region
 from .genepanelsnapshot import GenePanelSnapshot
 from .Level4Title import Level4Title
 from .codes import ProcessingRunCode
@@ -34,7 +35,7 @@ def update_gene_collection(results):
         to_update_gene_symbol = results['update_symbol']
         to_delete = results['delete']
 
-        for p in GenePanelSnapshot.objects.get_active(all=True, internal=True):
+        for p in GenePanelSnapshot.objects.get_active(all=True, internal=True, superpanels=False):
             p = p.increment_version()
 
         for record in to_insert:
@@ -70,6 +71,11 @@ def update_gene_collection(results):
         for str_in_panel in strs_in_panels:
             grouped_strs[str_in_panel.gene_core.gene_symbol].append(str_in_panel)
 
+        regions_in_panels = Region.objects.get_active()
+        grouped_regions = {gp.gene_core.gene_symbol: [] for gp in regions_in_panels if gp.gene_core}
+        for region_in_panel in regions_in_panels:
+            grouped_regions[region_in_panel.gene_core.gene_symbol].append(region_in_panel)
+
         for record in to_update:
             try:
                 gene = Gene.objects.get(gene_symbol=record['gene_symbol'])
@@ -102,6 +108,11 @@ def update_gene_collection(results):
                 str_entry.gene_core = gene
                 str_entry.gene = gene.dict_tr()
                 str_entry.save()
+
+            for region_entry in grouped_regions.get(record['gene_symbol'], []):
+                region_entry.gene_core = gene
+                region_entry.gene = gene.dict_tr()
+                region_entry.save()
 
             logger.debug("Updated {} gene".format(record['gene_symbol']))
 
@@ -165,6 +176,11 @@ def update_gene_collection(results):
                 panel = str_entry.panel
                 panel.update_str(user, str_entry.name, {'gene': new_gene})
 
+            for region_entry in Region.objects.get_active().filter(
+                    gene_core__gene_symbol=record[1]):
+                panel = region_entry.panel
+                panel.update_region(user, region_entry.name, {'gene': new_gene})
+
             try:
                 d = Gene.objects.get(gene_symbol=record[1])
                 d.active = False
@@ -182,6 +198,11 @@ def update_gene_collection(results):
             strs_in_panels = STR.objects.get_active().filter(gene_core__gene_symbol=record)
             if strs_in_panels.count() > 0:
                 distinct_panels = strs_in_panels.distinct().values_list('panel__panel__name', flat=True)
+                logger.warning("Deleted {} gene, this one is still used in {}".format(record, distinct_panels))
+
+            regions_in_panels = Region.objects.get_active().filter(gene_core__gene_symbol=record)
+            if regions_in_panels.count() > 0:
+                distinct_panels = regions_in_panels.distinct().values_list('panel__panel__name', flat=True)
                 logger.warning("Deleted {} gene, this one is still used in {}".format(record, distinct_panels))
 
             try:
