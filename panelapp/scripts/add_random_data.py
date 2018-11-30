@@ -1,5 +1,4 @@
 import random
-from beeprint import pp
 from django.db import transaction
 from accounts.models import Reviewer
 from psycopg2.extras import NumericRange
