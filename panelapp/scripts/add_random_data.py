@@ -32,7 +32,7 @@ def get_random_sentences(length=3):
 def random_gene_data(gene):
     return {
         "gene": gene,
-        "sources": Evidence.OTHER_SOURCES[0],
+        "sources": [Evidence.OTHER_SOURCES[0], ],
         "phenotypes": get_random_sentences(),
         "rating": random.choice([Evaluation.RATINGS.AMBER, Evaluation.RATINGS.GREEN, Evaluation.RATINGS.RED]),
         "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][random.randint(1, 12)][0],
@@ -73,7 +73,7 @@ def random_str_data(data_str):
         'normal_repeats': random.randint(1,5),
         'pathogenic_repeats': random.randint(6,15),
         "gene": data_str.gene_core if hasattr(data_str, 'gene_core') else None,
-        "sources": Evidence.ALL_SOURCES[random.randint(0, 9)],
+        "sources": [Evidence.ALL_SOURCES[random.randint(0, 9)]],
         "publications": get_random_sentences(),
         "phenotypes": get_random_sentences(),
         "rating": random.choice([Evaluation.RATINGS.AMBER, Evaluation.RATINGS.GREEN, Evaluation.RATINGS.RED]),
@@ -86,7 +86,7 @@ def random_str_data(data_str):
 
 def random_evaluation_data(user):
     return {
-        "source": Evidence.ALL_SOURCES[random.randint(0, 9)],
+        "source": [Evidence.ALL_SOURCES[random.randint(0, 9)]],
         "phenotypes": get_random_sentences(),
         "publications": [],
         "rating": random.choice([Evaluation.RATINGS.AMBER, Evaluation.RATINGS.GREEN, Evaluation.RATINGS.RED]),
