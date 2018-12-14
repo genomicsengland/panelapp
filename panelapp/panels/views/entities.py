@@ -609,11 +609,13 @@ class EntitiesListView(ListView):
             for gene in qs.order_by().distinct('gene_core__gene_symbol').values_list('gene_core__gene_symbol', flat=True).iterator():
                 entities.append(('gene', gene, gene))
 
-            for str_item in strs_qs.values_list('name', 'gene_core__gene_symbol').iterator():
+            for str_item in strs_qs.values_list('name', 'name').iterator():
                 entities.append(('str', str_item[0], str_item[1]))
 
-            for region in regions_qs.values_list('name', 'gene_core__gene_symbol').iterator():
+            for region in regions_qs.values_list('name', 'name').iterator():
                 entities.append(('region', region[0], region[1]))
+
+            entities = list(set(entities))
 
             sorted_entities = sorted(entities, key=lambda i: i[1].lower())
             cache.set(cache_key, sorted_entities)
