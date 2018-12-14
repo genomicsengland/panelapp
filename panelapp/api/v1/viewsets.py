@@ -285,7 +285,7 @@ class EntitySearch(ReadOnlyListViewset):
             filters['panel__panel__types__slug__in'] = self.request.query_params['type'].split(',')
 
         if self.request.query_params.get('tags'):
-            filters['tag__name__in'] = self.request.query_params['tags'].split(',')
+            filters['tags__name__in'] = self.request.query_params['tags'].split(',')
 
         return filters
 

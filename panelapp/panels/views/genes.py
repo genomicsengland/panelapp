@@ -81,7 +81,7 @@ class DownloadPanelTSVMixin(PanelMixin, DetailView):
 
         categories = self.get_categories()
         for gpentry in self.object.get_all_genes_extra:
-            if not gpentry.flagged and str(gpentry.status) in categories:
+            if not gpentry.flagged and gpentry.saved_gel_status > 0 and str(gpentry.status) in categories:
                 amber_perc, green_perc, red_prec = gpentry.aggregate_ratings()
 
                 evidence = ";".join([ev for ev in gpentry.entity_evidences if ev])
@@ -98,7 +98,7 @@ class DownloadPanelTSVMixin(PanelMixin, DetailView):
                     ";".join(map(remove_non_ascii, self.object.level4title.omim)),
                     ";".join(map(remove_non_ascii, self.object.level4title.orphanet)),
                     ";".join(map(remove_non_ascii, self.object.level4title.hpo)),
-                    ";".join(map(remove_non_ascii, gpentry.publications)),
+                    ";".join(map(remove_non_ascii, gpentry.publications)) if gpentry.publications else '',
                     "",
                     str(gpentry.flagged),
                     str(gpentry.saved_gel_status),
@@ -126,7 +126,7 @@ class DownloadPanelTSVMixin(PanelMixin, DetailView):
                 writer.writerow(export_gpentry)
 
         for strentry in self.object.get_all_strs_extra:
-            if not strentry.flagged and str(strentry.status) in categories:
+            if not strentry.flagged and strentry.saved_gel_status > 0 and str(strentry.status) in categories:
                 amber_perc, green_perc, red_prec = strentry.aggregate_ratings()
 
                 evidence = ";".join([evidence.name for evidence in strentry.evidence.all()])
@@ -143,7 +143,7 @@ class DownloadPanelTSVMixin(PanelMixin, DetailView):
                     ";".join(map(remove_non_ascii, self.object.level4title.omim)),
                     ";".join(map(remove_non_ascii, self.object.level4title.orphanet)),
                     ";".join(map(remove_non_ascii, self.object.level4title.hpo)),
-                    ";".join(map(remove_non_ascii, strentry.publications)),
+                    ";".join(map(remove_non_ascii, strentry.publications)) if strentry.publications else '',
                     "",
                     str(strentry.flagged),
                     str(strentry.saved_gel_status),
@@ -171,7 +171,7 @@ class DownloadPanelTSVMixin(PanelMixin, DetailView):
                 writer.writerow(export_strentry)
 
         for region in self.object.get_all_regions_extra:
-            if not region.flagged and str(region.status) in categories:
+            if not region.flagged and region.saved_gel_status > 0 and str(region.status) in categories:
                 amber_perc, green_perc, red_prec = region.aggregate_ratings()
 
                 evidence = ";".join([evidence.name for evidence in region.evidence.all()])
@@ -188,7 +188,7 @@ class DownloadPanelTSVMixin(PanelMixin, DetailView):
                     ";".join(map(remove_non_ascii, self.object.level4title.omim)),
                     ";".join(map(remove_non_ascii, self.object.level4title.orphanet)),
                     ";".join(map(remove_non_ascii, self.object.level4title.hpo)),
-                    ";".join(map(remove_non_ascii, region.publications)),
+                    ";".join(map(remove_non_ascii, region.publications)) if region.publications else '',
                     "",
                     str(region.flagged),
                     str(region.saved_gel_status),
