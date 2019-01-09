@@ -38,14 +38,7 @@ class DownloadAllSTRs(GELReviewerRequiredMixin, View):
 
         for gps in GenePanelSnapshot.objects.get_active(all=True, internal=True).iterator():
             for entry in gps.get_all_strs_extra:
-                if entry.flagged:
-                    colour = "grey"
-                elif entry.status < 2:
-                    colour = "red"
-                elif entry.status == 2:
-                    colour = "amber"
-                else:
-                    colour = "green"
+                color = entry.entity_color_name
 
                 if isinstance(entry.phenotypes, list):
                     phenotypes = ';'.join(entry.phenotypes)
@@ -67,7 +60,7 @@ class DownloadAllSTRs(GELReviewerRequiredMixin, View):
                     entry.panel.level4title.name,
                     entry.panel.version,
                     str(entry.panel.panel.status).upper(),
-                    colour,
+                    color,
                     ';'.join([evidence.name for evidence in entry.evidence.all()]),
                     entry.moi,
                     ';'.join([tag.name for tag in entry.tags.all()]),
