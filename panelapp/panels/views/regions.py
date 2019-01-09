@@ -40,14 +40,7 @@ class DownloadAllRegions(GELReviewerRequiredMixin, View):
 
         for gps in GenePanelSnapshot.objects.get_active(all=True, internal=True).iterator():
             for entry in gps.get_all_regions_extra.prefetch_related('evidence'):
-                if entry.flagged:
-                    colour = "grey"
-                elif entry.status < 2:
-                    colour = "red"
-                elif entry.status == 2:
-                    colour = "amber"
-                else:
-                    colour = "green"
+                color = entry.entity_color_name
 
                 if isinstance(entry.phenotypes, list):
                     phenotypes = ';'.join(entry.phenotypes)
@@ -71,7 +64,7 @@ class DownloadAllRegions(GELReviewerRequiredMixin, View):
                     gps.level4title.name,
                     gps.version,
                     str(gps.panel.status).upper(),
-                    colour,
+                    color,
                     ';'.join([evidence.name for evidence in entry.evidence.all()]),
                     entry.moi,
                     ';'.join([tag.name for tag in entry.tags.all()]),
