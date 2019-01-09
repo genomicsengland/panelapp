@@ -86,7 +86,7 @@ class GenePanelSnapshotManager(models.Manager):
             qs = qs.filter(filters)
 
         return qs.prefetch_related('panel', 'panel__types', 'child_panels', 'level4title')\
-            .order_by('panel_id', '-major_version', '-minor_version', '-modified', '-pk')
+            .order_by('level4title__name', '-major_version', '-minor_version', '-modified', '-pk')
 
     def get_active_annotated(self, all=False, deleted=False, internal=False, name=None, panel_types=None):
         """This method adds additional values to the queryset, such as number_of_genes, etc and returns active panels"""
@@ -398,7 +398,7 @@ class GenePanelSnapshot(TimeStampedModel):
 
         out['gene_reviewers'] = list(set([r for r in out['gene_reviewers'] if r]))  #  remove None
         out['str_reviewers'] = list(set([r for r in out['str_reviewers'] if r]))  # remove None
-        out['region_reviewers'] = list(set([r for r in out['str_reviewers'] if r]))  # remove None
+        out['region_reviewers'] = list(set([r for r in out['region_reviewers'] if r]))  # remove None
         out['entity_reviewers'] = list(set(out['gene_reviewers'] + out['str_reviewers'] + out['region_reviewers']))
         out['number_of_reviewers'] = len(out['entity_reviewers'])
         out['number_of_evaluated_entities'] = out['number_of_evaluated_genes'] + out['number_of_evaluated_strs'] +\
@@ -445,6 +445,15 @@ class GenePanelSnapshot(TimeStampedModel):
 
         if panels_changed:
             self.child_panels.set(updated_child_panels)
+
+    @cached_property
+    def contributors(self):
+        user_ids = Evaluation.objects.filter(Q(str__panel=self)).union(
+            Evaluation.objects.filter(region__panel=self)).union(
+            Evaluation.objects.filter(genepanelentrysnapshot__panel=self)).distinct('user').order_by(
+            'user').values('user', flat=True)
+
+        return User.objects.filter(pk__in=user_ids)
 
     def increment_version(self, major=False, user=None, comment=None, ignore_gene=None, ignore_str=None, ignore_region=None, remove_child=None):
         """Creates a new version of the panel.

@@ -123,6 +123,9 @@ class AbstractEntity:
     def is_region(self):
         return self._entity_type == 'region'
 
+    def get_entity_type(self):
+        return self._entity_type
+
     @property
     def status(self):
         """Save gel_status in the gene panel snapshot if saved_gel_status isn't set"""

@@ -3,16 +3,16 @@
 {% if user.is_authenticated and user.reviewer %}
   {% for evaluation in user.get_recent_evaluations %}
     {% if request.user == evaluation.user %}
-      {% with gene=evaluation.genepanelentrysnapshot_set.first %}
-        {% with panel=gene.panel %}
+      {% with entity=evaluation.entity %}
+        {% with panel=entity.panel %}
           <div class="panel panel-default">
             <div class="panel-heading">
               <div class="panel-title">
-                  <a href="{{ panel.panel.get_absolute_url }}" class="link-inherit">{{ panel.panel.name }}</a>,
-                  <a href="{{ gene.get_absolute_url }}" class="link-inherit">{{ gene.gene.gene_symbol }}</a>
-                </div>
+                <a href="{{ panel.panel.get_absolute_url }}" class="link-inherit">{{ panel.panel.name }}</a>,
+                <a href="{{ entity.get_absolute_url }}" class="link-inherit">{{ entity.name }}</a>
               </div>
-            {% include "panels/entity/entity_evaluation.html" with entity_name=gene.gene.gene_symbol entity_type='gene' ev=evaluation panel=panel %}
+            </div>
+            {% include "panels/entity/entity_evaluation.html" with entity_name=entity.name entity_type=entity.get_entity_type ev=evaluation panel=panel %}
           </div>
         {% endwith %}
       {% endwith %}
