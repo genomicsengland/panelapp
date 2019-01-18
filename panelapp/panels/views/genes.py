@@ -84,6 +84,18 @@ class DownloadPanelTSVMixin(PanelMixin, DetailView):
             if not gpentry.flagged and gpentry.saved_gel_status > 0 and str(gpentry.status) in categories:
                 amber_perc, green_perc, red_prec = gpentry.aggregate_ratings()
 
+                ensembl_id_37 = '-'
+                try:
+                    ensembl_id_37 = gpentry.gene.get('ensembl_genes', {}).get('GRch37', {}).get('82', {}).get('ensembl_id', '-')
+                except AttributeError:
+                    pass
+
+                ensembl_id_38 = '-'
+                try:
+                    ensembl_id_38 = gpentry.gene.get('ensembl_genes', {}).get('GRch38', {}).get('90', {}).get('ensembl_id', '-')
+                except AttributeError:
+                    pass
+
                 evidence = ";".join([ev for ev in gpentry.entity_evidences if ev])
                 export_gpentry = (
                     gpentry.gene.get('gene_symbol'),
@@ -106,8 +118,8 @@ class DownloadPanelTSVMixin(PanelMixin, DetailView):
                     str(version),
                     gpentry.ready,
                     gpentry.mode_of_pathogenicity,
-                    gpentry.gene.get('ensembl_genes', {}).get('GRch37', {}).get('82', {}).get('ensembl_id', '-'),
-                    gpentry.gene.get('ensembl_genes', {}).get('GRch38', {}).get('90', {}).get('ensembl_id', '-'),
+                    ensembl_id_37,
+                    ensembl_id_38,
                     gpentry.gene.get('hgnc_id', '-'),
                     '',
                     '',
