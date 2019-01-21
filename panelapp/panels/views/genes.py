@@ -436,6 +436,23 @@ class DownloadAllGenes(GELReviewerRequiredMixin, View):
                 else:
                     phenotypes = '-'
 
+
+                ensembl_id_37 = '-'
+                location_37 = '-'
+                try:
+                    ensembl_id_37 = entry.gene.get('ensembl_genes', {}).get('GRch37', {}).get('82', {}).get('ensembl_id', '-')
+                    location_37 = entry.gene.get('ensembl_genes', {}).get('GRch37', {}).get('82', {}).get('location', '-')
+                except AttributeError:
+                    pass
+
+                ensembl_id_38 = '-'
+                location_38 = '-'
+                try:
+                    ensembl_id_38 = entry.gene.get('ensembl_genes', {}).get('GRch38', {}).get('90', {}).get('ensembl_id', '-')
+                    location_38 = entry.gene.get('ensembl_genes', {}).get('GRch38', {}).get('90', {}).get('location', '-')
+                except AttributeError:
+                    pass
+
                 row = [
                     entry.gene.get('gene_symbol'),
                     entry.panel.panel.pk,
@@ -447,13 +464,13 @@ class DownloadAllGenes(GELReviewerRequiredMixin, View):
                     entry.moi,
                     entry.mode_of_pathogenicity,
                     ';'.join([tag for tag in entry.entity_tags if tag]),
-                    entry.gene.get('ensembl_genes', {}).get('GRch37', {}).get('82', {}).get('ensembl_id', '-'),
-                    entry.gene.get('ensembl_genes', {}).get('GRch38', {}).get('90', {}).get('ensembl_id', '-'),
+                    ensembl_id_37,
+                    ensembl_id_38,
                     entry.gene.get('hgnc_id', '-'),
                     entry.gene.get('biotype', '-'),
                     phenotypes,
-                    entry.gene.get('ensembl_genes', {}).get('GRch37', {}).get('82', {}).get('location', '-'),
-                    entry.gene.get('ensembl_genes', {}).get('GRch38', {}).get('90', {}).get('location', '-'),
+                    location_37,
+                    location_38,
                     ";".join([t.name for t in entry.panel.panel.types.all()]),
                     super_panel_id if is_super_panel else '-',
                     super_panel_name if is_super_panel else '-',
