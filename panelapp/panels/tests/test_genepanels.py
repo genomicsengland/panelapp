@@ -390,8 +390,14 @@ class GenePanelTest(LoginGELUser):
 
     def test_download_panel(self):
         gene, gps, gps2 = self.prepare_compare()
+        grey_gene = 'gene2'
+        gene2 = GeneFactory(gene_symbol=grey_gene)
+        gpes = GenePanelEntrySnapshotFactory.create(gene_core=gene2, panel=gps)
+        gpes.saved_gel_status = 0
+
         res = self.client.get(reverse_lazy('panels:download_panel_tsv', args=(gps.panel.pk, '01234')))
         self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.content.find(grey_gene.encode()), -1)
 
     def test_download_old_panel(self):
         gene, gps, gps2 = self.prepare_compare()

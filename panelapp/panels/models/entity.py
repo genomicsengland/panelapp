@@ -123,6 +123,9 @@ class AbstractEntity:
     def is_region(self):
         return self._entity_type == 'region'
 
+    def get_entity_type(self):
+        return self._entity_type
+
     @property
     def status(self):
         """Save gel_status in the gene panel snapshot if saved_gel_status isn't set"""
@@ -134,11 +137,16 @@ class AbstractEntity:
 
     @status.setter
     def status(self, value):
+        if value > 3:
+            value = 3
+        if value < 0:
+            value = 0
+
         self.saved_gel_status = value
 
     @status.deleter
     def status(self):
-        self.saved_gel_status = None
+        self.saved_gel_status = 0
 
     def is_reviewd_by_user(self, user):
         """Check if the entity was reviewed by the specific user"""
@@ -289,6 +297,7 @@ class AbstractEntity:
             status = int(status)
 
         if status > 2:
+            status = 3
             evidence = Evidence.objects.create(name="Expert Review Green", rating=5, reviewer=user.reviewer)
             issue_description = "{} has been classified as Green List (High Evidence).".format(self.label.capitalize())
             self.flagged = False
@@ -641,12 +650,16 @@ class AbstractEntity:
 
     @property
     def gene_list_class(self):
-        return get_gene_list_data(None, GeneDataType.CLASS.value, self.saved_gel_status)
+        return get_gene_list_data(None, GeneDataType.CLASS.value, self.saved_gel_status, flagged=self.flagged)
 
     @property
     def gene_list_name(self):
-        return get_gene_list_data(None, GeneDataType.LONG.value, self.saved_gel_status)
+        return get_gene_list_data(None, GeneDataType.LONG.value, self.saved_gel_status, flagged=self.flagged)
 
     @property
     def gene_list_short_name(self):
-        return get_gene_list_data(None, GeneDataType.SHORT.value, self.saved_gel_status)
+        return get_gene_list_data(None, GeneDataType.SHORT.value, self.saved_gel_status, flagged=self.flagged)
+
+    @property
+    def entity_color_name(self):
+        return get_gene_list_data(None, GeneDataType.COLOR.value, self.saved_gel_status, flagged=self.flagged)

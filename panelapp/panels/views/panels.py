@@ -121,7 +121,7 @@ class GenePanelView(DetailView):
             gel_curator=self.request.user.is_authenticated and self.request.user.reviewer.is_GEL(),
             request=self.request
         )
-        ctx['contributors'] = User.objects.panel_contributors(ctx['panel'].pk)
+        ctx['contributors'] = ctx['panel'].contributors
         ctx['promote_panel_form'] = PromotePanelForm(
             instance=ctx['panel'],
             request=self.request,

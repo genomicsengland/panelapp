@@ -35,19 +35,21 @@ class DownloadAllRegions(GELReviewerRequiredMixin, View):
             "Biotype",
             "Phenotypes",
             "GeneLocation(GRch37)",
-            "GeneLocation(GRch38)"
+            "GeneLocation(GRch38)",
+            "Panel Types",
+            "Super Panel Id",
+            "Super Panel Name",
+            "Super Panel Version",
         )
 
         for gps in GenePanelSnapshot.objects.get_active(all=True, internal=True).iterator():
-            for entry in gps.get_all_regions_extra.prefetch_related('evidence'):
-                if entry.flagged:
-                    colour = "grey"
-                elif entry.status < 2:
-                    colour = "red"
-                elif entry.status == 2:
-                    colour = "amber"
-                else:
-                    colour = "green"
+            is_super_panel = gps.is_super_panel
+            super_panel_id = gps.panel_id
+            super_panel_name = gps.level4title.name
+            super_panel_version = gps.version
+
+            for entry in gps.get_all_regions_extra:
+                color = entry.entity_color_name
 
                 if isinstance(entry.phenotypes, list):
                     phenotypes = ';'.join(entry.phenotypes)
@@ -71,7 +73,7 @@ class DownloadAllRegions(GELReviewerRequiredMixin, View):
                     gps.level4title.name,
                     gps.version,
                     str(gps.panel.status).upper(),
-                    colour,
+                    color,
                     ';'.join([evidence.name for evidence in entry.evidence.all()]),
                     entry.moi,
                     ';'.join([tag.name for tag in entry.tags.all()]),
@@ -81,6 +83,10 @@ class DownloadAllRegions(GELReviewerRequiredMixin, View):
                     phenotypes,
                     entry.gene.get('ensembl_genes', {}).get('GRch37', {}).get('82', {}).get('location', '') if entry.gene else '',
                     entry.gene.get('ensembl_genes', {}).get('GRch38', {}).get('90', {}).get('location', '') if entry.gene else '',
+                    ";".join([t.name for t in entry.panel.panel.types.all()]),
+                    super_panel_id if is_super_panel else '-',
+                    super_panel_name if is_super_panel else '-',
+                    super_panel_version if is_super_panel else '-',
                 ]
                 yield row
 

@@ -578,8 +578,12 @@ class EntitiesListView(ListView):
 
     def get_queryset(self, *args, **kwargs):
         is_admin_user = self.request.user.is_authenticated and self.request.user.reviewer.is_GEL()
+        tag_filter = self.request.GET.get('tag', '')
 
         cache_key = 'entities_admin' if is_admin_user else 'entities'
+
+        if tag_filter:
+            cache_key = '{}_{}'.format(cache_key, tag_filter)
 
         cached_entities = cache.get(cache_key)
         if cached_entities:
@@ -596,7 +600,6 @@ class EntitiesListView(ListView):
             strs_qs = STR.objects.filter(panel__in=panel_ids)
             regions_qs = Region.objects.filter(panel__in=panel_ids)
 
-            tag_filter = self.request.GET.get('tag')
             if tag_filter:
                 qs = qs.filter(tags__name=tag_filter)
                 strs_qs = strs_qs.filter(tags__name=tag_filter)
@@ -606,11 +609,13 @@ class EntitiesListView(ListView):
             for gene in qs.order_by().distinct('gene_core__gene_symbol').values_list('gene_core__gene_symbol', flat=True).iterator():
                 entities.append(('gene', gene, gene))
 
-            for str_item in strs_qs.values_list('name', 'gene_core__gene_symbol').iterator():
+            for str_item in strs_qs.values_list('name', 'name').iterator():
                 entities.append(('str', str_item[0], str_item[1]))
 
-            for region in regions_qs.values_list('name', 'gene_core__gene_symbol').iterator():
+            for region in regions_qs.values_list('name', 'name').iterator():
                 entities.append(('region', region[0], region[1]))
+
+            entities = list(set(entities))
 
             sorted_entities = sorted(entities, key=lambda i: i[1].lower())
             cache.set(cache_key, sorted_entities)

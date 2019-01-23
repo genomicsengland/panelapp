@@ -81,8 +81,20 @@ class DownloadPanelTSVMixin(PanelMixin, DetailView):
 
         categories = self.get_categories()
         for gpentry in self.object.get_all_genes_extra:
-            if not gpentry.flagged and str(gpentry.status) in categories:
+            if not gpentry.flagged and gpentry.saved_gel_status > 0 and str(gpentry.status) in categories:
                 amber_perc, green_perc, red_prec = gpentry.aggregate_ratings()
+
+                ensembl_id_37 = '-'
+                try:
+                    ensembl_id_37 = gpentry.gene.get('ensembl_genes', {}).get('GRch37', {}).get('82', {}).get('ensembl_id', '-')
+                except AttributeError:
+                    pass
+
+                ensembl_id_38 = '-'
+                try:
+                    ensembl_id_38 = gpentry.gene.get('ensembl_genes', {}).get('GRch38', {}).get('90', {}).get('ensembl_id', '-')
+                except AttributeError:
+                    pass
 
                 evidence = ";".join([ev for ev in gpentry.entity_evidences if ev])
                 export_gpentry = (
@@ -98,7 +110,7 @@ class DownloadPanelTSVMixin(PanelMixin, DetailView):
                     ";".join(map(remove_non_ascii, self.object.level4title.omim)),
                     ";".join(map(remove_non_ascii, self.object.level4title.orphanet)),
                     ";".join(map(remove_non_ascii, self.object.level4title.hpo)),
-                    ";".join(map(remove_non_ascii, gpentry.publications)),
+                    ";".join(map(remove_non_ascii, gpentry.publications)) if gpentry.publications else '',
                     "",
                     str(gpentry.flagged),
                     str(gpentry.saved_gel_status),
@@ -106,8 +118,8 @@ class DownloadPanelTSVMixin(PanelMixin, DetailView):
                     str(version),
                     gpentry.ready,
                     gpentry.mode_of_pathogenicity,
-                    gpentry.gene.get('ensembl_genes', {}).get('GRch37', {}).get('82', {}).get('ensembl_id', '-'),
-                    gpentry.gene.get('ensembl_genes', {}).get('GRch38', {}).get('90', {}).get('ensembl_id', '-'),
+                    ensembl_id_37,
+                    ensembl_id_38,
                     gpentry.gene.get('hgnc_id', '-'),
                     '',
                     '',
@@ -126,7 +138,7 @@ class DownloadPanelTSVMixin(PanelMixin, DetailView):
                 writer.writerow(export_gpentry)
 
         for strentry in self.object.get_all_strs_extra:
-            if not strentry.flagged and str(strentry.status) in categories:
+            if not strentry.flagged and strentry.saved_gel_status > 0 and str(strentry.status) in categories:
                 amber_perc, green_perc, red_prec = strentry.aggregate_ratings()
 
                 evidence = ";".join([evidence.name for evidence in strentry.evidence.all()])
@@ -143,7 +155,7 @@ class DownloadPanelTSVMixin(PanelMixin, DetailView):
                     ";".join(map(remove_non_ascii, self.object.level4title.omim)),
                     ";".join(map(remove_non_ascii, self.object.level4title.orphanet)),
                     ";".join(map(remove_non_ascii, self.object.level4title.hpo)),
-                    ";".join(map(remove_non_ascii, strentry.publications)),
+                    ";".join(map(remove_non_ascii, strentry.publications)) if strentry.publications else '',
                     "",
                     str(strentry.flagged),
                     str(strentry.saved_gel_status),
@@ -171,7 +183,7 @@ class DownloadPanelTSVMixin(PanelMixin, DetailView):
                 writer.writerow(export_strentry)
 
         for region in self.object.get_all_regions_extra:
-            if not region.flagged and str(region.status) in categories:
+            if not region.flagged and region.saved_gel_status > 0 and str(region.status) in categories:
                 amber_perc, green_perc, red_prec = region.aggregate_ratings()
 
                 evidence = ";".join([evidence.name for evidence in region.evidence.all()])
@@ -188,7 +200,7 @@ class DownloadPanelTSVMixin(PanelMixin, DetailView):
                     ";".join(map(remove_non_ascii, self.object.level4title.omim)),
                     ";".join(map(remove_non_ascii, self.object.level4title.orphanet)),
                     ";".join(map(remove_non_ascii, self.object.level4title.hpo)),
-                    ";".join(map(remove_non_ascii, region.publications)),
+                    ";".join(map(remove_non_ascii, region.publications)) if region.publications else '',
                     "",
                     str(region.flagged),
                     str(region.saved_gel_status),
@@ -403,24 +415,43 @@ class DownloadAllGenes(GELReviewerRequiredMixin, View):
             "Biotype",
             "Phenotypes",
             "GeneLocation((GRch37)",
-            "GeneLocation((GRch38)"
+            "GeneLocation((GRch38)",
+            "Panel Types",
+            "Super Panel Id",
+            "Super Panel Name",
+            "Super Panel Version",
         )
 
         for gps in GenePanelSnapshot.objects.get_active(all=True, internal=True).iterator():
+            is_super_panel = gps.is_super_panel
+            super_panel_id = gps.panel_id
+            super_panel_name = gps.level4title.name
+            super_panel_version = gps.version
+
             for entry in gps.get_all_genes_extra:
-                if entry.flagged:
-                    colour = "grey"
-                elif entry.status < 2:
-                    colour = "red"
-                elif entry.status == 2:
-                    colour = "amber"
-                else:
-                    colour = "green"
+                color = entry.entity_color_name
 
                 if isinstance(entry.phenotypes, list):
                     phenotypes = ';'.join(entry.phenotypes)
                 else:
                     phenotypes = '-'
+
+
+                ensembl_id_37 = '-'
+                location_37 = '-'
+                try:
+                    ensembl_id_37 = entry.gene.get('ensembl_genes', {}).get('GRch37', {}).get('82', {}).get('ensembl_id', '-')
+                    location_37 = entry.gene.get('ensembl_genes', {}).get('GRch37', {}).get('82', {}).get('location', '-')
+                except AttributeError:
+                    pass
+
+                ensembl_id_38 = '-'
+                location_38 = '-'
+                try:
+                    ensembl_id_38 = entry.gene.get('ensembl_genes', {}).get('GRch38', {}).get('90', {}).get('ensembl_id', '-')
+                    location_38 = entry.gene.get('ensembl_genes', {}).get('GRch38', {}).get('90', {}).get('location', '-')
+                except AttributeError:
+                    pass
 
                 row = [
                     entry.gene.get('gene_symbol'),
@@ -428,18 +459,22 @@ class DownloadAllGenes(GELReviewerRequiredMixin, View):
                     entry.panel.level4title.name,
                     entry.panel.version,
                     str(entry.panel.panel.status).upper(),
-                    colour,
+                    color,
                     ';'.join([ev for ev in entry.entity_evidences if ev]),
                     entry.moi,
                     entry.mode_of_pathogenicity,
                     ';'.join([tag for tag in entry.entity_tags if tag]),
-                    entry.gene.get('ensembl_genes', {}).get('GRch37', {}).get('82', {}).get('ensembl_id', '-'),
-                    entry.gene.get('ensembl_genes', {}).get('GRch38', {}).get('90', {}).get('ensembl_id', '-'),
+                    ensembl_id_37,
+                    ensembl_id_38,
                     entry.gene.get('hgnc_id', '-'),
                     entry.gene.get('biotype', '-'),
                     phenotypes,
-                    entry.gene.get('ensembl_genes', {}).get('GRch37', {}).get('82', {}).get('location', '-'),
-                    entry.gene.get('ensembl_genes', {}).get('GRch38', {}).get('90', {}).get('location', '-'),
+                    location_37,
+                    location_38,
+                    ";".join([t.name for t in entry.panel.panel.types.all()]),
+                    super_panel_id if is_super_panel else '-',
+                    super_panel_name if is_super_panel else '-',
+                    super_panel_version if is_super_panel else '-',
                 ]
                 yield row
 

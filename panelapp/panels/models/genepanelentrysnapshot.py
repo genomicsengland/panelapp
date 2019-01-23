@@ -38,6 +38,13 @@ class GenePanelEntrySnapshotManager(EntityManager):
             .values_list('panel_id', flat=True)\
             .order_by('panel__panel_id', '-panel__major_version', '-panel__minor_version', '-panel__modified', '-panel_id')
 
+    def get_active_slim(self, pks):
+        qs = super().get_queryset().filter(panel_id__in=pks)
+        return qs.annotate(
+            entity_type=V('gene', output_field=models.CharField()),
+            entity_name=models.F('gene_core__gene_symbol')
+        )
+
     def get_active(self, deleted=False, gene_symbol=None, pks=None, panel_types=None):
         """Get active Gene Entry Snapshots"""
 
@@ -55,13 +62,10 @@ class GenePanelEntrySnapshotManager(EntityManager):
             qs = qs.filter(panel__panel__types__slug__in=panel_types)
 
         return qs.annotate(
-                number_of_reviewers=Count('evaluation__user', distinct=True),
-                number_of_evaluated_genes=Count('evaluation'),
-                number_of_genes=Count('pk'),
                 entity_type=V('gene', output_field=models.CharField()),
                 entity_name=models.F('gene_core__gene_symbol')
             )\
-            .prefetch_related('evaluation', 'tags', 'evidence', 'panel', 'panel__level4title', 'panel__panel')\
+            .prefetch_related('tags', 'evidence', 'panel', 'panel__level4title', 'panel__panel', 'panel__panel__types')\
             .order_by('panel_id', '-panel__major_version', '-panel__minor_version', '-panel__modified', '-panel_id')
 
     def get_gene_panels(self, gene_symbol, deleted=False, pks=None):

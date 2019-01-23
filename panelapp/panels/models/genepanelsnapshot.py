@@ -36,7 +36,7 @@ from .tag import Tag
 
 
 class GenePanelSnapshotManager(models.Manager):
-    def get_latest_ids(self, deleted=False):
+    def get_latest_ids(self, deleted=False, exclude_superpanels=False):
         """Get latest versions for GenePanelsSnapshots"""
 
         qs = super().get_queryset()
@@ -48,7 +48,7 @@ class GenePanelSnapshotManager(models.Manager):
             .values('pk')\
             .order_by('panel_id', '-major_version', '-minor_version', '-modified', '-pk')
 
-    def get_active(self, all=False, deleted=False, internal=False, name=None, panel_types=None):
+    def get_active(self, all=False, deleted=False, internal=False, name=None, panel_types=None, superpanels=True):
         """Get active panels
 
         Parameters:
@@ -71,6 +71,10 @@ class GenePanelSnapshotManager(models.Manager):
         if not internal:
             qs = qs.exclude(panel__status=GenePanel.STATUS.internal)
 
+        if not superpanels:
+            # exclude super panels when incrementing versions for all panels
+            qs = qs.annotate(child_panels_count=Count('child_panels')).exclude(child_panels_count__gt=0)
+
         qs = qs.filter(pk__in=Subquery(self.get_latest_ids(deleted)))
 
         if name:
@@ -82,13 +86,15 @@ class GenePanelSnapshotManager(models.Manager):
             qs = qs.filter(filters)
 
         return qs.prefetch_related('panel', 'panel__types', 'child_panels', 'level4title')\
-            .order_by('panel_id', '-major_version', '-minor_version', '-modified', '-pk')
+            .order_by('level4title__name', '-major_version', '-minor_version', '-modified', '-pk')
 
     def get_active_annotated(self, all=False, deleted=False, internal=False, name=None, panel_types=None):
         """This method adds additional values to the queryset, such as number_of_genes, etc and returns active panels"""
 
-        return self.get_active(all, deleted, internal, name, panel_types)\
-            .annotate(
+        return self.annotate_panels(self.get_active(all, deleted, internal, name, panel_types))
+
+    def annotate_panels(self, qs):
+        return qs.annotate(
                 child_panels_count=Count('child_panels'),
                 superpanels_count=Count('genepanelsnapshot'),
                 panel_type_slugs=ArrayAgg('panel__types__slug', distinct=True)
@@ -123,7 +129,7 @@ class GenePanelSnapshotManager(models.Manager):
                       | Q(panel__name__icontains=name)
         qs = qs.filter(filters)
 
-        return qs.filter(major_version=major_version, minor_version=minor_version)
+        return self.annotate_panels(qs.filter(major_version=major_version, minor_version=minor_version))
 
     def get_gene_panels(self, gene_symbol, all=False, internal=False):
         """Get all panels for a specific gene in Gene entities"""
@@ -392,7 +398,7 @@ class GenePanelSnapshot(TimeStampedModel):
 
         out['gene_reviewers'] = list(set([r for r in out['gene_reviewers'] if r]))  #  remove None
         out['str_reviewers'] = list(set([r for r in out['str_reviewers'] if r]))  # remove None
-        out['region_reviewers'] = list(set([r for r in out['str_reviewers'] if r]))  # remove None
+        out['region_reviewers'] = list(set([r for r in out['region_reviewers'] if r]))  # remove None
         out['entity_reviewers'] = list(set(out['gene_reviewers'] + out['str_reviewers'] + out['region_reviewers']))
         out['number_of_reviewers'] = len(out['entity_reviewers'])
         out['number_of_evaluated_entities'] = out['number_of_evaluated_genes'] + out['number_of_evaluated_strs'] +\
@@ -439,6 +445,15 @@ class GenePanelSnapshot(TimeStampedModel):
 
         if panels_changed:
             self.child_panels.set(updated_child_panels)
+
+    @cached_property
+    def contributors(self):
+        user_ids = Evaluation.objects.filter(Q(str__panel=self)).union(
+            Evaluation.objects.filter(region__panel=self)).union(
+            Evaluation.objects.filter(genepanelentrysnapshot__panel=self)).distinct('user').order_by(
+            'user').values('user', flat=True)
+
+        return User.objects.filter(pk__in=user_ids)
 
     def increment_version(self, major=False, user=None, comment=None, ignore_gene=None, ignore_str=None, ignore_region=None, remove_child=None):
         """Creates a new version of the panel.
@@ -921,6 +936,27 @@ class GenePanelSnapshot(TimeStampedModel):
             return qs.annotate(entity_evidences=ArrayAgg('evidence__name', distinct=True))
 
     @cached_property
+    def get_all_genes_prefetch(self):
+        """Get all genes and annotated info, speeds up loading time"""
+
+        qs = self.get_all_extra(self.cached_genes).annotate(
+            entity_type=V('gene', output_field=models.CharField()),
+            entity_name=models.F('gene_core__gene_symbol')
+        ).prefetch_related(
+            'evidence',
+            'tags'
+        )
+
+        if self.is_super_panel:
+            out = []
+            for item in qs:
+                item.entity_evidences = [e.name for e in item.evidence.all()]
+                out.append(item)
+            return out
+        else:
+            return qs
+
+    @cached_property
     def get_all_strs_extra(self):
         """Get all strs and annotated info, speeds up loading time"""
 
@@ -940,6 +976,27 @@ class GenePanelSnapshot(TimeStampedModel):
             return qs.annotate(entity_evidences=ArrayAgg('evidence__name', distinct=True))
 
     @cached_property
+    def get_all_strs_prefetch(self):
+        """Get all strs and annotated info, speeds up loading time"""
+
+        qs = self.get_all_extra(self.cached_strs).annotate(
+            entity_type=V('str', output_field=models.CharField()),
+            entity_name=models.F('name')
+        ).prefetch_related(
+            'evidence',
+            'tags'
+        )
+
+        if self.is_super_panel:
+            out = []
+            for item in qs:
+                item.entity_evidences = [e.name for e in item.evidence.all()]
+                out.append(item)
+            return out
+        else:
+            return qs
+
+    @cached_property
     def get_all_regions_extra(self):
         """Get all genes and annotated info, speeds up loading time"""
 
@@ -957,6 +1014,27 @@ class GenePanelSnapshot(TimeStampedModel):
             return out
         else:
             return qs.annotate(entity_evidences=ArrayAgg('evidence__name', distinct=True))
+
+    @cached_property
+    def get_all_regions_prefetch(self):
+        """Get all genes and annotated info, speeds up loading time"""
+
+        qs = self.get_all_extra(self.cached_regions).annotate(
+            entity_type=V('region', output_field=models.CharField()),
+            entity_name=models.F('name')
+        ).prefetch_related(
+            'evidence',
+            'tags'
+        )
+
+        if self.is_super_panel:
+            out = []
+            for item in qs:
+                item.entity_evidences = [e.name for e in item.evidence.all()]
+                out.append(item)
+            return out
+        else:
+            return qs
 
     def get_gene_by_pk(self, gene_pk, prefetch_extra=False):
         """Get a gene for a specific pk."""

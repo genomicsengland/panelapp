@@ -47,7 +47,7 @@ class TrackRecord(TimeStampedModel):
     class Meta:
         ordering = ('-created',)
 
-    issue_type = models.CharField(choices=ISSUE_TYPES, max_length=512)  # can this be standartized?
+    issue_type = models.CharField(choices=ISSUE_TYPES, max_length=1024)  # can this be standartized?
     issue_description = models.TextField()
     user = models.ForeignKey(User, on_delete=models.PROTECT)
     curator_status = models.IntegerField(default=0)  # Boolean maybe?

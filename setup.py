@@ -48,7 +48,7 @@ setup(
         'ipython==6.4.0'
     ],
     install_requires=[
-        'django==2.0.8',
+        'django==2.1.3',
         'simplejson==3.8.2',
         'PyYAML==3.13',
         'psycopg2-binary==2.7.4',
@@ -57,7 +57,6 @@ setup(
         'djangoajax==3.0.2',
         'djangorestframework==3.8.2',
         'django-tables2==1.21.2',
-        'django-filter==1.1.0',
         'django-cors-headers==2.1.0',
         'django-autocomplete-light==3.3.0',
         'django-markdown-deux==1.0.5',
@@ -86,5 +85,6 @@ setup(
         'django-autoslug-iplweb==1.9.4',
         'django-qurl-templatetag==0.0.13',
         'django-click==2.1.0',
+        'django-filter==2.0.0'
     ]
 )

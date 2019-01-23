@@ -8,10 +8,10 @@ register = template.Library()
 
 
 gene_list_data = (
-    ('gel-added', 'No list', 'No list'),
-    ('gel-red', 'Red List (low evidence)', 'Red'),
-    ('gel-amber', 'Amber List (moderate evidence)', 'Amber'),
-    ('gel-green', 'Green List (high evidence)', 'Green'),
+    ('gel-added', 'No list', 'No list', 'grey'),
+    ('gel-red', 'Red List (low evidence)', 'Red', 'red'),
+    ('gel-amber', 'Amber List (moderate evidence)', 'Amber', 'amber'),
+    ('gel-green', 'Green List (high evidence)', 'Green', 'green'),
 )
 
 
@@ -26,14 +26,19 @@ class GeneDataType(Enum):
     CLASS = 0
     LONG = 1
     SHORT = 2
+    COLOR = 3
 
 
-def get_gene_list_data(gene, list_type, saved_gel_status=None):
+def get_gene_list_data(gene, list_type, saved_gel_status=None, flagged=None):
     if saved_gel_status is not None:
         value = saved_gel_status
     else:
         value = gene.get('saved_gel_status') if isinstance(gene, dict) else gene.status
-    if value > 2:
+        if flagged is None:
+            flagged = gene.get('flagged') if isinstance(gene, dict) else gene.flagged
+    if flagged:
+        return gene_list_data[GeneStatus.NOLIST.value][list_type]
+    elif value > 2:
         return gene_list_data[GeneStatus.GREEN.value][list_type]
     elif value == 2:
         return gene_list_data[GeneStatus.AMBER.value][list_type]

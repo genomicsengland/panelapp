@@ -17,12 +17,6 @@ from .tasks import send_verification_email
 
 
 class UserManager(BaseUserManager):
-    def panel_contributors(self, panel_id):
-        return super().get_queryset()\
-            .distinct('pk')\
-            .filter(evaluation__genepanelentrysnapshot__panel__pk=panel_id)\
-            .prefetch_related('reviewer')
-
     def _create_user(self, username, email, password, **extra_fields):
         """
         Create and save a user with the given username, email, and password.
@@ -81,7 +75,7 @@ class User(AbstractUser, TimeStampedModel):
             return self.get_full_name()
 
     def get_recent_evaluations(self):
-        return self.evaluation_set.prefetch_related('genepanelentrysnapshot_set')[:35]
+        return self.evaluation_set.all()[:35]
 
     def get_crypto_id(self):
         """Returns HMAC signed base64 string of JSON with current object id
