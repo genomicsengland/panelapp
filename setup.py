@@ -37,7 +37,6 @@ setup(
     extras_require={
         'dev': [
             'django-debug-toolbar==1.9.1',
-            'django-extensions==2.1.0',
             'ipython==6.4.0'
         ],
         'tests': [
@@ -58,6 +57,7 @@ setup(
         'django-model-utils==3.1.2',
         'djangoajax==3.0.2',
         'djangorestframework==3.8.2',
+        'django-extensions==2.1.0',
         'django-tables2==1.21.2',
         'django-cors-headers==2.1.0',
         'django-autocomplete-light==3.3.0',
@@ -84,7 +84,6 @@ setup(
         'djangorestframework-jsonapi==2.4.0',
         'drf-nested-routers==0.90.2',
         'django-array-field-select==0.2.0',
-        'django-autoslug-iplweb==1.9.4',
         'django-qurl-templatetag==0.0.13',
         'django-click==2.1.0',
         'django-filter==2.0.0'
