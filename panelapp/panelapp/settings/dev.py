@@ -10,13 +10,12 @@ MIDDLEWARE += ('debug_toolbar.middleware.DebugToolbarMiddleware',)  # noqa
 
 INTERNAL_IPS = [
     '127.0.0.1',
-    '10.0.2.2',  # Vagrant host
 ]
 
 EMAIL_HOST = 'localhost'
 EMAIL_PORT = 25
-EMAIL_HOST_USER = 'vagrant'
-EMAIL_HOST_PASSWORD = '1'
+EMAIL_HOST_USER = None
+EMAIL_HOST_PASSWORD = None
 
 ALLOWED_HOSTS = ALLOWED_HOSTS + ['localhost', '*']
 

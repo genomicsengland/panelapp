@@ -5,4 +5,4 @@ RUN mkdir -p /app/panelapp
 WORKDIR /app
 ADD ./panelapp /app/panelapp/
 ADD ./setup.py ./setup.cfg ./MANIFEST.in ./VERSION /app/
-RUN pip install -e .
+RUN pip install -e .[dev,tests]

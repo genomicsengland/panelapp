@@ -34,19 +34,21 @@ setup(
     setup_requires=[
         'pytest-runner'
     ],
-    tests_require=[
-        'pytest==3.7.1',
-        'pytest-django==3.3.3',
-        'flake8==3.5.0',
-        'faker==0.8.15',
-        'factory_boy==2.11.1',
-        'pytest-cov==2.5.1'
-    ],
-    dev_requires=[
-        'django-debug-toolbar==1.9.1',
-        'django-extensions==2.1.0',
-        'ipython==6.4.0'
-    ],
+    extras_require={
+        'dev': [
+            'django-debug-toolbar==1.9.1',
+            'django-extensions==2.1.0',
+            'ipython==6.4.0'
+        ],
+        'tests': [
+            'pytest==3.7.1',
+            'pytest-django==3.3.3',
+            'flake8==3.5.0',
+            'faker==0.8.15',
+            'factory_boy==2.11.1',
+            'pytest-cov==2.5.1'
+        ]
+    },
     install_requires=[
         'django==2.1.3',
         'simplejson==3.8.2',

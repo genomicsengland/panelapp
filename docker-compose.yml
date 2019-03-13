@@ -21,8 +21,11 @@ services:
     image: rabbitmq
     environment:
       - RABBITMQ_DEFAULT_VHOST=panelapp
-  web:
-    build: .
+  web: &web
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    image: panelapp_web
     command: gunicorn --workers=4 -b :8000 panelapp.wsgi:application --chdir=/app/panelapp
     volumes:
       - ./panelapp:/app/panelapp
@@ -35,7 +38,7 @@ services:
       - rabbitmq
     environment:
       - DATABASE_URL=postgres://panelapp:panelapp@db/panelapp
-      - DJANGO_SETTINGS_MODULE=panelapp.settings.base
+      - DJANGO_SETTINGS_MODULE=panelapp.settings.dev
       - DJANGO_LOG_LEVEL=DEBUG
       - HEALTH_ACCESS_TOKEN_LOCATION=/app/health_token
       - CELERY_BROKER_URL=amqp://rabbitmq/panelapp
@@ -43,20 +46,7 @@ services:
       - STATIC_ROOT=/static
       - MEDIA_ROOT=/media
   celery_worker:
-    build: .
+    <<: *web
+    image: panelapp_celery_worker
     command: bash -c "cd /app/panelapp; celery -A panelapp worker -E -l info"
-    volumes:
-      - ./panelapp:/app/panelapp
-      - /tmp/panelapp_static:/static
-      - /tmp/panelapp_media:/media
-    depends_on:
-      - rabbitmq
-    environment:
-      - DATABASE_URL=postgres://panelapp:panelapp@db/panelapp
-      - DJANGO_SETTINGS_MODULE=panelapp.settings.base
-      - DJANGO_LOG_LEVEL=DEBUG
-      - HEALTH_ACCESS_TOKEN_LOCATION=/app/health_token
-      - CELERY_BROKER_URL=amqp://rabbitmq/panelapp
-      - ALLOWED_HOSTS=localhost;web
-      - STATIC_ROOT=/static
-      - MEDIA_ROOT=/media
+    ports: []
