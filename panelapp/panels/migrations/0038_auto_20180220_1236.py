@@ -30,23 +30,21 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('panels', '0037_auto_20180213_1323'),
-    ]
+    dependencies = [("panels", "0037_auto_20180213_1323")]
 
     operations = [
         migrations.AddField(
-            model_name='genepanelsnapshot',
-            name='current_number_of_evaluated_strs',
+            model_name="genepanelsnapshot",
+            name="current_number_of_evaluated_strs",
             field=models.IntegerField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='genepanelsnapshot',
-            name='current_number_of_strs',
+            model_name="genepanelsnapshot",
+            name="current_number_of_strs",
             field=models.IntegerField(blank=True, null=True),
         ),
         migrations.AddIndex(
-            model_name='str',
-            index=models.Index(fields=['name'], name='panels_str_name_9b16bd_idx'),
+            model_name="str",
+            index=models.Index(fields=["name"], name="panels_str_name_9b16bd_idx"),
         ),
     ]

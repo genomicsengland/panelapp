@@ -32,8 +32,20 @@ class CellBaseConnector:
         self.host = host
         self.url = None
 
-    def create_url(self, version, species, category, subcategory, id, resource, excludes=None, includes=None):
-        base_url = os.path.join(self.host, version, species, category, subcategory, id, resource)
+    def create_url(
+        self,
+        version,
+        species,
+        category,
+        subcategory,
+        id,
+        resource,
+        excludes=None,
+        includes=None,
+    ):
+        base_url = os.path.join(
+            self.host, version, species, category, subcategory, id, resource
+        )
         if excludes is not None:
             url = os.path.join(base_url, "?exclude=" + excludes)
             if includes is not None:
@@ -54,22 +66,39 @@ class CellBaseConnector:
                 yield result["result"]
 
     def get_coding_transcripts_by_length(self, genes):
-        self.create_url("latest", "hsapiens", "feature", "gene", ",".join(genes), "transcript",
-                        includes="transcripts.id,transcripts.cdsLength,transcripts.biotype")
+        self.create_url(
+            "latest",
+            "hsapiens",
+            "feature",
+            "gene",
+            ",".join(genes),
+            "transcript",
+            includes="transcripts.id,transcripts.cdsLength,transcripts.biotype",
+        )
         for r in self.execute():
             yield r
 
     def get_transcripts(self, genes, coding=True):
-        includes = ",".join([
-            "transcripts.id",
-            "transcripts.cdsLength",
-            "transcripts.biotype",
-            "transcripts.chromosome",
-            "transcripts.strand",
-            "transcripts.start",
-            "transcripts.end"
-        ])
-        self.create_url("latest", "hsapiens", "feature", "gene", ",".join(genes), "transcript", includes=includes)
+        includes = ",".join(
+            [
+                "transcripts.id",
+                "transcripts.cdsLength",
+                "transcripts.biotype",
+                "transcripts.chromosome",
+                "transcripts.strand",
+                "transcripts.start",
+                "transcripts.end",
+            ]
+        )
+        self.create_url(
+            "latest",
+            "hsapiens",
+            "feature",
+            "gene",
+            ",".join(genes),
+            "transcript",
+            includes=includes,
+        )
         all_transcripts = []
         for r in self.execute():
             if len(r) > 0:
@@ -83,16 +112,26 @@ class CellBaseConnector:
         return all_transcripts
 
     def get_exons(self, genes, coding=True):
-        includes = ",".join([
-            "transcripts.id",
-            "transcripts.cdsLength",
-            "transcripts.biotype",
-            "transcripts.chromosome",
-            "transcripts.start",
-            "transcripts.end",
-            "transcripts.exons"
-        ])
-        self.create_url("latest", "hsapiens", "feature", "gene", ",".join(genes), "transcript", includes=includes)
+        includes = ",".join(
+            [
+                "transcripts.id",
+                "transcripts.cdsLength",
+                "transcripts.biotype",
+                "transcripts.chromosome",
+                "transcripts.start",
+                "transcripts.end",
+                "transcripts.exons",
+            ]
+        )
+        self.create_url(
+            "latest",
+            "hsapiens",
+            "feature",
+            "gene",
+            ",".join(genes),
+            "transcript",
+            includes=includes,
+        )
         all_exons = []
         for r in self.execute():
             if len(r) > 0:
@@ -105,13 +144,20 @@ class CellBaseConnector:
 
                         else:
                             for exon in t["exons"]:
-                                    all_exons.append(exon)
+                                all_exons.append(exon)
 
         return all_exons
 
     def get_gene(self, genes, coding=True):
-        self.create_url("latest", "hsapiens", "feature", "gene", ",".join(genes), "info",
-                        excludes="transcripts,expressionValues,_chunkIds")
+        self.create_url(
+            "latest",
+            "hsapiens",
+            "feature",
+            "gene",
+            ",".join(genes),
+            "info",
+            excludes="transcripts,expressionValues,_chunkIds",
+        )
         all_genes = []
         for r in self.execute():
             if len(r) > 0:
@@ -125,5 +171,5 @@ class CellBaseConnector:
         return all_genes
 
 
-def remove_non_ascii(text, replacemenet=' '):
-    return re.sub(r'[^\x00-\x7F]+', ' ', text)
+def remove_non_ascii(text, replacemenet=" "):
+    return re.sub(r"[^\x00-\x7F]+", " ", text)

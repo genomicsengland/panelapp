@@ -29,33 +29,44 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('panels', '0062_auto_20180713_1155'),
-    ]
+    dependencies = [("panels", "0062_auto_20180713_1155")]
 
     operations = [
         migrations.CreateModel(
-            name='PanelType',
+            name="PanelType",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=128)),
-                ('slug', AutoSlugField(editable=False, populate_from='name', unique=True)),
-                ('description', models.TextField()),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("name", models.CharField(max_length=128)),
+                (
+                    "slug",
+                    AutoSlugField(editable=False, populate_from="name", unique=True),
+                ),
+                ("description", models.TextField()),
             ],
         ),
         migrations.AlterField(
-            model_name='region',
-            name='name',
-            field=models.CharField(help_text='Region ID', max_length=128),
+            model_name="region",
+            name="name",
+            field=models.CharField(help_text="Region ID", max_length=128),
         ),
         migrations.AlterField(
-            model_name='region',
-            name='verbose_name',
-            field=models.CharField(blank=True, help_text='Region Name', max_length=256, null=True),
+            model_name="region",
+            name="verbose_name",
+            field=models.CharField(
+                blank=True, help_text="Region Name", max_length=256, null=True
+            ),
         ),
         migrations.AddField(
-            model_name='genepanel',
-            name='types',
-            field=models.ManyToManyField(to='panels.PanelType'),
+            model_name="genepanel",
+            name="types",
+            field=models.ManyToManyField(to="panels.PanelType"),
         ),
     ]

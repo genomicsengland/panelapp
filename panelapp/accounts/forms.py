@@ -1,9 +1,9 @@
 ##
 ## Copyright (c) 2016-2019 Genomics England Ltd.
-## 
+##
 ## This file is part of PanelApp
 ## (see https://panelapp.genomicsengland.co.uk).
-## 
+##
 ## Licensed to the Apache Software Foundation (ASF) under one
 ## or more contributor license agreements.  See the NOTICE file
 ## distributed with this work for additional information
@@ -11,9 +11,9 @@
 ## to you under the Apache License, Version 2.0 (the
 ## "License"); you may not use this file except in compliance
 ## with the License.  You may obtain a copy of the License at
-## 
+##
 ##   http://www.apache.org/licenses/LICENSE-2.0
-## 
+##
 ## Unless required by applicable law or agreed to in writing,
 ## software distributed under the License is distributed on an
 ## "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -40,15 +40,17 @@ class RegistrationForm(UserCreationForm):
 
     confirm_email = forms.EmailField()
     affiliation = forms.CharField()
-    role = forms.ChoiceField(choices=[('', 'Please select a role')] + Reviewer.ROLES)
-    workplace = forms.ChoiceField(choices=[('', 'Please select a workspace')] + Reviewer.WORKPLACES)
-    group = forms.ChoiceField(choices=[('', 'Please select a group')] + Reviewer.GROUPS)
+    role = forms.ChoiceField(choices=[("", "Please select a role")] + Reviewer.ROLES)
+    workplace = forms.ChoiceField(
+        choices=[("", "Please select a workspace")] + Reviewer.WORKPLACES
+    )
+    group = forms.ChoiceField(choices=[("", "Please select a group")] + Reviewer.GROUPS)
 
     class Meta:
         """Select fields"""
 
         model = User
-        fields = ('username', 'first_name', 'last_name', 'email')
+        fields = ("username", "first_name", "last_name", "email")
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -56,29 +58,31 @@ class RegistrationForm(UserCreationForm):
         original_fields = self.fields
 
         self.fields = OrderedDict()
-        self.fields['username'] = original_fields.get('username')
-        self.fields['first_name'] = original_fields.get('first_name')
-        self.fields['last_name'] = original_fields.get('last_name')
-        self.fields['email'] = original_fields.get('email')
-        self.fields['confirm_email'] = original_fields.get('confirm_email')
-        self.fields['password1'] = original_fields.get('password1')
-        self.fields['password2'] = original_fields.get('password2')
-        self.fields['affiliation'] = original_fields.get('affiliation')
-        self.fields['role'] = original_fields.get('role')
-        self.fields['workplace'] = original_fields.get('workplace')
-        self.fields['group'] = original_fields.get('group')
+        self.fields["username"] = original_fields.get("username")
+        self.fields["first_name"] = original_fields.get("first_name")
+        self.fields["last_name"] = original_fields.get("last_name")
+        self.fields["email"] = original_fields.get("email")
+        self.fields["confirm_email"] = original_fields.get("confirm_email")
+        self.fields["password1"] = original_fields.get("password1")
+        self.fields["password2"] = original_fields.get("password2")
+        self.fields["affiliation"] = original_fields.get("affiliation")
+        self.fields["role"] = original_fields.get("role")
+        self.fields["workplace"] = original_fields.get("workplace")
+        self.fields["group"] = original_fields.get("group")
 
     def clean_confirm_email(self):
         """Check emails match"""
 
-        email1 = self.cleaned_data.get('email')
-        email2 = self.cleaned_data.get('confirm_email')
+        email1 = self.cleaned_data.get("email")
+        email2 = self.cleaned_data.get("confirm_email")
 
         if (not email1 or not email2) or email1 and email2 and email1 != email2:
             raise forms.ValidationError("Email confirmation doesn't match")
-        
+
         if User.objects.filter(email=email1):
-            raise forms.ValidationError("This email is already registered, please use reset password functionality")
+            raise forms.ValidationError(
+                "This email is already registered, please use reset password functionality"
+            )
 
         return email1
 
@@ -90,10 +94,10 @@ class RegistrationForm(UserCreationForm):
 
         reviewer = Reviewer()
         reviewer.user = self.instance
-        reviewer.affiliation = self.cleaned_data['affiliation']
-        reviewer.workplace = self.cleaned_data['workplace']
-        reviewer.role = self.cleaned_data['role']
-        reviewer.group = self.cleaned_data['group']
+        reviewer.affiliation = self.cleaned_data["affiliation"]
+        reviewer.workplace = self.cleaned_data["workplace"]
+        reviewer.role = self.cleaned_data["role"]
+        reviewer.group = self.cleaned_data["group"]
         reviewer.save()
 
         registration_email.delay(self.instance.pk)
@@ -104,9 +108,7 @@ class ChangePasswordForm(forms.Form):
     """Change user's password"""
 
     current_password = forms.CharField(
-        label="Current password",
-        strip=False,
-        widget=forms.PasswordInput,
+        label="Current password", strip=False, widget=forms.PasswordInput
     )
     password1 = forms.CharField(
         label="New Password",
@@ -122,14 +124,14 @@ class ChangePasswordForm(forms.Form):
     )
 
     def __init__(self, *args, **kwargs):
-        self.user = kwargs['user']
-        del kwargs['user']
+        self.user = kwargs["user"]
+        del kwargs["user"]
         super().__init__(*args, **kwargs)
 
     def clean_current_password(self):
         """Check if current password match"""
 
-        current_password = self.cleaned_data['current_password']
+        current_password = self.cleaned_data["current_password"]
         if not self.user.check_password(current_password):
             raise forms.ValidationError("Please enter correct password")
         return current_password
@@ -141,10 +143,11 @@ class ChangePasswordForm(forms.Form):
         password2 = self.cleaned_data.get("password2")
         if password1 and password2 and password1 != password2:
             raise forms.ValidationError(
-                "Passwords don't match",
-                code='password_mismatch',
+                "Passwords don't match", code="password_mismatch"
             )
-        password_validation.validate_password(self.cleaned_data.get('password2'), self.user)
+        password_validation.validate_password(
+            self.cleaned_data.get("password2"), self.user
+        )
         return password2
 
     def update_user_password(self, commit=True):

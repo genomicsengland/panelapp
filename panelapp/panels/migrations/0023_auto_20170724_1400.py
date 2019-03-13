@@ -31,63 +31,66 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('panels', '0022_auto_20170621_1331'),
-    ]
+    dependencies = [("panels", "0022_auto_20170621_1331")]
 
     operations = [
         migrations.AlterModelOptions(
-            name='genepanelsnapshot',
-            options={'get_latest_by': 'created', 'ordering': ['-major_version', '-minor_version', '-created']},
+            name="genepanelsnapshot",
+            options={
+                "get_latest_by": "created",
+                "ordering": ["-major_version", "-minor_version", "-created"],
+            },
         ),
         migrations.RenameField(
-            model_name='gene',
-            old_name='other_transcripts',
-            new_name='ensembl_genes',
+            model_name="gene", old_name="other_transcripts", new_name="ensembl_genes"
         ),
         migrations.AddField(
-            model_name='gene',
-            name='alias',
-            field=django.contrib.postgres.fields.ArrayField(base_field=models.CharField(max_length=255), null=True, size=None),
+            model_name="gene",
+            name="alias",
+            field=django.contrib.postgres.fields.ArrayField(
+                base_field=models.CharField(max_length=255), null=True, size=None
+            ),
         ),
         migrations.AddField(
-            model_name='gene',
-            name='alias_name',
-            field=django.contrib.postgres.fields.ArrayField(base_field=models.CharField(max_length=255), null=True, size=None),
+            model_name="gene",
+            name="alias_name",
+            field=django.contrib.postgres.fields.ArrayField(
+                base_field=models.CharField(max_length=255), null=True, size=None
+            ),
         ),
         migrations.AddField(
-            model_name='gene',
-            name='biotype',
+            model_name="gene",
+            name="biotype",
             field=models.CharField(max_length=255, null=True),
         ),
         migrations.AddField(
-            model_name='gene',
-            name='hgnc_date_symbol_changed',
+            model_name="gene",
+            name="hgnc_date_symbol_changed",
             field=models.DateField(null=True),
         ),
         migrations.AddField(
-            model_name='gene',
-            name='hgnc_id',
+            model_name="gene",
+            name="hgnc_id",
             field=models.CharField(max_length=255, null=True),
         ),
         migrations.AddField(
-            model_name='gene',
-            name='hgnc_release',
-            field=models.DateField(null=True),
+            model_name="gene", name="hgnc_release", field=models.DateField(null=True)
         ),
         migrations.AddField(
-            model_name='gene',
-            name='hgnc_symbol',
+            model_name="gene",
+            name="hgnc_symbol",
             field=models.CharField(max_length=255, null=True),
         ),
         migrations.AlterField(
-            model_name='gene',
-            name='gene_name',
+            model_name="gene",
+            name="gene_name",
             field=models.CharField(max_length=255, null=True),
         ),
         migrations.AlterField(
-            model_name='gene',
-            name='omim_gene',
-            field=django.contrib.postgres.fields.ArrayField(base_field=models.CharField(max_length=255), null=True, size=None),
+            model_name="gene",
+            name="omim_gene",
+            field=django.contrib.postgres.fields.ArrayField(
+                base_field=models.CharField(max_length=255), null=True, size=None
+            ),
         ),
     ]

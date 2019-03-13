@@ -30,14 +30,22 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('panels', '0031_auto_20171107_1003'),
-    ]
+    dependencies = [("panels", "0031_auto_20171107_1003")]
 
     operations = [
         migrations.AddField(
-            model_name='genepanel',
-            name='status',
-            field=models.CharField(choices=[('promoted', 'promoted'), ('public', 'public'), ('retired', 'retired'), ('internal', 'internal'), ('deleted', 'deleted')], default='internal', max_length=36),
-        ),
+            model_name="genepanel",
+            name="status",
+            field=models.CharField(
+                choices=[
+                    ("promoted", "promoted"),
+                    ("public", "public"),
+                    ("retired", "retired"),
+                    ("internal", "internal"),
+                    ("deleted", "deleted"),
+                ],
+                default="internal",
+                max_length=36,
+            ),
+        )
     ]

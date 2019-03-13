@@ -30,26 +30,26 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('panels', '0033_auto_20171207_1109'),
-    ]
+    dependencies = [("panels", "0033_auto_20171207_1109")]
 
     operations = [
-        migrations.RemoveField(
-            model_name='genepanel',
-            name='approved',
-        ),
-        migrations.RemoveField(
-            model_name='genepanel',
-            name='deleted',
-        ),
-        migrations.RemoveField(
-            model_name='genepanel',
-            name='promoted',
-        ),
+        migrations.RemoveField(model_name="genepanel", name="approved"),
+        migrations.RemoveField(model_name="genepanel", name="deleted"),
+        migrations.RemoveField(model_name="genepanel", name="promoted"),
         migrations.AlterField(
-            model_name='genepanel',
-            name='status',
-            field=models.CharField(choices=[('promoted', 'promoted'), ('public', 'public'), ('retired', 'retired'), ('internal', 'internal'), ('deleted', 'deleted')], db_index=True, default='internal', max_length=36),
+            model_name="genepanel",
+            name="status",
+            field=models.CharField(
+                choices=[
+                    ("promoted", "promoted"),
+                    ("public", "public"),
+                    ("retired", "retired"),
+                    ("internal", "internal"),
+                    ("deleted", "deleted"),
+                ],
+                db_index=True,
+                default="internal",
+                max_length=36,
+            ),
         ),
     ]

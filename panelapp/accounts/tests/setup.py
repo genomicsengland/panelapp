@@ -1,9 +1,9 @@
 ##
 ## Copyright (c) 2016-2019 Genomics England Ltd.
-## 
+##
 ## This file is part of PanelApp
 ## (see https://panelapp.genomicsengland.co.uk).
-## 
+##
 ## Licensed to the Apache Software Foundation (ASF) under one
 ## or more contributor license agreements.  See the NOTICE file
 ## distributed with this work for additional information
@@ -11,9 +11,9 @@
 ## to you under the Apache License, Version 2.0 (the
 ## "License"); you may not use this file except in compliance
 ## with the License.  You may obtain a copy of the License at
-## 
+##
 ##   http://www.apache.org/licenses/LICENSE-2.0
-## 
+##
 ## Unless required by applicable law or agreed to in writing,
 ## software distributed under the License is distributed on an
 ## "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -40,8 +40,12 @@ class SetupUsers(TransactionTestCase):
     def setUp(self):
         super().setUp()
 
-        self.gel_user = UserFactory(username="gel_user", reviewer__user_type=Reviewer.TYPES.GEL)
-        self.verified_user = UserFactory(username="verified_user", reviewer__user_type=Reviewer.TYPES.REVIEWER)
+        self.gel_user = UserFactory(
+            username="gel_user", reviewer__user_type=Reviewer.TYPES.GEL
+        )
+        self.verified_user = UserFactory(
+            username="verified_user", reviewer__user_type=Reviewer.TYPES.REVIEWER
+        )
         self.external_user = UserFactory(username="external_user")
 
 
@@ -90,8 +94,11 @@ class TestMigrations(TransactionTestCase):
     app = None
 
     def setUp(self):
-        assert self.migrate_from and self.migrate_to and self.app, \
-            "TestCase '{}' must define app, migrate_from and migrate_to properties".format(self.__class__.__name__)
+        assert (
+            self.migrate_from and self.migrate_to and self.app
+        ), "TestCase '{}' must define app, migrate_from and migrate_to properties".format(
+            self.__class__.__name__
+        )
         self.migrate_from = [(self.app, self.migrate_from)]
         self.migrate_to = [(self.app, self.migrate_to)]
         executor = MigrationExecutor(connection)

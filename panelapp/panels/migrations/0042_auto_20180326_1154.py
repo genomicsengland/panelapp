@@ -30,25 +30,24 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('panels', '0041_auto_20180222_0948'),
-    ]
+    dependencies = [("panels", "0041_auto_20180222_0948")]
 
     operations = [
-        migrations.RemoveField(
-            model_name='str',
-            name='position',
-        ),
+        migrations.RemoveField(model_name="str", name="position"),
         migrations.AddField(
-            model_name='str',
-            name='position_37',
-            field=models.CharField(default='', help_text='Chr:Start Position (GRCh37)', max_length=32),
+            model_name="str",
+            name="position_37",
+            field=models.CharField(
+                default="", help_text="Chr:Start Position (GRCh37)", max_length=32
+            ),
             preserve_default=False,
         ),
         migrations.AddField(
-            model_name='str',
-            name='position_38',
-            field=models.CharField(default='', help_text='Chr:Start Position (GRCh38)', max_length=32),
+            model_name="str",
+            name="position_38",
+            field=models.CharField(
+                default="", help_text="Chr:Start Position (GRCh38)", max_length=32
+            ),
             preserve_default=False,
         ),
     ]

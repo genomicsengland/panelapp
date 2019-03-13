@@ -1,9 +1,9 @@
 ##
 ## Copyright (c) 2016-2019 Genomics England Ltd.
-## 
+##
 ## This file is part of PanelApp
 ## (see https://panelapp.genomicsengland.co.uk).
-## 
+##
 ## Licensed to the Apache Software Foundation (ASF) under one
 ## or more contributor license agreements.  See the NOTICE file
 ## distributed with this work for additional information
@@ -11,9 +11,9 @@
 ## to you under the Apache License, Version 2.0 (the
 ## "License"); you may not use this file except in compliance
 ## with the License.  You may obtain a copy of the License at
-## 
+##
 ##   http://www.apache.org/licenses/LICENSE-2.0
-## 
+##
 ## Unless required by applicable law or agreed to in writing,
 ## software distributed under the License is distributed on an
 ## "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -45,7 +45,7 @@ class UserManager(BaseUserManager):
         Create and save a user with the given username, email, and password.
         """
         if not username:
-            raise ValueError('The given username must be set')
+            raise ValueError("The given username must be set")
         email = self.normalize_email(email)
         username = self.model.normalize_username(username)
         user = self.model(username=username, email=email, **extra_fields)
@@ -54,18 +54,18 @@ class UserManager(BaseUserManager):
         return user
 
     def create_user(self, username, email=None, password=None, **extra_fields):
-        extra_fields.setdefault('is_staff', False)
-        extra_fields.setdefault('is_superuser', False)
+        extra_fields.setdefault("is_staff", False)
+        extra_fields.setdefault("is_superuser", False)
         return self._create_user(username, email, password, **extra_fields)
 
     def create_superuser(self, username, email, password, **extra_fields):
-        extra_fields.setdefault('is_staff', True)
-        extra_fields.setdefault('is_superuser', True)
+        extra_fields.setdefault("is_staff", True)
+        extra_fields.setdefault("is_superuser", True)
 
-        if extra_fields.get('is_staff') is not True:
-            raise ValueError('Superuser must have is_staff=True.')
-        if extra_fields.get('is_superuser') is not True:
-            raise ValueError('Superuser must have is_superuser=True.')
+        if extra_fields.get("is_staff") is not True:
+            raise ValueError("Superuser must have is_staff=True.")
+        if extra_fields.get("is_superuser") is not True:
+            raise ValueError("Superuser must have is_superuser=True.")
 
         return self._create_user(username, email, password, **extra_fields)
 
@@ -107,7 +107,7 @@ class User(AbstractUser, TimeStampedModel):
         """
 
         assert self.pk
-        return signing.dumps({'id': self.pk})
+        return signing.dumps({"id": self.pk})
 
     def verify_crypto_id(self, payload):
         """Check if payload contains the same PK as this object.
@@ -116,16 +116,21 @@ class User(AbstractUser, TimeStampedModel):
         :return: True if payload is valid (with respect to max age), False otherwise
         """
         try:
-            return self.pk and signing.loads(payload, max_age=settings.ACCOUNT_EMAIL_VERIFICATION_PERIOD)\
-                .get('id', None) == self.pk
+            return (
+                self.pk
+                and signing.loads(
+                    payload, max_age=settings.ACCOUNT_EMAIL_VERIFICATION_PERIOD
+                ).get("id", None)
+                == self.pk
+            )
         except (signing.SignatureExpired, signing.BadSignature):
             return False
 
     def get_email_verification_url(self):
-        return reverse('accounts:verify_email', kwargs={
-            'b64_email': self.base64_email,
-            'crypto_id': self.get_crypto_id()
-        })
+        return reverse(
+            "accounts:verify_email",
+            kwargs={"b64_email": self.base64_email, "crypto_id": self.get_crypto_id()},
+        )
 
     def send_verification_email(self):
         send_verification_email.delay(self.pk)
@@ -136,15 +141,11 @@ class User(AbstractUser, TimeStampedModel):
         :return: None
         """
         self.is_active = True
-        self.save(update_fields=['is_active', ])
+        self.save(update_fields=["is_active"])
 
 
 class Reviewer(models.Model):
-    TYPES = Choices(
-        'GEL',
-        'EXTERNAL',
-        'REVIEWER'
-    )
+    TYPES = Choices("GEL", "EXTERNAL", "REVIEWER")
     ROLES = Choices(
         "Clinical Scientist",
         "Clinician",
@@ -157,7 +158,7 @@ class Reviewer(models.Model):
         "Technician",
         "Researcher",
         "Student",
-        "Other"
+        "Other",
     )
     WORKPLACES = Choices(
         "Research lab",

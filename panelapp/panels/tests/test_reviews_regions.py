@@ -47,15 +47,20 @@ class EvaluationRegionTest(LoginGELUser):
         region = RegionFactory()
         region.evaluation.all().delete()
         region.panel.update_saved_stats()
-        url = reverse_lazy('panels:review_entity', kwargs={
-            'pk': region.panel.panel.pk,
-            'entity_type': 'region',
-            'entity_name': region.name
-        })
+        url = reverse_lazy(
+            "panels:review_entity",
+            kwargs={
+                "pk": region.panel.panel.pk,
+                "entity_type": "region",
+                "entity_name": region.name,
+            },
+        )
 
         current_version = region.panel.version
 
-        number_of_evaluated_genes = region.panel.stats.get('number_of_evaluated_regions')
+        number_of_evaluated_genes = region.panel.stats.get(
+            "number_of_evaluated_regions"
+        )
 
         region_data = {
             "rating": Evaluation.RATINGS.AMBER,
@@ -64,11 +69,16 @@ class EvaluationRegionTest(LoginGELUser):
             "publications": ";".join([fake.sentence(), fake.sentence()]),
             "phenotypes": ";".join([fake.sentence(), fake.sentence(), fake.sentence()]),
             "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)][0],
-            "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][randint(1, 2)][0],
+            "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][
+                randint(1, 2)
+            ][0],
         }
         res = self.client.post(url, region_data)
         assert res.status_code == 302
-        assert number_of_evaluated_genes + 1 == region.panel.panel.active_panel.stats.get('number_of_evaluated_regions')
+        assert (
+            number_of_evaluated_genes + 1
+            == region.panel.panel.active_panel.stats.get("number_of_evaluated_regions")
+        )
         assert current_version == region.panel.panel.active_panel.version
 
     def test_add_evaluation_comments_only(self):
@@ -77,24 +87,23 @@ class EvaluationRegionTest(LoginGELUser):
         region = RegionFactory()
         current_version = region.panel.version
         region.evaluation.all().delete()
-        url = reverse_lazy('panels:review_entity', kwargs={
-            'pk': region.panel.panel.pk,
-            'entity_type': 'region',
-            'entity_name': region.name
-        })
+        url = reverse_lazy(
+            "panels:review_entity",
+            kwargs={
+                "pk": region.panel.panel.pk,
+                "entity_type": "region",
+                "entity_name": region.name,
+            },
+        )
 
-        region_data = {
-            "comments": fake.sentence(),
-        }
+        region_data = {"comments": fake.sentence()}
         res = self.client.post(url, region_data)
         assert res.status_code == 302
 
         v01gene = region.panel.panel.active_panel.get_region(region.name)
         assert v01gene.evaluation.get(user=self.gel_user).comments.count() == 1
 
-        region_data = {
-            "comments": fake.sentence(),
-        }
+        region_data = {"comments": fake.sentence()}
         res = self.client.post(url, region_data)
 
         assert v01gene.evaluation.get(user=self.gel_user).comments.count() == 2
@@ -113,39 +122,55 @@ class EvaluationRegionTest(LoginGELUser):
     def test_form_should_be_prefilled(self):
         region = RegionFactory()
         region.evaluation.all().delete()
-        url = reverse_lazy('panels:review_entity', kwargs={
-            'pk': region.panel.panel.pk,
-            'entity_type': 'region',
-            'entity_name': region.name
-        })
+        url = reverse_lazy(
+            "panels:review_entity",
+            kwargs={
+                "pk": region.panel.panel.pk,
+                "entity_type": "region",
+                "entity_name": region.name,
+            },
+        )
 
         region_data = {
             "rating": Evaluation.RATINGS.AMBER,
             "current_diagnostic": True,
             "publications": ";".join([fake.sentence(), fake.sentence()]),
             "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)][0],
-            "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][randint(1, 2)][0],
+            "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][
+                randint(1, 2)
+            ][0],
         }
 
         self.client.post(url, region_data)
 
-        url = reverse_lazy('panels:evaluation', kwargs={
-            'pk': region.panel.panel.pk,
-            'entity_type': 'region',
-            'entity_name': region.name
-        })
+        url = reverse_lazy(
+            "panels:evaluation",
+            kwargs={
+                "pk": region.panel.panel.pk,
+                "entity_type": "region",
+                "entity_name": region.name,
+            },
+        )
         res = self.client.get(url)
-        assert res.content.find(str.encode('<option value="{}" selected>'.format(region_data['moi']))) != -1
+        assert (
+            res.content.find(
+                str.encode('<option value="{}" selected>'.format(region_data["moi"]))
+            )
+            != -1
+        )
 
     def test_change_evaluation(self):
         region = RegionFactory()
         current_version = region.panel.version
         region.evaluation.all().delete()
-        url = reverse_lazy('panels:review_entity', kwargs={
-            'pk': region.panel.panel.pk,
-            'entity_type': 'region',
-            'entity_name': region.name
-        })
+        url = reverse_lazy(
+            "panels:review_entity",
+            kwargs={
+                "pk": region.panel.panel.pk,
+                "entity_type": "region",
+                "entity_name": region.name,
+            },
+        )
 
         old_phenotypes = [fake.sentence(), fake.sentence(), fake.sentence()]
         gene_data = {
@@ -155,14 +180,18 @@ class EvaluationRegionTest(LoginGELUser):
             "publications": ";".join([fake.sentence(), fake.sentence()]),
             "phenotypes": ";".join(old_phenotypes),
             "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)][0],
-            "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][randint(1, 2)][0],
+            "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][
+                randint(1, 2)
+            ][0],
         }
         self.client.post(url, gene_data)
         assert Evaluation.objects.filter(user=self.gel_user).count() == 1
 
         gene_data = {
             "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)][0],
-            "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][randint(1, 2)][0],
+            "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][
+                randint(1, 2)
+            ][0],
         }
         self.client.post(url, gene_data)
         assert Evaluation.objects.filter(user=self.gel_user).count() == 1
@@ -175,15 +204,16 @@ class EvaluationRegionTest(LoginGELUser):
         region = RegionFactory()
         current_version = region.panel.version
         region.evaluation.all().delete()
-        url = reverse_lazy('panels:review_entity', kwargs={
-            'pk': region.panel.panel.pk,
-            'entity_type': 'region',
-            'entity_name': region.name
-        })
+        url = reverse_lazy(
+            "panels:review_entity",
+            kwargs={
+                "pk": region.panel.panel.pk,
+                "entity_type": "region",
+                "entity_name": region.name,
+            },
+        )
 
-        gene_data = {
-            "comments": fake.sentence(),
-        }
+        gene_data = {"comments": fake.sentence()}
         res = self.client.post(url, gene_data)
         assert res.status_code == 302
 
@@ -196,14 +226,17 @@ class EvaluationRegionTest(LoginGELUser):
             "comments": fake.sentence(),
             "publications": ";".join([fake.sentence(), fake.sentence()]),
         }
-        url_review = reverse_lazy('panels:review_entity', kwargs={
-            'pk': region.panel.panel.pk,
-            'entity_type': 'region',
-            'entity_name': region.name
-        })
+        url_review = reverse_lazy(
+            "panels:review_entity",
+            kwargs={
+                "pk": region.panel.panel.pk,
+                "entity_type": "region",
+                "entity_name": region.name,
+            },
+        )
         self.client.post(url_review, review_data)
         res_review = self.client.get(url_review)
-        assert res_review.content.find(str.encode(review_data['publications'])) != -1
+        assert res_review.content.find(str.encode(review_data["publications"])) != -1
         assert current_version == region.panel.panel.active_panel.version
 
 
@@ -211,63 +244,85 @@ class RegionReviewTest(LoginGELUser):
     def test_mark_as_ready(self):
         region = RegionFactory()
         region.evaluation.all().delete()
-        url = reverse_lazy('panels:mark_entity_as_ready', kwargs={
-            'pk': region.panel.panel.pk,
-            'entity_type': 'region',
-            'entity_name': region.name
-        })
+        url = reverse_lazy(
+            "panels:mark_entity_as_ready",
+            kwargs={
+                "pk": region.panel.panel.pk,
+                "entity_type": "region",
+                "entity_name": region.name,
+            },
+        )
 
-        self.client.post(url, {'ready_comment': fake.sentence()})
-        gene = GenePanel.objects.get(pk=region.panel.panel.pk).active_panel.get_region(region.name)
+        self.client.post(url, {"ready_comment": fake.sentence()})
+        gene = GenePanel.objects.get(pk=region.panel.panel.pk).active_panel.get_region(
+            region.name
+        )
         assert gene.ready is True
 
     def test_mark_as_ready_no_gene(self):
         region = RegionFactory(gene=None)
         region.evaluation.all().delete()
-        url = reverse_lazy('panels:mark_entity_as_ready', kwargs={
-            'pk': region.panel.panel.pk,
-            'entity_type': 'region',
-            'entity_name': region.name
-        })
+        url = reverse_lazy(
+            "panels:mark_entity_as_ready",
+            kwargs={
+                "pk": region.panel.panel.pk,
+                "entity_type": "region",
+                "entity_name": region.name,
+            },
+        )
 
-        self.client.post(url, {'ready_comment': fake.sentence()})
-        gene = GenePanel.objects.get(pk=region.panel.panel.pk).active_panel.get_region(region.name)
+        self.client.post(url, {"ready_comment": fake.sentence()})
+        gene = GenePanel.objects.get(pk=region.panel.panel.pk).active_panel.get_region(
+            region.name
+        )
         assert gene.ready is True
 
     def test_update_tags(self):
         region = RegionFactory()
         current_version = region.panel.version
         region.evaluation.all().delete()
-        url = reverse_lazy('panels:update_entity_tags', kwargs={
-            'pk': region.panel.panel.pk,
-            'entity_type': 'region',
-            'entity_name': region.name
-        })
+        url = reverse_lazy(
+            "panels:update_entity_tags",
+            kwargs={
+                "pk": region.panel.panel.pk,
+                "entity_type": "region",
+                "entity_name": region.name,
+            },
+        )
 
         tag1 = TagFactory()
         tag2 = TagFactory()
 
-        res = self.client.post(url, {'tags': [tag1.pk, tag2.pk]}, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
-        gene = GenePanel.objects.get(pk=region.panel.panel.pk).active_panel.get_region(region.name)
-        assert res.json().get('status') == 200
+        res = self.client.post(
+            url, {"tags": [tag1.pk, tag2.pk]}, HTTP_X_REQUESTED_WITH="XMLHttpRequest"
+        )
+        gene = GenePanel.objects.get(pk=region.panel.panel.pk).active_panel.get_region(
+            region.name
+        )
+        assert res.json().get("status") == 200
         assert gene.tags.count() == 2
         assert current_version == region.panel.panel.active_panel.version
 
     def test_update_moi(self):
         region = RegionFactory()
         region.evaluation.all().delete()
-        url = reverse_lazy('panels:update_entity_moi', kwargs={
-            'pk': region.panel.panel.pk,
-            'entity_type': 'region',
-            'entity_name': region.name
-        })
+        url = reverse_lazy(
+            "panels:update_entity_moi",
+            kwargs={
+                "pk": region.panel.panel.pk,
+                "entity_type": "region",
+                "entity_name": region.name,
+            },
+        )
 
         moi = [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 2)]
-        data = {'comment': fake.sentence(), 'moi': moi[1]}
+        data = {"comment": fake.sentence(), "moi": moi[1]}
 
-        res = self.client.post(url, data, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
-        gene = GenePanel.objects.get(pk=region.panel.panel.pk).active_panel.get_region(region.name)
-        assert res.json().get('status') == 200
+        res = self.client.post(url, data, HTTP_X_REQUESTED_WITH="XMLHttpRequest")
+        gene = GenePanel.objects.get(pk=region.panel.panel.pk).active_panel.get_region(
+            region.name
+        )
+        assert res.json().get("status") == 200
         assert Comment.objects.count() == 1
         assert gene.moi == moi[1]
         assert gene.panel.version != region.panel.version
@@ -275,19 +330,24 @@ class RegionReviewTest(LoginGELUser):
     def test_update_phenotypes(self):
         region = RegionFactory()
         region.evaluation.all().delete()
-        url = reverse_lazy('panels:update_entity_phenotypes', kwargs={
-            'pk': region.panel.panel.pk,
-            'entity_type': 'region',
-            'entity_name': region.name
-        })
+        url = reverse_lazy(
+            "panels:update_entity_phenotypes",
+            kwargs={
+                "pk": region.panel.panel.pk,
+                "entity_type": "region",
+                "entity_name": region.name,
+            },
+        )
 
         phenotypes_array = [fake.word(), fake.word()]
         phenotypes = "{}; {}".format(phenotypes_array[0], phenotypes_array[1])
-        data = {'comment': fake.sentence(), 'phenotypes': phenotypes}
+        data = {"comment": fake.sentence(), "phenotypes": phenotypes}
 
-        res = self.client.post(url, data, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
-        gene = GenePanel.objects.get(pk=region.panel.panel.pk).active_panel.get_region(region.name)
-        assert res.json().get('status') == 200
+        res = self.client.post(url, data, HTTP_X_REQUESTED_WITH="XMLHttpRequest")
+        gene = GenePanel.objects.get(pk=region.panel.panel.pk).active_panel.get_region(
+            region.name
+        )
+        assert res.json().get("status") == 200
         assert Comment.objects.count() == 1
         assert gene.phenotypes == phenotypes_array
         assert gene.panel.version != region.panel.version
@@ -295,19 +355,24 @@ class RegionReviewTest(LoginGELUser):
     def test_update_publications(self):
         region = RegionFactory()
         region.evaluation.all().delete()
-        url = reverse_lazy('panels:update_entity_publications', kwargs={
-            'pk': region.panel.panel.pk,
-            'entity_type': 'region',
-            'entity_name': region.name
-        })
+        url = reverse_lazy(
+            "panels:update_entity_publications",
+            kwargs={
+                "pk": region.panel.panel.pk,
+                "entity_type": "region",
+                "entity_name": region.name,
+            },
+        )
 
         publications_array = [fake.word(), fake.word()]
         publications = "{}; {}".format(publications_array[0], publications_array[1])
-        data = {'comment': fake.sentence(), 'publications': publications}
+        data = {"comment": fake.sentence(), "publications": publications}
 
-        res = self.client.post(url, data, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
-        gene = GenePanel.objects.get(pk=region.panel.panel.pk).active_panel.get_region(region.name)
-        assert res.json().get('status') == 200
+        res = self.client.post(url, data, HTTP_X_REQUESTED_WITH="XMLHttpRequest")
+        gene = GenePanel.objects.get(pk=region.panel.panel.pk).active_panel.get_region(
+            region.name
+        )
+        assert res.json().get("status") == 200
         assert Comment.objects.count() == 1
         assert gene.publications == publications_array
         assert gene.panel.version != region.panel.version
@@ -315,64 +380,80 @@ class RegionReviewTest(LoginGELUser):
     def test_curator_comment_added(self):
         region = RegionFactory()
         region.evaluation.all().delete()
-        url = reverse_lazy('panels:update_entity_rating', kwargs={
-            'pk': region.panel.panel.pk,
-            'entity_type': 'region',
-            'entity_name': region.name
-        })
+        url = reverse_lazy(
+            "panels:update_entity_rating",
+            kwargs={
+                "pk": region.panel.panel.pk,
+                "entity_type": "region",
+                "entity_name": region.name,
+            },
+        )
 
         new_status = 0
-        data = {'comment': fake.sentence(), 'status': new_status}
+        data = {"comment": fake.sentence(), "status": new_status}
 
-        res = self.client.post(url, data, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
-        gene = GenePanel.objects.get(pk=region.panel.panel.pk).active_panel.get_region(region.name)
+        res = self.client.post(url, data, HTTP_X_REQUESTED_WITH="XMLHttpRequest")
+        gene = GenePanel.objects.get(pk=region.panel.panel.pk).active_panel.get_region(
+            region.name
+        )
 
-        assert res.content.find(str.encode(data['comment'])) != -1
+        assert res.content.find(str.encode(data["comment"])) != -1
         assert gene.evaluation.count() > 0
 
     def test_update_rating(self):
         region = RegionFactory()
         region.evaluation.all().delete()
-        url = reverse_lazy('panels:update_entity_rating', kwargs={
-            'pk': region.panel.panel.pk,
-            'entity_type': 'region',
-            'entity_name': region.name
-        })
+        url = reverse_lazy(
+            "panels:update_entity_rating",
+            kwargs={
+                "pk": region.panel.panel.pk,
+                "entity_type": "region",
+                "entity_name": region.name,
+            },
+        )
 
         new_status = 0
-        data = {'comment': fake.sentence(), 'status': new_status}
+        data = {"comment": fake.sentence(), "status": new_status}
 
-        res = self.client.post(url, data, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
-        gene = GenePanel.objects.get(pk=region.panel.panel.pk).active_panel.get_region(region.name)
-        assert res.json().get('status') == 200
+        res = self.client.post(url, data, HTTP_X_REQUESTED_WITH="XMLHttpRequest")
+        gene = GenePanel.objects.get(pk=region.panel.panel.pk).active_panel.get_region(
+            region.name
+        )
+        assert res.json().get("status") == 200
         assert Comment.objects.count() == 1
-        assert res.content.find(str.encode(data['comment'])) != -1
+        assert res.content.find(str.encode(data["comment"])) != -1
         assert gene.saved_gel_status == new_status
 
         new_status = 1
-        data = {'comment': fake.sentence(), 'status': new_status}
+        data = {"comment": fake.sentence(), "status": new_status}
 
-        res = self.client.post(url, data, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
-        gene = GenePanel.objects.get(pk=region.panel.panel.pk).active_panel.get_region(region.name)
-        assert res.json().get('status') == 200
+        res = self.client.post(url, data, HTTP_X_REQUESTED_WITH="XMLHttpRequest")
+        gene = GenePanel.objects.get(pk=region.panel.panel.pk).active_panel.get_region(
+            region.name
+        )
+        assert res.json().get("status") == 200
         assert Comment.objects.count() == 3
         assert gene.saved_gel_status == new_status
 
         new_status = 2
-        data = {'comment': fake.sentence(), 'status': new_status}
+        data = {"comment": fake.sentence(), "status": new_status}
 
-        res = self.client.post(url, data, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
-        gene = GenePanel.objects.get(pk=region.panel.panel.pk).active_panel.get_region(region.name)
-        assert res.json().get('status') == 200
+        res = self.client.post(url, data, HTTP_X_REQUESTED_WITH="XMLHttpRequest")
+        gene = GenePanel.objects.get(pk=region.panel.panel.pk).active_panel.get_region(
+            region.name
+        )
+        assert res.json().get("status") == 200
         assert Comment.objects.count() == 6
         assert gene.saved_gel_status == new_status
 
         new_status = 3
-        data = {'comment': fake.sentence(), 'status': new_status}
+        data = {"comment": fake.sentence(), "status": new_status}
 
-        res = self.client.post(url, data, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
-        gene = GenePanel.objects.get(pk=region.panel.panel.pk).active_panel.get_region(region.name)
-        assert res.json().get('status') == 200
+        res = self.client.post(url, data, HTTP_X_REQUESTED_WITH="XMLHttpRequest")
+        gene = GenePanel.objects.get(pk=region.panel.panel.pk).active_panel.get_region(
+            region.name
+        )
+        assert res.json().get("status") == 200
         assert Comment.objects.count() == 10
         assert gene.saved_gel_status == new_status
         assert gene.panel.version != region.panel.version
@@ -381,11 +462,14 @@ class RegionReviewTest(LoginGELUser):
         region = RegionFactory()
         region.evaluation.all().delete()
 
-        evaluation_url = reverse_lazy('panels:review_entity', kwargs={
-            'pk': region.panel.panel.pk,
-            'entity_type': 'region',
-            'entity_name': region.name
-        })
+        evaluation_url = reverse_lazy(
+            "panels:review_entity",
+            kwargs={
+                "pk": region.panel.panel.pk,
+                "entity_type": "region",
+                "entity_name": region.name,
+            },
+        )
 
         gene_data = {
             "rating": Evaluation.RATINGS.AMBER,
@@ -394,22 +478,35 @@ class RegionReviewTest(LoginGELUser):
             "publications": ";".join([fake.sentence(), fake.sentence()]),
             "phenotypes": ";".join([fake.sentence(), fake.sentence(), fake.sentence()]),
             "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)][0],
-            "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][randint(1, 2)][0],
+            "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][
+                randint(1, 2)
+            ][0],
         }
-        self.client.post(evaluation_url, gene_data, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
-        gene = GenePanel.objects.get(pk=region.panel.panel.pk).active_panel.get_region(region.name)
+        self.client.post(
+            evaluation_url, gene_data, HTTP_X_REQUESTED_WITH="XMLHttpRequest"
+        )
+        gene = GenePanel.objects.get(pk=region.panel.panel.pk).active_panel.get_region(
+            region.name
+        )
         assert gene.panel.version == region.panel.version
         assert gene.is_reviewd_by_user(self.gel_user) is True
 
-        delete_evaluation_url = reverse_lazy('panels:delete_evaluation_by_user', kwargs={
-            'pk': region.panel.panel.pk,
-            'entity_type': 'region',
-            'entity_name': region.name,
-            'evaluation_pk': region.evaluation.get(user=self.gel_user).pk
-        })
-        res = self.client.get(delete_evaluation_url, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
-        last_gene = GenePanel.objects.get(pk=region.panel.panel.pk).active_panel.get_region(region.name)
-        assert res.json().get('status') == 200
+        delete_evaluation_url = reverse_lazy(
+            "panels:delete_evaluation_by_user",
+            kwargs={
+                "pk": region.panel.panel.pk,
+                "entity_type": "region",
+                "entity_name": region.name,
+                "evaluation_pk": region.evaluation.get(user=self.gel_user).pk,
+            },
+        )
+        res = self.client.get(
+            delete_evaluation_url, HTTP_X_REQUESTED_WITH="XMLHttpRequest"
+        )
+        last_gene = GenePanel.objects.get(
+            pk=region.panel.panel.pk
+        ).active_panel.get_region(region.name)
+        assert res.json().get("status") == 200
         assert last_gene.is_reviewd_by_user(self.gel_user) is False
         assert gene.panel.version == last_gene.panel.version
 
@@ -417,11 +514,14 @@ class RegionReviewTest(LoginGELUser):
         region = RegionFactory()
         current_version = region.panel.version
 
-        evaluation_url = reverse_lazy('panels:review_entity', kwargs={
-            'pk': region.panel.panel.pk,
-            'entity_type': 'region',
-            'entity_name': region.name
-        })
+        evaluation_url = reverse_lazy(
+            "panels:review_entity",
+            kwargs={
+                "pk": region.panel.panel.pk,
+                "entity_type": "region",
+                "entity_name": region.name,
+            },
+        )
 
         gene_data = {
             "rating": Evaluation.RATINGS.AMBER,
@@ -430,35 +530,49 @@ class RegionReviewTest(LoginGELUser):
             "publications": ";".join([fake.sentence(), fake.sentence()]),
             "phenotypes": ";".join([fake.sentence(), fake.sentence(), fake.sentence()]),
             "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)][0],
-            "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][randint(1, 2)][0],
+            "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][
+                randint(1, 2)
+            ][0],
         }
-        self.client.post(evaluation_url, gene_data, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
-        gene = GenePanel.objects.get(pk=region.panel.panel.pk).active_panel.get_region(region.name)
+        self.client.post(
+            evaluation_url, gene_data, HTTP_X_REQUESTED_WITH="XMLHttpRequest"
+        )
+        gene = GenePanel.objects.get(pk=region.panel.panel.pk).active_panel.get_region(
+            region.name
+        )
         evaluation = gene.evaluation.get(user=self.gel_user)
 
         assert evaluation.comments.count() == 1
 
-        delete_comment_url = reverse_lazy('panels:delete_comment_by_user', kwargs={
-            'pk': region.panel.panel.pk,
-            'entity_type': 'region',
-            'entity_name': region.name,
-            'comment_pk': evaluation.comments.first().pk
-        })
-        res = self.client.get(delete_comment_url, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
-        assert res.json().get('status') == 200
+        delete_comment_url = reverse_lazy(
+            "panels:delete_comment_by_user",
+            kwargs={
+                "pk": region.panel.panel.pk,
+                "entity_type": "region",
+                "entity_name": region.name,
+                "comment_pk": evaluation.comments.first().pk,
+            },
+        )
+        res = self.client.get(
+            delete_comment_url, HTTP_X_REQUESTED_WITH="XMLHttpRequest"
+        )
+        assert res.json().get("status") == 200
         assert evaluation.comments.count() == 0
-        assert res.content.find(str.encode('Your review')) != -1
+        assert res.content.find(str.encode("Your review")) != -1
         assert current_version == region.panel.panel.active_panel.version
 
     def test_edit_comment(self):
         region = RegionFactory()
         current_version = region.panel.version
 
-        evaluation_url = reverse_lazy('panels:review_entity', kwargs={
-            'pk': region.panel.panel.pk,
-            'entity_type': 'region',
-            'entity_name': region.name
-        })
+        evaluation_url = reverse_lazy(
+            "panels:review_entity",
+            kwargs={
+                "pk": region.panel.panel.pk,
+                "entity_type": "region",
+                "entity_name": region.name,
+            },
+        )
 
         comment = fake.sentence()
 
@@ -469,31 +583,43 @@ class RegionReviewTest(LoginGELUser):
             "publications": ";".join([fake.sentence(), fake.sentence()]),
             "phenotypes": ";".join([fake.sentence(), fake.sentence(), fake.sentence()]),
             "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)][0],
-            "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][randint(1, 2)][0],
+            "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][
+                randint(1, 2)
+            ][0],
         }
-        self.client.post(evaluation_url, gene_data, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
-        gene = GenePanel.objects.get(pk=region.panel.panel.pk).active_panel.get_region(region.name)
+        self.client.post(
+            evaluation_url, gene_data, HTTP_X_REQUESTED_WITH="XMLHttpRequest"
+        )
+        gene = GenePanel.objects.get(pk=region.panel.panel.pk).active_panel.get_region(
+            region.name
+        )
         evaluation = gene.evaluation.get(user=self.gel_user)
 
         assert evaluation.comments.first().comment == comment
 
-        get_comment_url = reverse_lazy('panels:edit_comment_by_user', kwargs={
-            'pk': region.panel.panel.pk,
-            'entity_type': 'region',
-            'entity_name': region.name,
-            'comment_pk': evaluation.comments.first().pk
-        })
-        res = self.client.get(get_comment_url, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        get_comment_url = reverse_lazy(
+            "panels:edit_comment_by_user",
+            kwargs={
+                "pk": region.panel.panel.pk,
+                "entity_type": "region",
+                "entity_name": region.name,
+                "comment_pk": evaluation.comments.first().pk,
+            },
+        )
+        res = self.client.get(get_comment_url, HTTP_X_REQUESTED_WITH="XMLHttpRequest")
         self.assertEqual(res.status_code, 200)
 
         new_comment = fake.sentence()
-        edit_comment_url = reverse_lazy('panels:submit_edit_comment_by_user', kwargs={
-            'pk': region.panel.panel.pk,
-            'entity_type': 'region',
-            'entity_name': region.name,
-            'comment_pk': evaluation.comments.first().pk
-        })
-        res = self.client.post(edit_comment_url, {'comment': new_comment})
+        edit_comment_url = reverse_lazy(
+            "panels:submit_edit_comment_by_user",
+            kwargs={
+                "pk": region.panel.panel.pk,
+                "entity_type": "region",
+                "entity_name": region.name,
+                "comment_pk": evaluation.comments.first().pk,
+            },
+        )
+        res = self.client.post(edit_comment_url, {"comment": new_comment})
         assert res.status_code == 302
         assert evaluation.comments.first().comment == new_comment
         assert current_version == region.panel.panel.active_panel.version
@@ -502,6 +628,8 @@ class RegionReviewTest(LoginGELUser):
         gene = GeneFactory()
         gps = GenePanelSnapshotFactory()
         region = RegionFactory(panel=gps, gene_core=gene)
-        url = reverse_lazy('panels:review_entity', args=(region.panel.panel.pk, 'region', region.name,))
+        url = reverse_lazy(
+            "panels:review_entity", args=(region.panel.panel.pk, "region", region.name)
+        )
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)

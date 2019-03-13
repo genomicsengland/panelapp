@@ -32,14 +32,14 @@ from django.db import migrations
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('panels', '0024_gene_active'),
-    ]
+    dependencies = [("panels", "0024_gene_active")]
 
     operations = [
         migrations.AlterField(
-            model_name='genepanelentrysnapshot',
-            name='gene',
-            field=django.contrib.postgres.fields.jsonb.JSONField(encoder=django.core.serializers.json.DjangoJSONEncoder),
-        ),
+            model_name="genepanelentrysnapshot",
+            name="gene",
+            field=django.contrib.postgres.fields.jsonb.JSONField(
+                encoder=django.core.serializers.json.DjangoJSONEncoder
+            ),
+        )
     ]

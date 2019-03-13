@@ -29,27 +29,27 @@ from django.db import migrations
 
 
 def combine_statuses(apps, schema_editor):
-    GenePanel = apps.get_model('panels', 'GenePanel')
+    GenePanel = apps.get_model("panels", "GenePanel")
     for gp in GenePanel.objects.all():
         if gp.deleted:
-            gp.status = 'deleted'
+            gp.status = "deleted"
         elif gp.promoted:
-            gp.status = 'promoted'
+            gp.status = "promoted"
         elif gp.approved:
-            gp.status = 'public'
+            gp.status = "public"
         else:
-            gp.status = 'internal'
+            gp.status = "internal"
         gp.save()
 
 
 def separate_statuses(apps, schema_editor):
-    GenePanel = apps.get_model('panels', 'GenePanel')
+    GenePanel = apps.get_model("panels", "GenePanel")
     for gp in GenePanel.objects.all():
-        if gp.status == 'deleted':
+        if gp.status == "deleted":
             gp.deleted = True
-        if gp.status == 'promoted':
+        if gp.status == "promoted":
             gp.promoted = True
-        if gp.status == 'public' or gp.status == 'promoted':
+        if gp.status == "public" or gp.status == "promoted":
             gp.approved = True
 
         gp.save()
@@ -57,10 +57,6 @@ def separate_statuses(apps, schema_editor):
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('panels', '0032_genepanel_status'),
-    ]
+    dependencies = [("panels", "0032_genepanel_status")]
 
-    operations = [
-        migrations.RunPython(combine_statuses, separate_statuses)
-    ]
+    operations = [migrations.RunPython(combine_statuses, separate_statuses)]

@@ -31,23 +31,23 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('panels', '0026_auto_20170822_1128_squashed_0033_auto_20170822_1422'),
+        ("panels", "0026_auto_20170822_1128_squashed_0033_auto_20170822_1422")
     ]
 
     operations = [
         migrations.AddField(
-            model_name='genepanelsnapshot',
-            name='current_number_of_evaluated_genes',
+            model_name="genepanelsnapshot",
+            name="current_number_of_evaluated_genes",
             field=models.IntegerField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='genepanelsnapshot',
-            name='current_number_of_genes',
+            model_name="genepanelsnapshot",
+            name="current_number_of_genes",
             field=models.IntegerField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='genepanelsnapshot',
-            name='current_number_of_reviewers',
+            model_name="genepanelsnapshot",
+            name="current_number_of_reviewers",
             field=models.IntegerField(blank=True, null=True),
         ),
     ]

@@ -30,14 +30,10 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('panels', '0023_auto_20170724_1400'),
-    ]
+    dependencies = [("panels", "0023_auto_20170724_1400")]
 
     operations = [
         migrations.AddField(
-            model_name='gene',
-            name='active',
-            field=models.BooleanField(default=True),
-        ),
+            model_name="gene", name="active", field=models.BooleanField(default=True)
+        )
     ]

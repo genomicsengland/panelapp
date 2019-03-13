@@ -43,9 +43,7 @@ def promote_panel(user_pk, panel_pk, version_comment):
     from panels.models import GenePanelSnapshot
 
     GenePanelSnapshot.objects.get(pk=panel_pk).increment_version(
-        major=True,
-        user=User.objects.get(pk=user_pk),
-        comment=version_comment
+        major=True, user=User.objects.get(pk=user_pk), comment=version_comment
     )
 
 
@@ -65,30 +63,40 @@ def import_panel(user_pk, upload_pk):
     error = True
     try:
         panel_list.process_file(user, background=True)
-        message = 'Panel list successfully imported'
+        message = "Panel list successfully imported"
         error = False
     except GeneDoesNotExist as line:
-        message = 'Line: {} has a wrong gene, please check it and try again.'.format(line)
+        message = "Line: {} has a wrong gene, please check it and try again.".format(
+            line
+        )
     except UserDoesNotExist as line:
-        message = 'Line: {} has a wrong username, please check it and try again.'.format(line)
+        message = "Line: {} has a wrong username, please check it and try again.".format(
+            line
+        )
     except TSVIncorrectFormat as line:
-        message = "Line: {} is not properly formatted, please check it and try again.".format(line)
+        message = "Line: {} is not properly formatted, please check it and try again.".format(
+            line
+        )
     except GenesDoNotExist as genes_error:
-        message = "Following lines have genes which do not exist in the"\
+        message = (
+            "Following lines have genes which do not exist in the"
             "database, please check it and try again:\n\n{}".format(genes_error)
+        )
     except IsSuperPanelException as e:
         message = "One of the panels contains child panels"
     except Exception as e:
         print(e)
-        message = "Unhandled error occured, please forward it to the dev team:\n\n{}".format(e)
-    
+        message = "Unhandled error occured, please forward it to the dev team:\n\n{}".format(
+            e
+        )
+
     panel_list.import_log = message
     panel_list.save()
 
     send_email.delay(
         user.email,
-        'Error importing panel list' if error else 'Success importing panel list',
-        "{}\n\n----\nPanelApp".format(message)
+        "Error importing panel list" if error else "Success importing panel list",
+        "{}\n\n----\nPanelApp".format(message),
     )
 
 
@@ -108,19 +116,27 @@ def import_reviews(user_pk, review_pk):
     error = True
     try:
         panel_list.process_file(user, background=True)
-        message = 'Reviews have been successfully imported'
+        message = "Reviews have been successfully imported"
         error = False
     except GeneDoesNotExist as line:
-        message = 'Line: {} has a wrong gene, please check it and try again.'.format(line)
+        message = "Line: {} has a wrong gene, please check it and try again.".format(
+            line
+        )
     except UserDoesNotExist as line:
-        message = 'Line: {} has a wrong username, please check it and try again.'.format(line)
+        message = "Line: {} has a wrong username, please check it and try again.".format(
+            line
+        )
     except TSVIncorrectFormat as line:
-        message = "Line: {} is not properly formatted, please check it and try again.".format(line)
+        message = "Line: {} is not properly formatted, please check it and try again.".format(
+            line
+        )
     except IncorrectGeneRating as e:
         message = e
     except GenesDoNotExist as genes_error:
-        message = "Following lines have genes which do not exist in the"\
+        message = (
+            "Following lines have genes which do not exist in the"
             "database, please check it and try again:\n\n{}".format(genes_error)
+        )
     except IsSuperPanelException as e:
         message = "One of the panels contains child panels"
     except Exception as e:
@@ -132,8 +148,8 @@ def import_reviews(user_pk, review_pk):
 
     send_email.delay(
         user.email,
-        'Error importing reviews list' if error else 'Success importing reviews list',
-        "{}\n\n----\nPanelApp".format(message)
+        "Error importing reviews list" if error else "Success importing reviews list",
+        "{}\n\n----\nPanelApp".format(message),
     )
 
 
@@ -142,32 +158,30 @@ def email_panel_promoted(panel_pk):
     """Emails everyone who contributed to the panel about the new major version"""
 
     from panels.models import GenePanel
+
     active_panel = GenePanel.objects.get(pk=panel_pk).active_panel
 
-    subject = 'A panel you reviewed has been promoted'
+    subject = "A panel you reviewed has been promoted"
     messages = []
 
     for contributor in active_panel.contributors:
         if contributor.email:  # check if we have an email in the database
             text = render_to_string(
-                'panels/emails/panel_promoted.txt',
+                "panels/emails/panel_promoted.txt",
                 {
-                    'first_name': contributor.first_name,
-                    'panel_name': active_panel.panel,
-                    'panel_id': panel_pk,
-                    'settings': settings
-                }
+                    "first_name": contributor.first_name,
+                    "panel_name": active_panel.panel,
+                    "panel_id": panel_pk,
+                    "settings": settings,
+                },
             )
 
-            message = (
-                subject,
-                text,
-                settings.DEFAULT_FROM_EMAIL,
-                [contributor.email]
-            )
+            message = (subject, text, settings.DEFAULT_FROM_EMAIL, [contributor.email])
             messages.append(message)
 
-    logging.debug("Number of emails to send after panel promotion: {}".format(len(messages)))
+    logging.debug(
+        "Number of emails to send after panel promotion: {}".format(len(messages))
+    )
     if messages:
         send_mass_email(tuple(messages))
 
@@ -179,7 +193,9 @@ def background_copy_reviews(user_pk, gene_symbols, panel_from_pk, panel_to_pk):
 
     user = User.objects.get(pk=user_pk)
 
-    panels = GenePanelSnapshot.objects.get_active(all=True, internal=True).filter(pk__in=[panel_from_pk, panel_to_pk])
+    panels = GenePanelSnapshot.objects.get_active(all=True, internal=True).filter(
+        pk__in=[panel_from_pk, panel_to_pk]
+    )
     if panels[0].pk == panel_from_pk:
         panel_from = panels[0]
         panel_to = panels[1]

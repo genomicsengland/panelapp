@@ -32,13 +32,10 @@ class Comment(TimeStampedModel):
     flagged = models.BooleanField(default=False)
 
     class Meta:
-        ordering = ['-created',]
+        ordering = ["-created"]
 
     def dict_tr(self):
-        return {
-            "date": self.created,
-            "comment": self.comment
-        }
+        return {"date": self.created, "comment": self.comment}
 
     def __str__(self):
         return "{}: {}".format(self.user.get_full_name(), self.comment[:30])

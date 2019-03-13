@@ -28,14 +28,12 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('panels', '0063_auto_20180724_1245'),
-    ]
+    dependencies = [("panels", "0063_auto_20180724_1245")]
 
     operations = [
         migrations.AlterField(
-            model_name='paneltype',
-            name='name',
+            model_name="paneltype",
+            name="name",
             field=models.CharField(max_length=128, unique=True),
-        ),
+        )
     ]

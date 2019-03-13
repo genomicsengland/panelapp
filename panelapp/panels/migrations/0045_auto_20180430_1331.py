@@ -31,62 +31,126 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('panels', '0044_auto_20180326_1616'),
-    ]
+    dependencies = [("panels", "0044_auto_20180326_1616")]
 
     operations = [
-        migrations.RemoveField(
-            model_name='str',
-            name='normal_range',
-        ),
-        migrations.RemoveField(
-            model_name='str',
-            name='pathogenic_range',
-        ),
-        migrations.RemoveField(
-            model_name='str',
-            name='prepathogenic_range',
-        ),
+        migrations.RemoveField(model_name="str", name="normal_range"),
+        migrations.RemoveField(model_name="str", name="pathogenic_range"),
+        migrations.RemoveField(model_name="str", name="prepathogenic_range"),
         migrations.AddField(
-            model_name='str',
-            name='chromosome',
-            field=models.CharField(choices=[('0', '0'), ('1', '1'), ('2', '2'), ('3', '3'), ('4', '4'), ('5', '5'), ('6', '6'), ('7', '7'), ('8', '8'), ('9', '9'), ('10', '10'), ('11', '11'), ('12', '12'), ('13', '13'), ('14', '14'), ('15', '15'), ('16', '16'), ('17', '17'), ('18', '18'), ('19', '19'), ('20', '20'), ('21', '21'), ('22', '22'), ('X', 'X'), ('Y', 'Y')], default='1', help_text='Chromosome', max_length=8),
+            model_name="str",
+            name="chromosome",
+            field=models.CharField(
+                choices=[
+                    ("0", "0"),
+                    ("1", "1"),
+                    ("2", "2"),
+                    ("3", "3"),
+                    ("4", "4"),
+                    ("5", "5"),
+                    ("6", "6"),
+                    ("7", "7"),
+                    ("8", "8"),
+                    ("9", "9"),
+                    ("10", "10"),
+                    ("11", "11"),
+                    ("12", "12"),
+                    ("13", "13"),
+                    ("14", "14"),
+                    ("15", "15"),
+                    ("16", "16"),
+                    ("17", "17"),
+                    ("18", "18"),
+                    ("19", "19"),
+                    ("20", "20"),
+                    ("21", "21"),
+                    ("22", "22"),
+                    ("X", "X"),
+                    ("Y", "Y"),
+                ],
+                default="1",
+                help_text="Chromosome",
+                max_length=8,
+            ),
             preserve_default=False,
         ),
         migrations.AddField(
-            model_name='str',
-            name='normal_repeats',
-            field=models.IntegerField(default=1, help_text='=< Maximum normal number of repeats', verbose_name='Normal'),
+            model_name="str",
+            name="normal_repeats",
+            field=models.IntegerField(
+                default=1,
+                help_text="=< Maximum normal number of repeats",
+                verbose_name="Normal",
+            ),
             preserve_default=False,
         ),
         migrations.AddField(
-            model_name='str',
-            name='pathogenic_repeats',
-            field=models.IntegerField(default=1, help_text='>= Minimum fully penetrant pathogenic number of repeats', verbose_name='Pathogenic'),
+            model_name="str",
+            name="pathogenic_repeats",
+            field=models.IntegerField(
+                default=1,
+                help_text=">= Minimum fully penetrant pathogenic number of repeats",
+                verbose_name="Pathogenic",
+            ),
             preserve_default=False,
         ),
-        migrations.RemoveField(
-            model_name='str',
-            name='position_37'
-        ),
+        migrations.RemoveField(model_name="str", name="position_37"),
         migrations.AddField(
-            model_name='str',
-            name='position_37',
-            field=django.contrib.postgres.fields.ranges.IntegerRangeField(default=(1, 1)),
+            model_name="str",
+            name="position_37",
+            field=django.contrib.postgres.fields.ranges.IntegerRangeField(
+                default=(1, 1)
+            ),
         ),
-        migrations.RemoveField(
-            model_name='str',
-            name='position_38'
-        ),
+        migrations.RemoveField(model_name="str", name="position_38"),
         migrations.AddField(
-            model_name='str',
-            name='position_38',
-            field=django.contrib.postgres.fields.ranges.IntegerRangeField(default=(1, 1)),
+            model_name="str",
+            name="position_38",
+            field=django.contrib.postgres.fields.ranges.IntegerRangeField(
+                default=(1, 1)
+            ),
         ),
         migrations.AlterField(
-            model_name='trackrecord',
-            name='issue_type',
-            field=models.CharField(choices=[('Created', 'Created'), ('NewSource', 'Added New Source'), ('RemovedSource', 'Removed Source'), ('ChangedGeneName', 'Changed Gene Name'), ('SetPhenotypes', 'Set Phenotypes'), ('SetModelofInheritance', 'Set Model of Inheritance'), ('ClearSources', 'Clear Sources'), ('SetModeofPathogenicity', 'Set mode of pathogenicity'), ('GeneClassifiedbyGenomicsEnglandCurator', 'Gene classified by Genomics England curator'), ('EntityClassifiedbyGenomicsEnglandCurator', 'Entity classified by Genomics England curator'), ('SetModeofInheritance', 'Set mode of inheritance'), ('SetPenetrance', 'Set penetrance'), ('SetPublications', 'Set publications'), ('ApprovedGene', 'Approved Gene'), ('ApprovedEntity', 'Approved Entity'), ('GelStatusUpdate', 'Gel Status Update'), ('UploadGeneInformation', 'Upload gene information'), ('RemovedTag', 'Removed Tag'), ('AddedTag', 'Added Tag'), ('ChangedSTRName', 'Changed STR Name'), ('ChangedChromosome', 'Changed Chromosome'), ('ChangedPosition37', 'Changed GRCh37'), ('ChangedPosition38', 'Changed GRCh38'), ('ChangedNormalRange', 'Changed Normal Range'), ('ChangedPrepathogenicRange', 'Changed Pre-Pathogenic Range'), ('ChangedPathogenicRange', 'Changed Pathogenic Range'), ('RemovedGene', 'Removed Gene from the STR'), ('ChangedRepeatedSequence', 'Changed Repeated Sequence')], max_length=512),
+            model_name="trackrecord",
+            name="issue_type",
+            field=models.CharField(
+                choices=[
+                    ("Created", "Created"),
+                    ("NewSource", "Added New Source"),
+                    ("RemovedSource", "Removed Source"),
+                    ("ChangedGeneName", "Changed Gene Name"),
+                    ("SetPhenotypes", "Set Phenotypes"),
+                    ("SetModelofInheritance", "Set Model of Inheritance"),
+                    ("ClearSources", "Clear Sources"),
+                    ("SetModeofPathogenicity", "Set mode of pathogenicity"),
+                    (
+                        "GeneClassifiedbyGenomicsEnglandCurator",
+                        "Gene classified by Genomics England curator",
+                    ),
+                    (
+                        "EntityClassifiedbyGenomicsEnglandCurator",
+                        "Entity classified by Genomics England curator",
+                    ),
+                    ("SetModeofInheritance", "Set mode of inheritance"),
+                    ("SetPenetrance", "Set penetrance"),
+                    ("SetPublications", "Set publications"),
+                    ("ApprovedGene", "Approved Gene"),
+                    ("ApprovedEntity", "Approved Entity"),
+                    ("GelStatusUpdate", "Gel Status Update"),
+                    ("UploadGeneInformation", "Upload gene information"),
+                    ("RemovedTag", "Removed Tag"),
+                    ("AddedTag", "Added Tag"),
+                    ("ChangedSTRName", "Changed STR Name"),
+                    ("ChangedChromosome", "Changed Chromosome"),
+                    ("ChangedPosition37", "Changed GRCh37"),
+                    ("ChangedPosition38", "Changed GRCh38"),
+                    ("ChangedNormalRange", "Changed Normal Range"),
+                    ("ChangedPrepathogenicRange", "Changed Pre-Pathogenic Range"),
+                    ("ChangedPathogenicRange", "Changed Pathogenic Range"),
+                    ("RemovedGene", "Removed Gene from the STR"),
+                    ("ChangedRepeatedSequence", "Changed Repeated Sequence"),
+                ],
+                max_length=512,
+            ),
         ),
     ]

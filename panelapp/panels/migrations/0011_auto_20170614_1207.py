@@ -30,18 +30,15 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('panels', '0010_auto_20170613_1603'),
-    ]
+    dependencies = [("panels", "0010_auto_20170613_1603")]
 
     operations = [
         migrations.AlterModelOptions(
-            name='activity',
-            options={'ordering': ('-created',)},
+            name="activity", options={"ordering": ("-created",)}
         ),
         migrations.AddField(
-            model_name='genepanel',
-            name='old_pk',
+            model_name="genepanel",
+            name="old_pk",
             field=models.CharField(blank=True, max_length=24, null=True),
         ),
     ]

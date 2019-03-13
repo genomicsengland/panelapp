@@ -28,21 +28,21 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('panels', '0055_auto_20180619_1603'),
-    ]
+    dependencies = [("panels", "0055_auto_20180619_1603")]
 
     operations = [
         migrations.AddIndex(
-            model_name='evidence',
-            index=models.Index(fields=['name'], name='panels_evid_name_e96511_idx'),
+            model_name="evidence",
+            index=models.Index(fields=["name"], name="panels_evid_name_e96511_idx"),
         ),
         migrations.AddIndex(
-            model_name='evidence',
-            index=models.Index(fields=['rating'], name='panels_evid_rating_650828_idx'),
+            model_name="evidence",
+            index=models.Index(fields=["rating"], name="panels_evid_rating_650828_idx"),
         ),
         migrations.AddIndex(
-            model_name='evidence',
-            index=models.Index(fields=['reviewer_id'], name='panels_evid_reviewe_31dac4_idx'),
+            model_name="evidence",
+            index=models.Index(
+                fields=["reviewer_id"], name="panels_evid_reviewe_31dac4_idx"
+            ),
         ),
     ]

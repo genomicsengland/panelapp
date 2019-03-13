@@ -29,65 +29,73 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('panels', '0064_auto_20180724_1334'),
-    ]
+    dependencies = [("panels", "0064_auto_20180724_1334")]
 
     operations = [
         migrations.RemoveIndex(
-            model_name='evaluation',
-            name='panels_eval_user_id_7e6977_idx',
+            model_name="evaluation", name="panels_eval_user_id_7e6977_idx"
         ),
         migrations.RemoveIndex(
-            model_name='genepanelentrysnapshot',
-            name='panels_gene_panel_i_d90d44_idx',
+            model_name="genepanelentrysnapshot", name="panels_gene_panel_i_d90d44_idx"
         ),
         migrations.RemoveIndex(
-            model_name='genepanelentrysnapshot',
-            name='panels_gene_gene_co_9223b2_idx',
+            model_name="genepanelentrysnapshot", name="panels_gene_gene_co_9223b2_idx"
         ),
         migrations.RemoveIndex(
-            model_name='genepanelsnapshot',
-            name='panels_gene_panel_i_2a8178_idx',
+            model_name="genepanelsnapshot", name="panels_gene_panel_i_2a8178_idx"
         ),
         migrations.RemoveIndex(
-            model_name='evidence',
-            name='panels_evid_reviewe_31dac4_idx',
+            model_name="evidence", name="panels_evid_reviewe_31dac4_idx"
+        ),
+        migrations.RemoveIndex(model_name="str", name="panels_str_panel_i_68b388_idx"),
+        migrations.RemoveIndex(model_name="str", name="panels_str_gene_co_bad503_idx"),
+        migrations.RemoveIndex(
+            model_name="region", name="panels_regi_panel_i_35b205_idx"
         ),
         migrations.RemoveIndex(
-            model_name='str',
-            name='panels_str_panel_i_68b388_idx',
-        ),
-        migrations.RemoveIndex(
-            model_name='str',
-            name='panels_str_gene_co_bad503_idx',
-        ),
-        migrations.RemoveIndex(
-            model_name='region',
-            name='panels_regi_panel_i_35b205_idx',
-        ),
-        migrations.RemoveIndex(
-            model_name='region',
-            name='panels_regi_gene_co_0c95f6_idx',
+            model_name="region", name="panels_regi_gene_co_0c95f6_idx"
         ),
         migrations.AlterField(
-            model_name='genepanelentrysnapshot',
-            name='type_of_variants',
-            field=models.CharField(choices=[('small', 'Small variants'), ('cnv_loss', 'CNV Loss'), ('cnv_gain', 'CNV Gain'), ('cnv_both', 'CNV Both gain and loss')], default='small', max_length=32),
+            model_name="genepanelentrysnapshot",
+            name="type_of_variants",
+            field=models.CharField(
+                choices=[
+                    ("small", "Small variants"),
+                    ("cnv_loss", "CNV Loss"),
+                    ("cnv_gain", "CNV Gain"),
+                    ("cnv_both", "CNV Both gain and loss"),
+                ],
+                default="small",
+                max_length=32,
+            ),
         ),
         migrations.AlterField(
-            model_name='region',
-            name='position_37',
-            field=django.contrib.postgres.fields.ranges.IntegerRangeField(blank=True, null=True),
+            model_name="region",
+            name="position_37",
+            field=django.contrib.postgres.fields.ranges.IntegerRangeField(
+                blank=True, null=True
+            ),
         ),
         migrations.AlterField(
-            model_name='region',
-            name='type_of_variants',
-            field=models.CharField(choices=[('small', 'Small variants'), ('cnv_loss', 'CNV Loss'), ('cnv_gain', 'CNV Gain'), ('cnv_both', 'CNV Both gain and loss')], default='small', max_length=32, verbose_name='Variation type'),
+            model_name="region",
+            name="type_of_variants",
+            field=models.CharField(
+                choices=[
+                    ("small", "Small variants"),
+                    ("cnv_loss", "CNV Loss"),
+                    ("cnv_gain", "CNV Gain"),
+                    ("cnv_both", "CNV Both gain and loss"),
+                ],
+                default="small",
+                max_length=32,
+                verbose_name="Variation type",
+            ),
         ),
         migrations.AlterField(
-            model_name='str',
-            name='position_37',
-            field=django.contrib.postgres.fields.ranges.IntegerRangeField(blank=True, null=True),
+            model_name="str",
+            name="position_37",
+            field=django.contrib.postgres.fields.ranges.IntegerRangeField(
+                blank=True, null=True
+            ),
         ),
     ]

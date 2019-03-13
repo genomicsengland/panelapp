@@ -30,19 +30,33 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('panels', '0008_auto_20170606_1557'),
-    ]
+    dependencies = [("panels", "0008_auto_20170606_1557")]
 
     operations = [
         migrations.AlterField(
-            model_name='trackrecord',
-            name='issue_description',
-            field=models.TextField(),
+            model_name="trackrecord", name="issue_description", field=models.TextField()
         ),
         migrations.AlterField(
-            model_name='trackrecord',
-            name='issue_type',
-            field=models.CharField(choices=[('Created', 'Created'), ('NewSource', 'Added New Source'), ('ChangedGeneName', 'Changed Gene Name'), ('SetPhenotypes', 'Set Phenotypes'), ('SetModelofInheritance', 'Set Model of Inheritance'), ('ClearSources', 'Clear Sources'), ('SetModeofPathogenicity', 'Set mode of pathogenicity'), ('GeneClassifiedbyGenomicsEnglandCurator', 'Gene classified by Genomics England curator'), ('SetModeofInheritance', 'Set mode of inheritance'), ('SetPhenotypes', 'Set phenotypes'), ('SetPublications', 'Set publications')], max_length=512),
+            model_name="trackrecord",
+            name="issue_type",
+            field=models.CharField(
+                choices=[
+                    ("Created", "Created"),
+                    ("NewSource", "Added New Source"),
+                    ("ChangedGeneName", "Changed Gene Name"),
+                    ("SetPhenotypes", "Set Phenotypes"),
+                    ("SetModelofInheritance", "Set Model of Inheritance"),
+                    ("ClearSources", "Clear Sources"),
+                    ("SetModeofPathogenicity", "Set mode of pathogenicity"),
+                    (
+                        "GeneClassifiedbyGenomicsEnglandCurator",
+                        "Gene classified by Genomics England curator",
+                    ),
+                    ("SetModeofInheritance", "Set mode of inheritance"),
+                    ("SetPhenotypes", "Set phenotypes"),
+                    ("SetPublications", "Set publications"),
+                ],
+                max_length=512,
+            ),
         ),
     ]

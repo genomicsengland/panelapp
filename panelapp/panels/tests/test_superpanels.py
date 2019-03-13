@@ -51,22 +51,26 @@ class SuperPanelsTest(LoginGELUser):
 
         gene1_data = {
             "gene": gene1.pk,
-            "sources": [Evidence.OTHER_SOURCES[0], ],
+            "sources": [Evidence.OTHER_SOURCES[0]],
             "phenotypes": fake.sentences(nb=3),
             "rating": Evaluation.RATINGS.AMBER,
             "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)][0],
-            "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][randint(1, 2)][0],
+            "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][
+                randint(1, 2)
+            ][0],
             "penetrance": GenePanelEntrySnapshot.PENETRANCE.Incomplete,
             "current_diagnostic": False,
         }
 
         gene2_data = {
             "gene": gene2.pk,
-            "sources": [Evidence.OTHER_SOURCES[0], ],
+            "sources": [Evidence.OTHER_SOURCES[0]],
             "phenotypes": fake.sentences(nb=3),
             "rating": Evaluation.RATINGS.AMBER,
             "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)][0],
-            "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][randint(1, 2)][0],
+            "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][
+                randint(1, 2)
+            ][0],
             "penetrance": GenePanelEntrySnapshot.PENETRANCE.Incomplete,
             "current_diagnostic": False,
         }
@@ -99,22 +103,26 @@ class SuperPanelsTest(LoginGELUser):
 
         gene1_data = {
             "gene": gene1.pk,
-            "sources": [Evidence.OTHER_SOURCES[0], ],
+            "sources": [Evidence.OTHER_SOURCES[0]],
             "phenotypes": fake.sentences(nb=3),
             "rating": Evaluation.RATINGS.AMBER,
             "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)][0],
-            "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][randint(1, 2)][0],
+            "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][
+                randint(1, 2)
+            ][0],
             "penetrance": GenePanelEntrySnapshot.PENETRANCE.Incomplete,
             "current_diagnostic": False,
         }
 
         gene2_data = {
             "gene": gene2.pk,
-            "sources": [Evidence.OTHER_SOURCES[0], ],
+            "sources": [Evidence.OTHER_SOURCES[0]],
             "phenotypes": fake.sentences(nb=3),
             "rating": Evaluation.RATINGS.AMBER,
             "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)][0],
-            "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][randint(1, 2)][0],
+            "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][
+                randint(1, 2)
+            ][0],
             "penetrance": GenePanelEntrySnapshot.PENETRANCE.Incomplete,
             "current_diagnostic": False,
         }
@@ -142,19 +150,19 @@ class SuperPanelsTest(LoginGELUser):
         self.assertEqual(child2, child2.panel.active_panel)
 
         new_data = {
-            'level2': fake.sentence(nb_words=6, variable_nb_words=True),
-            'level3': fake.sentence(nb_words=6, variable_nb_words=True),
-            'level4': fake.sentence(nb_words=6, variable_nb_words=True),
-            'description': fake.text(max_nb_chars=300),
-            'omim': fake.sentences(nb=3),
-            'orphanet': fake.sentences(nb=3),
-            'hpo': fake.sentences(nb=3),
-            'old_panels': fake.sentences(nb=3),
-            'status': GenePanel.STATUS.internal,
-            'child_panels': [child1.pk, child2.pk]
+            "level2": fake.sentence(nb_words=6, variable_nb_words=True),
+            "level3": fake.sentence(nb_words=6, variable_nb_words=True),
+            "level4": fake.sentence(nb_words=6, variable_nb_words=True),
+            "description": fake.text(max_nb_chars=300),
+            "omim": fake.sentences(nb=3),
+            "orphanet": fake.sentences(nb=3),
+            "hpo": fake.sentences(nb=3),
+            "old_panels": fake.sentences(nb=3),
+            "status": GenePanel.STATUS.internal,
+            "child_panels": [child1.pk, child2.pk],
         }
 
-        url = reverse_lazy('panels:update', kwargs={'pk': parent.panel_id})
+        url = reverse_lazy("panels:update", kwargs={"pk": parent.panel_id})
         res = self.client.post(url, new_data)
 
         self.assertNotEqual(parent, parent.panel.active_panel)
@@ -168,22 +176,26 @@ class SuperPanelsTest(LoginGELUser):
 
         gene1_data = {
             "gene": gene1.pk,
-            "sources": [Evidence.OTHER_SOURCES[0], ],
+            "sources": [Evidence.OTHER_SOURCES[0]],
             "phenotypes": fake.sentences(nb=3),
             "rating": Evaluation.RATINGS.AMBER,
             "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)][0],
-            "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][randint(1, 2)][0],
+            "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][
+                randint(1, 2)
+            ][0],
             "penetrance": GenePanelEntrySnapshot.PENETRANCE.Incomplete,
             "current_diagnostic": False,
         }
 
         gene2_data = {
             "gene": gene2.pk,
-            "sources": [Evidence.OTHER_SOURCES[0], ],
+            "sources": [Evidence.OTHER_SOURCES[0]],
             "phenotypes": fake.sentences(nb=3),
             "rating": Evaluation.RATINGS.AMBER,
             "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)][0],
-            "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][randint(1, 2)][0],
+            "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][
+                randint(1, 2)
+            ][0],
             "penetrance": GenePanelEntrySnapshot.PENETRANCE.Incomplete,
             "current_diagnostic": False,
         }
@@ -209,17 +221,23 @@ class SuperPanelsTest(LoginGELUser):
 
         child1.increment_version()
         child1 = child1.panel.active_panel
-        child1.update_gene(self.gel_user, gene2.gene_symbol, {
-            "gene": gene2,
-            "sources": [Evidence.OTHER_SOURCES[1], ],
-            "phenotypes": fake.sentences(nb=3),
-            "rating": Evaluation.RATINGS.GREEN,
-            "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)][0],
-            "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][randint(1, 2)][0],
-            "penetrance": GenePanelEntrySnapshot.PENETRANCE.Incomplete,
-            "current_diagnostic": False,
-        })
-        child1.get_gene(gene2.gene_symbol).update_rating(3, self.gel_user, '')
+        child1.update_gene(
+            self.gel_user,
+            gene2.gene_symbol,
+            {
+                "gene": gene2,
+                "sources": [Evidence.OTHER_SOURCES[1]],
+                "phenotypes": fake.sentences(nb=3),
+                "rating": Evaluation.RATINGS.GREEN,
+                "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)][0],
+                "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][
+                    randint(1, 2)
+                ][0],
+                "penetrance": GenePanelEntrySnapshot.PENETRANCE.Incomplete,
+                "current_diagnostic": False,
+            },
+        )
+        child1.get_gene(gene2.gene_symbol).update_rating(3, self.gel_user, "")
         child1 = child1.panel.active_panel
         parent = parent.panel.active_panel
         parent.update_saved_stats()
@@ -229,7 +247,9 @@ class SuperPanelsTest(LoginGELUser):
         self.assertIn(child1, parent.child_panels.all())
         self.assertIn(child2, parent.child_panels.all())
         self.assertEqual(child1.genepanelsnapshot_set.count(), 1)
-        self.assertEqual(child2.genepanelsnapshot_set.count(), 2)  # contains reference to two versions of parent panel
+        self.assertEqual(
+            child2.genepanelsnapshot_set.count(), 2
+        )  # contains reference to two versions of parent panel
 
     def test_multiple_parent_panels(self):
         """
@@ -241,33 +261,39 @@ class SuperPanelsTest(LoginGELUser):
 
         gene1_data = {
             "gene": gene1.pk,
-            "sources": [Evidence.OTHER_SOURCES[0], ],
+            "sources": [Evidence.OTHER_SOURCES[0]],
             "phenotypes": fake.sentences(nb=3),
             "rating": Evaluation.RATINGS.AMBER,
             "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)][0],
-            "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][randint(1, 2)][0],
+            "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][
+                randint(1, 2)
+            ][0],
             "penetrance": GenePanelEntrySnapshot.PENETRANCE.Incomplete,
             "current_diagnostic": False,
         }
 
         gene2_data = {
             "gene": gene2.pk,
-            "sources": [Evidence.OTHER_SOURCES[2], ],
+            "sources": [Evidence.OTHER_SOURCES[2]],
             "phenotypes": fake.sentences(nb=3),
             "rating": Evaluation.RATINGS.AMBER,
             "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)][0],
-            "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][randint(1, 2)][0],
+            "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][
+                randint(1, 2)
+            ][0],
             "penetrance": GenePanelEntrySnapshot.PENETRANCE.Incomplete,
             "current_diagnostic": False,
         }
 
         gene3_data = {
             "gene": gene3.pk,
-            "sources": [Evidence.OTHER_SOURCES[3], ],
+            "sources": [Evidence.OTHER_SOURCES[3]],
             "phenotypes": fake.sentences(nb=3),
             "rating": Evaluation.RATINGS.GREEN,
             "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)][0],
-            "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][randint(1, 2)][0],
+            "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][
+                randint(1, 2)
+            ][0],
             "penetrance": GenePanelEntrySnapshot.PENETRANCE.Incomplete,
             "current_diagnostic": True,
         }
@@ -322,16 +348,22 @@ class SuperPanelsTest(LoginGELUser):
         self.assertEqual(parent2.version, "0.2")
 
         child2.increment_version()
-        child2.update_gene(self.gel_user, gene2.gene_symbol, {
-            "gene": gene2,
-            "sources": [Evidence.OTHER_SOURCES[1], ],
-            "phenotypes": fake.sentences(nb=2),
-            "rating": Evaluation.RATINGS.GREEN,
-            "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)][0],
-            "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][randint(1, 2)][0],
-            "penetrance": GenePanelEntrySnapshot.PENETRANCE.Incomplete,
-            "current_diagnostic": True,
-        }).update_rating(3, self.gel_user, '')
+        child2.update_gene(
+            self.gel_user,
+            gene2.gene_symbol,
+            {
+                "gene": gene2,
+                "sources": [Evidence.OTHER_SOURCES[1]],
+                "phenotypes": fake.sentences(nb=2),
+                "rating": Evaluation.RATINGS.GREEN,
+                "moi": [x for x in Evaluation.MODES_OF_INHERITANCE][randint(1, 12)][0],
+                "mode_of_pathogenicity": [x for x in Evaluation.MODES_OF_PATHOGENICITY][
+                    randint(1, 2)
+                ][0],
+                "penetrance": GenePanelEntrySnapshot.PENETRANCE.Incomplete,
+                "current_diagnostic": True,
+            },
+        ).update_rating(3, self.gel_user, "")
         child2.update_saved_stats()
 
         self.assertEqual(child1.version, "0.2")

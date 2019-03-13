@@ -31,14 +31,14 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('panels', '0021_auto_20170621_1320'),
-    ]
+    dependencies = [("panels", "0021_auto_20170621_1320")]
 
     operations = [
         migrations.AlterField(
-            model_name='genepanelentrysnapshot',
-            name='publications',
-            field=django.contrib.postgres.fields.ArrayField(base_field=models.TextField(), blank=True, null=True, size=None),
-        ),
+            model_name="genepanelentrysnapshot",
+            name="publications",
+            field=django.contrib.postgres.fields.ArrayField(
+                base_field=models.TextField(), blank=True, null=True, size=None
+            ),
+        )
     ]

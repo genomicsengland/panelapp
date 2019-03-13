@@ -33,24 +33,64 @@ import django.db.models.deletion
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('panels', '0038_auto_20180220_1236'),
-    ]
+    dependencies = [("panels", "0038_auto_20180220_1236")]
 
     operations = [
         migrations.AlterField(
-            model_name='str',
-            name='gene',
-            field=django.contrib.postgres.fields.jsonb.JSONField(blank=True, encoder=django.core.serializers.json.DjangoJSONEncoder, null=True),
+            model_name="str",
+            name="gene",
+            field=django.contrib.postgres.fields.jsonb.JSONField(
+                blank=True,
+                encoder=django.core.serializers.json.DjangoJSONEncoder,
+                null=True,
+            ),
         ),
         migrations.AlterField(
-            model_name='str',
-            name='gene_core',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='panels.Gene'),
+            model_name="str",
+            name="gene_core",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                to="panels.Gene",
+            ),
         ),
         migrations.AlterField(
-            model_name='trackrecord',
-            name='issue_type',
-            field=models.CharField(choices=[('Created', 'Created'), ('NewSource', 'Added New Source'), ('RemovedSource', 'Removed Source'), ('ChangedGeneName', 'Changed Gene Name'), ('SetPhenotypes', 'Set Phenotypes'), ('SetModelofInheritance', 'Set Model of Inheritance'), ('ClearSources', 'Clear Sources'), ('SetModeofPathogenicity', 'Set mode of pathogenicity'), ('GeneClassifiedbyGenomicsEnglandCurator', 'Gene classified by Genomics England curator'), ('EntityClassifiedbyGenomicsEnglandCurator', 'Entity classified by Genomics England curator'), ('SetModeofInheritance', 'Set mode of inheritance'), ('SetPenetrance', 'Set penetrance'), ('SetPublications', 'Set publications'), ('ApprovedGene', 'Approved Gene'), ('ApprovedEntity', 'Approved Entity'), ('GelStatusUpdate', 'Gel Status Update'), ('UploadGeneInformation', 'Upload gene information'), ('RemovedTag', 'Removed Tag'), ('AddedTag', 'Added Tag'), ('ChangedSTRName', 'Changed STR Name'), ('ChangedNormalRange', 'Changed Normal Range'), ('ChangedPrepathogenicRange', 'Changed Pre-Pathogenic Range'), ('ChangedPathogenicRange', 'Changed Pathogenic Range')], max_length=512),
+            model_name="trackrecord",
+            name="issue_type",
+            field=models.CharField(
+                choices=[
+                    ("Created", "Created"),
+                    ("NewSource", "Added New Source"),
+                    ("RemovedSource", "Removed Source"),
+                    ("ChangedGeneName", "Changed Gene Name"),
+                    ("SetPhenotypes", "Set Phenotypes"),
+                    ("SetModelofInheritance", "Set Model of Inheritance"),
+                    ("ClearSources", "Clear Sources"),
+                    ("SetModeofPathogenicity", "Set mode of pathogenicity"),
+                    (
+                        "GeneClassifiedbyGenomicsEnglandCurator",
+                        "Gene classified by Genomics England curator",
+                    ),
+                    (
+                        "EntityClassifiedbyGenomicsEnglandCurator",
+                        "Entity classified by Genomics England curator",
+                    ),
+                    ("SetModeofInheritance", "Set mode of inheritance"),
+                    ("SetPenetrance", "Set penetrance"),
+                    ("SetPublications", "Set publications"),
+                    ("ApprovedGene", "Approved Gene"),
+                    ("ApprovedEntity", "Approved Entity"),
+                    ("GelStatusUpdate", "Gel Status Update"),
+                    ("UploadGeneInformation", "Upload gene information"),
+                    ("RemovedTag", "Removed Tag"),
+                    ("AddedTag", "Added Tag"),
+                    ("ChangedSTRName", "Changed STR Name"),
+                    ("ChangedNormalRange", "Changed Normal Range"),
+                    ("ChangedPrepathogenicRange", "Changed Pre-Pathogenic Range"),
+                    ("ChangedPathogenicRange", "Changed Pathogenic Range"),
+                ],
+                max_length=512,
+            ),
         ),
     ]

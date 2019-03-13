@@ -27,30 +27,26 @@ from django.db import migrations
 
 
 default_panel_types = {
-    'rare-disease-test-directory': 'Rare Disease Test Directory',
-    'actionable': 'Actionable',
-    'rare-disease-100k': 'Rare Disease 100K',
-    'superpanel': 'Superpanel',
-    'testing': 'testing',
-    'reference': 'Reference',
-    'clingen-curated-genes': 'ClinGen Curated genes',
-    'ga4gh-collaboration': 'GA4GH collaboration',
-    'external-diagnostic-lab': 'External Diagnostic Lab',
-    'cancer-test-directory': 'Cancer Test Directory',
-    'cancer-germline-100k': 'Cancer Germline 100K',
+    "rare-disease-test-directory": "Rare Disease Test Directory",
+    "actionable": "Actionable",
+    "rare-disease-100k": "Rare Disease 100K",
+    "superpanel": "Superpanel",
+    "testing": "testing",
+    "reference": "Reference",
+    "clingen-curated-genes": "ClinGen Curated genes",
+    "ga4gh-collaboration": "GA4GH collaboration",
+    "external-diagnostic-lab": "External Diagnostic Lab",
+    "cancer-test-directory": "Cancer Test Directory",
+    "cancer-germline-100k": "Cancer Germline 100K",
 }
 
 
 def create_default_panel_types(apps, schema_editor):
-    PanelType = apps.get_model('panels', 'PanelType')
-    current_types = list(PanelType.objects.values_list('slug', flat=True))
+    PanelType = apps.get_model("panels", "PanelType")
+    current_types = list(PanelType.objects.values_list("slug", flat=True))
     for slug, name in default_panel_types.items():
         if slug not in current_types:
-            PanelType.objects.create(
-                name=name,
-                slug=slug,
-                description=name
-            )
+            PanelType.objects.create(name=name, slug=slug, description=name)
 
 
 def do_nothing(apps, schema_editor):
@@ -59,10 +55,6 @@ def do_nothing(apps, schema_editor):
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('panels', '0066_auto_20180821_0849'),
-    ]
+    dependencies = [("panels", "0066_auto_20180821_0849")]
 
-    operations = [
-        migrations.RunPython(create_default_panel_types, do_nothing)
-    ]
+    operations = [migrations.RunPython(create_default_panel_types, do_nothing)]

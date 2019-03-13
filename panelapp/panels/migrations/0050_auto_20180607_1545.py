@@ -30,14 +30,10 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('panels', '0049_auto_20180607_1000'),
-    ]
+    dependencies = [("panels", "0049_auto_20180607_1000")]
 
     operations = [
         migrations.AlterField(
-            model_name='activity',
-            name='text',
-            field=models.TextField(),
-        ),
+            model_name="activity", name="text", field=models.TextField()
+        )
     ]

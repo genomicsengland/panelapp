@@ -28,23 +28,68 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('panels', '0065_auto_20180820_1006'),
-    ]
+    dependencies = [("panels", "0065_auto_20180820_1006")]
 
     operations = [
         migrations.RemoveField(
-            model_name='genepanelentrysnapshot',
-            name='type_of_variants',
+            model_name="genepanelentrysnapshot", name="type_of_variants"
         ),
         migrations.AlterField(
-            model_name='region',
-            name='haploinsufficiency_score',
-            field=models.CharField(blank=True, choices=[('3', 'Sufficient evidence suggesting dosage sensitivity is associated with clinical phenotype'), ('2', 'Emerging evidence suggesting dosage sensitivity is associated with clinical phenotype'), ('1', 'Little evidence suggesting dosage sensitivity is associated with clinical phenotype'), ('0', 'No evidence to suggest that dosage sensitivity is associated with clinical phenotype'), ('40', 'Dosage sensitivity unlikely'), ('30', 'Gene associated with autosomal recessive phenotype')], max_length=2, null=True),
+            model_name="region",
+            name="haploinsufficiency_score",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    (
+                        "3",
+                        "Sufficient evidence suggesting dosage sensitivity is associated with clinical phenotype",
+                    ),
+                    (
+                        "2",
+                        "Emerging evidence suggesting dosage sensitivity is associated with clinical phenotype",
+                    ),
+                    (
+                        "1",
+                        "Little evidence suggesting dosage sensitivity is associated with clinical phenotype",
+                    ),
+                    (
+                        "0",
+                        "No evidence to suggest that dosage sensitivity is associated with clinical phenotype",
+                    ),
+                    ("40", "Dosage sensitivity unlikely"),
+                    ("30", "Gene associated with autosomal recessive phenotype"),
+                ],
+                max_length=2,
+                null=True,
+            ),
         ),
         migrations.AlterField(
-            model_name='region',
-            name='triplosensitivity_score',
-            field=models.CharField(blank=True, choices=[('3', 'Sufficient evidence suggesting dosage sensitivity is associated with clinical phenotype'), ('2', 'Emerging evidence suggesting dosage sensitivity is associated with clinical phenotype'), ('1', 'Little evidence suggesting dosage sensitivity is associated with clinical phenotype'), ('0', 'No evidence to suggest that dosage sensitivity is associated with clinical phenotype'), ('40', 'Dosage sensitivity unlikely'), ('30', 'Gene associated with autosomal recessive phenotype')], max_length=2, null=True),
+            model_name="region",
+            name="triplosensitivity_score",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    (
+                        "3",
+                        "Sufficient evidence suggesting dosage sensitivity is associated with clinical phenotype",
+                    ),
+                    (
+                        "2",
+                        "Emerging evidence suggesting dosage sensitivity is associated with clinical phenotype",
+                    ),
+                    (
+                        "1",
+                        "Little evidence suggesting dosage sensitivity is associated with clinical phenotype",
+                    ),
+                    (
+                        "0",
+                        "No evidence to suggest that dosage sensitivity is associated with clinical phenotype",
+                    ),
+                    ("40", "Dosage sensitivity unlikely"),
+                    ("30", "Gene associated with autosomal recessive phenotype"),
+                ],
+                max_length=2,
+                null=True,
+            ),
         ),
     ]

@@ -33,9 +33,9 @@ class ActivateGenesTest(TestCase):
         out = StringIO()
 
         GeneFactory.create_batch(3, active=True)
-        GeneFactory.create_batch(4, active=False, ensembl_genes='{}')
+        GeneFactory.create_batch(4, active=False, ensembl_genes="{}")
         GeneFactory.create_batch(5, active=False, ensembl_genes='{"hello": "world"}')
 
-        call_command('activate_genes', stdout=out)
-        self.assertIn('5 genes should be active', out.getvalue())
+        call_command("activate_genes", stdout=out)
+        self.assertIn("5 genes should be active", out.getvalue())
         self.assertEqual(8, Gene.objects.filter(active=True).count())

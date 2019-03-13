@@ -29,9 +29,8 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('panels', '0053_auto_20180516_1622'),
-        ('panels', '0058_auto_20180620_1346'),
+        ("panels", "0053_auto_20180516_1622"),
+        ("panels", "0058_auto_20180620_1346"),
     ]
 
-    operations = [
-    ]
+    operations = []

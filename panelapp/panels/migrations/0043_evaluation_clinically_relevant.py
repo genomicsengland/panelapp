@@ -30,14 +30,12 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('panels', '0042_auto_20180326_1154'),
-    ]
+    dependencies = [("panels", "0042_auto_20180326_1154")]
 
     operations = [
         migrations.AddField(
-            model_name='evaluation',
-            name='clinically_relevant',
+            model_name="evaluation",
+            name="clinically_relevant",
             field=models.BooleanField(default=False),
-        ),
+        )
     ]

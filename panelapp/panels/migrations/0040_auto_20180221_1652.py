@@ -30,20 +30,52 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('panels', '0039_auto_20180221_1347'),
-    ]
+    dependencies = [("panels", "0039_auto_20180221_1347")]
 
     operations = [
         migrations.AddField(
-            model_name='str',
-            name='repeated_sequence',
-            field=models.CharField(default='ATAT', max_length=128),
+            model_name="str",
+            name="repeated_sequence",
+            field=models.CharField(default="ATAT", max_length=128),
             preserve_default=False,
         ),
         migrations.AlterField(
-            model_name='trackrecord',
-            name='issue_type',
-            field=models.CharField(choices=[('Created', 'Created'), ('NewSource', 'Added New Source'), ('RemovedSource', 'Removed Source'), ('ChangedGeneName', 'Changed Gene Name'), ('SetPhenotypes', 'Set Phenotypes'), ('SetModelofInheritance', 'Set Model of Inheritance'), ('ClearSources', 'Clear Sources'), ('SetModeofPathogenicity', 'Set mode of pathogenicity'), ('GeneClassifiedbyGenomicsEnglandCurator', 'Gene classified by Genomics England curator'), ('EntityClassifiedbyGenomicsEnglandCurator', 'Entity classified by Genomics England curator'), ('SetModeofInheritance', 'Set mode of inheritance'), ('SetPenetrance', 'Set penetrance'), ('SetPublications', 'Set publications'), ('ApprovedGene', 'Approved Gene'), ('ApprovedEntity', 'Approved Entity'), ('GelStatusUpdate', 'Gel Status Update'), ('UploadGeneInformation', 'Upload gene information'), ('RemovedTag', 'Removed Tag'), ('AddedTag', 'Added Tag'), ('ChangedSTRName', 'Changed STR Name'), ('ChangedNormalRange', 'Changed Normal Range'), ('ChangedPrepathogenicRange', 'Changed Pre-Pathogenic Range'), ('ChangedPathogenicRange', 'Changed Pathogenic Range'), ('RemovedGene', 'Removed Gene from the STR')], max_length=512),
+            model_name="trackrecord",
+            name="issue_type",
+            field=models.CharField(
+                choices=[
+                    ("Created", "Created"),
+                    ("NewSource", "Added New Source"),
+                    ("RemovedSource", "Removed Source"),
+                    ("ChangedGeneName", "Changed Gene Name"),
+                    ("SetPhenotypes", "Set Phenotypes"),
+                    ("SetModelofInheritance", "Set Model of Inheritance"),
+                    ("ClearSources", "Clear Sources"),
+                    ("SetModeofPathogenicity", "Set mode of pathogenicity"),
+                    (
+                        "GeneClassifiedbyGenomicsEnglandCurator",
+                        "Gene classified by Genomics England curator",
+                    ),
+                    (
+                        "EntityClassifiedbyGenomicsEnglandCurator",
+                        "Entity classified by Genomics England curator",
+                    ),
+                    ("SetModeofInheritance", "Set mode of inheritance"),
+                    ("SetPenetrance", "Set penetrance"),
+                    ("SetPublications", "Set publications"),
+                    ("ApprovedGene", "Approved Gene"),
+                    ("ApprovedEntity", "Approved Entity"),
+                    ("GelStatusUpdate", "Gel Status Update"),
+                    ("UploadGeneInformation", "Upload gene information"),
+                    ("RemovedTag", "Removed Tag"),
+                    ("AddedTag", "Added Tag"),
+                    ("ChangedSTRName", "Changed STR Name"),
+                    ("ChangedNormalRange", "Changed Normal Range"),
+                    ("ChangedPrepathogenicRange", "Changed Pre-Pathogenic Range"),
+                    ("ChangedPathogenicRange", "Changed Pathogenic Range"),
+                    ("RemovedGene", "Removed Gene from the STR"),
+                ],
+                max_length=512,
+            ),
         ),
     ]

@@ -28,13 +28,11 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('panels', '0054_auto_20180619_1526'),
-    ]
+    dependencies = [("panels", "0054_auto_20180619_1526")]
 
     operations = [
         migrations.AddIndex(
-            model_name='evaluation',
-            index=models.Index(fields=['rating'], name='panels_eval_rating_456408_idx'),
-        ),
+            model_name="evaluation",
+            index=models.Index(fields=["rating"], name="panels_eval_rating_456408_idx"),
+        )
     ]

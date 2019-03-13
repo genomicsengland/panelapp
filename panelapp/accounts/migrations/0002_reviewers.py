@@ -1,9 +1,9 @@
 ##
 ## Copyright (c) 2016-2019 Genomics England Ltd.
-## 
+##
 ## This file is part of PanelApp
 ## (see https://panelapp.genomicsengland.co.uk).
-## 
+##
 ## Licensed to the Apache Software Foundation (ASF) under one
 ## or more contributor license agreements.  See the NOTICE file
 ## distributed with this work for additional information
@@ -11,9 +11,9 @@
 ## to you under the Apache License, Version 2.0 (the
 ## "License"); you may not use this file except in compliance
 ## with the License.  You may obtain a copy of the License at
-## 
+##
 ##   http://www.apache.org/licenses/LICENSE-2.0
-## 
+##
 ## Unless required by applicable law or agreed to in writing,
 ## software distributed under the License is distributed on an
 ## "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -32,21 +32,33 @@ import django.db.models.deletion
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('accounts', '0001_initial'),
-    ]
+    dependencies = [("accounts", "0001_initial")]
 
     operations = [
         migrations.CreateModel(
-            name='Reviewers',
+            name="Reviewers",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('user_type', models.CharField(max_length=255)),
-                ('affiliation', models.CharField(max_length=255)),
-                ('workplace', models.CharField(max_length=255)),
-                ('role', models.CharField(max_length=255)),
-                ('group', models.CharField(max_length=255)),
-                ('user', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("user_type", models.CharField(max_length=255)),
+                ("affiliation", models.CharField(max_length=255)),
+                ("workplace", models.CharField(max_length=255)),
+                ("role", models.CharField(max_length=255)),
+                ("group", models.CharField(max_length=255)),
+                (
+                    "user",
+                    models.OneToOneField(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
-        ),
+        )
     ]

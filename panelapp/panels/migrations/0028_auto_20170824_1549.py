@@ -30,13 +30,13 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('panels', '0027_auto_20170823_1210'),
-    ]
+    dependencies = [("panels", "0027_auto_20170823_1210")]
 
     operations = [
         migrations.AddIndex(
-            model_name='genepanelentrysnapshot',
-            index=models.Index(fields=['gene_core_id'], name='panels_gene_gene_co_9223b2_idx'),
-        ),
+            model_name="genepanelentrysnapshot",
+            index=models.Index(
+                fields=["gene_core_id"], name="panels_gene_gene_co_9223b2_idx"
+            ),
+        )
     ]

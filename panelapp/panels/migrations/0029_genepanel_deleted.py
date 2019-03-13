@@ -30,14 +30,12 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('panels', '0028_auto_20170824_1549'),
-    ]
+    dependencies = [("panels", "0028_auto_20170824_1549")]
 
     operations = [
         migrations.AddField(
-            model_name='genepanel',
-            name='deleted',
+            model_name="genepanel",
+            name="deleted",
             field=models.BooleanField(db_index=True, default=False),
-        ),
+        )
     ]

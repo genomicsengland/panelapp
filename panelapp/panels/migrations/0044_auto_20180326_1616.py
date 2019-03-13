@@ -30,14 +30,15 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('panels', '0043_evaluation_clinically_relevant'),
-    ]
+    dependencies = [("panels", "0043_evaluation_clinically_relevant")]
 
     operations = [
         migrations.AlterField(
-            model_name='evaluation',
-            name='clinically_relevant',
-            field=models.NullBooleanField(default=False, help_text='Interruptions in the normal alleles are reported as part of standard diagnostic practice'),
-        ),
+            model_name="evaluation",
+            name="clinically_relevant",
+            field=models.NullBooleanField(
+                default=False,
+                help_text="Interruptions in the normal alleles are reported as part of standard diagnostic practice",
+            ),
+        )
     ]

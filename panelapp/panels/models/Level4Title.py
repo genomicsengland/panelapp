@@ -51,5 +51,5 @@ class Level4Title(models.Model):
             "level2title": self.level2title,
             "omim": self.omim,
             "orphanet": self.orphanet,
-            "hpo": self.hpo
+            "hpo": self.hpo,
         }

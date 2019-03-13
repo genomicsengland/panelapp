@@ -30,22 +30,61 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('panels', '0046_auto_20180430_1352'),
-    ]
+    dependencies = [("panels", "0046_auto_20180430_1352")]
 
     operations = [
         migrations.AlterModelOptions(
-            name='gene',
-            options={'ordering': ['gene_symbol']},
+            name="gene", options={"ordering": ["gene_symbol"]}
         ),
         migrations.AlterField(
-            model_name='trackrecord',
-            name='issue_type',
-            field=models.CharField(choices=[('Created', 'Created'), ('NewSource', 'Added New Source'), ('RemovedSource', 'Removed Source'), ('ChangedGeneName', 'Changed Gene Name'), ('SetPhenotypes', 'Set Phenotypes'), ('SetModelofInheritance', 'Set Model of Inheritance'), ('ClearSources', 'Clear Sources'), ('SetModeofPathogenicity', 'Set mode of pathogenicity'), ('GeneClassifiedbyGenomicsEnglandCurator', 'Gene classified by Genomics England curator'), ('EntityClassifiedbyGenomicsEnglandCurator', 'Entity classified by Genomics England curator'), ('SetModeofInheritance', 'Set mode of inheritance'), ('SetPenetrance', 'Set penetrance'), ('SetPublications', 'Set publications'), ('ApprovedGene', 'Approved Gene'), ('ApprovedEntity', 'Approved Entity'), ('GelStatusUpdate', 'Gel Status Update'), ('UploadGeneInformation', 'Upload gene information'), ('RemovedTag', 'Removed Tag'), ('AddedTag', 'Added Tag'), ('ChangedSTRName', 'Changed STR Name'), ('ChangedChromosome', 'Changed Chromosome'), ('ChangedPosition37', 'Changed GRCh37'), ('ChangedPosition38', 'Changed GRCh38'), ('ChangedNormalRepeats', 'Changed Normal Number of Repeats'), ('ChangedPathogenicRepeats', 'Changed Pathogenic Number of Repeats'), ('RemovedGene', 'Removed Gene from the STR'), ('ChangedRepeatedSequence', 'Changed Repeated Sequence')], max_length=512),
+            model_name="trackrecord",
+            name="issue_type",
+            field=models.CharField(
+                choices=[
+                    ("Created", "Created"),
+                    ("NewSource", "Added New Source"),
+                    ("RemovedSource", "Removed Source"),
+                    ("ChangedGeneName", "Changed Gene Name"),
+                    ("SetPhenotypes", "Set Phenotypes"),
+                    ("SetModelofInheritance", "Set Model of Inheritance"),
+                    ("ClearSources", "Clear Sources"),
+                    ("SetModeofPathogenicity", "Set mode of pathogenicity"),
+                    (
+                        "GeneClassifiedbyGenomicsEnglandCurator",
+                        "Gene classified by Genomics England curator",
+                    ),
+                    (
+                        "EntityClassifiedbyGenomicsEnglandCurator",
+                        "Entity classified by Genomics England curator",
+                    ),
+                    ("SetModeofInheritance", "Set mode of inheritance"),
+                    ("SetPenetrance", "Set penetrance"),
+                    ("SetPublications", "Set publications"),
+                    ("ApprovedGene", "Approved Gene"),
+                    ("ApprovedEntity", "Approved Entity"),
+                    ("GelStatusUpdate", "Gel Status Update"),
+                    ("UploadGeneInformation", "Upload gene information"),
+                    ("RemovedTag", "Removed Tag"),
+                    ("AddedTag", "Added Tag"),
+                    ("ChangedSTRName", "Changed STR Name"),
+                    ("ChangedChromosome", "Changed Chromosome"),
+                    ("ChangedPosition37", "Changed GRCh37"),
+                    ("ChangedPosition38", "Changed GRCh38"),
+                    ("ChangedNormalRepeats", "Changed Normal Number of Repeats"),
+                    (
+                        "ChangedPathogenicRepeats",
+                        "Changed Pathogenic Number of Repeats",
+                    ),
+                    ("RemovedGene", "Removed Gene from the STR"),
+                    ("ChangedRepeatedSequence", "Changed Repeated Sequence"),
+                ],
+                max_length=512,
+            ),
         ),
         migrations.AddIndex(
-            model_name='gene',
-            index=models.Index(fields=['gene_symbol', 'active'], name='panels_gene_gene_sy_62584a_idx'),
+            model_name="gene",
+            index=models.Index(
+                fields=["gene_symbol", "active"], name="panels_gene_gene_sy_62584a_idx"
+            ),
         ),
     ]

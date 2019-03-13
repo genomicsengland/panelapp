@@ -1,9 +1,9 @@
 ##
 ## Copyright (c) 2016-2019 Genomics England Ltd.
-## 
+##
 ## This file is part of PanelApp
 ## (see https://panelapp.genomicsengland.co.uk).
-## 
+##
 ## Licensed to the Apache Software Foundation (ASF) under one
 ## or more contributor license agreements.  See the NOTICE file
 ## distributed with this work for additional information
@@ -11,9 +11,9 @@
 ## to you under the Apache License, Version 2.0 (the
 ## "License"); you may not use this file except in compliance
 ## with the License.  You may obtain a copy of the License at
-## 
+##
 ##   http://www.apache.org/licenses/LICENSE-2.0
-## 
+##
 ## Unless required by applicable law or agreed to in writing,
 ## software distributed under the License is distributed on an
 ## "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -32,28 +32,98 @@ import django.db.models.deletion
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('accounts', '0002_reviewers'),
-    ]
+    dependencies = [("accounts", "0002_reviewers")]
 
     operations = [
         migrations.CreateModel(
-            name='Reviewer',
+            name="Reviewer",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('user_type', models.CharField(choices=[('GEL', 'GEL'), ('EXTERNAL', 'EXTERNAL'), ('REVIEWER', 'REVIEWER')], default='EXTERNAL', max_length=255)),
-                ('affiliation', models.CharField(max_length=255)),
-                ('workplace', models.CharField(choices=[('Research lab', 'Research lab'), ('NHS diagnostic lab', 'NHS diagnostic lab'), ('Other diagnostic lab', 'Other diagnostic lab'), ('NHS clinical service', 'NHS clinical service'), ('Other clinical service', 'Other clinical service'), ('Industry', 'Industry'), ('Other', 'Other')], max_length=255)),
-                ('role', models.CharField(choices=[('Clinical Scientist', 'Clinical Scientist'), ('Clinician', 'Clinician'), ('Genome analyst', 'Genome analyst'), ('Genetic Counsellor', 'Genetic Counsellor'), ('Bioinformatician', 'Bioinformatician'), ('Industry', 'Industry'), ('Lab director', 'Lab director'), ('Principal Investigator', 'Principal Investigator'), ('Technician', 'Technician'), ('Researcher', 'Researcher'), ('Student', 'Student'), ('Other', 'Other')], max_length=255)),
-                ('group', models.CharField(choices=[('GeCIP domain', 'GeCIP domain'), ('GENE consortium member', 'GENE consortium member'), ('NHS Genomic Medicine Centre', 'NHS Genomic Medicine Centre'), ('Other NHS organisation', 'Other NHS organisation'), ('Other biotech or pharmaceutical', 'Other biotech or pharmaceutical'), ('Other', 'Other')], max_length=255)),
-                ('user', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "user_type",
+                    models.CharField(
+                        choices=[
+                            ("GEL", "GEL"),
+                            ("EXTERNAL", "EXTERNAL"),
+                            ("REVIEWER", "REVIEWER"),
+                        ],
+                        default="EXTERNAL",
+                        max_length=255,
+                    ),
+                ),
+                ("affiliation", models.CharField(max_length=255)),
+                (
+                    "workplace",
+                    models.CharField(
+                        choices=[
+                            ("Research lab", "Research lab"),
+                            ("NHS diagnostic lab", "NHS diagnostic lab"),
+                            ("Other diagnostic lab", "Other diagnostic lab"),
+                            ("NHS clinical service", "NHS clinical service"),
+                            ("Other clinical service", "Other clinical service"),
+                            ("Industry", "Industry"),
+                            ("Other", "Other"),
+                        ],
+                        max_length=255,
+                    ),
+                ),
+                (
+                    "role",
+                    models.CharField(
+                        choices=[
+                            ("Clinical Scientist", "Clinical Scientist"),
+                            ("Clinician", "Clinician"),
+                            ("Genome analyst", "Genome analyst"),
+                            ("Genetic Counsellor", "Genetic Counsellor"),
+                            ("Bioinformatician", "Bioinformatician"),
+                            ("Industry", "Industry"),
+                            ("Lab director", "Lab director"),
+                            ("Principal Investigator", "Principal Investigator"),
+                            ("Technician", "Technician"),
+                            ("Researcher", "Researcher"),
+                            ("Student", "Student"),
+                            ("Other", "Other"),
+                        ],
+                        max_length=255,
+                    ),
+                ),
+                (
+                    "group",
+                    models.CharField(
+                        choices=[
+                            ("GeCIP domain", "GeCIP domain"),
+                            ("GENE consortium member", "GENE consortium member"),
+                            (
+                                "NHS Genomic Medicine Centre",
+                                "NHS Genomic Medicine Centre",
+                            ),
+                            ("Other NHS organisation", "Other NHS organisation"),
+                            (
+                                "Other biotech or pharmaceutical",
+                                "Other biotech or pharmaceutical",
+                            ),
+                            ("Other", "Other"),
+                        ],
+                        max_length=255,
+                    ),
+                ),
+                (
+                    "user",
+                    models.OneToOneField(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
         ),
-        migrations.RemoveField(
-            model_name='reviewers',
-            name='user',
-        ),
-        migrations.DeleteModel(
-            name='Reviewers',
-        ),
+        migrations.RemoveField(model_name="reviewers", name="user"),
+        migrations.DeleteModel(name="Reviewers"),
     ]

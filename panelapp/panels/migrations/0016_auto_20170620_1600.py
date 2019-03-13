@@ -30,24 +30,22 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('panels', '0015_auto_20170616_1109'),
-    ]
+    dependencies = [("panels", "0015_auto_20170616_1109")]
 
     operations = [
         migrations.AlterField(
-            model_name='uploadedgenelist',
-            name='gene_list',
-            field=models.FileField(max_length=255, upload_to='genes'),
+            model_name="uploadedgenelist",
+            name="gene_list",
+            field=models.FileField(max_length=255, upload_to="genes"),
         ),
         migrations.AlterField(
-            model_name='uploadedpanellist',
-            name='panel_list',
-            field=models.FileField(max_length=255, upload_to='panels'),
+            model_name="uploadedpanellist",
+            name="panel_list",
+            field=models.FileField(max_length=255, upload_to="panels"),
         ),
         migrations.AlterField(
-            model_name='uploadedreviewslist',
-            name='reviews',
-            field=models.FileField(max_length=255, upload_to='reviews'),
+            model_name="uploadedreviewslist",
+            name="reviews",
+            field=models.FileField(max_length=255, upload_to="reviews"),
         ),
     ]

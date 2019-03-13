@@ -28,14 +28,12 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('panels', '0052_auto_20180615_1147'),
-    ]
+    dependencies = [("panels", "0052_auto_20180615_1147")]
 
     operations = [
         migrations.AddField(
-            model_name='genepanelsnapshot',
-            name='child_panels',
-            field=models.ManyToManyField(to='panels.GenePanelSnapshot'),
-        ),
+            model_name="genepanelsnapshot",
+            name="child_panels",
+            field=models.ManyToManyField(to="panels.GenePanelSnapshot"),
+        )
     ]

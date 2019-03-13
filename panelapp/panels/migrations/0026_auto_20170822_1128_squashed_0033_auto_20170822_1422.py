@@ -43,74 +43,83 @@ class Migration(migrations.Migration):
     #     ('panels', '0033_auto_20170822_1422')
     # ]
 
-    dependencies = [
-        ('panels', '0025_auto_20170816_0954'),
-    ]
+    dependencies = [("panels", "0025_auto_20170816_0954")]
 
     operations = [
         migrations.AlterField(
-            model_name='genepanelsnapshot',
-            name='major_version',
+            model_name="genepanelsnapshot",
+            name="major_version",
             field=models.IntegerField(db_index=True, default=0),
         ),
         migrations.AlterField(
-            model_name='genepanelsnapshot',
-            name='minor_version',
+            model_name="genepanelsnapshot",
+            name="minor_version",
             field=models.IntegerField(db_index=True, default=0),
         ),
         migrations.AlterField(
-            model_name='genepanel',
-            name='name',
+            model_name="genepanel",
+            name="name",
             field=models.CharField(db_index=True, max_length=255),
         ),
         migrations.AlterField(
-            model_name='gene',
-            name='active',
+            model_name="gene",
+            name="active",
             field=models.BooleanField(db_index=True, default=True),
         ),
         migrations.AlterField(
-            model_name='gene',
-            name='gene_symbol',
-            field=models.CharField(db_index=True, max_length=255, primary_key=True, serialize=False),
+            model_name="gene",
+            name="gene_symbol",
+            field=models.CharField(
+                db_index=True, max_length=255, primary_key=True, serialize=False
+            ),
         ),
         migrations.AlterField(
-            model_name='genepanel',
-            name='approved',
+            model_name="genepanel",
+            name="approved",
             field=models.BooleanField(db_index=True, default=False),
         ),
         migrations.AlterField(
-            model_name='genepanel',
-            name='old_pk',
+            model_name="genepanel",
+            name="old_pk",
             field=models.CharField(blank=True, db_index=True, max_length=24, null=True),
         ),
         migrations.AddIndex(
-            model_name='genepanelentrysnapshot',
-            index=models.Index(fields=['panel_id'], name='panels_gene_panel_i_d90d44_idx'),
+            model_name="genepanelentrysnapshot",
+            index=models.Index(
+                fields=["panel_id"], name="panels_gene_panel_i_d90d44_idx"
+            ),
         ),
         migrations.AlterModelOptions(
-            name='genepanelentrysnapshot',
-            options={'get_latest_by': 'created', 'ordering': ['-saved_gel_status']},
+            name="genepanelentrysnapshot",
+            options={"get_latest_by": "created", "ordering": ["-saved_gel_status"]},
         ),
         migrations.AddIndex(
-            model_name='genepanelsnapshot',
-            index=models.Index(fields=['panel_id'], name='panels_gene_panel_i_2a8178_idx'),
+            model_name="genepanelsnapshot",
+            index=models.Index(
+                fields=["panel_id"], name="panels_gene_panel_i_2a8178_idx"
+            ),
         ),
         migrations.AlterModelOptions(
-            name='genepanelsnapshot',
-            options={'get_latest_by': 'created', 'ordering': ['-major_version', '-minor_version']},
+            name="genepanelsnapshot",
+            options={
+                "get_latest_by": "created",
+                "ordering": ["-major_version", "-minor_version"],
+            },
         ),
         migrations.AlterField(
-            model_name='genepanelentrysnapshot',
-            name='saved_gel_status',
+            model_name="genepanelentrysnapshot",
+            name="saved_gel_status",
             field=models.IntegerField(db_index=True, null=True),
         ),
         migrations.AddIndex(
-            model_name='evaluation',
-            index=models.Index(fields=['user_id'], name='panels_eval_user_id_7e6977_idx'),
+            model_name="evaluation",
+            index=models.Index(
+                fields=["user_id"], name="panels_eval_user_id_7e6977_idx"
+            ),
         ),
         migrations.AlterField(
-            model_name='genepanelentrysnapshot',
-            name='evaluation',
-            field=models.ManyToManyField(db_index=True, to='panels.Evaluation'),
+            model_name="genepanelentrysnapshot",
+            name="evaluation",
+            field=models.ManyToManyField(db_index=True, to="panels.Evaluation"),
         ),
     ]

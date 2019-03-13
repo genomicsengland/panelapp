@@ -30,19 +30,17 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('panels', '0031_auto_20171107_1003'),
-    ]
+    dependencies = [("panels", "0031_auto_20171107_1003")]
 
     operations = [
         migrations.AddField(
-            model_name='uploadedpanellist',
-            name='import_log',
-            field=models.TextField(default=''),
+            model_name="uploadedpanellist",
+            name="import_log",
+            field=models.TextField(default=""),
         ),
         migrations.AddField(
-            model_name='uploadedreviewslist',
-            name='import_log',
-            field=models.TextField(default=''),
+            model_name="uploadedreviewslist",
+            name="import_log",
+            field=models.TextField(default=""),
         ),
     ]

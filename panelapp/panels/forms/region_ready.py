@@ -35,20 +35,22 @@ class RegionReadyForm(forms.ModelForm):
     ready_comment = forms.CharField(
         label="Comment (eg What decisions are being made?)",
         required=False,
-        widget=forms.Textarea
+        widget=forms.Textarea,
     )
 
     class Meta:
         model = Region
-        fields = ('comments',)
+        fields = ("comments",)
 
     def __init__(self, *args, **kwargs):
-        self.request = kwargs.pop('request')
+        self.request = kwargs.pop("request")
         super().__init__(*args, **kwargs)
 
         original_fields = self.fields
         self.fields = {}
-        self.fields['ready_comment'] = original_fields.get('ready_comment')
+        self.fields["ready_comment"] = original_fields.get("ready_comment")
 
     def save(self, *args, **kwargs):
-        self.instance.mark_as_ready(self.request.user, self.cleaned_data['ready_comment'])
+        self.instance.mark_as_ready(
+            self.request.user, self.cleaned_data["ready_comment"]
+        )

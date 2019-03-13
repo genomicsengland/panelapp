@@ -31,29 +31,59 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('panels', '0045_auto_20180430_1331'),
-    ]
+    dependencies = [("panels", "0045_auto_20180430_1331")]
 
     operations = [
         migrations.AlterField(
-            model_name='evaluation',
-            name='clinically_relevant',
-            field=models.NullBooleanField(default=False, help_text='Interruptions in the repeated sequence are reported as part of standard diagnostic practise'),
+            model_name="evaluation",
+            name="clinically_relevant",
+            field=models.NullBooleanField(
+                default=False,
+                help_text="Interruptions in the repeated sequence are reported as part of standard diagnostic practise",
+            ),
         ),
         migrations.AlterField(
-            model_name='str',
-            name='chromosome',
-            field=models.CharField(choices=[('0', '0'), ('1', '1'), ('2', '2'), ('3', '3'), ('4', '4'), ('5', '5'), ('6', '6'), ('7', '7'), ('8', '8'), ('9', '9'), ('10', '10'), ('11', '11'), ('12', '12'), ('13', '13'), ('14', '14'), ('15', '15'), ('16', '16'), ('17', '17'), ('18', '18'), ('19', '19'), ('20', '20'), ('21', '21'), ('22', '22'), ('X', 'X'), ('Y', 'Y')], max_length=8),
+            model_name="str",
+            name="chromosome",
+            field=models.CharField(
+                choices=[
+                    ("0", "0"),
+                    ("1", "1"),
+                    ("2", "2"),
+                    ("3", "3"),
+                    ("4", "4"),
+                    ("5", "5"),
+                    ("6", "6"),
+                    ("7", "7"),
+                    ("8", "8"),
+                    ("9", "9"),
+                    ("10", "10"),
+                    ("11", "11"),
+                    ("12", "12"),
+                    ("13", "13"),
+                    ("14", "14"),
+                    ("15", "15"),
+                    ("16", "16"),
+                    ("17", "17"),
+                    ("18", "18"),
+                    ("19", "19"),
+                    ("20", "20"),
+                    ("21", "21"),
+                    ("22", "22"),
+                    ("X", "X"),
+                    ("Y", "Y"),
+                ],
+                max_length=8,
+            ),
         ),
         migrations.AlterField(
-            model_name='str',
-            name='position_37',
+            model_name="str",
+            name="position_37",
             field=django.contrib.postgres.fields.ranges.IntegerRangeField(),
         ),
         migrations.AlterField(
-            model_name='str',
-            name='position_38',
+            model_name="str",
+            name="position_38",
             field=django.contrib.postgres.fields.ranges.IntegerRangeField(),
         ),
     ]

@@ -27,14 +27,15 @@ from django import template
 from django.utils.safestring import SafeString
 from panels.models import Evaluation
 from panels.models import TrackRecord
+
 register = template.Library()
 
 
 gene_list_data = (
-    ('gel-added', 'No list', 'No list', 'grey'),
-    ('gel-red', 'Red List (low evidence)', 'Red', 'red'),
-    ('gel-amber', 'Amber List (moderate evidence)', 'Amber', 'amber'),
-    ('gel-green', 'Green List (high evidence)', 'Green', 'green'),
+    ("gel-added", "No list", "No list", "grey"),
+    ("gel-red", "Red List (low evidence)", "Red", "red"),
+    ("gel-amber", "Amber List (moderate evidence)", "Amber", "amber"),
+    ("gel-green", "Green List (high evidence)", "Green", "green"),
 )
 
 
@@ -56,9 +57,9 @@ def get_gene_list_data(gene, list_type, saved_gel_status=None, flagged=None):
     if saved_gel_status is not None:
         value = saved_gel_status
     else:
-        value = gene.get('saved_gel_status') if isinstance(gene, dict) else gene.status
+        value = gene.get("saved_gel_status") if isinstance(gene, dict) else gene.status
         if flagged is None:
-            flagged = gene.get('flagged') if isinstance(gene, dict) else gene.flagged
+            flagged = gene.get("flagged") if isinstance(gene, dict) else gene.flagged
     if flagged:
         return gene_list_data[GeneStatus.NOLIST.value][list_type]
     elif value > 2:
@@ -115,7 +116,7 @@ def reviewed_by(gene, user):
 
 @register.filter
 def human_issue_type(issue_type):
-    issues = issue_type.split(',')
+    issues = issue_type.split(",")
     out_arr = []
 
     for issue in issues:
@@ -129,27 +130,34 @@ def human_issue_type(issue_type):
 
 @register.filter
 def get_ensembleId(transcripts):
-    return transcripts.get('GRch38', {}).get('89', {}).get('ensembl_id', None)
+    return transcripts.get("GRch38", {}).get("89", {}).get("ensembl_id", None)
 
 
 @register.filter
 def pubmed_link(publication):
     # Pubmed IDs are 1-8 digits, but not all strings of digits are pubmed IDs
     # Assume that 7-8 chars is a pubmed ID and link to it.
-    parts = re.split('([0-9]{7,8})', publication)
+    parts = re.split("([0-9]{7,8})", publication)
     for i, part in enumerate(parts):
-        if re.search('^[0-9]{7,8}$', part):
-            part = SafeString('<a href="http://www.ncbi.nlm.nih.gov/pubmed/' + part + '">' + part + '</a>')
+        if re.search("^[0-9]{7,8}$", part):
+            part = SafeString(
+                '<a href="http://www.ncbi.nlm.nih.gov/pubmed/'
+                + part
+                + '">'
+                + part
+                + "</a>"
+            )
             parts[i] = part
     return parts
 
 
 @register.filter
 def remove_special(seq):
-    return re.sub('\W+', '', seq)
+    return re.sub("\W+", "", seq)
 
 
 @register.filter
 def human_variant_types(variant_type):
     from panels.models import Region
+
     return Region.VARIANT_TYPES[variant_type]

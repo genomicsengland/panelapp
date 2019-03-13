@@ -28,19 +28,33 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('panels', '0061_auto_20180706_1441'),
-    ]
+    dependencies = [("panels", "0061_auto_20180706_1441")]
 
     operations = [
         migrations.AddField(
-            model_name='genepanelentrysnapshot',
-            name='type_of_variants',
-            field=models.CharField(choices=[('small', 'Small variants'), ('cnv_loss', 'CNV_LOSS'), ('cnv_gain', 'CNV_GAIN')], default='small', max_length=32),
+            model_name="genepanelentrysnapshot",
+            name="type_of_variants",
+            field=models.CharField(
+                choices=[
+                    ("small", "Small variants"),
+                    ("cnv_loss", "CNV_LOSS"),
+                    ("cnv_gain", "CNV_GAIN"),
+                ],
+                default="small",
+                max_length=32,
+            ),
         ),
         migrations.AddField(
-            model_name='region',
-            name='type_of_variants',
-            field=models.CharField(choices=[('small', 'Small variants'), ('cnv_loss', 'CNV_LOSS'), ('cnv_gain', 'CNV_GAIN')], default='small', max_length=32),
+            model_name="region",
+            name="type_of_variants",
+            field=models.CharField(
+                choices=[
+                    ("small", "Small variants"),
+                    ("cnv_loss", "CNV_LOSS"),
+                    ("cnv_gain", "CNV_GAIN"),
+                ],
+                default="small",
+                max_length=32,
+            ),
         ),
     ]

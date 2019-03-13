@@ -38,16 +38,19 @@ class PanelForm(forms.ModelForm):
     omim = forms.CharField(required=False)
     orphanet = forms.CharField(required=False)
     hpo = forms.CharField(required=False)
-    status = forms.ChoiceField(required=True, choices=GenePanel.STATUS, initial=GenePanel.STATUS.internal)
+    status = forms.ChoiceField(
+        required=True, choices=GenePanel.STATUS, initial=GenePanel.STATUS.internal
+    )
 
     child_panels = forms.ModelMultipleChoiceField(
         label="Child Panels",
         required=False,
-        queryset=GenePanelSnapshot.objects.get_active_annotated().exclude(is_super_panel=True),
+        queryset=GenePanelSnapshot.objects.get_active_annotated().exclude(
+            is_super_panel=True
+        ),
         widget=ModelSelect2Multiple(
-            url="autocomplete-simple-panels",
-            attrs={'data-minimum-input-length': 3}
-        )
+            url="autocomplete-simple-panels", attrs={"data-minimum-input-length": 3}
+        ),
     )
 
     types = forms.ModelMultipleChoiceField(
@@ -56,68 +59,79 @@ class PanelForm(forms.ModelForm):
         queryset=PanelType.objects.all(),
         widget=ModelSelect2Multiple(
             url="autocomplete-simple-panel-types",
-            attrs={'data-minimum-input-length': 1}
-        )
+            attrs={"data-minimum-input-length": 1},
+        ),
     )
 
     class Meta:
         model = GenePanelSnapshot
-        fields = ('old_panels', )
+        fields = ("old_panels",)
 
     def __init__(self, *args, **kwargs):
-        gel_curator = kwargs.pop('gel_curator')
-        self.request = kwargs.pop('request')
+        gel_curator = kwargs.pop("gel_curator")
+        self.request = kwargs.pop("request")
 
         super().__init__(*args, **kwargs)
 
         original_fields = self.fields
 
         self.fields = OrderedDict()
-        self.fields['level2'] = original_fields.get('level2')
-        self.fields['level3'] = original_fields.get('level3')
-        self.fields['level4'] = original_fields.get('level4')
-        self.fields['description'] = original_fields.get('description')
-        self.fields['omim'] = original_fields.get('omim')
-        self.fields['orphanet'] = original_fields.get('orphanet')
-        self.fields['hpo'] = original_fields.get('hpo')
-        self.fields['old_panels'] = original_fields.get('old_panels')
-        self.fields['types'] = original_fields.get('types')
+        self.fields["level2"] = original_fields.get("level2")
+        self.fields["level3"] = original_fields.get("level3")
+        self.fields["level4"] = original_fields.get("level4")
+        self.fields["description"] = original_fields.get("description")
+        self.fields["omim"] = original_fields.get("omim")
+        self.fields["orphanet"] = original_fields.get("orphanet")
+        self.fields["hpo"] = original_fields.get("hpo")
+        self.fields["old_panels"] = original_fields.get("old_panels")
+        self.fields["types"] = original_fields.get("types")
         if gel_curator:  # TODO (Oleg) also check if we have entities in this panel
-            self.fields['child_panels'] = original_fields.get('child_panels')
-        self.fields['status'] = original_fields.get('status')
+            self.fields["child_panels"] = original_fields.get("child_panels")
+        self.fields["status"] = original_fields.get("status")
 
         if self.instance.pk:
-            self.fields['status'].initial = self.instance.panel.status
+            self.fields["status"].initial = self.instance.panel.status
             if gel_curator:
-                self.fields['child_panels'].initial = self.instance.child_panels.values_list('pk', flat=True)
-                self.fields['types'].initial = self.instance.panel.types.values_list('pk', flat=True)
+                self.fields[
+                    "child_panels"
+                ].initial = self.instance.child_panels.values_list("pk", flat=True)
+                self.fields["types"].initial = self.instance.panel.types.values_list(
+                    "pk", flat=True
+                )
 
     def clean_level4(self):
-        if not self.instance.pk or self.cleaned_data['level4'] != self.instance.level4title.name:
-            if GenePanelSnapshot.objects.get_active(all=True, internal=True).exclude(panel__status=GenePanel.STATUS.deleted).filter(
-                    level4title__name=self.cleaned_data['level4']).exists():
-                raise forms.ValidationError('Panel with this name already exists')
+        if (
+            not self.instance.pk
+            or self.cleaned_data["level4"] != self.instance.level4title.name
+        ):
+            if (
+                GenePanelSnapshot.objects.get_active(all=True, internal=True)
+                .exclude(panel__status=GenePanel.STATUS.deleted)
+                .filter(level4title__name=self.cleaned_data["level4"])
+                .exists()
+            ):
+                raise forms.ValidationError("Panel with this name already exists")
 
-        return self.cleaned_data['level4']
+        return self.cleaned_data["level4"]
 
     def clean_omim(self):
-        return self._clean_array(self.cleaned_data['omim'])
+        return self._clean_array(self.cleaned_data["omim"])
 
     def clean_orphanet(self):
-        return self._clean_array(self.cleaned_data['orphanet'])
+        return self._clean_array(self.cleaned_data["orphanet"])
 
     def clean_hpo(self):
-        return self._clean_array(self.cleaned_data['hpo'])
+        return self._clean_array(self.cleaned_data["hpo"])
 
     def save(self, *args, **kwargs):
         new_level4 = Level4Title(
-            level2title=self.cleaned_data['level2'].strip(),
-            level3title=self.cleaned_data['level3'].strip(),
-            name=self.cleaned_data['level4'].strip(),
-            description=self.cleaned_data['description'].strip(),
-            omim=self.cleaned_data['omim'],
-            hpo=self.cleaned_data['hpo'],
-            orphanet=self.cleaned_data['orphanet']
+            level2title=self.cleaned_data["level2"].strip(),
+            level3title=self.cleaned_data["level3"].strip(),
+            name=self.cleaned_data["level4"].strip(),
+            description=self.cleaned_data["description"].strip(),
+            omim=self.cleaned_data["omim"],
+            hpo=self.cleaned_data["hpo"],
+            orphanet=self.cleaned_data["orphanet"],
         )
 
         activities = []
@@ -133,48 +147,60 @@ class PanelForm(forms.ModelForm):
                 data_changed = True
                 new_level4.save()
                 if level4title.name != new_level4.name:
-                    activities.append("Panel name changed from {} to {}".format(
-                        level4title.name,
-                        new_level4.name
-                    ))
+                    activities.append(
+                        "Panel name changed from {} to {}".format(
+                            level4title.name, new_level4.name
+                        )
+                    )
 
                 if level4title.hpo != new_level4.hpo:
-                    activities.append("HPO terms changed from {} to {}".format(
-                        ', '.join(level4title.hpo),
-                        ', '.join(new_level4.hpo)
-                    ))
+                    activities.append(
+                        "HPO terms changed from {} to {}".format(
+                            ", ".join(level4title.hpo), ", ".join(new_level4.hpo)
+                        )
+                    )
 
                 self.instance.level4title = new_level4
                 self.instance.panel.name = new_level4.name
 
-            if 'old_panels' in self.changed_data:
-                activities.append("List of related panels changed from {} to {}".format(
-                    "; ".join(current_instance.old_panels),
-                    "; ".join(self.cleaned_data['old_panels'])
-                ))
-                self.instance.old_panels = self.cleaned_data['old_panels']
-            
-            if 'status' in self.changed_data:
-                activities.append("Panel status changed from {} to {}".format(
-                    current_instance.panel.status,
-                    self.cleaned_data['status']
-                ))
-                self.instance.panel.status = self.cleaned_data['status']
+            if "old_panels" in self.changed_data:
+                activities.append(
+                    "List of related panels changed from {} to {}".format(
+                        "; ".join(current_instance.old_panels),
+                        "; ".join(self.cleaned_data["old_panels"]),
+                    )
+                )
+                self.instance.old_panels = self.cleaned_data["old_panels"]
+
+            if "status" in self.changed_data:
+                activities.append(
+                    "Panel status changed from {} to {}".format(
+                        current_instance.panel.status, self.cleaned_data["status"]
+                    )
+                )
+                self.instance.panel.status = self.cleaned_data["status"]
 
             update_stats_superpanel = True
-            if 'child_panels' in self.changed_data:
-                self.instance.child_panels.set(self.cleaned_data['child_panels'])
-                activities.append("Changed child panels to: {}".format(
-                    "; ".join(self.instance.child_panels.values_list('panel__name', flat=True))
-                ))
+            if "child_panels" in self.changed_data:
+                self.instance.child_panels.set(self.cleaned_data["child_panels"])
+                activities.append(
+                    "Changed child panels to: {}".format(
+                        "; ".join(
+                            self.instance.child_panels.values_list(
+                                "panel__name", flat=True
+                            )
+                        )
+                    )
+                )
                 update_stats_superpanel = False
 
-
-            if 'types' in self.changed_data:
-                panel.types.set(self.cleaned_data['types'])
-                activities.append("Panel types changed to {}".format(
-                    "; ".join(panel.types.values_list('name', flat=True)),
-                ))
+            if "types" in self.changed_data:
+                panel.types.set(self.cleaned_data["types"])
+                activities.append(
+                    "Panel types changed to {}".format(
+                        "; ".join(panel.types.values_list("name", flat=True))
+                    )
+                )
 
             if data_changed or self.changed_data:
                 self.instance.increment_version()
@@ -185,33 +211,48 @@ class PanelForm(forms.ModelForm):
 
         else:
             panel = GenePanel.objects.create(
-                name=self.cleaned_data['level4'].strip(),
-                status=self.cleaned_data['status']
+                name=self.cleaned_data["level4"].strip(),
+                status=self.cleaned_data["status"],
             )
             new_level4.save()
 
             activities.append("Added Panel {}".format(panel.name))
-            if self.cleaned_data['old_panels']:
-                activities.append("Set list of related panels to {}".format(
-                    "; ".join(self.cleaned_data['old_panels'])))
+            if self.cleaned_data["old_panels"]:
+                activities.append(
+                    "Set list of related panels to {}".format(
+                        "; ".join(self.cleaned_data["old_panels"])
+                    )
+                )
 
             self.instance.panel = panel
             self.instance.level4title = new_level4
-            self.instance.old_panels = self.cleaned_data['old_panels']
+            self.instance.old_panels = self.cleaned_data["old_panels"]
             self.instance.save()
-            if self.cleaned_data.get('child_panels'):
-                self.instance.child_panels.set(self.cleaned_data['child_panels'])
-                self.instance.major_version = max(self.instance.child_panels.values_list('major_version', flat=True))
-                self.instance.save(update_fields=['major_version', ])
+            if self.cleaned_data.get("child_panels"):
+                self.instance.child_panels.set(self.cleaned_data["child_panels"])
+                self.instance.major_version = max(
+                    self.instance.child_panels.values_list("major_version", flat=True)
+                )
+                self.instance.save(update_fields=["major_version"])
                 self.instance.update_saved_stats(use_db=False)
-                activities.append("Set child panels to: {}".format(
-                    '; '.join(list(self.instance.child_panels.values_list('panel__name', flat=True)))
-                ))
-            if self.cleaned_data.get('types'):
-                panel.types.set(self.cleaned_data['types'])
-                activities.append("Set panel types to: {}".format(
-                    '; '.join(panel.types.values_list('name', flat=True))
-                ))
+                activities.append(
+                    "Set child panels to: {}".format(
+                        "; ".join(
+                            list(
+                                self.instance.child_panels.values_list(
+                                    "panel__name", flat=True
+                                )
+                            )
+                        )
+                    )
+                )
+            if self.cleaned_data.get("types"):
+                panel.types.set(self.cleaned_data["types"])
+                activities.append(
+                    "Set panel types to: {}".format(
+                        "; ".join(panel.types.values_list("name", flat=True))
+                    )
+                )
 
         if activities:
             panel.add_activity(self.request.user, "\n".join(activities))

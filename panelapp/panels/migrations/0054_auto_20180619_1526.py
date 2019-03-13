@@ -28,17 +28,17 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('panels', '0053_genepanelsnapshot_child_panels'),
-    ]
+    dependencies = [("panels", "0053_genepanelsnapshot_child_panels")]
 
     operations = [
         migrations.AddIndex(
-            model_name='genepanelentrysnapshot',
-            index=models.Index(fields=['ready'], name='panels_gene_ready_881755_idx'),
+            model_name="genepanelentrysnapshot",
+            index=models.Index(fields=["ready"], name="panels_gene_ready_881755_idx"),
         ),
         migrations.AddIndex(
-            model_name='genepanelentrysnapshot',
-            index=models.Index(fields=['saved_gel_status'], name='panels_gene_saved_g_e6461a_idx'),
+            model_name="genepanelentrysnapshot",
+            index=models.Index(
+                fields=["saved_gel_status"], name="panels_gene_saved_g_e6461a_idx"
+            ),
         ),
     ]

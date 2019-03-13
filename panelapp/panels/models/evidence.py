@@ -29,11 +29,8 @@ from accounts.models import Reviewer
 
 class Evidence(TimeStampedModel):
     class Meta:
-        ordering = ['-created', ]
-        indexes = [
-            models.Index(fields=['name']),
-            models.Index(fields=['rating']),
-        ]
+        ordering = ["-created"]
+        indexes = [models.Index(fields=["name"]), models.Index(fields=["rating"])]
 
     HIGH_CONFIDENCE_SOURCES = [
         "Radboud University Medical Center, Nijmegen",
@@ -48,7 +45,7 @@ class Evidence(TimeStampedModel):
         "Expert Review",
         "Literature",
         "Eligibility statement prior genetic testing",
-        "Research"
+        "Research",
     ]
 
     ALL_SOURCES = HIGH_CONFIDENCE_SOURCES + OTHER_SOURCES
@@ -57,7 +54,7 @@ class Evidence(TimeStampedModel):
         "Expert Review Green": 4,
         "Expert Review Amber": 2,
         "Expert Review Red": 1,
-        "Expert Review Removed": 0
+        "Expert Review Removed": 0,
     }
 
     name = models.CharField(max_length=255)
@@ -93,5 +90,5 @@ class Evidence(TimeStampedModel):
             "comment": self.comment,
             "rating": self.rating,
             "date": self.created,
-            "type": self.type
+            "type": self.type,
         }

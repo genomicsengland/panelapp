@@ -30,17 +30,9 @@ from django.db import migrations
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('panels', '0048_auto_20180606_1556'),
-    ]
+    dependencies = [("panels", "0048_auto_20180606_1556")]
 
     operations = [
-        migrations.RemoveField(
-            model_name='activity',
-            name='gene_symbol',
-        ),
-        migrations.RemoveField(
-            model_name='activity',
-            name='str_name',
-        ),
+        migrations.RemoveField(model_name="activity", name="gene_symbol"),
+        migrations.RemoveField(model_name="activity", name="str_name"),
     ]

@@ -33,17 +33,17 @@ from panels.models import GenePanelEntrySnapshot
 class UpdateGeneTagsForm(forms.ModelForm):
     class Meta:
         model = GenePanelEntrySnapshot
-        fields = ('tags',)
+        fields = ("tags",)
 
     tags = forms.ModelMultipleChoiceField(
         queryset=Tag.objects.all(),
         widget=ModelSelect2Multiple(url="autocomplete-tags"),
-        required=False
+        required=False,
     )
 
     def save(self, *args, **kwargs):
-        if 'tags' in self.changed_data:
-            self.instance.update_tags(kwargs['user'], self.cleaned_data['tags'])
+        if "tags" in self.changed_data:
+            self.instance.update_tags(kwargs["user"], self.cleaned_data["tags"])
 
 
 class UpdateGeneMOPForm(forms.ModelForm):
@@ -51,15 +51,16 @@ class UpdateGeneMOPForm(forms.ModelForm):
 
     class Meta:
         model = GenePanelEntrySnapshot
-        fields = ('mode_of_pathogenicity',)
+        fields = ("mode_of_pathogenicity",)
 
     def save(self, *args, **kwargs):
-        mop = self.cleaned_data['mode_of_pathogenicity']
-        comment = self.cleaned_data['comment']
-        user = kwargs.pop('user')
+        mop = self.cleaned_data["mode_of_pathogenicity"]
+        comment = self.cleaned_data["comment"]
+        user = kwargs.pop("user")
         self.instance.panel.increment_version()
-        self.instance = GenePanel.objects.get(pk=self.instance.panel.panel.pk)\
-            .active_panel.get_gene(self.instance.gene['gene_symbol'])
+        self.instance = GenePanel.objects.get(
+            pk=self.instance.panel.panel.pk
+        ).active_panel.get_gene(self.instance.gene["gene_symbol"])
         self.instance.update_pathogenicity(mop, user, comment)
         self.instance.panel.update_saved_stats()
 
@@ -69,15 +70,16 @@ class UpdateGeneMOIForm(forms.ModelForm):
 
     class Meta:
         model = GenePanelEntrySnapshot
-        fields = ('moi',)
+        fields = ("moi",)
 
     def save(self, *args, **kwargs):
-        moi = self.cleaned_data['moi']
-        comment = self.cleaned_data['comment']
-        user = kwargs.pop('user')
+        moi = self.cleaned_data["moi"]
+        comment = self.cleaned_data["comment"]
+        user = kwargs.pop("user")
         self.instance.panel.increment_version()
-        self.instance = GenePanel.objects.get(pk=self.instance.panel.panel.pk)\
-            .active_panel.get_gene(self.instance.gene['gene_symbol'])
+        self.instance = GenePanel.objects.get(
+            pk=self.instance.panel.panel.pk
+        ).active_panel.get_gene(self.instance.gene["gene_symbol"])
         self.instance.update_moi(moi, user, comment)
         self.instance.panel.update_saved_stats()
 
@@ -87,20 +89,21 @@ class UpdateGenePhenotypesForm(forms.ModelForm):
     phenotypes = SimpleArrayField(
         forms.CharField(max_length=255),
         label="Phenotypes (separate using a semi-colon - ;)",
-        delimiter=";"
+        delimiter=";",
     )
 
     class Meta:
         model = GenePanelEntrySnapshot
-        fields = ('phenotypes',)
+        fields = ("phenotypes",)
 
     def save(self, *args, **kwargs):
-        phenotypes = self.cleaned_data['phenotypes']
-        comment = self.cleaned_data['comment']
-        user = kwargs.pop('user')
+        phenotypes = self.cleaned_data["phenotypes"]
+        comment = self.cleaned_data["comment"]
+        user = kwargs.pop("user")
         self.instance.panel.increment_version()
-        self.instance = GenePanel.objects.get(pk=self.instance.panel.panel.pk)\
-            .active_panel.get_gene(self.instance.gene['gene_symbol'])
+        self.instance = GenePanel.objects.get(
+            pk=self.instance.panel.panel.pk
+        ).active_panel.get_gene(self.instance.gene["gene_symbol"])
         self.instance.update_phenotypes(phenotypes, user, comment)
         self.instance.panel.update_saved_stats()
 
@@ -111,20 +114,21 @@ class UpdateGenePublicationsForm(forms.ModelForm):
     publications = SimpleArrayField(
         forms.CharField(max_length=255),
         label="Publications (separate using a semi-colon - ;)",
-        delimiter=";"
+        delimiter=";",
     )
 
     class Meta:
         model = GenePanelEntrySnapshot
-        fields = ('publications',)
+        fields = ("publications",)
 
     def save(self, *args, **kwargs):
-        publications = self.cleaned_data['publications']
-        comment = self.cleaned_data['comment']
-        user = kwargs.pop('user')
+        publications = self.cleaned_data["publications"]
+        comment = self.cleaned_data["comment"]
+        user = kwargs.pop("user")
         self.instance.panel.increment_version()
-        self.instance = GenePanel.objects.get(pk=self.instance.panel.panel.pk)\
-            .active_panel.get_gene(self.instance.gene['gene_symbol'])
+        self.instance = GenePanel.objects.get(
+            pk=self.instance.panel.panel.pk
+        ).active_panel.get_gene(self.instance.gene["gene_symbol"])
         self.instance.update_publications(publications, user, comment)
         self.instance.panel.update_saved_stats()
 
@@ -135,21 +139,22 @@ class UpdateGeneRatingForm(forms.ModelForm):
 
     class Meta:
         model = GenePanelEntrySnapshot
-        fields = ('saved_gel_status',)
+        fields = ("saved_gel_status",)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         original_fields = self.fields
         self.fields = OrderedDict()
-        self.fields['status'] = original_fields['status']
-        self.fields['status'].initial = self.instance.saved_gel_status
-        self.fields['comment'] = original_fields['comment']
+        self.fields["status"] = original_fields["status"]
+        self.fields["status"].initial = self.instance.saved_gel_status
+        self.fields["comment"] = original_fields["comment"]
 
     def save(self, *args, **kwargs):
-        status = self.cleaned_data['status']
-        user = kwargs.pop('user')
+        status = self.cleaned_data["status"]
+        user = kwargs.pop("user")
         self.instance.panel.increment_version()
-        self.instance = GenePanel.objects.get(pk=self.instance.panel.panel.pk)\
-            .active_panel.get_gene(self.instance.gene['gene_symbol'])
-        self.instance.update_rating(status, user, self.cleaned_data['comment'])
+        self.instance = GenePanel.objects.get(
+            pk=self.instance.panel.panel.pk
+        ).active_panel.get_gene(self.instance.gene["gene_symbol"])
+        self.instance.update_rating(status, user, self.cleaned_data["comment"])
         self.instance.panel.update_saved_stats()

@@ -31,35 +31,32 @@ from django.db.models import Q
 
 def migrate_other_value(apps, schema_editor):
     # Migrate `Other` value stored in database as it's stored with a comment
-    Evaluation = apps.get_model('panels', 'Evaluation')
+    Evaluation = apps.get_model("panels", "Evaluation")
     for ev in Evaluation.objects.filter(
-            Q(moi='Other - please specifiy in evaluation comments') |
-            Q(mode_of_pathogenicity='Other - please provide details in the comments')):
-        if ev.moi == 'Other - please specifiy in evaluation comments':
-            ev.moi = 'Other'
-        if ev.mode_of_pathogenicity == 'Other - please provide details in the comments':
-            ev.mode_of_pathogenicity = 'Other'
+        Q(moi="Other - please specifiy in evaluation comments")
+        | Q(mode_of_pathogenicity="Other - please provide details in the comments")
+    ):
+        if ev.moi == "Other - please specifiy in evaluation comments":
+            ev.moi = "Other"
+        if ev.mode_of_pathogenicity == "Other - please provide details in the comments":
+            ev.mode_of_pathogenicity = "Other"
         ev.save()
 
 
 def migrate_other_back(apps, schema_editor):
-    Evaluation = apps.get_model('panels', 'Evaluation')
+    Evaluation = apps.get_model("panels", "Evaluation")
     for ev in Evaluation.objects.filter(
-            Q(moi='Other') |
-            Q(mode_of_pathogenicity='Other')):
-        if ev.moi == 'Other':
-            ev.moi = 'Other - please specifiy in evaluation comments'
-        if ev.mode_of_pathogenicity == 'Other':
-            ev.mode_of_pathogenicity = 'Other - please provide details in the comments'
+        Q(moi="Other") | Q(mode_of_pathogenicity="Other")
+    ):
+        if ev.moi == "Other":
+            ev.moi = "Other - please specifiy in evaluation comments"
+        if ev.mode_of_pathogenicity == "Other":
+            ev.mode_of_pathogenicity = "Other - please provide details in the comments"
         ev.save()
 
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('panels', '0050_auto_20180607_1545'),
-    ]
+    dependencies = [("panels", "0050_auto_20180607_1545")]
 
-    operations = [
-        migrations.RunPython(migrate_other_value, migrate_other_back)
-    ]
+    operations = [migrations.RunPython(migrate_other_value, migrate_other_back)]

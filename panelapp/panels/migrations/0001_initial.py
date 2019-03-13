@@ -32,30 +32,53 @@ class Migration(migrations.Migration):
 
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='UploadedGeneList',
+            name="UploadedGeneList",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('imported', models.BooleanField(default=False)),
-                ('gene_list', models.FileField(upload_to='genes')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("imported", models.BooleanField(default=False)),
+                ("gene_list", models.FileField(upload_to="genes")),
             ],
         ),
         migrations.CreateModel(
-            name='UploadedPanelList',
+            name="UploadedPanelList",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('panel_list', models.FileField(upload_to='panels')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("panel_list", models.FileField(upload_to="panels")),
             ],
         ),
         migrations.CreateModel(
-            name='UploadedReviewsList',
+            name="UploadedReviewsList",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('reviews', models.FileField(upload_to='reviews')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("reviews", models.FileField(upload_to="reviews")),
             ],
         ),
     ]

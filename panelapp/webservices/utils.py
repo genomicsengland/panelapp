@@ -1,9 +1,9 @@
 ##
 ## Copyright (c) 2016-2019 Genomics England Ltd.
-## 
+##
 ## This file is part of PanelApp
 ## (see https://panelapp.genomicsengland.co.uk).
-## 
+##
 ## Licensed to the Apache Software Foundation (ASF) under one
 ## or more contributor license agreements.  See the NOTICE file
 ## distributed with this work for additional information
@@ -11,9 +11,9 @@
 ## to you under the Apache License, Version 2.0 (the
 ## "License"); you may not use this file except in compliance
 ## with the License.  You may obtain a copy of the License at
-## 
+##
 ##   http://www.apache.org/licenses/LICENSE-2.0
-## 
+##
 ## Unless required by applicable law or agreed to in writing,
 ## software distributed under the License is distributed on an
 ## "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -33,7 +33,7 @@ def convert_moi(moi, back=False):
         "X-LINKED: hemizygous mutation in males, biallelic mutations in females": "xlinked_biallelic",
         "X-LINKED: hemizygous mutation in males, monoallelic mutations in females may cause disease (may be less severe, later onset than males)": "xlinked_monoallelic",  # noqa
         "MITOCHONDRIAL": "mitochondrial",
-        "Unknown": "unknown"
+        "Unknown": "unknown",
     }
 
     if back:
@@ -55,8 +55,8 @@ def convert_moi(moi, back=False):
 
 def convert_mop(mop, back=False):
     short_terms = {
-        'Loss-of-function variants (as defined in pop up message) DO NOT cause this phenotype - please provide details in the comments': 'no_loss_of_function',  # noqa
-        'Other - please provide details in the comments': 'other'
+        "Loss-of-function variants (as defined in pop up message) DO NOT cause this phenotype - please provide details in the comments": "no_loss_of_function",  # noqa
+        "Other - please provide details in the comments": "other",
     }
 
     if back:
@@ -76,16 +76,16 @@ def convert_mop(mop, back=False):
 
 def convert_evidences(evidence, back=False):
     short_terms = {
-        "Radboud University Medical Center, Nijmegen": 'radboud_university_medical_center_nijmegen',
-        "Illumina TruGenome Clinical Sequencing Services": 'illumina_trugenome_clinical_sequencing_services',
-        "Emory Genetics Laboratory": 'emory_genetics_laboratory',
-        "UKGTN": 'ukgtn',
-        "Other": 'other',
-        "Expert list": 'export_list',
-        "Expert Review": 'export_review',
-        "Literature": 'literature',
-        "Eligibility statement prior genetic testing": 'eligibility_statement_prior_genetic_testing',
-        "Research": 'research'
+        "Radboud University Medical Center, Nijmegen": "radboud_university_medical_center_nijmegen",
+        "Illumina TruGenome Clinical Sequencing Services": "illumina_trugenome_clinical_sequencing_services",
+        "Emory Genetics Laboratory": "emory_genetics_laboratory",
+        "UKGTN": "ukgtn",
+        "Other": "other",
+        "Expert list": "export_list",
+        "Expert Review": "export_review",
+        "Literature": "literature",
+        "Eligibility statement prior genetic testing": "eligibility_statement_prior_genetic_testing",
+        "Research": "research",
     }
 
     if back:
@@ -116,10 +116,10 @@ def convert_gel_status(gel_status):
 
 def convert_confidence_level(conf_level):
     map_levels = {
-        'HighEvidence': 3,
-        'ModerateEvidence': 2,
-        'LowEvidence': 1,
-        'NoList': 0
+        "HighEvidence": 3,
+        "ModerateEvidence": 2,
+        "LowEvidence": 1,
+        "NoList": 0,
     }
 
     if conf_level in map_levels:
@@ -133,6 +133,7 @@ def make_null(value):
         return None
     else:
         return value
+
 
 def filter_empty(value):
     return bool(value)

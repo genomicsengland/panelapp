@@ -40,8 +40,14 @@ class TrackRecord(TimeStampedModel):
         ("SetModelofInheritance", "Set Mode of Inheritance"),
         ("ClearSources", "Clear Sources"),
         ("SetModeofPathogenicity", "Set mode of pathogenicity"),
-        ("GeneClassifiedbyGenomicsEnglandCurator", "Gene classified by Genomics England curator"),
-        ("EntityClassifiedbyGenomicsEnglandCurator", "Entity classified by Genomics England curator"),
+        (
+            "GeneClassifiedbyGenomicsEnglandCurator",
+            "Gene classified by Genomics England curator",
+        ),
+        (
+            "EntityClassifiedbyGenomicsEnglandCurator",
+            "Entity classified by Genomics England curator",
+        ),
         ("SetModeofInheritance", "Set mode of inheritance"),
         ("SetPenetrance", "Set penetrance"),
         ("SetPublications", "Set publications"),
@@ -60,17 +66,19 @@ class TrackRecord(TimeStampedModel):
         ("ChangedPathogenicRepeats", "Changed Pathogenic Number of Repeats"),
         ("RemovedGene", "Removed Gene from the STR"),
         ("ChangedRepeatedSequence", "Changed Repeated Sequence"),
-        ('ChangedEffectTypes', 'Changed Effect Types'),
-        ('ChangedVariantType', 'Changed Variant Types'),
-        ('ChangedHaploinsufficiencyScore', 'Changed Haploinsufficiency Score'),
-        ('ChangedTriplosensitivityScore', 'Changed Triplosensitivity Score'),
-        ('ChangedRequiredOverlapPercentage', 'Changed Required Overlap Percentage'),
+        ("ChangedEffectTypes", "Changed Effect Types"),
+        ("ChangedVariantType", "Changed Variant Types"),
+        ("ChangedHaploinsufficiencyScore", "Changed Haploinsufficiency Score"),
+        ("ChangedTriplosensitivityScore", "Changed Triplosensitivity Score"),
+        ("ChangedRequiredOverlapPercentage", "Changed Required Overlap Percentage"),
     )
 
     class Meta:
-        ordering = ('-created',)
+        ordering = ("-created",)
 
-    issue_type = models.CharField(choices=ISSUE_TYPES, max_length=1024)  # can this be standartized?
+    issue_type = models.CharField(
+        choices=ISSUE_TYPES, max_length=1024
+    )  # can this be standartized?
     issue_description = models.TextField()
     user = models.ForeignKey(User, on_delete=models.PROTECT)
     curator_status = models.IntegerField(default=0)  # Boolean maybe?
@@ -83,5 +91,5 @@ class TrackRecord(TimeStampedModel):
             "curator_status": self.curator_status,
             "issue_type": self.issue_type,
             "issue_description": self.issue_description,
-            "user": self.user
+            "user": self.user,
         }

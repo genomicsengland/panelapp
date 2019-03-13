@@ -1,9 +1,9 @@
 ##
 ## Copyright (c) 2016-2019 Genomics England Ltd.
-## 
+##
 ## This file is part of PanelApp
 ## (see https://panelapp.genomicsengland.co.uk).
-## 
+##
 ## Licensed to the Apache Software Foundation (ASF) under one
 ## or more contributor license agreements.  See the NOTICE file
 ## distributed with this work for additional information
@@ -11,9 +11,9 @@
 ## to you under the Apache License, Version 2.0 (the
 ## "License"); you may not use this file except in compliance
 ## with the License.  You may obtain a copy of the License at
-## 
+##
 ##   http://www.apache.org/licenses/LICENSE-2.0
-## 
+##
 ## Unless required by applicable law or agreed to in writing,
 ## software distributed under the License is distributed on an
 ## "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -29,16 +29,16 @@ from .models import Image
 from .models import File
 
 
-admin.site.site_header = 'PanelApp administration'
+admin.site.site_header = "PanelApp administration"
 
 
 class HomeTextAdmin(MarkdownxModelAdmin):
-    list_display = ('section', 'href', 'title')
+    list_display = ("section", "href", "title")
 
 
 class ImageAdmin(admin.ModelAdmin):
-    list_display = ('pk', 'alt', 'title',)
-    readonly_fields = ('view_example',)
+    list_display = ("pk", "alt", "title")
+    readonly_fields = ("view_example",)
 
     def view_example(self, obj):
         "Example of how to use this image with markdown syntax"
@@ -46,13 +46,13 @@ class ImageAdmin(admin.ModelAdmin):
         site = Site.objects.get_current()
         return "![{0}](https://{1}{2})".format(obj.alt, site.domain, obj.image.url)
 
-    view_example.empty_value_display = ''
-    view_example.short_description = 'Markdown example'
+    view_example.empty_value_display = ""
+    view_example.short_description = "Markdown example"
 
 
 class FileAdmin(admin.ModelAdmin):
-    list_display = ('pk', 'title',)
-    readonly_fields = ('view_example',)
+    list_display = ("pk", "title")
+    readonly_fields = ("view_example",)
 
     def view_example(self, obj):
         "File url"
@@ -60,8 +60,8 @@ class FileAdmin(admin.ModelAdmin):
         site = Site.objects.get_current()
         return "[{0}](https://{1}{2})".format(obj.title, site.domain, obj.file.url)
 
-    view_example.empty_value_display = ''
-    view_example.short_description = 'File url'
+    view_example.empty_value_display = ""
+    view_example.short_description = "File url"
 
 
 admin.site.register(HomeText, HomeTextAdmin)

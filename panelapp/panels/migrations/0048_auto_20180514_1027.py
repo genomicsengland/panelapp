@@ -30,13 +30,6 @@ from django.db import migrations
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('panels', '0047_auto_20180509_1014'),
-    ]
+    dependencies = [("panels", "0047_auto_20180509_1014")]
 
-    operations = [
-        migrations.AlterModelOptions(
-            name='gene',
-            options={},
-        ),
-    ]
+    operations = [migrations.AlterModelOptions(name="gene", options={})]

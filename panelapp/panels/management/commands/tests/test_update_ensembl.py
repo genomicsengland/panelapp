@@ -50,10 +50,22 @@ class CommandUpdateEnsemblTest(LoginGELUser):
         super().setUp()
 
     def test_update_ensembl(self):
-        gene_symbol = 'FAM58A'
+        gene_symbol = "FAM58A"
         gene_to_update = GeneFactory(gene_symbol=gene_symbol)
-        ensembl_data = {"GRch37": {"82": {"ensembl_id": "ENSG00000147382", "location": "X:152853377-152865500"}},
-                        "GRch38": {"90": {"ensembl_id": "ENSG00000262919", "location": "X:153587919-153600045"}}}
+        ensembl_data = {
+            "GRch37": {
+                "82": {
+                    "ensembl_id": "ENSG00000147382",
+                    "location": "X:152853377-152865500",
+                }
+            },
+            "GRch38": {
+                "90": {
+                    "ensembl_id": "ENSG00000262919",
+                    "location": "X:153587919-153600045",
+                }
+            },
+        }
         json_data = {gene_symbol: ensembl_data}
 
         gps = GenePanelSnapshotFactory()
@@ -71,14 +83,16 @@ class CommandUpdateEnsemblTest(LoginGELUser):
         RegionFactory.create(gene_core=gene_to_update, panel=gps_2)
 
         # make sure ensembl data doesn't match
-        for gene in GenePanelEntrySnapshot.objects.filter(gene__gene_symbol=gene_symbol):
-            self.assertNotEqual(gene.gene.get('ensembl_genes'), ensembl_data)
+        for gene in GenePanelEntrySnapshot.objects.filter(
+            gene__gene_symbol=gene_symbol
+        ):
+            self.assertNotEqual(gene.gene.get("ensembl_genes"), ensembl_data)
 
         for str in STR.objects.filter(gene__gene_symbol=gene_symbol):
-            self.assertNotEqual(gene.gene.get('ensembl_genes'), ensembl_data)
+            self.assertNotEqual(gene.gene.get("ensembl_genes"), ensembl_data)
 
         for region in Region.objects.filter(gene__gene_symbol=gene_symbol):
-            self.assertNotEqual(gene.gene.get('ensembl_genes'), ensembl_data)
+            self.assertNotEqual(gene.gene.get("ensembl_genes"), ensembl_data)
 
         gps_pk = gps.pk
         gps_version = gps.version
@@ -87,14 +101,18 @@ class CommandUpdateEnsemblTest(LoginGELUser):
         process(json_data)
 
         # make sure previous data didn't change
-        for gene in GenePanelEntrySnapshot.objects.filter(gene__gene_symbol=gene_symbol, panel_id=gps_pk):
-            self.assertNotEqual(gene.gene.get('ensembl_genes'), ensembl_data)
+        for gene in GenePanelEntrySnapshot.objects.filter(
+            gene__gene_symbol=gene_symbol, panel_id=gps_pk
+        ):
+            self.assertNotEqual(gene.gene.get("ensembl_genes"), ensembl_data)
 
         for str in STR.objects.filter(gene__gene_symbol=gene_symbol, panel_id=gps_pk):
-            self.assertNotEqual(gene.gene.get('ensembl_genes'), ensembl_data)
+            self.assertNotEqual(gene.gene.get("ensembl_genes"), ensembl_data)
 
-        for region in Region.objects.filter(gene__gene_symbol=gene_symbol, panel_id=gps_pk):
-            self.assertNotEqual(gene.gene.get('ensembl_genes'), ensembl_data)
+        for region in Region.objects.filter(
+            gene__gene_symbol=gene_symbol, panel_id=gps_pk
+        ):
+            self.assertNotEqual(gene.gene.get("ensembl_genes"), ensembl_data)
 
         gps = gps.panel.active_panel
         gps_2 = gps_2.panel.active_panel
@@ -103,11 +121,13 @@ class CommandUpdateEnsemblTest(LoginGELUser):
         self.assertNotEqual(gps_2_version, gps_2.version)
 
         # make sure new data has changed
-        for gene in GenePanelEntrySnapshot.objects.filter(gene__gene_symbol=gene_symbol, panel=gps):
-            self.assertEqual(gene.gene.get('ensembl_genes'), ensembl_data)
+        for gene in GenePanelEntrySnapshot.objects.filter(
+            gene__gene_symbol=gene_symbol, panel=gps
+        ):
+            self.assertEqual(gene.gene.get("ensembl_genes"), ensembl_data)
 
         for str in STR.objects.filter(gene__gene_symbol=gene_symbol, panel=gps):
-            self.assertEqual(gene.gene.get('ensembl_genes'), ensembl_data)
+            self.assertEqual(gene.gene.get("ensembl_genes"), ensembl_data)
 
         for region in Region.objects.filter(gene__gene_symbol=gene_symbol, panel=gps):
-            self.assertEqual(gene.gene.get('ensembl_genes'), ensembl_data)
+            self.assertEqual(gene.gene.get("ensembl_genes"), ensembl_data)

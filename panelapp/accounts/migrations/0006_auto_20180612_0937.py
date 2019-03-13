@@ -1,9 +1,9 @@
 ##
 ## Copyright (c) 2016-2019 Genomics England Ltd.
-## 
+##
 ## This file is part of PanelApp
 ## (see https://panelapp.genomicsengland.co.uk).
-## 
+##
 ## Licensed to the Apache Software Foundation (ASF) under one
 ## or more contributor license agreements.  See the NOTICE file
 ## distributed with this work for additional information
@@ -11,9 +11,9 @@
 ## to you under the Apache License, Version 2.0 (the
 ## "License"); you may not use this file except in compliance
 ## with the License.  You may obtain a copy of the License at
-## 
+##
 ##   http://www.apache.org/licenses/LICENSE-2.0
-## 
+##
 ## Unless required by applicable law or agreed to in writing,
 ## software distributed under the License is distributed on an
 ## "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -34,17 +34,17 @@ from panels.models import UploadedGeneList
 from panels.models import UploadedPanelList
 from panels.models import UploadedReviewsList
 
-user_support_group = 'User Support'
-site_editor_group = 'Site Editor'
-file_upload_curation_group = 'File Upload Curation'
+user_support_group = "User Support"
+site_editor_group = "Site Editor"
+file_upload_curation_group = "File Upload Curation"
 
 
 def create_panelapp_groups(apps, schema_editor):
-    Group = apps.get_model('auth', 'Group')
-    Permission = apps.get_model('auth', 'Permission')
-    ContentType = apps.get_model('contenttypes', 'ContentType')
-    User = apps.get_model('accounts', 'User')
-    Reviewer = apps.get_model('accounts', 'Reviewer')
+    Group = apps.get_model("auth", "Group")
+    Permission = apps.get_model("auth", "Permission")
+    ContentType = apps.get_model("contenttypes", "ContentType")
+    User = apps.get_model("accounts", "User")
+    Reviewer = apps.get_model("accounts", "Reviewer")
 
     user_content_type = ContentType.objects.get_for_model(User)
     reviewer_content_type = ContentType.objects.get_for_model(Reviewer)
@@ -62,7 +62,9 @@ def create_panelapp_groups(apps, schema_editor):
     site_editor = Group.objects.create(name=site_editor_group)
     site_editor.permissions.set(
         Permission.objects.filter(
-            Q(content_type=hometext_content_type) | Q(content_type=image_content_type) | Q(content_type=file_content_type)
+            Q(content_type=hometext_content_type)
+            | Q(content_type=image_content_type)
+            | Q(content_type=file_content_type)
         )
     )
 
@@ -72,26 +74,22 @@ def create_panelapp_groups(apps, schema_editor):
     site_editor = Group.objects.create(name=file_upload_curation_group)
     site_editor.permissions.set(
         Permission.objects.filter(
-            Q(content_type=gene_list_content_type) | Q(content_type=panel_list_content_type) | Q(
-                content_type=reviews_list_content_type)
+            Q(content_type=gene_list_content_type)
+            | Q(content_type=panel_list_content_type)
+            | Q(content_type=reviews_list_content_type)
         )
     )
 
 
 def delete_panelapp_groups(apps, schema_editor):
-    Group = apps.get_model('auth', 'Group')
+    Group = apps.get_model("auth", "Group")
     Group.objects.filter(name=user_support_group).delete()
     Group.objects.filter(name=site_editor_group).delete()
     Group.objects.filter(name=file_upload_curation_group).delete()
 
 
-
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('accounts', '0005_auto_20170816_0954'),
-    ]
+    dependencies = [("accounts", "0005_auto_20170816_0954")]
 
-    operations = [
-        migrations.RunPython(create_panelapp_groups, delete_panelapp_groups),
-    ]
+    operations = [migrations.RunPython(create_panelapp_groups, delete_panelapp_groups)]

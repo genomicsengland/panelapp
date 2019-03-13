@@ -1,9 +1,9 @@
 ##
 ## Copyright (c) 2016-2019 Genomics England Ltd.
-## 
+##
 ## This file is part of PanelApp
 ## (see https://panelapp.genomicsengland.co.uk).
-## 
+##
 ## Licensed to the Apache Software Foundation (ASF) under one
 ## or more contributor license agreements.  See the NOTICE file
 ## distributed with this work for additional information
@@ -11,9 +11,9 @@
 ## to you under the Apache License, Version 2.0 (the
 ## "License"); you may not use this file except in compliance
 ## with the License.  You may obtain a copy of the License at
-## 
+##
 ##   http://www.apache.org/licenses/LICENSE-2.0
-## 
+##
 ## Unless required by applicable law or agreed to in writing,
 ## software distributed under the License is distributed on an
 ## "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -34,27 +34,59 @@ class Migration(migrations.Migration):
 
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='HomeText',
+            name="HomeText",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('section', models.IntegerField()),
-                ('title', models.CharField(max_length=32)),
-                ('href', models.CharField(max_length=32)),
-                ('text', markdownx.models.MarkdownxField()),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("section", models.IntegerField()),
+                ("title", models.CharField(max_length=32)),
+                ("href", models.CharField(max_length=32)),
+                ("text", markdownx.models.MarkdownxField()),
             ],
         ),
         migrations.CreateModel(
-            name='Image',
+            name="Image",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('image', models.FileField(storage=panelapp.utils.storage.OverwriteStorage(), upload_to='images')),
-                ('alt', models.CharField(max_length=64, verbose_name='Alterative text')),
-                ('title', models.CharField(blank=True, max_length=128, null=True, verbose_name='Image title')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "image",
+                    models.FileField(
+                        storage=panelapp.utils.storage.OverwriteStorage(),
+                        upload_to="images",
+                    ),
+                ),
+                (
+                    "alt",
+                    models.CharField(max_length=64, verbose_name="Alterative text"),
+                ),
+                (
+                    "title",
+                    models.CharField(
+                        blank=True,
+                        max_length=128,
+                        null=True,
+                        verbose_name="Image title",
+                    ),
+                ),
             ],
         ),
     ]

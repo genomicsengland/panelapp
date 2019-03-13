@@ -37,7 +37,10 @@ class ActivityManager(models.Manager):
         """Return activities for all publicly visible panels"""
 
         qs = self.get_queryset()
-        qs = qs.filter(Q(panel__status=GenePanel.STATUS.public) | Q(panel__status=GenePanel.STATUS.promoted))
+        qs = qs.filter(
+            Q(panel__status=GenePanel.STATUS.public)
+            | Q(panel__status=GenePanel.STATUS.promoted)
+        )
         return qs
 
     def visible_to_gel(self):
@@ -48,7 +51,7 @@ class ActivityManager(models.Manager):
 
 class Activity(TimeStampedModel):
     class Meta:
-        ordering = ('-created',)
+        ordering = ("-created",)
 
     objects = ActivityManager()
 
@@ -62,40 +65,40 @@ class Activity(TimeStampedModel):
 
     @property
     def panel_version(self):
-        return self.extra_data.get('panel_version')
+        return self.extra_data.get("panel_version")
 
     @property
     def panel_name(self):
-        return self.extra_data.get('panel_name')
+        return self.extra_data.get("panel_name")
 
     @property
     def user_name(self):
-        return self.extra_data.get('user_name')
+        return self.extra_data.get("user_name")
 
     @classmethod
     def log(cls, user, panel_snapshot, text, extra_info):
         extra_data = deepcopy(extra_info)
 
         if user:
-            extra_data['user_name'] = user.get_full_name()
+            extra_data["user_name"] = user.get_full_name()
 
-        extra_data['panel_name'] = panel_snapshot.panel.name
-        extra_data['panel_id'] = panel_snapshot.panel_id
-        extra_data['panel_version'] = panel_snapshot.version
+        extra_data["panel_name"] = panel_snapshot.panel.name
+        extra_data["panel_id"] = panel_snapshot.panel_id
+        extra_data["panel_version"] = panel_snapshot.version
 
-        if 'entity_type' in extra_info:
-            extra_data['item_type'] = 'entity'
-            extra_data['entity_type'] = extra_info['entity_type']
-            extra_data['entity_name'] = extra_info['entity_name']
+        if "entity_type" in extra_info:
+            extra_data["item_type"] = "entity"
+            extra_data["entity_type"] = extra_info["entity_type"]
+            extra_data["entity_name"] = extra_info["entity_name"]
         else:
-            extra_data['item_type'] = 'panel'
+            extra_data["item_type"] = "panel"
 
         cls.objects.create(
             user=user,
             panel=panel_snapshot.panel,
             text=text,
             extra_data=extra_data,
-            item_type=extra_data['item_type'],
-            entity_type=extra_data.get('entity_type'),
-            entity_name=extra_data.get('entity_name')
+            item_type=extra_data["item_type"],
+            entity_type=extra_data.get("entity_type"),
+            entity_name=extra_data.get("entity_name"),
         )

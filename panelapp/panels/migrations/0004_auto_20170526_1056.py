@@ -30,13 +30,11 @@ from django.db import migrations
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('panels', '0003_auto_20170526_1041'),
-    ]
+    dependencies = [("panels", "0003_auto_20170526_1041")]
 
     operations = [
         migrations.AlterModelOptions(
-            name='genepanelsnapshot',
-            options={'get_latest_by': 'created', 'ordering': ['-created']},
-        ),
+            name="genepanelsnapshot",
+            options={"get_latest_by": "created", "ordering": ["-created"]},
+        )
     ]

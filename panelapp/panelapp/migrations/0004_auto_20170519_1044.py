@@ -1,9 +1,9 @@
 ##
 ## Copyright (c) 2016-2019 Genomics England Ltd.
-## 
+##
 ## This file is part of PanelApp
 ## (see https://panelapp.genomicsengland.co.uk).
-## 
+##
 ## Licensed to the Apache Software Foundation (ASF) under one
 ## or more contributor license agreements.  See the NOTICE file
 ## distributed with this work for additional information
@@ -11,9 +11,9 @@
 ## to you under the Apache License, Version 2.0 (the
 ## "License"); you may not use this file except in compliance
 ## with the License.  You may obtain a copy of the License at
-## 
+##
 ##   http://www.apache.org/licenses/LICENSE-2.0
-## 
+##
 ## Unless required by applicable law or agreed to in writing,
 ## software distributed under the License is distributed on an
 ## "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -32,23 +32,22 @@ import panelapp.utils.storage
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('panelapp', '0003_auto_20170518_1704'),
-    ]
+    dependencies = [("panelapp", "0003_auto_20170518_1704")]
 
     operations = [
         migrations.AlterModelOptions(
-            name='hometext',
-            options={'ordering': ['section']},
+            name="hometext", options={"ordering": ["section"]}
         ),
         migrations.AlterField(
-            model_name='hometext',
-            name='text',
+            model_name="hometext",
+            name="text",
             field=markdownx.models.MarkdownxField(blank=True),
         ),
         migrations.AlterField(
-            model_name='image',
-            name='image',
-            field=models.ImageField(storage=panelapp.utils.storage.OverwriteStorage(), upload_to='images'),
+            model_name="image",
+            name="image",
+            field=models.ImageField(
+                storage=panelapp.utils.storage.OverwriteStorage(), upload_to="images"
+            ),
         ),
     ]
