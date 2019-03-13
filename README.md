@@ -27,7 +27,7 @@ Overview
 
 The Panel App is a project based on Django Framework (v2.1) with PostgreSQL as a backend.
 
-Python version: 3.5 (installed via apt-get on Ubuntu 16.04.2)
+Python version: 3.5
 
 Python dependencies are installed via setup.py.
 
@@ -63,7 +63,7 @@ docker-compose run web python3 /app/panelapp/manage.py createsuperuser
 
 After the super user is created you'd need to create a Reviewer for the admin user.
 
-Go to [http://localhost:8000/GeL-admin/](http://localhost:8000/GeL-admin/), login with the credentials from the step
+Go to [http://localhost:8000/admin/](http://localhost:8000/admin/), login with the credentials from the step
 before, navigate to users, open the user, at the bottom of the page add information for the reviewer part:
 - Set user type to GEL
 - Add affiliation, Workplace, Role, Group
@@ -98,6 +98,7 @@ Tests
 * `HEALTH_CHECK_TOKEN` - URL token for authorizing status checks
 * `EMAIL_HOST_PASSWORD` - SMTP password
 * `ALLOWED_HOSTS` - whitelisted hostnames, if user tries to access website which isn't here Django will throw 500 error
+* `DJANGO_ADMIN_URL` - change admin URL to something secure.
 
 ## Other variables
 

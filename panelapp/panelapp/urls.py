@@ -69,7 +69,7 @@ urlpatterns = [
     path('api/', include('api.urls', namespace='api')),
     path('WebServices/', include('webservices.urls', namespace="webservices")),
     path('markdownx/', include('markdownx.urls')),
-    path('GeL-admin/', admin.site.urls),
+    path(settings.ADMIN_URL, admin.site.urls),
     path('autocomplete/gene/', GeneAutocomplete.as_view(), name="autocomplete-gene"),
     path('autocomplete/source/', SourceAutocomplete.as_view(), name="autocomplete-source"),
     path('autocomplete/tags/', TagsAutocomplete.as_view(), name="autocomplete-tags"),

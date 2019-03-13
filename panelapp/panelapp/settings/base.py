@@ -146,6 +146,9 @@ DATABASES = {
     'default': dj_database_url.config(engine="django.db.backends.postgresql")
 }
 
+# Admin
+ADMIN_URL = os.getenv('DJANGO_ADMIN_URL', 'admin/')
+
 
 # Auth
 AUTH_USER_MODEL = 'accounts.User'

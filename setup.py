@@ -37,7 +37,8 @@ setup(
     extras_require={
         'dev': [
             'django-debug-toolbar==1.9.1',
-            'ipython==6.4.0'
+            'ipython==6.4.0',
+            'Werkzeug==0.14.1'
         ],
         'tests': [
             'pytest==3.7.1',

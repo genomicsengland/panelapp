@@ -26,7 +26,7 @@ services:
       context: .
       dockerfile: Dockerfile.dev
     image: panelapp_web
-    command: gunicorn --workers=4 -b :8000 panelapp.wsgi:application --chdir=/app/panelapp
+    command: python /app/panelapp/manage.py runserver_plus
     volumes:
       - ./panelapp:/app/panelapp
       - /tmp/panelapp_static:/static
