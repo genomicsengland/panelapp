@@ -61,16 +61,16 @@ DEBUG = False
 
 ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "").split(";")
 
-PANEL_APP_BASE_URL = os.getenv("PANEL_APP_BASE_URL", "https://panelapp.extge.co.uk")
+PANEL_APP_BASE_URL = os.getenv("PANEL_APP_BASE_URL", "https://panelapp.local")
 EMAIL_HOST = os.getenv("EMAIL_HOST", None)
 EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", None)
 EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", None)
 EMAIL_PORT = os.getenv("EMAIL_PORT", 587)
 EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", True)
 DEFAULT_FROM_EMAIL = os.getenv(
-    "DEFAULT_FROM_EMAIL", "PanelApp <panelapp@genomicsengland.co.uk>"
+    "DEFAULT_FROM_EMAIL", "PanelApp <panelapp@panelapp.local>"
 )
-PANEL_APP_EMAIL = os.getenv("PANEL_APP_EMAIL", "panelapp@genomicsengland.co.uk")
+PANEL_APP_EMAIL = os.getenv("PANEL_APP_EMAIL", "panelapp@panelapp.local")
 
 
 # Application definition
@@ -218,11 +218,6 @@ SITE_ID = 1
 MARKDOWN_DEUX_STYLES = {
     "default": {"extras": {"wiki-tables": True}, "safe_mode": "escape"}
 }
-
-CELL_BASE_CONNECTOR_REST = os.getenv(
-    "CELL_BASE_CONNECTOR_REST",
-    "http://bioinfo.hpc.cam.ac.uk/cellbase/webservices/rest/",
-)
 
 HEALTH_ACCESS_TOKEN_LOCATION = os.getenv("HEALTH_ACCESS_TOKEN_LOCATION", None)
 HEALTH_CHECK_TOKEN = None

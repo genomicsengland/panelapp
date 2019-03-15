@@ -26,6 +26,7 @@ services:
       context: .
       dockerfile: Dockerfile.dev
     image: panelapp_web
+    restart: on-failure
     command: python /app/panelapp/manage.py runserver_plus
     volumes:
       - ./panelapp:/app/panelapp

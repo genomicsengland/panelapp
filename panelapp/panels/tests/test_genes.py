@@ -51,8 +51,7 @@ class GeneTest(LoginGELUser):
 
     def test_import_gene(self):
         """
-        Test Gene import. This also tests CellBaseConnector, which actually makes
-        requests to the server. We can mock it later if necessary.
+        Test Gene import.
         """
 
         file_path = os.path.join(os.path.dirname(__file__), "test_import.json")

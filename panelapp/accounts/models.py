@@ -51,6 +51,20 @@ class UserManager(BaseUserManager):
         user = self.model(username=username, email=email, **extra_fields)
         user.set_password(password)
         user.save(using=self._db)
+
+        if extra_fields.get("is_superuser") and extra_fields.get("is_staff"):
+            # Create reviewer profiles for Django superuser
+            # Without it you won't be able to view the frontend
+
+            Reviewer.objects.create(
+                user=user,
+                user_type=Reviewer.TYPES.GEL,
+                role=Reviewer.ROLES.Other,
+                affiliation="Other",
+                workplace=Reviewer.WORKPLACES.Other,
+                group=Reviewer.GROUPS.Other,
+            )
+
         return user
 
     def create_user(self, username, email=None, password=None, **extra_fields):
