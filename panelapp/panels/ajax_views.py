@@ -708,7 +708,7 @@ class SubmitEntityCommentFormAjaxView(
         comment = Comment.objects.get(pk=self.kwargs["comment_pk"])
         form = EditCommentForm(data=self.request.POST)
         if form.is_valid() and self.request.user == comment.user:
-            self.object.edit_comment(comment.pk, self.request.POST.get("comment"))
+            self.object.edit_comment(comment.pk, self.request.POST.get("comment"), self.request.user)
 
         return self.return_post_data()
 

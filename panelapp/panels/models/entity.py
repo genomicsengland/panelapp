@@ -31,6 +31,7 @@ Author: Oleg Gerasimenko
 from django.db.models import Manager
 from django.db.models import Count
 from django.db.models import Subquery
+from django.utils import timezone
 from model_utils import Choices
 
 from .evaluation import Evaluation
@@ -238,9 +239,11 @@ class AbstractEntity:
     def edit_comment(self, comment_pk, new_comment, user=None):
         evaluation = self.evaluation.get(comments=comment_pk)
         comment = evaluation.comments.get(pk=comment_pk)
+        evaluation.modified = timezone.now()
         old_comment = comment.comment
         comment.comment = new_comment
         comment.save()
+        evaluation.save()
         if user:
             self.panel.add_activity(
                 user,

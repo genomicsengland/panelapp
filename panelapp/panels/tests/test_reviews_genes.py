@@ -29,6 +29,7 @@ from accounts.tests.setup import LoginGELUser
 from panels.models import GenePanel
 from panels.models import Comment
 from panels.models import Evaluation
+from panels.models import Activity
 from panels.tests.factories import TagFactory
 from panels.tests.factories import GeneFactory
 from panels.tests.factories import GenePanelSnapshotFactory
@@ -675,9 +676,11 @@ class GeneReviewTest(LoginGELUser):
             },
         )
         res = self.client.post(edit_comment_url, {"comment": new_comment})
+        activity = Activity.objects.all()[0]
         assert res.status_code == 302
         assert evaluation.comments.first().comment == new_comment
         assert current_version == gpes.panel.panel.active_panel.version
+        assert 'changed review comment from' in activity.text
 
     def test_gene_review_view(self):
         gene = GeneFactory()
