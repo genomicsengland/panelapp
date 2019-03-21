@@ -76,6 +76,11 @@
                       <br /><strong>{{ entry.panel.status|title }}</strong>
                       {% endif %}
                   </p>
+                {%  if entry.panel.types.all %}
+                  <p>
+                      Panel Types:{% for type in entry.panel.types.all %} {{ type }}, {% endfor %}
+                  </p>
+                {%  endif %}
               </td>
               <td>
                   {% if 'number_of_genes' in entry.stats %}

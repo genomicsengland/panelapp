@@ -572,3 +572,15 @@ class GenePanelTest(LoginGELUser):
         self.assertEqual(gp.types.first(), panel_type)
         r = self.client.get(reverse_lazy("panels:detail", args=(gp.pk,)))
         self.assertIn(panel_type.name.encode(), r.content)
+
+    def test_panel_type_displayed(self):
+        panel_type = PanelTypeFactory()
+        gpes = GenePanelEntrySnapshotFactory()
+
+        panel_data = self.panel_data
+        panel_data["types"] = [panel_type.pk]
+        res = self.client.post(reverse_lazy("panels:create"), panel_data)
+        self.assertEqual(res.status_code, 302)
+
+        res = self.client.get(reverse_lazy("panels:index"))
+        self.assertIn(panel_type.name.encode(), res.content)
