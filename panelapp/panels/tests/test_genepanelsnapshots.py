@@ -135,7 +135,7 @@ class GenePanelSnapshotTest(LoginGELUser):
         )
         gene_data = {
             "gene": gene.pk,
-            "source": Evidence.ALL_SOURCES[randint(0, 9)],
+            "source": Evidence.ALL_SOURCES[randint(0, 11)],
             "tags": [TagFactory().pk],
             "publications": "{};{};{}".format(*fake.sentences(nb=3)),
             "phenotypes": "{};{};{}".format(*fake.sentences(nb=3)),
@@ -240,6 +240,43 @@ class GenePanelSnapshotTest(LoginGELUser):
             "number_of_genes", 0
         )
         assert number_of_genes == new_current_number
+
+    def test_add_new_sources(self):
+        gpes = GenePanelEntrySnapshotFactory()
+
+        url = reverse_lazy(
+            "panels:edit_entity",
+            kwargs={
+                "pk": gpes.panel.panel.pk,
+                "entity_type": "gene",
+                "entity_name": gpes.gene.get("gene_symbol"),
+            },
+        )
+
+        sources = set([ev.name for ev in gpes.evidence.all()])
+        status = gpes.evidence_status(True)
+
+        sources.add("ClinGen")
+        gene_data = {
+            "gene": gpes.gene_core.pk,
+            "gene_name": "Gene name",
+            "source": sources,
+            "tags": [tag.pk for tag in gpes.tags.all()],
+            "publications": ";".join(
+                [publication for publication in gpes.publications]
+            ),
+            "phenotypes": ";".join([phenotype for phenotype in gpes.phenotypes]),
+            "moi": gpes.moi,
+            "mode_of_pathogenicity": gpes.mode_of_pathogenicity,
+            "penetrance": GenePanelEntrySnapshot.PENETRANCE.Complete,
+        }
+        res = self.client.post(url, gene_data)
+        assert res.status_code == 302
+        gene = GenePanel.objects.get(pk=gpes.panel.panel.pk).active_panel.get_gene(
+            gpes.gene_core.gene_symbol
+        )
+        assert gene.saved_gel_status == status + 1
+        assert 'ClinGen' in [ev.name for ev in gene.evidence.all()]
 
     def test_remove_sources(self):
         """Remove sources via edit gene detail section"""

@@ -46,6 +46,8 @@ class Evidence(TimeStampedModel):
         "Literature",
         "Eligibility statement prior genetic testing",
         "Research",
+        "NHS GMS",
+        "ClinGen",
     ]
 
     ALL_SOURCES = HIGH_CONFIDENCE_SOURCES + OTHER_SOURCES
