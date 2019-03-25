@@ -680,7 +680,7 @@ class GeneReviewTest(LoginGELUser):
         assert res.status_code == 302
         assert evaluation.comments.first().comment == new_comment
         assert current_version == gpes.panel.panel.active_panel.version
-        assert 'changed review comment from' in activity.text
+        assert "changed review comment from" in activity.text
 
     def test_gene_review_view(self):
         gene = GeneFactory()

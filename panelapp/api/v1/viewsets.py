@@ -113,7 +113,10 @@ class PanelsViewSet(ReadOnlyListViewset):
     filter_class = PanelsFilter
 
     def get_serializer(self, *args, **kwargs):
-        if self.action == "retrieve":
+        if (
+            self.action == "retrieve"
+            and self.request.query_params.get("exclude_entities") != "True"
+        ):
             kwargs["include_entities"] = True
         return super().get_serializer(*args, **kwargs)
 
