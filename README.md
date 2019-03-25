@@ -61,15 +61,15 @@ permissions via `shell_plus` or use `python manage.py createsuperuser` command.
 docker-compose run web python3 /app/panelapp/manage.py createsuperuser
 ```
 
-After the super user is created you'd need to create a Reviewer for the admin user.
-
-Go to [http://localhost:8000/admin/](http://localhost:8000/admin/), login with the credentials from the step
-before, navigate to users, open the user, at the bottom of the page add information for the reviewer part:
-- Set user type to GEL
-- Add affiliation, Workplace, Role, Group
-Click save.
-
 We also run Celery with RabbitMQ backend for async tasks. To run celery simply run `celery -A panelapp worker`.
+It should start automatically with docker compose.
+
+Gene data
+
+In order to add genes to panels, you need to load gene data. Uncompress `deploy/genes.tgz`,
+copy it to `panelapp` folder and run: `docker-compose run web python3 /app/panelapp/manage.py loaddata /app/panelapp/genes.json`.
+
+Genes data contains public gene info, such as ensembl IDs, HGNC symbols, OMIM ID.
 
 
 Project configuration
