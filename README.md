@@ -111,3 +111,8 @@ Tests
 * `EMAIL_HOST_USER` - SMTP username
 * `EMAIL_PORT` - SMTP server port
 * `EMAIL_USE_TLS` - Set to True (default) if SMTP server uses TLS
+
+Contributing to PanelApp
+------------------------
+
+All contributions are under [Apache2 license](http://www.apache.org/licenses/LICENSE-2.0.html#contributions).
