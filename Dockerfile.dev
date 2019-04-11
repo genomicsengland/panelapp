@@ -1,4 +1,4 @@
-FROM python:3.5.6-jessie
+FROM python:3.5-jessie
 RUN apt-get update && apt-get install build-essential ntp -y
 ENV PYTHONUNBUFFERED 1
 RUN mkdir -p /app/panelapp
