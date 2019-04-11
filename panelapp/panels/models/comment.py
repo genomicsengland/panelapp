@@ -30,6 +30,8 @@ class Comment(TimeStampedModel):
     user = models.ForeignKey(User, on_delete=models.PROTECT, null=True)
     comment = models.TextField()
     flagged = models.BooleanField(default=False)
+    last_updated = models.DateTimeField(null=True, blank=True)
+    version = models.CharField(null=True, blank=True, max_length=255)
 
     class Meta:
         ordering = ["-created"]

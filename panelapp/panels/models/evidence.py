@@ -53,7 +53,7 @@ class Evidence(TimeStampedModel):
     ALL_SOURCES = HIGH_CONFIDENCE_SOURCES + OTHER_SOURCES
 
     EXPERT_REVIEWS = {
-        "Expert Review Green": 4,
+        "Expert Review Green": 3,
         "Expert Review Amber": 2,
         "Expert Review Red": 1,
         "Expert Review Removed": 0,

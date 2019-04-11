@@ -24,6 +24,7 @@
 import os
 from random import randint
 from django.urls import reverse_lazy
+from django.utils import timezone
 from faker import Factory
 from accounts.tests.setup import LoginGELUser
 from panels.models import GenePanel
@@ -396,7 +397,9 @@ class RegionReviewTest(LoginGELUser):
         gene = GenePanel.objects.get(pk=region.panel.panel.pk).active_panel.get_region(
             region.name
         )
-
+        comment = Comment.objects.all()[0]
+        assert comment.last_updated
+        assert comment.version == region.panel.panel.active_panel.version
         assert res.content.find(str.encode(data["comment"])) != -1
         assert gene.evaluation.count() > 0
 
@@ -609,6 +612,8 @@ class RegionReviewTest(LoginGELUser):
         res = self.client.get(get_comment_url, HTTP_X_REQUESTED_WITH="XMLHttpRequest")
         self.assertEqual(res.status_code, 200)
 
+        created = timezone.now()
+
         new_comment = fake.sentence()
         edit_comment_url = reverse_lazy(
             "panels:submit_edit_comment_by_user",
@@ -620,6 +625,9 @@ class RegionReviewTest(LoginGELUser):
             },
         )
         res = self.client.post(edit_comment_url, {"comment": new_comment})
+        comment = evaluation.comments.first()
+        assert comment.version == region.panel.panel.active_panel.version
+        assert comment.last_updated > created
         assert res.status_code == 302
         assert evaluation.comments.first().comment == new_comment
         assert current_version == region.panel.panel.active_panel.version

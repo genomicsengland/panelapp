@@ -3,7 +3,7 @@
 <div class="panel panel-default">
     <div class="panel-heading">Description</div>
     <div class="panel-body">
-        <pre class="panel-description">{{ panel.level4title.description }}</pre>
+        <pre class="panel-description">{{ panel.level4title.description|urlize }}</pre>
     </div>
     {% if request.user.is_authenticated and request.user.reviewer.is_GEL or not panel.is_super_panel %}
     <div class="panel-footer">

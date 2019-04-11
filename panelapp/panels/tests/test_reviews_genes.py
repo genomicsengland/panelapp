@@ -24,6 +24,7 @@
 import os
 from random import randint
 from django.urls import reverse_lazy
+from django.utils import timezone
 from faker import Factory
 from accounts.tests.setup import LoginGELUser
 from panels.models import GenePanel
@@ -452,9 +453,37 @@ class GeneReviewTest(LoginGELUser):
         gene = GenePanel.objects.get(pk=gpes.panel.panel.pk).active_panel.get_gene(
             gpes.gene.get("gene_symbol")
         )
-
+        comment = Comment.objects.all()[0]
+        assert comment.last_updated
+        assert comment.version == gpes.panel.panel.active_panel.version
         assert res.content.find(str.encode(data["comment"])) != -1
         assert gene.evaluation.count() > 0
+
+    def test_comment_unchaged_by_increment(self):
+        gps = GenePanelSnapshotFactory()
+        gpes = GenePanelEntrySnapshotFactory(panel=gps)
+        gpes.evaluation.all().delete()
+        url = reverse_lazy(
+            "panels:update_entity_rating",
+            kwargs={
+                "pk": gpes.panel.panel.pk,
+                "entity_type": "gene",
+                "entity_name": gpes.gene.get("gene_symbol"),
+            },
+        )
+
+        new_status = 0
+        data = {"comment": fake.sentence(), "status": new_status}
+
+        self.client.post(url, data, HTTP_X_REQUESTED_WITH="XMLHttpRequest")
+        old_comment = Comment.objects.all()[0]
+        updated = old_comment.last_updated
+        version = old_comment.version
+
+        gps.panel.active_panel.increment_version()
+        comment = Comment.objects.all()[0]
+        assert comment.last_updated == updated
+        assert comment.version == version
 
     def test_update_rating(self):
         gpes = GenePanelEntrySnapshotFactory()
@@ -665,6 +694,8 @@ class GeneReviewTest(LoginGELUser):
         res = self.client.get(get_comment_url, HTTP_X_REQUESTED_WITH="XMLHttpRequest")
         self.assertEqual(res.status_code, 200)
 
+        created = timezone.now()
+
         new_comment = fake.sentence()
         edit_comment_url = reverse_lazy(
             "panels:submit_edit_comment_by_user",
@@ -677,6 +708,9 @@ class GeneReviewTest(LoginGELUser):
         )
         res = self.client.post(edit_comment_url, {"comment": new_comment})
         activity = Activity.objects.all()[0]
+        comment = evaluation.comments.first()
+        assert comment.version == gpes.panel.panel.active_panel.version
+        assert comment.last_updated > created
         assert res.status_code == 302
         assert evaluation.comments.first().comment == new_comment
         assert current_version == gpes.panel.panel.active_panel.version

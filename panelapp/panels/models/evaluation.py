@@ -120,6 +120,7 @@ class Evaluation(TimeStampedModel):
     )
     version = models.CharField(null=True, blank=True, max_length=255)
     comments = models.ManyToManyField(Comment)
+    last_updated = models.DateTimeField(null=True, blank=True)
 
     @property
     def entity(self):
