@@ -2,9 +2,8 @@
 
 PanelApp uses various open source libraries, licenses for some of them listed below:
 
-PanelApp uses PostgreSQL with Django which requires `psycopg2-binary`, licensed under LGPLv3.
-Full license can be obtained at https://opensource.org/licenses/LGPL-3.0
+PanelApp uses PostgreSQL with Django which requires `psycopg2-binary`, licensed under LGPLv3. Full license can be obtained at https://opensource.org/licenses/LGPL-3.0, and the terms and conditions of version 3 of the GNU General Public License (which LGPLv3 incorporates and supplements) are available at https://www.gnu.org/licenses/gpl-3.0.en.html
 
 `simplejson` licensed under AFLv3, full license available at https://opensource.org/licenses/AFL-3.0
 
-`uwsgi`, licensed under GPLv2 with linking exception, full license: https://github.com/unbit/uwsgi/blob/master/LICENSE
+`uwsgi`, licensed under GPLv2 with linking exception, full license and details of the author: https://github.com/unbit/uwsgi/blob/master/LICENSE 
