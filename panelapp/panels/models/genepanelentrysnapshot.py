@@ -133,7 +133,7 @@ class GenePanelEntrySnapshot(AbstractEntity, TimeStampedModel):
             models.Index(fields=["saved_gel_status"]),
         ]
 
-    panel = models.ForeignKey(GenePanelSnapshot, on_delete=models.PROTECT)
+    panel = models.ForeignKey(GenePanelSnapshot, on_delete=models.CASCADE)
     gene = JSONField(encoder=DjangoJSONEncoder)  # copy data from Gene.dict_tr
     gene_core = models.ForeignKey(
         Gene, on_delete=models.PROTECT

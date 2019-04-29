@@ -133,7 +133,7 @@ class SuperPanelsTest(LoginGELUser):
         child1 = child1.panel.active_panel
         child1.add_gene(self.gel_user, gene2.gene_symbol, gene2_data)
         child1 = child1.panel.active_panel
-        self.assertNotEqual(initial_child1_pk, child1.pk)
+        self.assertEqual(initial_child1_pk, child1.pk)
 
         child2 = GenePanelSnapshotFactory(panel__status=GenePanel.STATUS.public)
         initial_child2_pk = child2.pk
@@ -141,7 +141,7 @@ class SuperPanelsTest(LoginGELUser):
         del child2.panel.active_panel
         child2 = child2.panel.active_panel
 
-        self.assertNotEqual(initial_child2_pk, child2.pk)
+        self.assertEqual(initial_child2_pk, child2.pk)
 
         parent.child_panels.set([child1, child2])
         parent.update_saved_stats()
@@ -206,14 +206,14 @@ class SuperPanelsTest(LoginGELUser):
         child1 = child1.panel.active_panel
         child1.add_gene(self.gel_user, gene2.gene_symbol, gene2_data)
         child1 = child1.panel.active_panel
-        self.assertNotEqual(initial_child1_pk, child1.pk)
+        self.assertEqual(initial_child1_pk, child1.pk)
 
         child2 = GenePanelSnapshotFactory(panel__status=GenePanel.STATUS.public)
         initial_child2_pk = child2.pk
         child2.add_gene(self.gel_user, gene1.gene_symbol, gene1_data)
         child2 = child2.panel.active_panel
 
-        self.assertNotEqual(initial_child2_pk, child2.pk)
+        self.assertEqual(initial_child2_pk, child2.pk)
 
         parent.child_panels.set([child1, child2])
         parent.update_saved_stats()
@@ -314,7 +314,6 @@ class SuperPanelsTest(LoginGELUser):
 
         child1.add_gene(self.gel_user, gene1.gene_symbol, gene1_data)
         child1.add_gene(self.gel_user, gene2.gene_symbol, gene2_data)
-        self.assertEqual(child1.version, "0.2")
 
         parent = parent.panel.active_panel
         self.assertEqual(parent.version, "0.2")

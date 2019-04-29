@@ -40,7 +40,7 @@ services:
     environment:
       - DATABASE_URL=postgres://panelapp:panelapp@db/panelapp
       - DJANGO_SETTINGS_MODULE=panelapp.settings.dev
-      - DJANGO_LOG_LEVEL=DEBUG
+      - DJANGO_LOG_LEVEL=ERROR
       - HEALTH_ACCESS_TOKEN_LOCATION=/app/health_token
       - CELERY_BROKER_URL=amqp://rabbitmq/panelapp
       - ALLOWED_HOSTS=localhost;web

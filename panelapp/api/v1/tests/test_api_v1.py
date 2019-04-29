@@ -276,7 +276,7 @@ class TestAPIV1(LoginExternalUser):
         j = r.json()
         self.assertEqual(r.status_code, 200)
         gene_symbols_v0 = [g["entity_name"] for g in j["genes"]]
-        self.assertFalse(gene_symbols_v0, gene_symbol)
+        self.assertTrue(gene_symbols_v0, gene_symbol)
 
     def test_green_genes_panel(self):
         # get all genes and their confidence levels counts
@@ -314,7 +314,7 @@ class TestAPIV1(LoginExternalUser):
 
         r = self.client.get(
             reverse_lazy("api:v1:panels_genes-list", args=(self.gpes.panel.panel.pk,))
-            + "?version=0.0"
+            + "?version=0.1"
         )
         j = r.json()
         self.assertEqual(r.status_code, 200)
@@ -378,6 +378,10 @@ class TestAPIV1(LoginExternalUser):
             reverse_lazy("api:v1:panels-detail", args=(super_panel.panel.pk,))
         )
         self.assertEqual(r.status_code, 200)
+
+        for gene in r.json()["genes"]:
+            del gene["panel"]
+
         self.assertEqual(
             result_genes,
             list(sorted(r.json()["genes"], key=lambda x: x.get("gene_symbol"))),

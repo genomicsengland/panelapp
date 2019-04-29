@@ -27,6 +27,7 @@ from rest_framework.response import Response
 from rest_framework import permissions
 from panels.models import GenePanelSnapshot
 from panels.models import GenePanelEntrySnapshot
+from panels.models import HistoricalSnapshot
 from panels.models import STR
 from panels.models import Region
 from panels.models import Activity
@@ -123,22 +124,9 @@ class PanelsViewSet(ReadOnlyListViewset):
         return GenePanelSnapshot.objects.get_active_annotated(all=retired, name=name)
 
     def get_object(self):
-        version = self.request.query_params.get("version", None)
-        if version:
-            try:
-                _, _ = version.split(".")
-            except ValueError:
-                raise APIException(
-                    detail="Incorrect version supplied", code="incorrect_version"
-                )
-
-            obj = GenePanelSnapshot.objects.get_panel_version(
-                name=self.kwargs["pk"], version=version
-            ).first()
-        else:
-            obj = GenePanelSnapshot.objects.get_active_annotated(
-                name=self.kwargs["pk"]
-            ).first()
+        obj = GenePanelSnapshot.objects.get_active_annotated(
+            name=self.kwargs["pk"]
+        ).first()
 
         if obj:
             return obj
@@ -154,7 +142,20 @@ class PanelsViewSet(ReadOnlyListViewset):
 
         ?version=1.1 - get a specific version for this panel
         """
-
+        version = self.request.query_params.get("version", None)
+        if version:
+            try:
+                major_version, minor_version = version.split(".")
+            except ValueError:
+                raise APIException(
+                    detail="Incorrect version supplied", code="incorrect_version"
+                )
+            snap = HistoricalSnapshot.objects.filter(panel__pk=self.kwargs["pk"],
+                                                     major_version=major_version,
+                                                     minor_version=minor_version).first()
+            if snap:
+                json = snap.to_api_1()
+                return Response(json)
         return super().retrieve(request, *args, **kwargs)
 
     @action(detail=True)
