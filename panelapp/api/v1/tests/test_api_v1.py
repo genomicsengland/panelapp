@@ -314,13 +314,13 @@ class TestAPIV1(LoginExternalUser):
 
         r = self.client.get(
             reverse_lazy("api:v1:panels_genes-list", args=(self.gpes.panel.panel.pk,))
-            + "?version=0.1"
+            + "?version=0.0"
         )
         j = r.json()
+        assert 0
         self.assertEqual(r.status_code, 200)
         gene_symbols_v0 = [g["entity_name"] for g in j["results"]]
         self.assertTrue(gene_symbols_v0, gene_symbol)
-
         r = self.client.get(
             reverse_lazy("api:v1:panels_genes-list", args=(self.gpes.panel.panel.pk,))
             + "?version=0.1"

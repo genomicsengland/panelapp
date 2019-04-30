@@ -156,6 +156,8 @@ class PanelsViewSet(ReadOnlyListViewset):
             if snap:
                 json = snap.to_api_1()
                 return Response(json)
+            else:
+                raise Http404
         return super().retrieve(request, *args, **kwargs)
 
     @action(detail=True)

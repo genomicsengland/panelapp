@@ -56,4 +56,4 @@ def command():
         .iterator()
     ):
         HistoricalSnapshot().import_panel(panel=gps)
-        gps.delete()
+        #gps.delete()

@@ -1184,11 +1184,11 @@ class GenePanelSnapshot(TimeStampedModel):
 
         if self.has_gene(gene_symbol):
             if increment:
-                self = self.increment_version(ignore_gene=gene_symbol)
-            else:
-                self.get_all_genes.get(gene__gene_symbol=gene_symbol).delete()
-                self.clear_cache()
-                self.clear_django_cache()
+                self = self.increment_version()
+
+            self.get_all_genes.get(gene__gene_symbol=gene_symbol).delete()
+            self.clear_cache()
+            self.clear_django_cache()
 
             if user:
                 self.add_activity(
