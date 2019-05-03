@@ -1418,7 +1418,7 @@ class GenePanelSnapshot(TimeStampedModel):
             return False
 
         if increment_version:
-            self = self.increment_version()
+            self = self.increment_version(user=user)
 
         gene_core = Gene.objects.get(gene_symbol=gene_symbol)
         gene_info = gene_core.dict_tr()

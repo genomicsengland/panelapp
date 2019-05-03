@@ -432,7 +432,7 @@ class STRReviewTest(LoginGELUser):
         )
         assert res.json().get("status") == 200
         assert (
-            Comment.objects.count() == 3
+            Comment.objects.count() == 2
         )  # FIXME old comments are deleted even for the current object...
         assert gene.saved_gel_status == new_status
 
@@ -444,7 +444,7 @@ class STRReviewTest(LoginGELUser):
             str_item.name
         )
         assert res.json().get("status") == 200
-        assert Comment.objects.count() == 6
+        assert Comment.objects.count() == 3
         assert gene.saved_gel_status == new_status
 
         new_status = 3
@@ -455,7 +455,7 @@ class STRReviewTest(LoginGELUser):
             str_item.name
         )
         assert res.json().get("status") == 200
-        assert Comment.objects.count() == 10
+        assert Comment.objects.count() == 4
         assert gene.saved_gel_status == new_status
         assert gene.panel.version != str_item.panel.version
 

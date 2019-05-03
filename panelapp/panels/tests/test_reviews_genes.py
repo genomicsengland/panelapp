@@ -488,7 +488,7 @@ class GeneReviewTest(LoginGELUser):
             gpes.gene.get("gene_symbol")
         )
         assert res.json().get("status") == 200
-        assert Comment.objects.count() == 3
+        assert Comment.objects.count() == 2
         assert gene.saved_gel_status == new_status
 
         new_status = 2
@@ -499,7 +499,7 @@ class GeneReviewTest(LoginGELUser):
             gpes.gene.get("gene_symbol")
         )
         assert res.json().get("status") == 200
-        assert Comment.objects.count() == 6
+        assert Comment.objects.count() == 3
         assert gene.saved_gel_status == new_status
 
         new_status = 3
@@ -510,7 +510,7 @@ class GeneReviewTest(LoginGELUser):
             gpes.gene.get("gene_symbol")
         )
         assert res.json().get("status") == 200
-        assert Comment.objects.count() == 10
+        assert Comment.objects.count() == 4
         assert gene.saved_gel_status == new_status
         assert gene.panel.version != gpes.panel.version
 

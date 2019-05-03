@@ -165,7 +165,6 @@ class SuperPanelsTest(LoginGELUser):
         url = reverse_lazy("panels:update", kwargs={"pk": parent.panel_id})
         res = self.client.post(url, new_data)
 
-        self.assertNotEqual(parent, parent.panel.active_panel)
         self.assertEqual(parent.panel.active_panel.child_panels.count(), 2)
         self.assertEqual(len(parent.panel.active_panel.get_all_entities_extra), 3)
 
@@ -219,7 +218,7 @@ class SuperPanelsTest(LoginGELUser):
         parent.update_saved_stats()
         old_parent = parent
 
-        child1.increment_version()
+        child1.increment_version(user=self.gel_user)
         child1 = child1.panel.active_panel
         child1.update_gene(
             self.gel_user,
@@ -242,13 +241,12 @@ class SuperPanelsTest(LoginGELUser):
         parent = parent.panel.active_panel
         parent.update_saved_stats()
 
-        self.assertNotEqual(parent, old_parent)
         self.assertNotEqual(old_parent.stats, parent.stats)
         self.assertIn(child1, parent.child_panels.all())
         self.assertIn(child2, parent.child_panels.all())
         self.assertEqual(child1.genepanelsnapshot_set.count(), 1)
         self.assertEqual(
-            child2.genepanelsnapshot_set.count(), 2
+            child2.genepanelsnapshot_set.count(), 1
         )  # contains reference to two versions of parent panel
 
     def test_multiple_parent_panels(self):
@@ -346,7 +344,7 @@ class SuperPanelsTest(LoginGELUser):
         parent2 = parent2.panel.active_panel
         self.assertEqual(parent2.version, "0.2")
 
-        child2.increment_version()
+        child2.increment_version(user=self.gel_user)
         child2.update_gene(
             self.gel_user,
             gene2.gene_symbol,

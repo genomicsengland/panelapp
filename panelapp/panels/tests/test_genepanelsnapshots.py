@@ -33,6 +33,7 @@ from panels.models import GenePanelSnapshot
 from panels.models import Evidence
 from panels.models import GenePanel
 from panels.models import Evaluation
+from panels.models import HistoricalSnapshot
 from panels.tests.factories import GeneFactory
 from panels.tests.factories import RegionFactory
 from panels.tests.factories import GenePanelSnapshotFactory
@@ -311,8 +312,10 @@ class GenePanelSnapshotTest(LoginGELUser):
         gene = GenePanel.objects.get(pk=gpes.panel.panel.pk).active_panel.get_gene(
             gpes.gene_core.gene_symbol
         )
+        old_version = HistoricalSnapshot.objects.filter(panel=gpes.panel.panel).first()
+
         assert sorted(list(gene.tags.values_list("pk"))) != sorted(
-            list(gpes.tags.values_list("pk"))
+            list(g["tags"] for g in old_version.data["genes"])
         )
 
     def test_remove_tag_via_edit_details(self):
@@ -579,13 +582,13 @@ class GenePanelSnapshotTest(LoginGELUser):
         assert res.status_code == 302
 
         new_gps = GenePanel.objects.get(pk=gpes.panel.panel.pk).active_panel
-        old_gps = GenePanelSnapshot.objects.get(pk=gpes.panel.pk)
+        old_gps = HistoricalSnapshot.objects.get(panel=gpes.panel.panel)
 
         # check panel has no previous gene
         assert new_gps.has_gene(old_gene_symbol) is False
 
         # test previous panel contains old gene
-        assert old_gps.has_gene(old_gene_symbol) is True
+        assert old_gene_symbol in [g["entity_name"] for g in old_gps.data["genes"]]
 
     def test_type_of_variants_added(self):
         region = RegionFactory()
