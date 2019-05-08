@@ -1,0 +1,21 @@
+FROM python:3.6-8-alpine3.9
+
+# Better to buffer stdout logging, for performance
+ENV PYTHONUNBUFFERED 0
+
+RUN mkdir -p /app/panelapp
+
+COPY ./panelapp /app/panelapp
+COPY ./setup.py ./setup.cfg ./MANIFEST.in ./VERSION /app/
+
+WORKDIR /app
+
+RUN pip install .
+
+
+WORKDIR /app/panelapp
+EXPOSE 8000
+ENTRYPOINT ["python", "/app/panelapp/manage.py"]
+
+# FIXME this is a dev server
+CMD ["runserver"]

@@ -3,6 +3,9 @@ PanelApp
 
 The Panel App is a crowd-sourced repository of information about various Gene panels.
 
+> **This documentation is obsolete due to cloud-native refactoring**
+
+> Also see [Local development with Docker Compose](./docker/dev/README.md)
 
 Installation
 ------------
