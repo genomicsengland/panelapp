@@ -37,9 +37,12 @@ from panels.models import HistoricalSnapshot
 @click.command()
 def command():
 
-    latest_panels = GenePanelSnapshot.objects.all().distinct("panel_id").order_by(
-                "panel_id", "-major_version", "-minor_version", "-modified", "-pk"
-            ).values_list("pk", flat=True)
+    latest_panels = (
+        GenePanelSnapshot.objects.all()
+        .distinct("panel_id")
+        .order_by("panel_id", "-major_version", "-minor_version", "-modified", "-pk")
+        .values_list("pk", flat=True)
+    )
 
     for gps in (
         GenePanelSnapshot.objects.all()
@@ -56,4 +59,4 @@ def command():
         .iterator()
     ):
         HistoricalSnapshot().import_panel(panel=gps)
-        #gps.delete()
+        # gps.delete()

@@ -122,7 +122,10 @@ class PanelSerializer(serializers.ModelSerializer):
                 no_panel=no_panel,
             )
             self.fields["strs"] = STRSerializer(
-                source="get_all_strs_prefetch", many=True, read_only=True, no_panel=no_panel
+                source="get_all_strs_prefetch",
+                many=True,
+                read_only=True,
+                no_panel=no_panel,
             )
             self.fields["regions"] = RegionSerializer(
                 source="get_all_regions_prefetch",
@@ -189,7 +192,7 @@ class GeneSerializer(serializers.ModelSerializer):
             kwargs.pop("no_panel")
         super().__init__(*args, **kwargs)
         if self.no_panel:
-            del self.fields['panel']
+            del self.fields["panel"]
 
     def get_field_names(self, declared_fields, info):
         field_names = super().get_field_names(declared_fields, info)

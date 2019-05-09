@@ -408,7 +408,9 @@ class RegionTest(LoginGELUser):
         new_region = GenePanel.objects.get(
             pk=region.panel.panel.pk
         ).active_panel.get_region(region.name)
-        old_version = HistoricalSnapshot.objects.filter(panel=region.panel.panel).first()
+        old_version = HistoricalSnapshot.objects.filter(
+            panel=region.panel.panel
+        ).first()
 
         assert sorted(list(new_region.tags.values_list("pk"))) != sorted(
             list(g["tags"] for g in old_version.data["regions"])

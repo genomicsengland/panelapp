@@ -134,9 +134,11 @@ def get_panel(request, panel_name):
                 {"Query Error: The incorrect version requested"}, status=400
             )
 
-        snap = HistoricalSnapshot.objects.filter(panel__pk=panel_name,
-                                                 major_version=major_version,
-                                                 minor_version=minor_version).first()
+        snap = HistoricalSnapshot.objects.filter(
+            panel__pk=panel_name,
+            major_version=major_version,
+            minor_version=minor_version,
+        ).first()
 
         if not snap:
             return Response(

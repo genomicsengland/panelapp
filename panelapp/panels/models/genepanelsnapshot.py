@@ -614,73 +614,7 @@ class GenePanelSnapshot(TimeStampedModel):
                     self.minor_version += 1
 
                 self.save()
-                '''
-                child_panels = list(
-                    GenePanelSnapshot.objects.filter(panel_id__in=distinct_child_panels)
-                    .order_by(
-                        "panel_id",
-                        "-major_version",
-                        "-minor_version",
-                        "-modified",
-                        "-pk",
-                    )
-                    .distinct("panel_id")
-                    .values_list("pk", flat=True)
-                )
-
-                # copy child panels
-                self.child_panels.through.objects.bulk_create(
-                    [
-                        self.child_panels.through(
-                            **{
-                                "to_genepanelsnapshot_id": child_panel,
-                                "from_genepanelsnapshot_id": self.pk,
-                            }
-                        )
-                        for child_panel in child_panels
-                        if remove_child != child_panel
-                    ]
-                )
-                '''
             else:
-                '''
-                current_genes = deepcopy(
-                    self.get_all_genes_extra.prefetch_related(
-                        "comments",
-                        "evidence",
-                        "evidence__reviewer",
-                        "evaluation",
-                        "evaluation__user",
-                        "evaluation__comments",
-                        "evaluation__user__reviewer",
-                        "tags",
-                    )
-                )  # cache the results
-                current_strs = deepcopy(
-                    self.get_all_strs_extra.prefetch_related(
-                        "comments",
-                        "evidence",
-                        "evidence__reviewer",
-                        "evaluation",
-                        "evaluation__user",
-                        "evaluation__comments",
-                        "evaluation__user__reviewer",
-                        "tags",
-                    )
-                )
-                current_regions = deepcopy(
-                    self.get_all_regions_extra.prefetch_related(
-                        "comments",
-                        "evidence",
-                        "evidence__reviewer",
-                        "evaluation",
-                        "evaluation__user",
-                        "evaluation__comments",
-                        "evaluation__user__reviewer",
-                        "tags",
-                    )
-                )
-                '''
                 # get latest versions for super panels
                 super_genepanels = set(
                     self.genepanelsnapshot_set.values_list("panel_id", flat=True)
@@ -700,7 +634,6 @@ class GenePanelSnapshot(TimeStampedModel):
 
                 self.save()
 
-
                 super_panels = list(
                     GenePanelSnapshot.objects.filter(panel_id__in=super_genepanels)
                     .distinct("panel_id")
@@ -713,23 +646,7 @@ class GenePanelSnapshot(TimeStampedModel):
                     )
                     .values_list("pk", flat=True)
                 )
-                '''
-                self._increment_version_entities(
-                    "genepanelentrysnapshot",
-                    current_genes,
-                    major,
-                    user,
-                    comment,
-                    ignore_gene,
-                )
-                self._increment_version_entities(
-                    "str", current_strs, major, user, comment, ignore_str
-                )
-                self._increment_version_entities(
-                    "region", current_regions, major, user, comment, ignore_region
-                )
-                self.clear_cache()
-                '''
+
                 if major:
                     email_panel_promoted.delay(self.panel.pk)
 
@@ -3387,5 +3304,3 @@ class GenePanelSnapshot(TimeStampedModel):
             }
 
         Activity.log(user=user, panel_snapshot=self, text=text, extra_info=extra_info)
-
-

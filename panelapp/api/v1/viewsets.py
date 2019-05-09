@@ -152,9 +152,11 @@ class PanelsViewSet(ReadOnlyListViewset):
                 raise APIException(
                     detail="Incorrect version supplied", code="incorrect_version"
                 )
-            snap = HistoricalSnapshot.objects.filter(panel__pk=self.kwargs["pk"],
-                                                     major_version=major_version,
-                                                     minor_version=minor_version).first()
+            snap = HistoricalSnapshot.objects.filter(
+                panel__pk=self.kwargs["pk"],
+                major_version=major_version,
+                minor_version=minor_version,
+            ).first()
             if snap:
                 json = snap.to_api_1()
                 return Response(json)
@@ -208,38 +210,49 @@ class EntityViewSet(viewsets.mixins.ListModelMixin, viewsets.GenericViewSet):
         tags = self.request.query_params.get("tags")
 
         if entity_name and confidence_level and tags:
-            if object['entity_name'] in entity_name.split(',') and object['confidence_level'] == confidence_level and [True for tag in tags.split(',') if tag in object['tags']]:
+            if (
+                object["entity_name"] in entity_name.split(",")
+                and object["confidence_level"] == confidence_level
+                and [True for tag in tags.split(",") if tag in object["tags"]]
+            ):
                 return True
             else:
                 return False
         elif entity_name and confidence_level:
-            if object['entity_name'] in entity_name.split(',') and object['confidence_level'] == confidence_level:
+            if (
+                object["entity_name"] in entity_name.split(",")
+                and object["confidence_level"] == confidence_level
+            ):
                 return True
             else:
                 return False
         elif entity_name and tags:
-            if object['entity_name'] in entity_name.split(',') and [True for tag in tags.split(',') if tag in object['tags']]:
+            if object["entity_name"] in entity_name.split(",") and [
+                True for tag in tags.split(",") if tag in object["tags"]
+            ]:
                 return True
             else:
                 return False
         elif confidence_level and tags:
-            if object['confidence_level'] == confidence_level and [True for tag in tags.split(',') if tag in object['tags']]:
+            if object["confidence_level"] == confidence_level and [
+                True for tag in tags.split(",") if tag in object["tags"]
+            ]:
                 return True
             else:
                 return False
         elif entity_name:
-            if object['entity_name'] in entity_name.split(','):
+            if object["entity_name"] in entity_name.split(","):
                 return True
             else:
                 return False
         elif confidence_level:
-            if object['confidence_level'] == confidence_level:
+            if object["confidence_level"] == confidence_level:
                 return True
             else:
                 return False
         elif tags:
-            for tag in tags.split(','):
-                if tag in object['tags']:
+            for tag in tags.split(","):
+                if tag in object["tags"]:
                     return True
             else:
                 return False
@@ -256,16 +269,23 @@ class EntityViewSet(viewsets.mixins.ListModelMixin, viewsets.GenericViewSet):
                     detail="Incorrect version supplied", code="incorrect_version"
                 )
 
-            obj = HistoricalSnapshot.objects.filter(panel__pk=self.kwargs["panel_pk"],
-                                                    major_version=major_version,
-                                                    minor_version=minor_version).first()
+            obj = HistoricalSnapshot.objects.filter(
+                panel__pk=self.kwargs["panel_pk"],
+                major_version=major_version,
+                minor_version=minor_version,
+            ).first()
 
             if obj:
-                count = len(obj.data['genes'])
+                count = len(obj.data["genes"])
                 start = 0
                 finish = 100
                 page = self.request.query_params.get("page", None)
-                response = {"count": count, "next": None, "previous": None, "results": []}
+                response = {
+                    "count": count,
+                    "next": None,
+                    "previous": None,
+                    "results": [],
+                }
                 max_pages = ceil(count / 100)
 
                 if max_pages > 1:
@@ -276,19 +296,23 @@ class EntityViewSet(viewsets.mixins.ListModelMixin, viewsets.GenericViewSet):
                         next_page = (page + 1) if page + 1 <= max_pages else None
                         previous_page = (page - 1) if page - 1 >= 1 else None
                         if next_page:
-                            response["next"] = request.build_absolute_uri().replace('&page='+str(page), '&page=' + str(next_page))
+                            response["next"] = request.build_absolute_uri().replace(
+                                "&page=" + str(page), "&page=" + str(next_page)
+                            )
                         if previous_page:
-                            response["previous"] = request.build_absolute_uri().replace('&page='+str(page), '&page=' + str(previous_page))
+                            response["previous"] = request.build_absolute_uri().replace(
+                                "&page=" + str(page), "&page=" + str(previous_page)
+                            )
 
                     else:
-                        response["next"] = request.build_absolute_uri() + '&page=2'
+                        response["next"] = request.build_absolute_uri() + "&page=2"
 
                 collection = obj.data[self.lookup_collection]
 
                 collection = list(filter(self.filter_list, collection))
 
                 for gene in collection[start:finish]:
-                    response['results'].append(gene)
+                    response["results"].append(gene)
 
                 response["count"] = len(collection)
                 return Response(response)
@@ -318,7 +342,7 @@ class GeneViewSet(EntityViewSet):
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
     serializer_class = GeneSerializer
     filter_class = EntityFilter
-    lookup_collection = 'genes'
+    lookup_collection = "genes"
 
     def get_queryset(self):
         version = self.request.query_params.get("version", None)
@@ -329,6 +353,7 @@ class GeneViewSet(EntityViewSet):
                 all=True, internal=True, deleted=True, name=self.kwargs["panel_pk"]
             ).first()
             return obj.get_all_genes.prefetch_related("evidence", "tags")
+
 
 class GeneEvaluationsViewSet(EntityViewSet):
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
@@ -347,8 +372,7 @@ class STRViewSet(EntityViewSet):
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
     serializer_class = STRSerializer
     filter_class = EntityFilter
-    lookup_collection = 'strs'
-
+    lookup_collection = "strs"
 
     def get_queryset(self):
         return self.get_panel().get_all_strs.prefetch_related("evidence", "tags")
@@ -372,8 +396,7 @@ class RegionViewSet(EntityViewSet):
     filter_backends = (filters.DjangoFilterBackend,)
     serializer_class = RegionSerializer
     filter_class = EntityFilter
-    lookup_collection = 'regions'
-
+    lookup_collection = "regions"
 
     def get_queryset(self):
         return self.get_panel().get_all_regions.prefetch_related("evidence", "tags")

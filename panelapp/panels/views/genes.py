@@ -329,12 +329,16 @@ class DownloadPanelVersionTSVView(DownloadPanelTSVMixin):
                 raise APIException(
                     detail="Incorrect version supplied", code="incorrect_version"
                 )
-            if major_version == str(panel.major_version) and minor_version == str(panel.minor_version):
+            if major_version == str(panel.major_version) and minor_version == str(
+                panel.minor_version
+            ):
                 return panel
 
-            snapshot = HistoricalSnapshot.objects.filter(panel__pk=self.kwargs["pk"],
-                                                     major_version=major_version,
-                                                     minor_version=minor_version).first()
+            snapshot = HistoricalSnapshot.objects.filter(
+                panel__pk=self.kwargs["pk"],
+                major_version=major_version,
+                minor_version=minor_version,
+            ).first()
             return snapshot
         else:
             return panel

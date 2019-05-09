@@ -498,7 +498,9 @@ class STRTest(LoginGELUser):
         new_str = GenePanel.objects.get(
             pk=str_item.panel.panel.pk
         ).active_panel.get_str(str_item.name)
-        old_version = HistoricalSnapshot.objects.filter(panel=str_item.panel.panel).first()
+        old_version = HistoricalSnapshot.objects.filter(
+            panel=str_item.panel.panel
+        ).first()
 
         assert sorted(list(new_str.tags.values_list("pk"))) != sorted(
             list(g["tags"] for g in old_version.data["strs"])
