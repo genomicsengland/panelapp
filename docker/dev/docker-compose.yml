@@ -39,7 +39,7 @@ services:
       - STATIC_ROOT=/static
       - MEDIA_ROOT=/media
 
-  celery_worker:
+  backend:
     build:
       context: .
       dockerfile: Dockerfile-backend
