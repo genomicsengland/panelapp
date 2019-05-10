@@ -28,8 +28,6 @@ loaddata: ## Load genes files into db (loaddata command)
 collectstatic: ## Deploy static files (collectstatic command)
 	docker-compose exec web python manage.py collectstatic --noinput
 
-setup: clean build run migrate loaddata collectstatic ## Build a dev cluster from scratch
-
 stop: ## Stop cluster, withoud destroying
 	docker-compose stop
 

@@ -14,7 +14,6 @@ RUN pip install -e .[dev,tests]
 
 # Install dev-time dependencies
 RUN apt-get update && apt-get install build-essential -y
-#RUN pip install django-debug-toolbar Werkzeug pytest
 
 # Copy the genes file
 ADD .build/genes.json.tgz /app
@@ -27,6 +26,7 @@ VOLUME ["/app/panelapp"]
 
 WORKDIR /app/panelapp
 
-CMD ["gunicorn", "--workers=2", "-b :8000", "panelapp.wsgi:application"]
+# Start Gunicorn web server
+CMD ["gunicorn", "--workers=2", "-b :8080", "panelapp.wsgi:application"]
 
-EXPOSE 8000
+EXPOSE 8080

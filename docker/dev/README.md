@@ -23,7 +23,8 @@ As separate steps:
     ```bash
     $ make run
     ```
-2. Create db schema or apply migration: 
+2. Create db schema or apply migration (give time to the db container to start, before running `migrate`. 
+Possibly, have a look at logs with `make logs` to see it starting): 
     ```bash
     $ make migrate
     ```
@@ -35,8 +36,6 @@ As separate steps:
     ```bash
     $ make collectstatic
     ```
- 
-Alternatively, as single step: 
 
 ```bash
 $ make setup
@@ -44,7 +43,7 @@ $ make setup
 
 ### Developing and accessing the application
 
-The application is accessible from `http://localhost:8090/`
+The application is accessible from `http://localhost:8080/`
 
 The python code is mounted from the host `./panelapp` directory. 
 Changes to the code are immediately reflected into the running containers.
