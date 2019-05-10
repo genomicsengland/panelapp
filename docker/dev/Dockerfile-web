@@ -25,14 +25,8 @@ ENV PYTHONUNBUFFERED 1
 # Volume to mount application sources from the host machine
 VOLUME ["/app/panelapp"]
 
-
-
 WORKDIR /app/panelapp
 
-# Default entrypoint; not supposed to be overwritten
-ENTRYPOINT ["python", "manage.py"]
-
-# Default command; can be easily overwritten when by `docker run`
-CMD ["runserver_plus"]
+CMD ["gunicorn", "--workers=2", "-b :8000", "panelapp.wsgi:application"]
 
 EXPOSE 8000

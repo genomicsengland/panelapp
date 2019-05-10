@@ -9,18 +9,6 @@ services:
       - POSTGRES_USER=panelapp
       - POSTGRES_DB=panelapp
 
-  # FIXME Remove nginx
-  nginx:
-    image: nginx:1.15.1
-    ports:
-      - "8090:80"
-    volumes:
-      - ../../deploy/nginx.conf:/etc/nginx/conf.d/default.conf
-      - /tmp/panelapp_static:/static
-      - /tmp/panelapp_media:/media
-    depends_on:
-      - web
-
   rabbitmq:
     image: rabbitmq
     environment:

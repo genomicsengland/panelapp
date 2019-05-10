@@ -21,6 +21,9 @@
 ## specific language governing permissions and limitations
 ## under the License.
 ##
+
+# Profile used for local, dockerised development
+
 from .base import *  # noqa
 
 DEBUG = True
