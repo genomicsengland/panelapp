@@ -86,7 +86,7 @@ def import_panel(user_pk, upload_pk):
         message = "One of the panels contains child panels"
     except Exception as e:
         print(e)
-        message = "Unhandled error occured, please forward it to the docker team:\n\n{}".format(
+        message = "Unhandled error occured, please forward it to the dev team:\n\n{}".format(
             e
         )
 

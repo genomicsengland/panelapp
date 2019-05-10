@@ -2,9 +2,13 @@
 
 > DOCUMENT TO BE IMPROVED
 
-Tested with docker version 18.09.2
+This directory contains Docker and Docker-compose files to be used for local development.
 
-All commands are supposed to be run from `./docker/dev` directory.
+You are supposed to use `make` rather than calling `docker-compose` directly.
+
+This is tested with Docker v.18.09.2
+
+All commands are supposed to be run from this directory.
 
 ### Build dev docker images 
 ```bash
