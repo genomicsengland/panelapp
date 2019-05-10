@@ -3,6 +3,12 @@ PanelApp
 
 The Panel App is a crowd-sourced repository of information about various Gene panels.
 
+> This version of the application is under refactoring to be more "cloud-native"
+
+> This documentation page is going to be obsolete and replaced
+
+
+
 
 Installation
 ------------
