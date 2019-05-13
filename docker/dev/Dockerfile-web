@@ -1,0 +1,32 @@
+FROM python:3.6-jessie
+
+RUN mkdir -p /app/panelapp
+
+COPY .build/panelapp /app/panelapp
+COPY .build/setup.py .build/setup.cfg .build/MANIFEST.in .build/VERSION /app/
+
+WORKDIR /app
+
+# Install everything in editable mode, for development
+RUN pip install -e .[dev,tests]
+
+## Prepare installation for development
+
+# Install dev-time dependencies
+RUN apt-get update && apt-get install build-essential -y
+
+# Copy the genes file
+ADD .build/genes.json.tgz /app
+
+# Unbufferend I/O for synchronous logging at dev-time
+ENV PYTHONUNBUFFERED 1
+
+# Volume to mount application sources from the host machine
+VOLUME ["/app/panelapp"]
+
+WORKDIR /app/panelapp
+
+# Start Gunicorn web server
+CMD ["gunicorn", "--workers=2", "-b :8080", "panelapp.wsgi:application"]
+
+EXPOSE 8080

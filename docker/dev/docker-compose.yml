@@ -1,0 +1,83 @@
+version: '3'
+
+services:
+
+
+  localstack:
+    image: localstack/localstack
+    ports:
+      - "4567-4593:4567-4593"
+      # Exposes LocalStack WebUI on 8090
+      - "8090:8080"
+    environment:
+      - SERVICES=sqs,s3,ses
+      # FIXME make Region configurable
+      - DEFAULT_REGION=${LOCALSTACK_AWS_REGION-eu-west-2}
+      - HOSTNAME=localstack
+      - DEBUG=${DEBUG- }
+      - DATA_DIR=${DATA_DIR- }
+      - PORT_WEB_UI=8080
+      - DOCKER_HOST=unix:///var/run/docker.sock
+    volumes:
+      - "${TMPDIR:-/tmp/localstack}:/tmp/localstack"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+
+  db:
+    image: postgres:9.6.9
+    environment:
+      - POSTGRES_PASSWORD=panelapp
+      - POSTGRES_USER=panelapp
+      - POSTGRES_DB=panelapp
+
+  rabbitmq:
+    image: rabbitmq
+    environment:
+      - RABBITMQ_DEFAULT_VHOST=panelapp
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile-web
+    image: panelapp_web_dev
+    restart: on-failure
+    volumes:
+      - ../../panelapp:/app/panelapp
+      - /tmp/panelapp_static:/static
+      - /tmp/panelapp_media:/media
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+      - rabbitmq
+    environment:
+      - DATABASE_URL=postgres://panelapp:panelapp@db/panelapp
+      - DJANGO_SETTINGS_MODULE=panelapp.settings.docker-dev
+      - DJANGO_LOG_LEVEL=DEBUG
+      - HEALTH_ACCESS_TOKEN_LOCATION=/app/health_token
+      - CELERY_BROKER_URL=amqp://rabbitmq/panelapp
+      - ALLOWED_HOSTS=localhost;web
+      - STATIC_ROOT=/static
+      - MEDIA_ROOT=/media
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile-worker
+    image: panelapp_worker_dev
+    restart: on-failure
+    volumes:
+      - ../../panelapp:/app/panelapp
+      - /tmp/panelapp_static:/static
+      - /tmp/panelapp_media:/media
+    ports: []
+    depends_on:
+      - db
+      - rabbitmq
+    environment:
+      # FIXME do we need all the following?
+      - DATABASE_URL=postgres://panelapp:panelapp@db/panelapp
+      - DJANGO_SETTINGS_MODULE=panelapp.settings.docker-dev
+      - HEALTH_ACCESS_TOKEN_LOCATION=/app/health_token
+      - CELERY_BROKER_URL=amqp://rabbitmq/panelapp
+      - ALLOWED_HOSTS=localhost;web
+      - STATIC_ROOT=/static
