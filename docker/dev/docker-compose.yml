@@ -59,11 +59,11 @@ services:
       - STATIC_ROOT=/static
       - MEDIA_ROOT=/media
 
-  backend:
+  worker:
     build:
       context: .
-      dockerfile: Dockerfile-backend
-    image: panelapp_backend_dev
+      dockerfile: Dockerfile-worker
+    image: panelapp_worker_dev
     restart: on-failure
     volumes:
       - ../../panelapp:/app/panelapp
