@@ -10,6 +10,12 @@ ifeq (command,$(firstword $(MAKECMDGOALS)))
   $(eval $(COMMAND_ARGS):;@:)
 endif
 
+OS := $(shell uname)
+ifeq ($(OS),Darwin)
+  ## LocalStack needs a different TMPDIR in OSX
+  TMPDIR := /private$(TMPDIR)
+endif
+
 clean: ## Remove build directory
 	rm -rf $(BUILDDIR)
 

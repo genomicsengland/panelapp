@@ -37,10 +37,6 @@ Possibly, have a look at logs with `make logs` to see it starting):
     $ make collectstatic
     ```
 
-```bash
-$ make setup
-```
-
 ### Developing and accessing the application
 
 The application is accessible from `http://localhost:8080/`
@@ -95,3 +91,16 @@ Useful commands:
 
 * `createsuperuser`: create a superuser to access admin panel
 * `shell_plus`: run shell_plus extension to debug models
+
+## LocalStack
+
+The Docker-Compose cluster also includes an instance of [LocalStack](https://github.com/localstack/localstack) running 
+S3, SQS and SES for local development.
+
+The LocalStack UI is accessible from `http://localhost:8090`
+
+Service endpoints are the defaults:
+
+* S3: `http://localhost:4572`
+* SQS: `http://localhost:4576`
+* SES `http://localhost:4579`

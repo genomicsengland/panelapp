@@ -2,6 +2,26 @@ version: '3'
 
 services:
 
+
+  localstack:
+    image: localstack/localstack
+    ports:
+      - "4567-4593:4567-4593"
+      # Exposes LocalStack WebUI on 8090
+      - "8090:8080"
+    environment:
+      - SERVICES=sqs,s3,ses
+      # FIXME make Region configurable
+      - DEFAULT_REGION=${LOCALSTACK_AWS_REGION-eu-west-2}
+      - HOSTNAME=localstack
+      - DEBUG=${DEBUG- }
+      - DATA_DIR=${DATA_DIR- }
+      - PORT_WEB_UI=8080
+      - DOCKER_HOST=unix:///var/run/docker.sock
+    volumes:
+      - "${TMPDIR:-/tmp/localstack}:/tmp/localstack"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+
   db:
     image: postgres:9.6.9
     environment:
