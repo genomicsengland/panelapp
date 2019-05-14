@@ -12,7 +12,7 @@ services:
     environment:
       - SERVICES=sqs,s3,ses
       # FIXME make Region configurable
-      - DEFAULT_REGION=${LOCALSTACK_AWS_REGION-eu-west-2}
+      - DEFAULT_REGION=${AWS_DEFAULT_REGION-eu-west-2}
       - HOSTNAME=localstack
       - DEBUG=${DEBUG- }
       - DATA_DIR=${DATA_DIR- }
@@ -74,10 +74,9 @@ services:
       - db
       - rabbitmq
     environment:
-      # FIXME do we need all the following?
       - DATABASE_URL=postgres://panelapp:panelapp@db/panelapp
       - DJANGO_SETTINGS_MODULE=panelapp.settings.docker-dev
       - HEALTH_ACCESS_TOKEN_LOCATION=/app/health_token
       - CELERY_BROKER_URL=amqp://rabbitmq/panelapp
       - ALLOWED_HOSTS=localhost;web
-      - STATIC_ROOT=/static
+      - MEDIA_ROOT=/media
