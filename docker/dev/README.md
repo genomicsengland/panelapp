@@ -14,6 +14,13 @@ This is tested with Docker v.18.09.2
 
 It requires `aws` CLI installed.
 
+
+#### Edit `hosts` file
+
+To develop locally against AWS LocalStack, your machine has to resolve `localstack` hostname as localhost.
+
+Edit `/etc/hosts` and add `localstack` as alias to `localhost`.
+
 ### Build dev docker images 
 
 ```bash
@@ -37,13 +44,13 @@ Possibly, have a look at logs with `make logs` to see it starting):
     ```bash
     $ make loaddata
     ```
-4. Deploy static files (takes a while):
-    ```bash
-    $ make collectstatic
-    ```
-5. Create all required mock, local AWS resources
+4. Create all required mock, local AWS resources
     ```bash
     $ make mock-aws
+    ```
+5. Deploy static files (takes a while):
+    ```bash
+    $ make collectstatic
     ```
 
 ### Developing and accessing the application

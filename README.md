@@ -7,6 +7,9 @@ The Panel App is a crowd-sourced repository of information about various Gene pa
 
 > This documentation page is going to be obsolete and replaced
 
+For building local, dockerised development environment, see [./docker/dev/README.md](docker/dev/README.md)
+
+For notes about cloud-native, AWS porting, see [AWS.md](AWS.md)
 
 
 

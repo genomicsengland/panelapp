@@ -13,11 +13,13 @@ services:
       - SERVICES=sqs,s3,ses
       # FIXME make Region configurable
       - DEFAULT_REGION=${AWS_DEFAULT_REGION-eu-west-2}
-      - HOSTNAME=localstack
+      - HOSTNAME_EXTERNAL=localstack
       - DEBUG=${DEBUG- }
-      - DATA_DIR=${DATA_DIR- }
       - PORT_WEB_UI=8080
       - DOCKER_HOST=unix:///var/run/docker.sock
+      # Make S3 bucket persistent
+      - DATA_DIR=/tmp/localstack/data
+#      - DATA_DIR=${DATA_DIR- }
     volumes:
       - "${TMPDIR:-/tmp/localstack}:/tmp/localstack"
       - "/var/run/docker.sock:/var/run/docker.sock"
@@ -42,8 +44,8 @@ services:
     restart: on-failure
     volumes:
       - ../../panelapp:/app/panelapp
-      - /tmp/panelapp_static:/static
-      - /tmp/panelapp_media:/media
+#      - /tmp/panelapp_static:/static
+#      - /tmp/panelapp_media:/media
     ports:
       - "8080:8080"
     depends_on:
@@ -56,8 +58,12 @@ services:
       - HEALTH_ACCESS_TOKEN_LOCATION=/app/health_token
       - CELERY_BROKER_URL=amqp://rabbitmq/panelapp
       - ALLOWED_HOSTS=localhost;web
-      - STATIC_ROOT=/static
-      - MEDIA_ROOT=/media
+#      - STATIC_ROOT=/static
+#      - MEDIA_ROOT=/media
+      - USE_S3=TRUE
+      - AWS_STORAGE_BUCKET_NAME=static
+      - AWS_ACCESS_KEY_ID=dummy
+      - AWS_SECRET_ACCESS_KEY=dummy
 
   worker:
     build:
@@ -67,8 +73,8 @@ services:
     restart: on-failure
     volumes:
       - ../../panelapp:/app/panelapp
-      - /tmp/panelapp_static:/static
-      - /tmp/panelapp_media:/media
+#      - /tmp/panelapp_static:/static
+#      - /tmp/panelapp_media:/media
     ports: []
     depends_on:
       - db
@@ -79,4 +85,8 @@ services:
       - HEALTH_ACCESS_TOKEN_LOCATION=/app/health_token
       - CELERY_BROKER_URL=amqp://rabbitmq/panelapp
       - ALLOWED_HOSTS=localhost;web
-      - MEDIA_ROOT=/media
+#      - MEDIA_ROOT=/media
+      - USE_S3='TRUE'
+      - AWS_STORAGE_BUCKET_NAME=storage
+      - AWS_ACCESS_KEY_ID=dummy
+      - AWS_SECRET_ACCESS_KEY=dummy

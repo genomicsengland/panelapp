@@ -14,14 +14,8 @@ endif
 # LocalStack needs a different TMPDIR in OSX
 OS := $(shell uname)
 ifeq ($(OS),Darwin)
-  TMPDIR := /private$(TMPDIR)
+  export TMPDIR := /private$(TMPDIR)
 endif
-
-# Dummy AWS credentials for LocalStack
-AWS_DEFAULT_REGION := eu-west-2
-AWS_ACCESS_KEY_ID := foo
-AWS_SECRET_ACCESS_KEY := bar
-
 
 clean: ## Remove build directory
 	rm -rf $(BUILDDIR)
@@ -59,10 +53,11 @@ logs: ## Tail all logs
 command: ## Run a generic command, passed as additional argument(s)
 	docker-compose exec web python manage.py $(COMMAND_ARGS)
 
-mock-aws: mock-s3 ## Create all mock AWS resources (docker-compose cluster must be running)
+mock-aws: export AWS_DEFAULT_REGION := eu-west-2
+mock-aws: export AWS_ACCESS_KEY_ID := foo
+mock-aws: export AWS_SECRET_ACCESS_KEY := bar
+mock-aws: .mock-s3-static .mock-s3-media ## Create all mock AWS resources (docker-compose cluster must be running)
 
-mock-s3: ## Create mock S3 bucket (docker-compose cluster must be running)
-	aws --endpoint-url=http://localhost:4572 s3 mb s3://media
 
 help:	## display this help
 	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target> [<arguments>]\033[0m\n\nTargets:\n"} /^[a-zA-Z_-]+:.*?##/ { printf "  \033[36m%-13s\033[0m %s\n", $$1, $$2 } END{print ""}' $(MAKEFILE_LIST)
@@ -75,6 +70,18 @@ $(BUILDDIR):
 .copy_sources: $(BUILDDIR)
 	cp -r $(SOURCEDIR)/panelapp/* $(BUILDDIR)/panelapp/
 	cp $(SOURCEDIR)/setup.py $(SOURCEDIR)/setup.cfg $(SOURCEDIR)/MANIFEST.in $(SOURCEDIR)/VERSION $(SOURCEDIR)/deploy/* $(BUILDDIR)/
+
+
+.mock-s3-static: ## Create mock S3 bucket for static files
+	aws configure set default.s3.addressing_style path
+	aws --endpoint-url=http://localhost:4572 s3 mb s3://static
+	aws --endpoint-url=http://localhost:4572 s3api put-bucket-acl --bucket static --acl public-read
+
+.mock-s3-media: ## Create mock S3 bucket for media files
+	aws configure set default.s3.addressing_style path
+	aws --endpoint-url=http://localhost:4572 s3 mb s3://media
+	aws --endpoint-url=http://localhost:4572 s3api put-bucket-acl --bucket media --acl public-read
+
 
 .PHONY:	clean .copy_sources run down-cluster migrate load-genes collect-static build-dev-env stop start down-cluster
 .DEFAULT_GOAL:=help
