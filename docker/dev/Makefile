@@ -13,9 +13,11 @@ endif
 
 # LocalStack needs a different TMPDIR in OSX
 OS := $(shell uname)
+TMPDIR := /tmp/localstack
 ifeq ($(OS),Darwin)
-  export TMPDIR := /private$(TMPDIR)
+  TMPDIR := /private$(TMPDIR)
 endif
+export TMPDIR := $(TMPDIR)
 
 clean: ## Remove build directory
 	rm -rf $(BUILDDIR)
@@ -35,7 +37,7 @@ loaddata: ## Load genes files into db (loaddata command)
 collectstatic: ## Deploy static files (collectstatic command)
 	docker-compose exec web python manage.py collectstatic --noinput
 
-stop: ## Stop cluster, withoud destroying
+stop: ## Stop cluster, without destroying it
 	docker-compose stop
 
 start: ## Restart a stopped cluster

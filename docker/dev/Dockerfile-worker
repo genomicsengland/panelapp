@@ -19,5 +19,5 @@ VOLUME ["/app/panelapp"]
 WORKDIR /app/panelapp
 
 # Celery is a script and must run in "shell mode"
-ENTRYPOINT celery worker --app panelapp --task-events
+ENTRYPOINT celery worker --app panelapp --task-events --concurrency 1
 CMD ["--loglevel INFO"]

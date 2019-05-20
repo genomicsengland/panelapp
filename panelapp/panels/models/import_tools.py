@@ -540,9 +540,14 @@ class UploadedPanelList(TimeStampedModel):
 
         returns ProcessingRunCode
         """
-
+        # FIXME Calling the `.path` attribute assumes the Storage has the return an absolute path to be opened with
+        #       standard Python `open()`. `S3Boto3Storage` does NOT support this.
+        #       `S3Boto3Storage` also does not support `Storage.open()` (to get a `File`) so we cannot use
+        #       `FileField.open()`.
+        #       `S3Boto3StorageFile(File)` should be used instead
         with open(self.panel_list.path, encoding="utf-8", errors="ignore") as file:
-            logger.info("Started importing list of genes")
+
+            logger.info("Started importing list of genes from {}".format(file.name))
             reader = csv.reader(file, delimiter="\t")
             _ = next(reader)  # noqa
 
@@ -702,6 +707,7 @@ class UploadedReviewsList(TimeStampedModel):
 
         Returns ProcessingRunCode"""
 
+        # FIXME This must be fixed too
         with open(self.reviews.path, encoding="utf-8", errors="ignore") as file:
             logger.info("Started importing list of genes")
             reader = csv.reader(file, delimiter="\t")

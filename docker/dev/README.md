@@ -120,3 +120,12 @@ Service endpoints are the defaults:
 * S3: `http://localhost:4572`
 * SQS: `http://localhost:4576`
 * SES `http://localhost:4579`
+
+### LocalStack tmp directory
+
+If you are running Docker Compose directly (or from the IDE) on OSX, beware it requires environment variable
+`TMPDIR=/private/tmp/localstack`.
+
+Failing to do this causes LocalStack mounting the host directory `/tmp/localstack` (default on Linux), but Docker has no 
+write access to `/tmp` on OSX.
+The symptom will be a number of *Mount denied* or permissions errors on starting LocalStack.

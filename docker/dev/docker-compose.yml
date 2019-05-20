@@ -51,6 +51,7 @@ services:
     depends_on:
       - db
       - rabbitmq
+      - localstack
     environment:
       - DATABASE_URL=postgres://panelapp:panelapp@db/panelapp
       - DJANGO_SETTINGS_MODULE=panelapp.settings.docker-dev
@@ -58,12 +59,13 @@ services:
       - HEALTH_ACCESS_TOKEN_LOCATION=/app/health_token
       - CELERY_BROKER_URL=amqp://rabbitmq/panelapp
       - ALLOWED_HOSTS=localhost;web
-#      - STATIC_ROOT=/static
-#      - MEDIA_ROOT=/media
       - USE_S3=TRUE
-      - AWS_STORAGE_BUCKET_NAME=static
+      - AWS_S3_STATICFILES_BUCKET_NAME=static
+      - AWS_S3_MEDIAFILES_BUCKET_NAME=media
       - AWS_ACCESS_KEY_ID=dummy
       - AWS_SECRET_ACCESS_KEY=dummy
+#      - STATIC_ROOT=/static
+#      - MEDIA_ROOT=/media
 
   worker:
     build:

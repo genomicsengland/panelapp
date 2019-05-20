@@ -9,6 +9,7 @@ WORKDIR /app
 
 # Install everything in editable mode, for development
 RUN pip install -e .[dev,tests]
+RUN pip install pytest-runner
 
 ## Prepare installation for development
 
@@ -27,6 +28,6 @@ VOLUME ["/app/panelapp"]
 WORKDIR /app/panelapp
 
 # Start Gunicorn web server
-CMD ["gunicorn", "--workers=2", "-b :8080", "panelapp.wsgi:application"]
+CMD ["gunicorn", "--workers=1", "-b :8080", "panelapp.wsgi:application"]
 
 EXPOSE 8080

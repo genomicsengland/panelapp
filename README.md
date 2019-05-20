@@ -18,6 +18,10 @@ Installation
 
 `pip install -e .` will install the application
 
+> If you are using `pipenv` there is a (known problem)[https://github.com/pypa/pipenv/issues/1356] with installing `psycopg2-binary`
+
+> Use `pipenv install --sequential -e .`
+
 ## Docker
 
 For development, you can use docker-compose. This will take care of all services and databases locally.

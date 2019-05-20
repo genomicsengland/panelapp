@@ -62,32 +62,39 @@ USE_S3 = os.getenv('USE_S3') == 'TRUE'
 
 if USE_S3:
 
+
+    # AWS settings (regardless using LocalStack or the real thing)
+    AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID')
+    AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
+
+    # What follows is specific to using LocalStack
+    AWS_DEFAULT_ACL = 'public-read'
+    AWS_S3_USE_SSL = False
+    AWS_S3_ENDPOINT_URL = 'http://localstack:4572/'  # URL used by Boto3 to connect to S3 API
+
     ###############
     # Static files
     ###############
 
     # Tell the staticfiles app to use S3Boto3 storage when writing the collected static files
     # (when you run `collectstatic`).
-    STATICFILES_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+    STATICFILES_STORAGE = 's3_storages.StaticStorage'
+    AWS_S3_STATICFILES_BUCKET_NAME = os.getenv('AWS_S3_STATICFILES_BUCKET_NAME')  # Bucket containing staticfiles
 
-    # AWS settings (regardless using LocalStack or the real thing)
-    AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID')
-    AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
-    AWS_STORAGE_BUCKET_NAME = os.getenv('AWS_STORAGE_BUCKET_NAME')
-    # AWS_LOCATION = 'static'
-
-    AWS_S3_OBJECT_PARAMETERS = {'CacheControl': 'max-age=86400'}
-
-    # What follows is specific to using LocalStack
-    AWS_DEFAULT_ACL = 'public-read'
-    AWS_S3_USE_SSL = False
-    AWS_S3_ENDPOINT_URL = 'http://localstack:4572/'  # URL used by Boto3 to connect to S3 API
 #   AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com'
+    AWS_S3_STATICFILES_CUSTOM_DOMAIN = None
+
 #   STATIC_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/{AWS_LOCATION}/'
-    STATIC_URL = f'http://localstack:4572/static/'  # URL static files are served from (must end with /)
+    STATIC_URL = f'http://localstack:4572/{AWS_S3_STATICFILES_BUCKET_NAME}/'  # URL static files are served from
 
-# FIXME Media file in S3
-#  See https://www.caktusgroup.com/blog/2014/11/10/Using-Amazon-S3-to-store-your-Django-sites-static-and-media-files/
+    AWS_S3_STATICFILES_OBJECT_PARAMETERS = {'CacheControl': 'max-age=86400'}
 
-MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+    ##############
+    # Media files
+    ##############
+
+    DEFAULT_FILE_STORAGE = 's3_storages.MediaStorage'
+    AWS_S3_MEDIAFILES_BUCKET_NAME = os.getenv('AWS_S3_MEDIAFILES_BUCKET_NAME')  # Bucket containing mediafiles
+    AWS_S3_MEDIAFILES_CUSTOM_DOMAIN = None
+    MEDIA_URL = f'http://localstack:4572/{AWS_S3_MEDIAFILES_BUCKET_NAME}/'  # URL media files are served from
+    AWS_S3_MEDIAFILES_OBJECT_PARAMETERS = {}
