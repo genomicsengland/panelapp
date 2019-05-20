@@ -209,55 +209,79 @@ class EntityViewSet(viewsets.mixins.ListModelMixin, viewsets.GenericViewSet):
         confidence_level = self.request.query_params.get("confidence_level")
         tags = self.request.query_params.get("tags")
 
+        filters = []
         if entity_name and confidence_level and tags:
-            if (
+            filters.append(
                 object["entity_name"] in entity_name.split(",")
                 and object["confidence_level"] == confidence_level
                 and [True for tag in tags.split(",") if tag in object["tags"]]
-            ):
-                return True
-            else:
-                return False
-        elif entity_name and confidence_level:
-            if (
+            )
+        if entity_name and confidence_level:
+            filters.append(
                 object["entity_name"] in entity_name.split(",")
                 and object["confidence_level"] == confidence_level
-            ):
-                return True
-            else:
-                return False
-        elif entity_name and tags:
-            if object["entity_name"] in entity_name.split(",") and [
+            )
+        if entity_name and tags:
+            filters.append(object["entity_name"] in entity_name.split(",") and [
                 True for tag in tags.split(",") if tag in object["tags"]
-            ]:
-                return True
-            else:
-                return False
-        elif confidence_level and tags:
-            if object["confidence_level"] == confidence_level and [
+            ])
+        if confidence_level and tags:
+            filters.append(object["confidence_level"] == confidence_level and [
                 True for tag in tags.split(",") if tag in object["tags"]
-            ]:
-                return True
-            else:
-                return False
-        elif entity_name:
-            if object["entity_name"] in entity_name.split(","):
-                return True
-            else:
-                return False
-        elif confidence_level:
-            if object["confidence_level"] == confidence_level:
-                return True
-            else:
-                return False
-        elif tags:
+            ])
+        if entity_name:
+            filters.append(object["entity_name"] in entity_name.split(","))
+        if confidence_level:
+            filters.append(object["confidence_level"] == confidence_level)
+        if tags:
             for tag in tags.split(","):
-                if tag in object["tags"]:
-                    return True
-            else:
-                return False
+                filters.append(tag in object["tags"])
+        if filters:
+            return all(filters)
         else:
             return True
+
+    def paginate(self, obj):
+        count = len(obj.data["genes"])
+        start = 0
+        finish = 100
+        page = self.request.query_params.get("page", None)
+        response = {
+            "count": count,
+            "next": None,
+            "previous": None,
+            "results": [],
+        }
+        max_pages = ceil(count / 100)
+
+        if max_pages > 1:
+            if page:
+                page = int(page)
+                start = (page - 1) * 100
+                finish = page * 100
+                next_page = (page + 1) if page + 1 <= max_pages else None
+                previous_page = (page - 1) if page - 1 >= 1 else None
+                if next_page:
+                    response["next"] = self.request.build_absolute_uri().replace(
+                        "&page=" + str(page), "&page=" + str(next_page)
+                    )
+                if previous_page:
+                    response["previous"] = self.request.build_absolute_uri().replace(
+                        "&page=" + str(page), "&page=" + str(previous_page)
+                    )
+
+            else:
+                response["next"] = self.request.build_absolute_uri() + "&page=2"
+
+        collection = obj.data[self.lookup_collection]
+
+        collection = list(filter(self.filter_list, collection))
+
+        for gene in collection[start:finish]:
+            response["results"].append(gene)
+
+        response["count"] = len(collection)
+        return response
 
     def list(self, request, *args, **kwargs):
         version = self.request.query_params.get("version", None)
@@ -276,45 +300,7 @@ class EntityViewSet(viewsets.mixins.ListModelMixin, viewsets.GenericViewSet):
             ).first()
 
             if obj:
-                count = len(obj.data["genes"])
-                start = 0
-                finish = 100
-                page = self.request.query_params.get("page", None)
-                response = {
-                    "count": count,
-                    "next": None,
-                    "previous": None,
-                    "results": [],
-                }
-                max_pages = ceil(count / 100)
-
-                if max_pages > 1:
-                    if page:
-                        page = int(page)
-                        start = (page - 1) * 100
-                        finish = page * 100
-                        next_page = (page + 1) if page + 1 <= max_pages else None
-                        previous_page = (page - 1) if page - 1 >= 1 else None
-                        if next_page:
-                            response["next"] = request.build_absolute_uri().replace(
-                                "&page=" + str(page), "&page=" + str(next_page)
-                            )
-                        if previous_page:
-                            response["previous"] = request.build_absolute_uri().replace(
-                                "&page=" + str(page), "&page=" + str(previous_page)
-                            )
-
-                    else:
-                        response["next"] = request.build_absolute_uri() + "&page=2"
-
-                collection = obj.data[self.lookup_collection]
-
-                collection = list(filter(self.filter_list, collection))
-
-                for gene in collection[start:finish]:
-                    response["results"].append(gene)
-
-                response["count"] = len(collection)
+                response = self.paginate(obj)
                 return Response(response)
             else:
                 raise Http404

@@ -24,7 +24,7 @@
 
 import djclick as click
 
-from django.db import models
+from django.db import models, transaction
 from django.db.models import Case
 from django.db.models import Count
 from django.db.models import When
@@ -32,7 +32,6 @@ from django.db.models import Value
 
 from panels.models import GenePanelSnapshot
 from panels.models import HistoricalSnapshot
-
 
 @click.command()
 def command():
@@ -58,5 +57,6 @@ def command():
         .order_by("panel_id", "-major_version", "-minor_version")
         .iterator()
     ):
-        HistoricalSnapshot().import_panel(panel=gps)
-        # gps.delete()
+        with transaction.atomic():
+            HistoricalSnapshot().import_panel(panel=gps)
+            gps.delete()

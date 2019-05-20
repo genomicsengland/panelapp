@@ -312,6 +312,7 @@ class SuperPanelsTest(LoginGELUser):
 
         child1.add_gene(self.gel_user, gene1.gene_symbol, gene1_data)
         child1.add_gene(self.gel_user, gene2.gene_symbol, gene2_data)
+        self.assertEqual(child1.version, "0.2")
 
         parent = parent.panel.active_panel
         self.assertEqual(parent.version, "0.2")

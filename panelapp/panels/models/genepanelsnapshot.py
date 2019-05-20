@@ -598,10 +598,6 @@ class GenePanelSnapshot(TimeStampedModel):
 
         with transaction.atomic():
             if self.is_super_panel:
-                distinct_child_panels = set(
-                    self.child_panels.values_list("panel_id", flat=True)
-                )
-
                 HistoricalSnapshot().import_panel(self, comment=comment)
 
                 self.created = timezone.now()
@@ -622,7 +618,6 @@ class GenePanelSnapshot(TimeStampedModel):
 
                 HistoricalSnapshot().import_panel(self, comment=comment)
 
-                old_pk = self.pk
                 self.created = timezone.now()
                 self.modified = timezone.now()
 

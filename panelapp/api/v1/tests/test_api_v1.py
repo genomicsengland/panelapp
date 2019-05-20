@@ -324,8 +324,8 @@ class TestAPIV1(LoginExternalUser):
         )
         j = r.json()
         self.assertEqual(r.status_code, 200)
-        gene_symbols_v0 = [g["entity_name"] for g in j["results"]]
-        self.assertFalse(gene_symbols_v0, gene_symbol)
+        gene_symbols_v1 = [g["entity_name"] for g in j["results"]]
+        self.assertNotIn(gene_symbol, gene_symbols_v1)
 
     def test_genes_endpoint_entities_name(self):
         gene_symbol1 = self.genes[0].gene.get("gene_symbol")

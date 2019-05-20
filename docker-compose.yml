@@ -26,6 +26,7 @@ services:
       context: .
       dockerfile: Dockerfile.dev
     image: panelapp_web
+    #restart: on-failure
     command: python /app/panelapp/manage.py runserver_plus
     volumes:
       - ./panelapp:/app/panelapp
@@ -39,7 +40,7 @@ services:
     environment:
       - DATABASE_URL=postgres://panelapp:panelapp@db/panelapp
       - DJANGO_SETTINGS_MODULE=panelapp.settings.dev
-      - DJANGO_LOG_LEVEL=ERROR
+      - DJANGO_LOG_LEVEL=DEBUG
       - HEALTH_ACCESS_TOKEN_LOCATION=/app/health_token
       - CELERY_BROKER_URL=amqp://rabbitmq/panelapp
       - ALLOWED_HOSTS=localhost;web

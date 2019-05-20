@@ -120,7 +120,7 @@ class TestUsers(SetupUsers):
         reviewer_confirmation_requset_email(self.external_user.pk)
         self.assertEqual(len(mail.outbox), 2)
 
-    def test_reviewer_confirmed_email(self):
+    def test_revierwer_confirmed_email(self):
         revierwer_confirmed_email(self.verified_user.pk)
         self.assertEqual(len(mail.outbox), 1)
 
