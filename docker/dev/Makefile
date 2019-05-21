@@ -22,7 +22,7 @@ export TMPDIR := $(TMPDIR)
 clean: ## Remove build directory
 	rm -rf $(BUILDDIR)
 
-build: clean .copy_sources ## Build Docker Images
+build: clean ## Build Docker Images
 	docker-compose build
 
 run: ## Run cluster
@@ -68,11 +68,6 @@ help:	## display this help
 
 $(BUILDDIR):
 	mkdir -p $(BUILDDIR)/$(APPDIR)
-
-.copy_sources: $(BUILDDIR)
-	cp -r $(SOURCEDIR)/panelapp/* $(BUILDDIR)/panelapp/
-	cp $(SOURCEDIR)/setup.py $(SOURCEDIR)/setup.cfg $(SOURCEDIR)/MANIFEST.in $(SOURCEDIR)/VERSION $(SOURCEDIR)/deploy/* $(BUILDDIR)/
-
 
 .mock-s3-static: ## Create mock S3 bucket for static files
 	aws configure set default.s3.addressing_style path

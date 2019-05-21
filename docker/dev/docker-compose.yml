@@ -38,8 +38,8 @@ services:
 
   web:
     build:
-      context: .
-      dockerfile: Dockerfile-web
+      context: ../../
+      dockerfile: ./docker/dev/Dockerfile-web
     image: panelapp_web_dev
     restart: on-failure
     volumes:
@@ -69,8 +69,8 @@ services:
 
   worker:
     build:
-      context: .
-      dockerfile: Dockerfile-worker
+      context: ../../
+      dockerfile: ./docker/dev/Dockerfile-worker
     image: panelapp_worker_dev
     restart: on-failure
     volumes:

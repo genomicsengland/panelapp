@@ -2,8 +2,8 @@ FROM python:3.6-jessie
 
 RUN mkdir -p /app/panelapp
 
-COPY .build/panelapp /app/panelapp
-COPY .build/setup.py .build/setup.cfg .build/MANIFEST.in .build/VERSION /app/
+COPY ./panelapp /app/panelapp
+COPY ./setup.py ./setup.cfg ./MANIFEST.in ./VERSION /app/
 
 WORKDIR /app
 
@@ -17,7 +17,7 @@ RUN pip install pytest-runner
 RUN apt-get update && apt-get install build-essential -y
 
 # Copy the genes file
-ADD .build/genes.json.tgz /app
+ADD ./deploy/genes.json.tgz /app
 
 # Unbufferend I/O for synchronous logging at dev-time
 ENV PYTHONUNBUFFERED 1
