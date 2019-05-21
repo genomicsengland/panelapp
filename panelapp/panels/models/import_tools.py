@@ -542,10 +542,13 @@ class UploadedPanelList(TimeStampedModel):
         """
         # FIXME Calling the `.path` attribute assumes the Storage has the return an absolute path to be opened with
         #       standard Python `open()`. `S3Boto3Storage` does NOT support this.
-        #       `S3Boto3Storage` also does not support `Storage.open()` (to get a `File`) so we cannot use
-        #       `FileField.open()`.
-        #       `S3Boto3StorageFile(File)` should be used instead
-        with open(self.panel_list.path, encoding="utf-8", errors="ignore") as file:
+        #       Try using `S3Boto3StorageFile(File)`
+
+        # with open(self.panel_list.path, encoding="utf-8", errors="ignore") as file:
+        with self.panel_list.open(mode="rt") as file:
+            # `FileField.open(mode"rt")` returns the following unexpected error
+            # "iterator should return strings, not bytes (did you open the file in text mode?)"
+            # This seems related to this issue: https://github.com/jschneier/django-storages/issues/404
 
             logger.info("Started importing list of genes from {}".format(file.name))
             reader = csv.reader(file, delimiter="\t")

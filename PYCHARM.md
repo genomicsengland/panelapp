@@ -22,7 +22,7 @@ All settings not explicitly mentioned should be left as by default.
 			*   Server: `Docker`
 			*   Configuration files: `./docker/dev/docker-compose.yml`
 			*   Service: `web` 
-			*   Evironment Variables: `TMPDIR=/private/tmp/localstack`
+			*   Environment Variables: `TMPDIR=/private/tmp/localstack`
 		*   Path Mappings: `<project-root>`->`/app`
 3. Enable Django support:
 	*  `Preferences` : `Language & Frameworks` > `Django` : enable
@@ -40,3 +40,20 @@ All settings not explicitly mentioned should be left as by default.
 	* `Run` > `Edit Configurations`: Add `Django server`
 		* Host: `0.0.0.0`, Port: `8080`
 		* Python Interpreter: `Remote Python 3.6.8 Docker Compose...` (the one created above)
+		
+		
+## Preparing the dev environment
+
+Run Django commands from the IDE:
+
+1. `Tools` > `Run manage.py Tasks`:
+    * `migrate`
+    * `loaddata /app/genes.json`
+2. Create mock AWS resources in LocalStack (you must use the `Makefile` in `./docker/dev` at the moment)
+    * From `./docker/dev` run `make mock-aws`
+3. `Tools` > `Run manage.py Tasks`:
+    * `collectstatic --noinput`
+    * `createsuperuser` (create admin user credentials) 
+
+    
+Now you may run the Django application using the Run profile and access it from `http://127.0.0.1:8080`
