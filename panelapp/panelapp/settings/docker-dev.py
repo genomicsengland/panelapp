@@ -60,8 +60,7 @@ CELERY_TASK_PUBLISH_RETRY_POLICY = {
 
 USE_S3 = os.getenv('USE_S3') == 'TRUE'
 
-if USE_S3:
-
+if USE_S3:  # Static and Media files on S3
 
     # AWS settings (regardless using LocalStack or the real thing)
     AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID')
@@ -98,3 +97,11 @@ if USE_S3:
     AWS_S3_MEDIAFILES_CUSTOM_DOMAIN = None
     MEDIA_URL = f'http://localstack:4572/{AWS_S3_MEDIAFILES_BUCKET_NAME}/'  # URL media files are served from
     AWS_S3_MEDIAFILES_OBJECT_PARAMETERS = {}
+
+else:  # Static and Media files on local file system
+
+    STATIC_URL = "/static/"
+    STATIC_ROOT = os.getenv("STATIC_ROOT")
+
+    MEDIA_URL = "/media/"
+    MEDIA_ROOT = os.getenv("MEDIA_ROOT")
