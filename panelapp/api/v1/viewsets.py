@@ -47,7 +47,7 @@ from .serializers import RegionSerializer
 from .serializers import EntitySerializer
 from django.http import Http404
 from rest_framework.exceptions import APIException
-
+from panelapp.settings.base import REST_FRAMEWORK
 
 class ReadOnlyListViewset(
     viewsets.mixins.RetrieveModelMixin,
@@ -126,8 +126,12 @@ class PanelsViewSet(ReadOnlyListViewset):
         return GenePanelSnapshot.objects.get_active_annotated(all=retired, name=name)
 
     def get_object(self):
+        version = self.request.query_params.get("version", None)
+        param = {}
+        if version:
+            param.update({'all': True, 'deleted': True, 'internal': True})
         obj = GenePanelSnapshot.objects.get_active_annotated(
-            name=self.kwargs["pk"]
+            name=self.kwargs["pk"], **param
         ).first()
 
         if obj:
@@ -152,6 +156,12 @@ class PanelsViewSet(ReadOnlyListViewset):
                 raise APIException(
                     detail="Incorrect version supplied", code="incorrect_version"
                 )
+
+            latest = GenePanelSnapshot.objects.filter(panel_id=self.kwargs["pk"]).first()
+
+            if str(latest.major_version) == major_version and str(latest.minor_version) == minor_version:
+                return super().retrieve(request, *args, **kwargs)
+
             snap = HistoricalSnapshot.objects.filter(
                 panel__pk=self.kwargs["pk"],
                 major_version=major_version,
@@ -204,47 +214,28 @@ class EntityViewSet(viewsets.mixins.ListModelMixin, viewsets.GenericViewSet):
     lookup_field = "entity_name"
     lookup_url_kwarg = "entity_name"
 
-    def filter_list(self, object):
+    def filter_list(self, obj):
         entity_name = self.request.query_params.get("entity_name")
         confidence_level = self.request.query_params.get("confidence_level")
         tags = self.request.query_params.get("tags")
 
-        filters = []
-        if entity_name and confidence_level and tags:
-            filters.append(
-                object["entity_name"] in entity_name.split(",")
-                and object["confidence_level"] == confidence_level
-                and [True for tag in tags.split(",") if tag in object["tags"]]
-            )
-        if entity_name and confidence_level:
-            filters.append(
-                object["entity_name"] in entity_name.split(",")
-                and object["confidence_level"] == confidence_level
-            )
-        if entity_name and tags:
-            filters.append(object["entity_name"] in entity_name.split(",") and [
-                True for tag in tags.split(",") if tag in object["tags"]
-            ])
-        if confidence_level and tags:
-            filters.append(object["confidence_level"] == confidence_level and [
-                True for tag in tags.split(",") if tag in object["tags"]
-            ])
+        list_filters = []
         if entity_name:
-            filters.append(object["entity_name"] in entity_name.split(","))
+            list_filters.append(obj["entity_name"] in entity_name.split(","))
         if confidence_level:
-            filters.append(object["confidence_level"] == confidence_level)
+            list_filters.append(obj["confidence_level"] == confidence_level)
         if tags:
             for tag in tags.split(","):
-                filters.append(tag in object["tags"])
-        if filters:
-            return all(filters)
+                list_filters.append(tag in obj["tags"])
+        if list_filters:
+            return all(list_filters)
         else:
             return True
 
     def paginate(self, obj):
         count = len(obj.data["genes"])
         start = 0
-        finish = 100
+        finish = REST_FRAMEWORK['PAGE_SIZE']
         page = self.request.query_params.get("page", None)
         response = {
             "count": count,
@@ -252,13 +243,13 @@ class EntityViewSet(viewsets.mixins.ListModelMixin, viewsets.GenericViewSet):
             "previous": None,
             "results": [],
         }
-        max_pages = ceil(count / 100)
+        max_pages = ceil(count / finish)
 
         if max_pages > 1:
             if page:
                 page = int(page)
-                start = (page - 1) * 100
-                finish = page * 100
+                start = (page - 1) * finish
+                finish = page * finish
                 next_page = (page + 1) if page + 1 <= max_pages else None
                 previous_page = (page - 1) if page - 1 >= 1 else None
                 if next_page:
@@ -292,6 +283,11 @@ class EntityViewSet(viewsets.mixins.ListModelMixin, viewsets.GenericViewSet):
                 raise APIException(
                     detail="Incorrect version supplied", code="incorrect_version"
                 )
+
+            latest = GenePanelSnapshot.objects.filter(panel_id=self.kwargs["panel_pk"]).first()
+
+            if str(latest.major_version) == major_version and str(latest.minor_version) == minor_version:
+                return super().list(request, *args, **kwargs)
 
             obj = HistoricalSnapshot.objects.filter(
                 panel__pk=self.kwargs["panel_pk"],

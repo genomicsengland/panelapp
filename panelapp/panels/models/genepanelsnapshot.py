@@ -577,10 +577,6 @@ class GenePanelSnapshot(TimeStampedModel):
         major=False,
         user=None,
         comment=None,
-        ignore_gene=None,
-        ignore_str=None,
-        ignore_region=None,
-        remove_child=None,
     ):
         """Creates a new version of the panel.
 
@@ -597,37 +593,24 @@ class GenePanelSnapshot(TimeStampedModel):
             raise Exception("Cannot increment non recent version")
 
         with transaction.atomic():
-            if self.is_super_panel:
-                HistoricalSnapshot().import_panel(self, comment=comment)
+            HistoricalSnapshot().import_panel(self, comment=comment)
 
-                self.created = timezone.now()
-                self.modified = timezone.now()
+            self.created = timezone.now()
+            self.modified = timezone.now()
 
-                if major:
-                    self.major_version += 1
-                    self.minor_version = 0
-                else:
-                    self.minor_version += 1
-
-                self.save()
+            if major:
+                self.major_version += 1
+                self.minor_version = 0
             else:
+                self.minor_version += 1
+
+            self.save()
+
+            if not self.is_super_panel:
                 # get latest versions for super panels
                 super_genepanels = set(
                     self.genepanelsnapshot_set.values_list("panel_id", flat=True)
                 )
-
-                HistoricalSnapshot().import_panel(self, comment=comment)
-
-                self.created = timezone.now()
-                self.modified = timezone.now()
-
-                if major:
-                    self.major_version += 1
-                    self.minor_version = 0
-                else:
-                    self.minor_version += 1
-
-                self.save()
 
                 super_panels = list(
                     GenePanelSnapshot.objects.filter(panel_id__in=super_genepanels)
@@ -662,10 +645,7 @@ class GenePanelSnapshot(TimeStampedModel):
                     for panel in GenePanelSnapshot.objects.filter(pk__in=super_panels):
                         increment_panel_async.delay(user.pk, panel.pk, major=major)
 
-            if getattr(self.panel, "active_panel"):
-                del self.panel.active_panel
-
-            return self.panel.active_panel
+            return self
 
     @cached_property
     def contributors(self):
