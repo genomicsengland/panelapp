@@ -44,7 +44,7 @@ Possibly, have a look at logs with `make logs` to see it starting):
     ```bash
     $ make loaddata
     ```
-4. Create all required mock, local AWS resources
+4. Create all required mock, local AWS resources (a bit dumb at the moment: it explodes if any resources already exists):
     ```bash
     $ make mock-aws
     ```
@@ -74,6 +74,12 @@ To tail logs from all containers:
 
 ```bash
 $ make logs
+```
+
+To create a superuser (interactive):
+
+```bash
+$ make createsuperuser
 ```
 
 ### Stop, restart and destroy the cluster

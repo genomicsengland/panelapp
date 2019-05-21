@@ -37,6 +37,12 @@ loaddata: ## Load genes files into db (loaddata command)
 collectstatic: ## Deploy static files (collectstatic command)
 	docker-compose exec web python manage.py collectstatic --noinput
 
+createsuperuser: ## Create superuser (interactive)
+	docker-compose exec web python manage.py createsuperuser
+
+command: ## Run a generic command, passed as additional argument(s)
+	docker-compose exec web python manage.py $(COMMAND_ARGS)
+
 stop: ## Stop cluster, without destroying it
 	docker-compose stop
 
@@ -51,9 +57,6 @@ tests: ## Run tests
 
 logs: ## Tail all logs
 	docker-compose logs -f
-
-command: ## Run a generic command, passed as additional argument(s)
-	docker-compose exec web python manage.py $(COMMAND_ARGS)
 
 mock-aws: export AWS_DEFAULT_REGION := eu-west-2
 mock-aws: export AWS_ACCESS_KEY_ID := foo

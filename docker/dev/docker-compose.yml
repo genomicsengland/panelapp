@@ -47,7 +47,7 @@ services:
 #      - /tmp/panelapp_static:/static
 #      - /tmp/panelapp_media:/media
     ports:
-      - "8080:8080"
+      - "8080:8000"
     depends_on:
       - db
       - rabbitmq

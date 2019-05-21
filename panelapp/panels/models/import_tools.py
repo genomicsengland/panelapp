@@ -46,6 +46,7 @@ from .region import Region
 from .genepanelsnapshot import GenePanelSnapshot
 from .Level4Title import Level4Title
 from .codes import ProcessingRunCode
+from django.utils.encoding import force_text
 
 
 logger = logging.getLogger(__name__)
@@ -540,18 +541,12 @@ class UploadedPanelList(TimeStampedModel):
 
         returns ProcessingRunCode
         """
-        # FIXME Calling the `.path` attribute assumes the Storage has the return an absolute path to be opened with
-        #       standard Python `open()`. `S3Boto3Storage` does NOT support this.
-        #       Try using `S3Boto3StorageFile(File)`
-
-        # with open(self.panel_list.path, encoding="utf-8", errors="ignore") as file:
         with self.panel_list.open(mode="rt") as file:
-            # `FileField.open(mode"rt")` returns the following unexpected error
-            # "iterator should return strings, not bytes (did you open the file in text mode?)"
-            # This seems related to this issue: https://github.com/jschneier/django-storages/issues/404
-
-            logger.info("Started importing list of genes from {}".format(file.name))
-            reader = csv.reader(file, delimiter="\t")
+            # When file is stored in S3 we need to read the file returned by FieldFile.open(), then force it into text
+            # and split the content into lines
+            # FIXME is this working when using FileSystemStorage?
+            textfile_content = force_text(file.read(), encoding="utf-8",errors="ignore")
+            reader = csv.reader(textfile_content.splitlines(), delimiter="\t")
             _ = next(reader)  # noqa
 
             lines = [line for line in reader]
