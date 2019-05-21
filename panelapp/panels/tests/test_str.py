@@ -196,7 +196,9 @@ class STRTest(LoginGELUser):
         assert panel.get_str("SomeSTR").saved_gel_status == 1
 
     def test_str_evaluation(self):
-        str_item = STRFactory()
+        gps = GenePanelSnapshotFactory()
+        str_items = STRFactory.create_batch(4, panel=gps)
+        str_item = sorted(str_items, key=lambda s: (s.saved_gel_status, s.name))[3]
         url = reverse_lazy(
             "panels:evaluation",
             kwargs={
