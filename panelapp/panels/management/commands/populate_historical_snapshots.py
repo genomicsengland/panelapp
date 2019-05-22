@@ -43,6 +43,8 @@ def command():
         .values_list("pk", flat=True)
     )
 
+    completed = {'genepanel': 0, 'historical': 0}
+
     for gps in (
         GenePanelSnapshot.objects.all()
         .annotate(child_panels_count=Count("child_panels"))
@@ -60,3 +62,9 @@ def command():
         with transaction.atomic():
             HistoricalSnapshot().import_panel(panel=gps)
             gps.delete()
+            completed['genepanel'] +=1
+            completed['historical'] +=1
+            if completed['genepanel'] % 1000:
+                print('Migrated {} Genepanels!'.format(completed['genepanel']))
+
+    print('Populated {} Historical panels from {} Genepanels!'.format(completed['historical'], completed['genepanel']))

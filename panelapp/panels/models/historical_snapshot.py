@@ -103,10 +103,8 @@ class HistoricalSnapshot(models.Model):
                     gene.get("entity_name", ""),
                     ";".join([ev for ev in gene["evidence"] if ev]),
                     panel_name,
-                    gene["panel"].get("disease_sub_group", "")
-                    if gene.get("panel") else "",
-                    gene["panel"].get("disease_group", "")
-                    if gene.get("panel") else "",
+                    data.get("panel", {}).get("disease_sub_group", ""),
+                    data.get("panel", {}).get("disease_group", ""),
                     gene.get("mode_of_inheritance", ""),
                     ";".join(map(remove_non_ascii, gene["phenotypes"]))
                     if gene.get("phenotypes") else "",
@@ -123,11 +121,13 @@ class HistoricalSnapshot(models.Model):
                     "{}.{}".format(self.major_version, self.minor_version),
                     "",
                     gene.get("mode_of_pathogenicity", ""),
-                    gene["gene_data"]["ensembl_genes"]["GRch38"]["90"]["ensembl_id"]
-                    if gene.get("gene_data") else "",
-                    gene["gene_data"]["ensembl_genes"]["GRch37"]["82"]["ensembl_id"]
-                    if gene.get("gene_data") else "",
-                    gene["gene_data"].get("hgnc_id", "") if gene.get("gene_data") else "",
+                    gene.get("gene_data", {}).get("ensembl_genes", {})
+                        .get("GRch38", {}).get("90", {}).get("ensembl_id", "")
+                    if gene.get("gene_data") is not None else "",
+                    gene.get("gene_data", {}).get("ensembl_genes", {})
+                        .get("GRch37", {}).get("82", {}).get("ensembl_id", "")
+                    if gene.get("gene_data") is not None else "",
+                    gene.get("gene_data", {}).get("hgnc_id", ""),
                     "",
                     "",
                     "",
@@ -153,10 +153,8 @@ class HistoricalSnapshot(models.Model):
                     ";".join([ev for ev in str["evidence"] if ev])
                     if str.get("evidence") else "",
                     panel_name,
-                    str["panel"].get("disease_sub_group", "")
-                    if str.get("panel") else "",
-                    str["panel"].get"disease_group", "")
-                    if str.get("panel") else "",
+                    data.get("panel", {}).get("disease_sub_group", ""),
+                    data.get("panel", {}).get("disease_group", ""),
                     str.get("mode_of_inheritance", ""),
                     ";".join(map(remove_non_ascii, str["phenotypes"]))
                     if str.get('phenotypes') else "",
@@ -173,11 +171,13 @@ class HistoricalSnapshot(models.Model):
                     "{}.{}".format(self.major_version, self.minor_version),
                     "",
                     "",
-                    str["gene_data"]["ensembl_genes"]["GRch38"]["90"]["ensembl_id"]
-                    if str.get("gene_data") else "",
-                    str["gene_data"]["ensembl_genes"]["GRch37"]["82"]["ensembl_id"]
-                    if str.get("gene_data") else "",
-                    str["gene_data"]["hgnc_id"] if str.get("gene_data") else "",
+                    str.get("gene_data", {}).get("ensembl_genes", {})
+                        .get("GRch38", {}).get("90", {}).get("ensembl_id", "")
+                    if str.get("gene_data") is not None else "",
+                    str.get("gene_data", {}).get("ensembl_genes", {})
+                        .get("GRch37", {}).get("82", {}).get("ensembl_id", "")
+                    if str.get("gene_data") is not None else "",
+                    str.get("gene_data", {}).get("hgnc_id", ""),
                     str.get("chromosome", ""),
                     str["grch37_coordinates"][0] if str.get("grch37_coordinates") else "",
                     str["grch37_coordinates"][1] if str.get("grch37_coordinates") else "",
@@ -202,12 +202,12 @@ class HistoricalSnapshot(models.Model):
                     region["gene_data"].get("gene_symbol", "") if region.get("gene_data") else "",
                     ";".join([ev for ev in region["evidence"] if ev]) if region.get("evidence") else "",
                     panel_name,
-                    region["panel"].get("disease_sub_group", "") if region.get("panel") else "",
-                    region["panel"].get("disease_group", "") if region.get("panel") else "",
+                    data.get("panel", {}).get("disease_sub_group", ""),
+                    data.get("panel", {}).get("disease_group", ""),
                     region.get("mode_of_inheritance", ""),
                     ";".join(map(remove_non_ascii, region["phenotypes"]))
                     if region.get("phenotypes") else "",
-                    region["gene_data"].get("omim_gene", "") if region.get("gene_data") else "",
+                    region["gene_data"].get("omim_gene", "") if region.get("gene_data") is not None else "",
                     "",
                     "",
                     ";".join(map(remove_non_ascii, region["publications"]))
@@ -219,11 +219,13 @@ class HistoricalSnapshot(models.Model):
                     "{}.{}".format(self.major_version, self.minor_version),
                     "",
                     "",
-                    region["gene_data"]["ensembl_genes"]["GRch38"]["90"]["ensembl_id"]
-                    if region.get("gene_data") else "",
-                    region["gene_data"]["ensembl_genes"]["GRch37"]["82"]["ensembl_id"]
-                    if region.get("gene_data") else "",
-                    region["gene_data"].get("hgnc_id", "") if region.get("gene_data") else "",
+                    region.get("gene_data", {}).get("ensembl_genes", {})
+                        .get("GRch38", {}).get("90", {}).get("ensembl_id", "")
+                    if region.get("gene_data") is not None else "",
+                    region.get("gene_data", {}).get("ensembl_genes", {})
+                        .get("GRch37", {}).get("82", {}).get("ensembl_id", "")
+                    if region.get("gene_data") is not None else "",
+                    region.get("gene_data", {}).get("hgnc_id", "") if region.get("gene_data") is not None else "",
                     region.get("chromosome", ""),
                     region["grch37_coordinates"][0] if region.get("grch37_coordinates") else "",
                     region["grch37_coordinates"][1] if region.get("grch37_coordinates") else "",
