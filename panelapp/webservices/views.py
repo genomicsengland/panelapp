@@ -41,6 +41,7 @@ from panels.models import GenePanelSnapshot
 from panels.models import GenePanelEntrySnapshot
 from panels.models import STR
 from panels.models import Region
+from panels.models import HistoricalSnapshot
 from .serializers import PanelSerializer
 from .serializers import GenesSerializer
 from .serializers import EntitySerializer
@@ -133,64 +134,23 @@ def get_panel(request, panel_name):
                 {"Query Error: The incorrect version requested"}, status=400
             )
 
-        queryset = GenePanel.objects.filter(name=panel_name)
-        if queryset.first():
-            queryset = [queryset[0].active_panel]
-        if not queryset:
-            queryset = GenePanelSnapshot.objects.get_active(
-                all=True, deleted=True, internal=True
-            ).filter(old_panels__icontains=panel_name)
-            if not queryset:
-                try:
-                    try:
-                        int(panel_name)
-                        queryset = GenePanelSnapshot.objects.get_active(
-                            all=True, deleted=True, internal=True
-                        ).filter(panel__id=panel_name)
-                    except ValueError:
-                        queryset = GenePanelSnapshot.objects.get_active(
-                            all=True, deleted=True, internal=True
-                        ).filter(panel__old_pk=panel_name)
-                    if not queryset:
-                        return Response({"Query Error: " + panel_name + " not found."})
-                except DatabaseError:
-                    return Response({"Query Error: " + panel_name + " not found."})
+        snap = HistoricalSnapshot.objects.filter(
+            panel__pk=panel_name,
+            major_version=major_version,
+            minor_version=minor_version,
+        ).first()
 
-        if (
-            major_version != queryset[0].major_version
-            or minor_version != queryset[0].minor_version
-        ):
-            queryset = GenePanelSnapshot.objects.filter(
-                panel__name=panel_name,
-                major_version=major_version,
-                minor_version=minor_version,
+        if not snap:
+            return Response(
+                {
+                    "Query Error: The version requested for panel:"
+                    + panel_name
+                    + " was not found."
+                }
             )
+        json = snap.to_api_0()
+        return Response(json)
 
-            if not queryset:
-                try:
-                    int(panel_name)
-                    queryset = GenePanelSnapshot.objects.filter(
-                        panel__pk=panel_name,
-                        major_version=major_version,
-                        minor_version=minor_version,
-                    )
-                except ValueError:
-                    queryset = GenePanelSnapshot.objects.filter(
-                        panel__old_pk=panel_name,
-                        major_version=major_version,
-                        minor_version=minor_version,
-                    )
-
-            if not queryset:
-                return Response(
-                    {
-                        "Query Error: The version requested for panel:"
-                        + panel_name
-                        + " was not found."
-                    }
-                )
-
-            queryset = [queryset[0]]
     else:
         queryset = GenePanelSnapshot.objects.get_active()
 

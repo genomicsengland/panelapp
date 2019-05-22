@@ -38,12 +38,12 @@ from panels.exceptions import IsSuperPanelException
 
 
 @shared_task
-def promote_panel(user_pk, panel_pk, version_comment):
+def increment_panel_async(user_pk, panel_pk, version_comment=None, major=False):
     from accounts.models import User
     from panels.models import GenePanelSnapshot
 
     GenePanelSnapshot.objects.get(pk=panel_pk).increment_version(
-        major=True, user=User.objects.get(pk=user_pk), comment=version_comment
+        major=major, user=User.objects.get(pk=user_pk), comment=version_comment
     )
 
 

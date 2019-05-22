@@ -271,7 +271,6 @@ class TestAPIV1(LoginExternalUser):
 
         r = self.client.get(
             reverse_lazy("api:v1:panels-detail", args=(self.gpes.panel.panel.pk,))
-            + "?version=0.1"
         )
         j = r.json()
         self.assertEqual(r.status_code, 200)
@@ -337,15 +336,34 @@ class TestAPIV1(LoginExternalUser):
         self.assertEqual(r.status_code, 200)
         gene_symbols_v0 = [g["entity_name"] for g in j["results"]]
         self.assertTrue(gene_symbols_v0, gene_symbol)
-
         r = self.client.get(
             reverse_lazy("api:v1:panels_genes-list", args=(self.gpes.panel.panel.pk,))
-            + "?version=0.1"
         )
         j = r.json()
         self.assertEqual(r.status_code, 200)
-        gene_symbols_v0 = [g["entity_name"] for g in j["results"]]
-        self.assertFalse(gene_symbols_v0, gene_symbol)
+        gene_symbols_v1 = [g["entity_name"] for g in j["results"]]
+        self.assertNotIn(gene_symbol, gene_symbols_v1)
+
+    def test_entities_pagination_historical_version(self):
+        with self.settings(REST_FRAMEWORK={"PAGE_SIZE": 1, "DEFAULT_VERSIONING_CLASS": "rest_framework.versioning.NamespaceVersioning",
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "DEFAULT_FILTER_BACKENDS": ("django_filters.rest_framework.DjangoFilterBackend",),
+    "DEFAULT_VERSION": "v1",
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        "rest_framework.authentication.SessionAuthentication",
+        "rest_framework.authentication.TokenAuthentication",
+    )}):
+            self.gpes.panel.increment_version()
+            r = self.client.get(reverse_lazy("api:v1:panels_genes-list", args=(self.gpes.panel.panel.pk,)) + "?version=0.0")
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(len(r.json()["results"]), 1)
+
+    def test_filter_entities_list_historical(self):
+        self.gps.panel.active_panel.increment_version()
+        r = self.client.get(reverse_lazy("api:v1:panels_genes-list", args=(self.gps.panel_id,)) +
+                            "?version=0.0&entity_name=" + self.gps.get_all_genes[0].gene.get("gene_symbol"))
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(len(r.json()["results"]), 1)
 
     def test_genes_endpoint_entities_name(self):
         gene_symbol1 = self.genes[0].gene.get("gene_symbol")
@@ -395,6 +413,10 @@ class TestAPIV1(LoginExternalUser):
             reverse_lazy("api:v1:panels-detail", args=(super_panel.panel.pk,))
         )
         self.assertEqual(r.status_code, 200)
+
+        for gene in r.json()["genes"]:
+            del gene["panel"]
+
         self.assertEqual(
             result_genes,
             list(sorted(r.json()["genes"], key=lambda x: x.get("gene_symbol"))),

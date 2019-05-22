@@ -36,6 +36,7 @@ from panels.models import GenePanelSnapshot
 from panels.models import STR
 from panels.models import Region
 from panels.models import GenePanelEntrySnapshot
+from panels.models import HistoricalSnapshot
 from panels.tests.factories import GeneFactory
 from panels.tests.factories import GenePanelSnapshotFactory
 from panels.tests.factories import GenePanelEntrySnapshotFactory
@@ -184,7 +185,8 @@ class GeneTest(LoginGELUser):
                 gene_core__gene_symbol=gene_to_update.gene_symbol
             )
         ]
-        self.assertNotEqual(updated_not_updated[0], updated_not_updated[1])
+        not_updated = HistoricalSnapshot.objects.all()[1].data['genes'][0]['gene_data']['ensembl_genes']
+        self.assertNotEqual(updated_not_updated[0], not_updated)
 
         updated_not_updated = [
             str_item.gene["ensembl_genes"]
@@ -192,7 +194,9 @@ class GeneTest(LoginGELUser):
                 gene_core__gene_symbol=gene_to_update.gene_symbol
             )
         ]
-        self.assertNotEqual(updated_not_updated[0], updated_not_updated[1])
+        not_updated = HistoricalSnapshot.objects.all()[1].data['strs'][0]['gene_data']['ensembl_genes']
+
+        self.assertNotEqual(updated_not_updated[0], not_updated)
 
         updated_not_updated = [
             region_item.gene["ensembl_genes"]
@@ -200,25 +204,9 @@ class GeneTest(LoginGELUser):
                 gene_core__gene_symbol=gene_to_update.gene_symbol
             )
         ]
-        self.assertNotEqual(updated_not_updated[0], updated_not_updated[1])
+        not_updated = HistoricalSnapshot.objects.all()[1].data['regions'][0]['gene_data']['ensembl_genes']
 
-        self.assertFalse(
-            GenePanelEntrySnapshot.objects.get(
-                gene_core__gene_symbol=gene_to_update_symbol.gene_symbol
-            ).gene_core.active
-        )
-
-        self.assertFalse(
-            STR.objects.get(
-                gene_core__gene_symbol=gene_to_update_symbol.gene_symbol
-            ).gene_core.active
-        )
-
-        self.assertFalse(
-            Region.objects.get(
-                gene_core__gene_symbol=gene_to_update_symbol.gene_symbol
-            ).gene_core.active
-        )
+        self.assertNotEqual(updated_not_updated[0], not_updated)
 
         self.assertFalse(
             Gene.objects.get(gene_symbol=gene_to_update_symbol.gene_symbol).active

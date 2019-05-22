@@ -21,12 +21,15 @@
 ## specific language governing permissions and limitations
 ## under the License.
 ##
+from math import ceil
+
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework import permissions
 from panels.models import GenePanelSnapshot
 from panels.models import GenePanelEntrySnapshot
+from panels.models import HistoricalSnapshot
 from panels.models import STR
 from panels.models import Region
 from panels.models import Activity
@@ -44,7 +47,7 @@ from .serializers import RegionSerializer
 from .serializers import EntitySerializer
 from django.http import Http404
 from rest_framework.exceptions import APIException
-
+from panelapp.settings.base import REST_FRAMEWORK
 
 class ReadOnlyListViewset(
     viewsets.mixins.RetrieveModelMixin,
@@ -127,21 +130,12 @@ class PanelsViewSet(ReadOnlyListViewset):
 
     def get_object(self):
         version = self.request.query_params.get("version", None)
+        param = {}
         if version:
-            try:
-                _, _ = version.split(".")
-            except ValueError:
-                raise APIException(
-                    detail="Incorrect version supplied", code="incorrect_version"
-                )
-
-            obj = GenePanelSnapshot.objects.get_panel_version(
-                name=self.kwargs["pk"], version=version
-            ).first()
-        else:
-            obj = GenePanelSnapshot.objects.get_active_annotated(
-                name=self.kwargs["pk"]
-            ).first()
+            param.update({'all': True, 'deleted': True, 'internal': True})
+        obj = GenePanelSnapshot.objects.get_active_annotated(
+            name=self.kwargs["pk"], **param
+        ).first()
 
         if obj:
             return obj
@@ -157,7 +151,30 @@ class PanelsViewSet(ReadOnlyListViewset):
 
         ?version=1.1 - get a specific version for this panel
         """
+        version = self.request.query_params.get("version", None)
+        if version:
+            try:
+                major_version, minor_version = version.split(".")
+            except ValueError:
+                raise APIException(
+                    detail="Incorrect version supplied", code="incorrect_version"
+                )
 
+            latest = GenePanelSnapshot.objects.filter(panel_id=self.kwargs["pk"]).first()
+
+            if str(latest.major_version) == major_version and str(latest.minor_version) == minor_version:
+                return super().retrieve(request, *args, **kwargs)
+
+            snap = HistoricalSnapshot.objects.filter(
+                panel__pk=self.kwargs["pk"],
+                major_version=major_version,
+                minor_version=minor_version,
+            ).first()
+            if snap:
+                json = snap.to_api_1()
+                return Response(json)
+            else:
+                raise Http404
         return super().retrieve(request, *args, **kwargs)
 
     @action(detail=True)
@@ -200,6 +217,95 @@ class EntityViewSet(viewsets.mixins.ListModelMixin, viewsets.GenericViewSet):
     lookup_field = "entity_name"
     lookup_url_kwarg = "entity_name"
 
+    def filter_list(self, obj):
+        entity_name = self.request.query_params.get("entity_name")
+        confidence_level = self.request.query_params.get("confidence_level")
+        tags = self.request.query_params.get("tags")
+
+        list_filters = []
+        if entity_name:
+            list_filters.append(obj["entity_name"] in entity_name.split(","))
+        if confidence_level:
+            list_filters.append(obj["confidence_level"] == confidence_level)
+        if tags:
+            for tag in tags.split(","):
+                list_filters.append(tag in obj["tags"])
+        if list_filters:
+            return all(list_filters)
+        else:
+            return True
+
+    def paginate(self, obj):
+        count = len(obj.data["genes"])
+        start = 0
+        finish = REST_FRAMEWORK['PAGE_SIZE']
+        page = self.request.query_params.get("page", None)
+        response = {
+            "count": count,
+            "next": None,
+            "previous": None,
+            "results": [],
+        }
+        max_pages = ceil(count / finish)
+
+        if max_pages > 1:
+            if page:
+                page = int(page)
+                start = (page - 1) * finish
+                finish = page * finish
+                next_page = (page + 1) if page + 1 <= max_pages else None
+                previous_page = (page - 1) if page - 1 >= 1 else None
+                if next_page:
+                    response["next"] = self.request.build_absolute_uri().replace(
+                        "&page=" + str(page), "&page=" + str(next_page)
+                    )
+                if previous_page:
+                    response["previous"] = self.request.build_absolute_uri().replace(
+                        "&page=" + str(page), "&page=" + str(previous_page)
+                    )
+
+            else:
+                response["next"] = self.request.build_absolute_uri() + "&page=2"
+
+        collection = obj.data[self.lookup_collection]
+
+        collection = list(filter(self.filter_list, collection))
+
+        for gene in collection[start:finish]:
+            response["results"].append(gene)
+
+        response["count"] = len(collection)
+        return response
+
+    def list(self, request, *args, **kwargs):
+        version = self.request.query_params.get("version", None)
+        if version:
+            try:
+                major_version, minor_version = version.split(".")
+            except ValueError:
+                raise APIException(
+                    detail="Incorrect version supplied", code="incorrect_version"
+                )
+
+            latest = GenePanelSnapshot.objects.filter(panel_id=self.kwargs["panel_pk"]).first()
+
+            if str(latest.major_version) == major_version and str(latest.minor_version) == minor_version:
+                return super().list(request, *args, **kwargs)
+
+            obj = HistoricalSnapshot.objects.filter(
+                panel__pk=self.kwargs["panel_pk"],
+                major_version=major_version,
+                minor_version=minor_version,
+            ).first()
+
+            if obj:
+                response = self.paginate(obj)
+                return Response(response)
+            else:
+                raise Http404
+        else:
+            return super().list(request, *args, **kwargs)
+
     def get_panel(self):
         version = self.request.query_params.get("version")
         if version:
@@ -221,9 +327,17 @@ class GeneViewSet(EntityViewSet):
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
     serializer_class = GeneSerializer
     filter_class = EntityFilter
+    lookup_collection = "genes"
 
     def get_queryset(self):
-        return self.get_panel().get_all_genes.prefetch_related("evidence", "tags")
+        version = self.request.query_params.get("version", None)
+        if version:
+            return GenePanelEntrySnapshot.objects.none()
+        else:
+            obj = GenePanelSnapshot.objects.get_active_annotated(
+                all=True, internal=True, deleted=True, name=self.kwargs["panel_pk"]
+            ).first()
+            return obj.get_all_genes.prefetch_related("evidence", "tags")
 
 
 class GeneEvaluationsViewSet(EntityViewSet):
@@ -243,6 +357,7 @@ class STRViewSet(EntityViewSet):
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
     serializer_class = STRSerializer
     filter_class = EntityFilter
+    lookup_collection = "strs"
 
     def get_queryset(self):
         return self.get_panel().get_all_strs.prefetch_related("evidence", "tags")
@@ -266,6 +381,7 @@ class RegionViewSet(EntityViewSet):
     filter_backends = (filters.DjangoFilterBackend,)
     serializer_class = RegionSerializer
     filter_class = EntityFilter
+    lookup_collection = "regions"
 
     def get_queryset(self):
         return self.get_panel().get_all_regions.prefetch_related("evidence", "tags")

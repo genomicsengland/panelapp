@@ -435,7 +435,7 @@ class RegionReviewTest(LoginGELUser):
             region.name
         )
         assert res.json().get("status") == 200
-        assert Comment.objects.count() == 3
+        assert Comment.objects.count() == 2
         assert gene.saved_gel_status == new_status
 
         new_status = 2
@@ -446,7 +446,7 @@ class RegionReviewTest(LoginGELUser):
             region.name
         )
         assert res.json().get("status") == 200
-        assert Comment.objects.count() == 6
+        assert Comment.objects.count() == 3
         assert gene.saved_gel_status == new_status
 
         new_status = 3
@@ -457,7 +457,7 @@ class RegionReviewTest(LoginGELUser):
             region.name
         )
         assert res.json().get("status") == 200
-        assert Comment.objects.count() == 10
+        assert Comment.objects.count() == 4
         assert gene.saved_gel_status == new_status
         assert gene.panel.version != region.panel.version
 
