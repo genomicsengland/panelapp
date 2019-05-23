@@ -6,8 +6,8 @@ RUN apt-get update && apt-get install build-essential -y
 ENV PYTHONUNBUFFERED 1
 RUN mkdir -p /app/panelapp
 
-COPY .build/panelapp /app/panelapp
-COPY .build/setup.py .build/setup.cfg .build/MANIFEST.in .build/VERSION /app/
+COPY ./panelapp /app/panelapp
+COPY ./setup.py ./setup.cfg ./MANIFEST.in ./VERSION /app/
 
 WORKDIR /app
 
@@ -19,5 +19,5 @@ VOLUME ["/app/panelapp"]
 WORKDIR /app/panelapp
 
 # Celery is a script and must run in "shell mode"
-ENTRYPOINT celery worker --app panelapp --task-events
+ENTRYPOINT celery worker --app panelapp --task-events --concurrency 1
 CMD ["--loglevel INFO"]

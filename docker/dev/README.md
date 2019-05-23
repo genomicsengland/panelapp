@@ -6,11 +6,23 @@ This directory contains Docker and Docker-compose files to be used for local dev
 
 You are supposed to use `make` rather than calling `docker-compose` directly.
 
-This is tested with Docker v.18.09.2
-
 All commands are supposed to be run from this directory.
 
+### Requirements
+
+This is tested with Docker v.18.09.2
+
+It requires `aws` CLI installed.
+
+
+#### Edit `hosts` file
+
+To develop locally against AWS LocalStack, your machine has to resolve `localstack` hostname as localhost.
+
+Edit `/etc/hosts` and add `localstack` as alias to `localhost`.
+
 ### Build dev docker images 
+
 ```bash
 $ make build
 ```
@@ -32,7 +44,11 @@ Possibly, have a look at logs with `make logs` to see it starting):
     ```bash
     $ make loaddata
     ```
-4. Deploy static files (takes a while):
+4. Create all required mock, local AWS resources (a bit dumb at the moment: it explodes if any resources already exists):
+    ```bash
+    $ make mock-aws
+    ```
+5. Deploy static files (takes a while):
     ```bash
     $ make collectstatic
     ```
@@ -58,6 +74,12 @@ To tail logs from all containers:
 
 ```bash
 $ make logs
+```
+
+To create a superuser (interactive):
+
+```bash
+$ make createsuperuser
 ```
 
 ### Stop, restart and destroy the cluster
@@ -104,3 +126,12 @@ Service endpoints are the defaults:
 * S3: `http://localhost:4572`
 * SQS: `http://localhost:4576`
 * SES `http://localhost:4579`
+
+### LocalStack tmp directory
+
+If you are running Docker Compose directly (or from the IDE) on OSX, beware it requires environment variable
+`TMPDIR=/private/tmp/localstack`.
+
+Failing to do this causes LocalStack mounting the host directory `/tmp/localstack` (default on Linux), but Docker has no 
+write access to `/tmp` on OSX.
+The symptom will be a number of *Mount denied* or permissions errors on starting LocalStack.

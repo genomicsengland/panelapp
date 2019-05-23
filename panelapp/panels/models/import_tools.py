@@ -46,6 +46,7 @@ from .region import Region
 from .genepanelsnapshot import GenePanelSnapshot
 from .Level4Title import Level4Title
 from .codes import ProcessingRunCode
+from django.utils.encoding import force_text
 
 
 logger = logging.getLogger(__name__)
@@ -540,10 +541,12 @@ class UploadedPanelList(TimeStampedModel):
 
         returns ProcessingRunCode
         """
-
-        with open(self.panel_list.path, encoding="utf-8", errors="ignore") as file:
-            logger.info("Started importing list of genes")
-            reader = csv.reader(file, delimiter="\t")
+        with self.panel_list.open(mode="rt") as file:
+            # When file is stored in S3 we need to read the file returned by FieldFile.open(), then force it into text
+            # and split the content into lines
+            # TODO is this working when using FileSystemStorage?
+            textfile_content = force_text(file.read(), encoding="utf-8",errors="ignore")
+            reader = csv.reader(textfile_content.splitlines(), delimiter="\t")
             _ = next(reader)  # noqa
 
             lines = [line for line in reader]
@@ -700,11 +703,12 @@ class UploadedReviewsList(TimeStampedModel):
 
         If file has more than 200 lines process it in the background.
 
-        Returns ProcessingRunCode"""
-
-        with open(self.reviews.path, encoding="utf-8", errors="ignore") as file:
-            logger.info("Started importing list of genes")
-            reader = csv.reader(file, delimiter="\t")
+        Returns ProcessingRunCode
+        """
+        with self.reviews.open(mode="rt") as file:
+            # TODO is this working when using FileSystemStorage?
+            textfile_content = force_text(file.read(), encoding="utf-8",errors="ignore")
+            reader = csv.reader(textfile_content.splitlines(), delimiter="\t")
             next(reader)  # skip header
 
             with transaction.atomic():

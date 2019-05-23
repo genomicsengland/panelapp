@@ -7,6 +7,9 @@ The Panel App is a crowd-sourced repository of information about various Gene pa
 
 > This documentation page is going to be obsolete and replaced
 
+For building local, dockerised development environment, see [./docker/dev/README.md](docker/dev/README.md)
+
+For notes about cloud-native, AWS porting, see [AWS.md](AWS.md)
 
 
 
@@ -14,6 +17,10 @@ Installation
 ------------
 
 `pip install -e .` will install the application
+
+> If you are using `pipenv` there is a (known problem)[https://github.com/pypa/pipenv/issues/1356] with installing `psycopg2-binary`
+
+> Use `pipenv install --sequential -e .`
 
 ## Docker
 

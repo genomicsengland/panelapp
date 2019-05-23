@@ -12,12 +12,14 @@ services:
     environment:
       - SERVICES=sqs,s3,ses
       # FIXME make Region configurable
-      - DEFAULT_REGION=${LOCALSTACK_AWS_REGION-eu-west-2}
-      - HOSTNAME=localstack
+      - DEFAULT_REGION=${AWS_DEFAULT_REGION-eu-west-2}
+      - HOSTNAME_EXTERNAL=localstack
       - DEBUG=${DEBUG- }
-      - DATA_DIR=${DATA_DIR- }
       - PORT_WEB_UI=8080
       - DOCKER_HOST=unix:///var/run/docker.sock
+      # Make S3 bucket persistent
+      - DATA_DIR=/tmp/localstack/data
+#      - DATA_DIR=${DATA_DIR- }
     volumes:
       - "${TMPDIR:-/tmp/localstack}:/tmp/localstack"
       - "/var/run/docker.sock:/var/run/docker.sock"
@@ -36,19 +38,20 @@ services:
 
   web:
     build:
-      context: .
-      dockerfile: Dockerfile-web
+      context: ../../
+      dockerfile: ./docker/dev/Dockerfile-web
     image: panelapp_web_dev
     restart: on-failure
     volumes:
       - ../../panelapp:/app/panelapp
-      - /tmp/panelapp_static:/static
-      - /tmp/panelapp_media:/media
+#      - /tmp/panelapp_static:/static
+#      - /tmp/panelapp_media:/media
     ports:
-      - "8080:8080"
+      - "8080:8000"
     depends_on:
       - db
       - rabbitmq
+      - localstack
     environment:
       - DATABASE_URL=postgres://panelapp:panelapp@db/panelapp
       - DJANGO_SETTINGS_MODULE=panelapp.settings.docker-dev
@@ -56,28 +59,36 @@ services:
       - HEALTH_ACCESS_TOKEN_LOCATION=/app/health_token
       - CELERY_BROKER_URL=amqp://rabbitmq/panelapp
       - ALLOWED_HOSTS=localhost;web
-      - STATIC_ROOT=/static
-      - MEDIA_ROOT=/media
+      - USE_S3=TRUE
+      - AWS_S3_STATICFILES_BUCKET_NAME=static
+      - AWS_S3_MEDIAFILES_BUCKET_NAME=media
+      - AWS_ACCESS_KEY_ID=dummy
+      - AWS_SECRET_ACCESS_KEY=dummy
+#      - STATIC_ROOT=/static
+#      - MEDIA_ROOT=/media
 
   worker:
     build:
-      context: .
-      dockerfile: Dockerfile-worker
+      context: ../../
+      dockerfile: ./docker/dev/Dockerfile-worker
     image: panelapp_worker_dev
     restart: on-failure
     volumes:
       - ../../panelapp:/app/panelapp
-      - /tmp/panelapp_static:/static
-      - /tmp/panelapp_media:/media
+#      - /tmp/panelapp_static:/static
+#      - /tmp/panelapp_media:/media
     ports: []
     depends_on:
       - db
       - rabbitmq
     environment:
-      # FIXME do we need all the following?
       - DATABASE_URL=postgres://panelapp:panelapp@db/panelapp
       - DJANGO_SETTINGS_MODULE=panelapp.settings.docker-dev
       - HEALTH_ACCESS_TOKEN_LOCATION=/app/health_token
       - CELERY_BROKER_URL=amqp://rabbitmq/panelapp
       - ALLOWED_HOSTS=localhost;web
-      - STATIC_ROOT=/static
+#      - MEDIA_ROOT=/media
+      - USE_S3=TRUE
+      - AWS_STORAGE_BUCKET_NAME=storage
+      - AWS_ACCESS_KEY_ID=dummy
+      - AWS_SECRET_ACCESS_KEY=dummy
