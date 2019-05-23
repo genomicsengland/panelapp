@@ -544,7 +544,7 @@ class UploadedPanelList(TimeStampedModel):
         with self.panel_list.open(mode="rt") as file:
             # When file is stored in S3 we need to read the file returned by FieldFile.open(), then force it into text
             # and split the content into lines
-            # FIXME is this working when using FileSystemStorage?
+            # TODO is this working when using FileSystemStorage?
             textfile_content = force_text(file.read(), encoding="utf-8",errors="ignore")
             reader = csv.reader(textfile_content.splitlines(), delimiter="\t")
             _ = next(reader)  # noqa
@@ -703,12 +703,12 @@ class UploadedReviewsList(TimeStampedModel):
 
         If file has more than 200 lines process it in the background.
 
-        Returns ProcessingRunCode"""
-
-        # FIXME This must be fixed too
-        with open(self.reviews.path, encoding="utf-8", errors="ignore") as file:
-            logger.info("Started importing list of genes")
-            reader = csv.reader(file, delimiter="\t")
+        Returns ProcessingRunCode
+        """
+        with self.reviews.open(mode="rt") as file:
+            # TODO is this working when using FileSystemStorage?
+            textfile_content = force_text(file.read(), encoding="utf-8",errors="ignore")
+            reader = csv.reader(textfile_content.splitlines(), delimiter="\t")
             next(reader)  # skip header
 
             with transaction.atomic():

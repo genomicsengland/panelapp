@@ -33,6 +33,7 @@ from panels.models import GenePanelEntrySnapshot
 from panels.models import Evaluation
 from panels.models import Evidence
 from panels.models import GenePanelSnapshot
+from panels.models import HistoricalSnapshot
 from panels.tasks import email_panel_promoted
 from panels.tests.factories import GeneFactory
 from panels.tests.factories import GenePanelSnapshotFactory
@@ -196,7 +197,9 @@ class STRTest(LoginGELUser):
         assert panel.get_str("SomeSTR").saved_gel_status == 1
 
     def test_str_evaluation(self):
-        str_item = STRFactory()
+        gps = GenePanelSnapshotFactory()
+        str_items = STRFactory.create_batch(4, panel=gps)
+        str_item = sorted(str_items, key=lambda s: (s.saved_gel_status, s.name))[3]
         url = reverse_lazy(
             "panels:evaluation",
             kwargs={
@@ -497,8 +500,12 @@ class STRTest(LoginGELUser):
         new_str = GenePanel.objects.get(
             pk=str_item.panel.panel.pk
         ).active_panel.get_str(str_item.name)
+        old_version = HistoricalSnapshot.objects.filter(
+            panel=str_item.panel.panel
+        ).first()
+
         assert sorted(list(new_str.tags.values_list("pk"))) != sorted(
-            list(str_item.tags.values_list("pk"))
+            list(g["tags"] for g in old_version.data["strs"])
         )
 
     def test_remove_tag_via_edit_details(self):
@@ -750,13 +757,13 @@ class STRTest(LoginGELUser):
         assert res.status_code == 302
 
         new_gps = GenePanel.objects.get(pk=str_item.panel.panel.pk).active_panel
-        old_gps = GenePanelSnapshot.objects.get(pk=str_item.panel.pk)
+        old_gps = HistoricalSnapshot.objects.get(panel=str_item.panel.panel)
 
         # check panel has no previous gene
         assert new_gps.has_str(old_str_name) is False
 
         # test previous panel contains old gene
-        assert old_gps.has_str(old_str_name) is True
+        assert old_str_name in [g["entity_name"] for g in old_gps.data["strs"]]
 
     def test_download_panel_contains_strs(self):
         gpes = GenePanelEntrySnapshotFactory()

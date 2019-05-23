@@ -88,7 +88,7 @@ services:
       - CELERY_BROKER_URL=amqp://rabbitmq/panelapp
       - ALLOWED_HOSTS=localhost;web
 #      - MEDIA_ROOT=/media
-      - USE_S3='TRUE'
+      - USE_S3=TRUE
       - AWS_STORAGE_BUCKET_NAME=storage
       - AWS_ACCESS_KEY_ID=dummy
       - AWS_SECRET_ACCESS_KEY=dummy

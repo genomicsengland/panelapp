@@ -29,6 +29,7 @@ from faker import Factory
 from accounts.tests.setup import LoginGELUser
 from panels.models import GenePanel
 from panels.models import GenePanelEntrySnapshot
+from panels.models import HistoricalSnapshot
 from panels.tasks import email_panel_promoted
 from panels.tests.factories import GeneFactory
 from panels.tests.factories import STRFactory
@@ -176,9 +177,9 @@ class GenePanelTest(LoginGELUser):
             "number_of_genes"
         )  # 4 is due to create_batch
 
-        old_gps = GenePanel.objects.get(pk=gps.panel.pk).genepanelsnapshot_set.last()
-        assert old_gps.version != gps.version
-        assert old_gps.has_gene(gene_symbol) is True
+        old_gps = HistoricalSnapshot.objects.get(panel__pk=gps.panel.pk)
+        assert '{}.{}'.format(old_gps.major_version, old_gps.minor_version) != gps.version
+        assert gene_symbol in [g["entity_name"] for g in old_gps.data["genes"]]
 
         new_gps = GenePanel.objects.get(pk=gps.panel.pk).active_panel
         assert new_gps.has_gene(gene_symbol) is False
@@ -534,7 +535,7 @@ class GenePanelTest(LoginGELUser):
             .values_list("pk", flat=True)
         )
 
-        self.assertNotEqual(evaluations2, current_ev2)
+        self.assertEqual(evaluations2, current_ev2)
 
     def test_evaluation_single_panel(self):
         gps = GenePanelSnapshotFactory()
@@ -556,8 +557,8 @@ class GenePanelTest(LoginGELUser):
         # check if deleting gene preserves it in the previous versions
         gp = gps.panel
         gps.delete_gene(gene_symbol)
-        v1 = gp.genepanelsnapshot_set.get(major_version=0, minor_version=1)
-        self.assertTrue(v1.has_gene(gene_symbol))
+        v1 = HistoricalSnapshot.objects.filter(panel=gps.panel, major_version=0, minor_version=1).first()
+        assert gene_symbol in [g["entity_name"] for g in v1.data["genes"]]
 
     def test_panel_types(self):
         panel_type = PanelTypeFactory()

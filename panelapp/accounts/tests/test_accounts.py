@@ -118,7 +118,7 @@ class TestUsers(SetupUsers):
     def test_reviewer_confirmation_request_email(self):
         self.external_user.promote_to_reviewer()
         reviewer_confirmation_requset_email(self.external_user.pk)
-        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(len(mail.outbox), 2)
 
     def test_revierwer_confirmed_email(self):
         revierwer_confirmed_email(self.verified_user.pk)
