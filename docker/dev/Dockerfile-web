@@ -31,8 +31,10 @@ WORKDIR /app/panelapp
 # CMD ["gunicorn", "--workers=1", "-b :8000", "panelapp.wsgi:application"]
 
 # Start runserver_plus: useful for development
-ENTRYPOINT ["python", "manage.py"]
-CMD ["runserver_plus"]
+CMD ["python", "manage.py", "runserver_plus"]
+# Note there is a known issue prevending PyCharm debugging if ENTRYPOINT is defined
+# https://youtrack.jetbrains.com/issue/PY-32022
+
 
 EXPOSE 8000
 
