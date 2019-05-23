@@ -41,6 +41,7 @@ from panels.forms import CopyReviewsForm
 from panels.models import GenePanel
 from panels.models import GenePanelSnapshot
 from panels.models import ProcessingRunCode
+from panels.models import HistoricalSnapshot
 from panels.mixins import PanelMixin
 from panels.utils import remove_non_ascii
 from .entities import EchoWriter
@@ -320,12 +321,27 @@ class DownloadPanelVersionTSVView(DownloadPanelTSVMixin):
 
     def get_object(self):
         panel_version = self.request.POST.get("panel_version")
+        panel = GenePanel.objects.get_active_panel(pk=self.kwargs["pk"])
         if panel_version:
-            return GenePanel.objects.get_panel(pk=self.kwargs["pk"]).get_panel_version(
-                panel_version
-            )
+            try:
+                major_version, minor_version = panel_version.split(".")
+            except ValueError:
+                raise APIException(
+                    detail="Incorrect version supplied", code="incorrect_version"
+                )
+            if major_version == str(panel.major_version) and minor_version == str(
+                panel.minor_version
+            ):
+                return panel
+
+            snapshot = HistoricalSnapshot.objects.filter(
+                panel__pk=self.kwargs["pk"],
+                major_version=major_version,
+                minor_version=minor_version,
+            ).first()
+            return snapshot
         else:
-            return GenePanel.objects.get_active_panel(pk=self.kwargs["pk"])
+            return panel
 
     def post(self, *args, **kwargs):
         self.object = self.get_object()
@@ -337,6 +353,8 @@ class DownloadPanelVersionTSVView(DownloadPanelTSVMixin):
             return redirect(
                 reverse_lazy("panels:detail", kwargs={"pk": self.kwargs["pk"]})
             )
+        elif isinstance(self.object, HistoricalSnapshot):
+            return self.object.to_tsv()
         else:
             return self.process()
 

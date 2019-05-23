@@ -56,6 +56,7 @@ from .evaluation import Evaluation
 from .gene import Gene
 from .comment import Comment
 from .tag import Tag
+from panels.tasks import increment_panel_async
 
 
 class GenePanelSnapshotManager(models.Manager):
@@ -331,8 +332,8 @@ class GenePanelSnapshot(TimeStampedModel):
 
     objects = GenePanelSnapshotManager()
 
-    level4title = models.ForeignKey(Level4Title, on_delete=models.PROTECT)
-    panel = models.ForeignKey(GenePanel, on_delete=models.PROTECT)
+    level4title = models.ForeignKey(Level4Title, on_delete=models.CASCADE)
+    panel = models.ForeignKey(GenePanel, on_delete=models.CASCADE)
     major_version = models.IntegerField(default=0, db_index=True)
     minor_version = models.IntegerField(default=0, db_index=True)
     version_comment = models.TextField(null=True)
@@ -576,10 +577,6 @@ class GenePanelSnapshot(TimeStampedModel):
         major=False,
         user=None,
         comment=None,
-        ignore_gene=None,
-        ignore_str=None,
-        ignore_region=None,
-        remove_child=None,
     ):
         """Creates a new version of the panel.
 
@@ -590,109 +587,30 @@ class GenePanelSnapshot(TimeStampedModel):
         This has weird behaviour as self references still goes to the previous
         snapshot and not the new one.
         """
+        from .historical_snapshot import HistoricalSnapshot
 
         if self != self.panel.active_panel:
             raise Exception("Cannot increment non recent version")
 
         with transaction.atomic():
-            if self.is_super_panel:
-                distinct_child_panels = set(
-                    self.child_panels.values_list("panel_id", flat=True)
-                )
+            HistoricalSnapshot().import_panel(self, comment=comment)
 
-                self.pk = None
-                self.created = timezone.now()
-                self.modified = timezone.now()
+            self.created = timezone.now()
+            self.modified = timezone.now()
 
-                if major:
-                    self.major_version += 1
-                    self.minor_version = 0
-                else:
-                    self.minor_version += 1
-
-                self.save()
-
-                child_panels = list(
-                    GenePanelSnapshot.objects.filter(panel_id__in=distinct_child_panels)
-                    .order_by(
-                        "panel_id",
-                        "-major_version",
-                        "-minor_version",
-                        "-modified",
-                        "-pk",
-                    )
-                    .distinct("panel_id")
-                    .values_list("pk", flat=True)
-                )
-
-                # copy child panels
-                self.child_panels.through.objects.bulk_create(
-                    [
-                        self.child_panels.through(
-                            **{
-                                "to_genepanelsnapshot_id": child_panel,
-                                "from_genepanelsnapshot_id": self.pk,
-                            }
-                        )
-                        for child_panel in child_panels
-                        if remove_child != child_panel
-                    ]
-                )
+            if major:
+                self.major_version += 1
+                self.minor_version = 0
             else:
-                current_genes = deepcopy(
-                    self.get_all_genes_extra.prefetch_related(
-                        "comments",
-                        "evidence",
-                        "evidence__reviewer",
-                        "evaluation",
-                        "evaluation__user",
-                        "evaluation__comments",
-                        "evaluation__user__reviewer",
-                        "tags",
-                    )
-                )  # cache the results
-                current_strs = deepcopy(
-                    self.get_all_strs_extra.prefetch_related(
-                        "comments",
-                        "evidence",
-                        "evidence__reviewer",
-                        "evaluation",
-                        "evaluation__user",
-                        "evaluation__comments",
-                        "evaluation__user__reviewer",
-                        "tags",
-                    )
-                )
-                current_regions = deepcopy(
-                    self.get_all_regions_extra.prefetch_related(
-                        "comments",
-                        "evidence",
-                        "evidence__reviewer",
-                        "evaluation",
-                        "evaluation__user",
-                        "evaluation__comments",
-                        "evaluation__user__reviewer",
-                        "tags",
-                    )
-                )
+                self.minor_version += 1
 
+            self.save()
+
+            if not self.is_super_panel:
                 # get latest versions for super panels
                 super_genepanels = set(
                     self.genepanelsnapshot_set.values_list("panel_id", flat=True)
                 )
-
-                old_pk = self.pk
-                self.pk = None
-                self.created = timezone.now()
-                self.modified = timezone.now()
-
-                if major:
-                    self.major_version += 1
-                    self.minor_version = 0
-                else:
-                    self.minor_version += 1
-
-                self.save()
 
                 super_panels = list(
                     GenePanelSnapshot.objects.filter(panel_id__in=super_genepanels)
@@ -706,22 +624,6 @@ class GenePanelSnapshot(TimeStampedModel):
                     )
                     .values_list("pk", flat=True)
                 )
-
-                self._increment_version_entities(
-                    "genepanelentrysnapshot",
-                    current_genes,
-                    major,
-                    user,
-                    comment,
-                    ignore_gene,
-                )
-                self._increment_version_entities(
-                    "str", current_strs, major, user, comment, ignore_str
-                )
-                self._increment_version_entities(
-                    "region", current_regions, major, user, comment, ignore_region
-                )
-                self.clear_cache()
 
                 if major:
                     email_panel_promoted.delay(self.panel.pk)
@@ -741,208 +643,9 @@ class GenePanelSnapshot(TimeStampedModel):
                 # check if there are any parent panels
                 if super_panels:
                     for panel in GenePanelSnapshot.objects.filter(pk__in=super_panels):
-                        panel.increment_version(major=major, remove_child=old_pk)
+                        increment_panel_async.delay(user.pk, panel.pk, major=major)
 
-            if getattr(self.panel, "active_panel"):
-                del self.panel.active_panel
-
-            return self.panel.active_panel
-
-    def _increment_version_entities(
-        self, entity_type, current_entities, major, user, comment, ignore_entity
-    ):
-        assert entity_type in self.SUPPORTED_ENTITIES
-
-        models_map = {
-            "genepanelentrysnapshot": self.genepanelentrysnapshot_set.model,
-            "str": self.str_set.model,
-            "region": self.region_set.model,
-        }
-
-        model = models_map[entity_type]
-
-        reference_table = "{}_id".format(entity_type)
-
-        if not current_entities:
-            # what's the point :)
-            return
-
-        entities = {
-            e.entity_name: {
-                "entity": e,
-                "evidences": [],
-                "evaluations": [],
-                "tracks": [],
-                "tags": [],
-                "comments": [],
-            }
-            for e in current_entities
-            if not ignore_entity or (ignore_entity and ignore_entity != e.entity_name)
-        }
-
-        for entity in current_entities.prefetch_related("gene_core", "track"):
-            if ignore_entity and ignore_entity == entity.entity_name:
-                continue
-
-            evidences = list(entity.evidence.all())
-            for evidence in evidences:
-                evidence.pk = None
-            entities[entity.entity_name]["evidences"] = evidences
-
-            evaluations = list(entity.evaluation.all())
-            for evaluation in evaluations:
-                evaluation.create_comments = []
-                for comment in evaluation.comments.all():
-                    comment.pk = None
-                    evaluation.create_comments.append(comment)
-                evaluation.pk = None
-            entities[entity.entity_name]["evaluations"] = evaluations
-
-            tracks = list(entity.track.all())
-            for track in tracks:
-                track.pk = None
-            if major and user and comment:
-                issue_type = "Panel promoted to version {}".format(self.version)
-                issue_description = comment
-
-                track_promoted = TrackRecord(
-                    curator_status=user.reviewer.is_GEL(),
-                    issue_description=issue_description,
-                    gel_status=entity.status,
-                    issue_type=issue_type,
-                    user=user,
-                )
-                tracks.append(track_promoted)
-            entities[entity.entity_name]["tracks"] = tracks
-
-            tags = entity.tags.all()
-            entities[entity.entity_name]["tags"] = tags
-
-            comments = entity.comments.all()
-            for comment in comments:
-                comment.pk = None
-            entities[entity.entity_name]["comments"] = comments
-
-            new_entity = deepcopy(entity)
-            new_entity.gene_core = entity.gene_core
-            if major:
-                new_entity.ready = False
-            new_entity.pk = None
-            new_entity.created = timezone.now()
-            new_entity.modified = timezone.now()
-            new_entity.panel = self
-            entities[entity.entity_name]["entity"] = new_entity
-
-        # create copies
-        model.objects.bulk_create(
-            [entities[entity_name]["entity"] for entity_name in entities]
-        )
-
-        evidences = list(
-            itertools.chain.from_iterable(
-                [entities[entity_name]["evidences"] for entity_name in entities]
-            )
-        )
-        Evidence.objects.bulk_create(evidences)
-
-        entity_evidences = []
-        for entity_name, data in entities.items():
-            entity_evidences.extend(
-                [
-                    data["entity"].evidence.through(
-                        **{"evidence_id": ev.pk, reference_table: data["entity"].pk}
-                    )
-                    for ev in data["evidences"]
-                ]
-            )
-        model.evidence.through.objects.bulk_create(entity_evidences)
-
-        evaluations = list(
-            itertools.chain.from_iterable(
-                [entities[entity_name]["evaluations"] for entity_name in entities]
-            )
-        )
-        Evaluation.objects.bulk_create(evaluations)
-
-        entity_evaluations = []
-        for entity_name, data in entities.items():
-            entity_evaluations.extend(
-                [
-                    data["entity"].evaluation.through(
-                        **{"evaluation_id": ev.pk, reference_table: data["entity"].pk}
-                    )
-                    for ev in data["evaluations"]
-                ]
-            )
-        model.evaluation.through.objects.bulk_create(entity_evaluations)
-
-        evaluation_comments = []
-        for evaluation in evaluations:
-            evaluation_comments.extend(evaluation.create_comments)
-        Comment.objects.bulk_create(evaluation_comments)
-
-        evaluation_comments_through = []
-        for evaluation in evaluations:
-            for comment in evaluation.create_comments:
-                evaluation_comments_through.append(
-                    Evaluation.comments.through(
-                        **{"comment_id": comment.pk, "evaluation_id": evaluation.pk}
-                    )
-                )
-        Evaluation.comments.through.objects.bulk_create(evaluation_comments_through)
-
-        tracks = list(
-            itertools.chain.from_iterable(
-                [entities[entity_name]["tracks"] for entity_name in entities]
-            )
-        )
-        TrackRecord.objects.bulk_create(tracks)
-
-        entity_tracks = []
-        for entity_name, data in entities.items():
-            entity_tracks.extend(
-                [
-                    data["entity"].track.through(
-                        **{"trackrecord_id": ev.pk, reference_table: data["entity"].pk}
-                    )
-                    for ev in data["tracks"]
-                ]
-            )
-
-        model.track.through.objects.bulk_create(entity_tracks)
-
-        entity_tags = []
-        for entity_name, data in entities.items():
-            entity_tags.extend(
-                [
-                    data["entity"].tags.through(
-                        **{"tag_id": ev.pk, reference_table: data["entity"].pk}
-                    )
-                    for ev in data["tags"]
-                ]
-            )
-
-        model.tags.through.objects.bulk_create(entity_tags)
-
-        comments = list(
-            itertools.chain.from_iterable(
-                [entities[entity_name]["comments"] for entity_name in entities]
-            )
-        )
-        Comment.objects.bulk_create(comments)
-
-        entity_comments = []
-        for entity_name, data in entities.items():
-            entity_comments.extend(
-                [
-                    data["entity"].comments.through(
-                        **{"comment_id": ev.pk, reference_table: data["entity"].pk}
-                    )
-                    for ev in data["comments"]
-                ]
-            )
-
-        model.comments.through.objects.bulk_create(entity_comments)
+            return self
 
     @cached_property
     def contributors(self):
@@ -1373,11 +1076,11 @@ class GenePanelSnapshot(TimeStampedModel):
 
         if self.has_gene(gene_symbol):
             if increment:
-                self = self.increment_version(ignore_gene=gene_symbol)
-            else:
-                self.get_all_genes.get(gene__gene_symbol=gene_symbol).delete()
-                self.clear_cache()
-                self.clear_django_cache()
+                self = self.increment_version()
+
+            self.get_all_genes.get(gene__gene_symbol=gene_symbol).delete()
+            self.clear_cache()
+            self.clear_django_cache()
 
             if user:
                 self.add_activity(
@@ -1607,7 +1310,7 @@ class GenePanelSnapshot(TimeStampedModel):
             return False
 
         if increment_version:
-            self = self.increment_version()
+            self = self.increment_version(user=user)
 
         gene_core = Gene.objects.get(gene_symbol=gene_symbol)
         gene_info = gene_core.dict_tr()

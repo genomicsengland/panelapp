@@ -194,7 +194,7 @@ class Region(AbstractEntity, TimeStampedModel):
         ordering = ["-saved_gel_status"]
         indexes = [models.Index(fields=["name"])]
 
-    panel = models.ForeignKey(GenePanelSnapshot, on_delete=models.PROTECT)
+    panel = models.ForeignKey(GenePanelSnapshot, on_delete=models.CASCADE)
 
     name = models.CharField(max_length=128, help_text="Region ID")
     verbose_name = models.CharField(
