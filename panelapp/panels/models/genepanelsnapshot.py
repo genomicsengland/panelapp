@@ -643,7 +643,10 @@ class GenePanelSnapshot(TimeStampedModel):
                 # check if there are any parent panels
                 if super_panels:
                     for panel in GenePanelSnapshot.objects.filter(pk__in=super_panels):
-                        increment_panel_async.delay(user.pk, panel.pk, major=major)
+                        if user:
+                            increment_panel_async.delay(panel.pk, user_pk=user.pk, major=major)
+                        else:
+                            increment_panel_async.delay(panel.pk, major=major)
 
             return self
 

@@ -38,13 +38,15 @@ from panels.exceptions import IsSuperPanelException
 
 
 @shared_task
-def increment_panel_async(user_pk, panel_pk, version_comment=None, major=False):
+def increment_panel_async(panel_pk, user_pk=None, version_comment=None, major=False):
     from accounts.models import User
     from panels.models import GenePanelSnapshot
 
-    GenePanelSnapshot.objects.get(pk=panel_pk).increment_version(
-        major=major, user=User.objects.get(pk=user_pk), comment=version_comment
-    )
+    if user_pk and version_comment:
+        GenePanelSnapshot.objects.get(pk=panel_pk).increment_version(
+            major=major, user=User.objects.get(pk=user_pk), comment=version_comment)
+    else:
+        GenePanelSnapshot.objects.get(pk=panel_pk).increment_version()
 
 
 @shared_task

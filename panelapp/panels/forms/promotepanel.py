@@ -45,5 +45,5 @@ class PromotePanelForm(forms.ModelForm):
 
     def save(self, *args, commit=True, **kwargs):
         increment_panel_async(
-            self.request.user.pk, self.instance.pk, self.cleaned_data["version_comment"], major=True
+            self.instance.pk, self.request.user.pk, self.cleaned_data["version_comment"], major=True
         )
