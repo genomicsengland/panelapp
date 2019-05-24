@@ -19,5 +19,8 @@ VOLUME ["/app/panelapp"]
 WORKDIR /app/panelapp
 
 # Celery is a script and must run in "shell mode"
-ENTRYPOINT celery worker --app panelapp --task-events --concurrency 1
-CMD ["--loglevel INFO"]
+# ENTRYPOINT celery worker --app panelapp --task-events --concurrency 1
+# CMD ["--loglevel INFO"]
+CMD celery worker --app panelapp --task-events --concurrency 1 --loglevel INFO
+# Note there is a known issue prevending PyCharm debugging if ENTRYPOINT is defined
+# https://youtrack.jetbrains.com/issue/PY-32022

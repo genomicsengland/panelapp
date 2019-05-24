@@ -89,6 +89,6 @@ services:
       - ALLOWED_HOSTS=localhost;web
 #      - MEDIA_ROOT=/media
       - USE_S3=TRUE
-      - AWS_STORAGE_BUCKET_NAME=storage
+      - AWS_S3_MEDIAFILES_BUCKET_NAME=media
       - AWS_ACCESS_KEY_ID=dummy
       - AWS_SECRET_ACCESS_KEY=dummy

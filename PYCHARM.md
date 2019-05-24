@@ -57,3 +57,8 @@ Run Django commands from the IDE:
 
     
 Now you may run the Django application using the Run profile and access it from `http://127.0.0.1:8080`
+
+## Remote debugging
+
+There is a [known issue](https://youtrack.jetbrains.com/issue/PY-32022) preventing from debugging an application
+running inside Docker if the Dockerfile defines a custom `ENTRYPOINT`
