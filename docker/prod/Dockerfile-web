@@ -12,6 +12,11 @@ WORKDIR /app
 
 RUN pip install .
 
+ENV DJANGO_SETTINGS_MODULE=panelapp.settings.docker-dev
+    DJANGO_LOG_LEVEL=INFO
+    USE_S3=TRUE
+    USE_SQS=TRUE
+
 
 WORKDIR /app/panelapp
 EXPOSE 8080
