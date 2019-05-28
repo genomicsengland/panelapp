@@ -45,12 +45,7 @@ ALLOWED_HOSTS = ALLOWED_HOSTS + ["localhost", "*"]
 
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
-CELERY_TASK_PUBLISH_RETRY_POLICY = {
-    "max_retries": 3,
-    "interval_start": 0,
-    "interval_step": 0.2,
-    "interval_max": 0.2,
-}
+
 
 # Static files and media (uploaded files) to S3 bucket (LocalStack)
 # see https://testdriven.io/blog/storing-django-static-and-media-files-on-amazon-s3/
@@ -105,3 +100,33 @@ else:  # Static and Media files on local file system
 
     MEDIA_URL = "/media/"
     MEDIA_ROOT = os.getenv("MEDIA_ROOT")
+
+##########
+# Celery
+##########
+
+CELERY_TASK_DEFAULT_QUEUE = "panelapp"  # Statically specify the queue name
+
+USE_SQS = os.getenv('USE_SQS') == 'TRUE'
+
+if USE_SQS:  # Use SQS as message broker
+    AWS_REGION = os.getenv('AWS_REGION', "eu-west-2")
+
+    CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL", "sqs://@localstack:4576")
+    BROKER_TRANSPORT_OPTIONS = {
+        'region': AWS_REGION,  # FIXME Is Kombo/Boto3 ignoring the region and always using us-east-1?
+        'polling_interval': 1,      # seconds
+        'visibility_timeout': 360,  # seconds
+    }
+
+else:  # Use RabbitMQ as message broker
+
+    CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL", "pyamqp://localhost:5672/")
+
+# Dev-only
+CELERY_TASK_PUBLISH_RETRY_POLICY = {
+    "max_retries": 3,
+    "interval_start": 0,
+    "interval_step": 0.2,
+    "interval_max": 0.2,
+}

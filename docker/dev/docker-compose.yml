@@ -11,7 +11,6 @@ services:
       - "8090:8080"
     environment:
       - SERVICES=sqs,s3,ses
-      # FIXME make Region configurable
       - DEFAULT_REGION=${AWS_DEFAULT_REGION-eu-west-2}
       - HOSTNAME_EXTERNAL=localstack
       - DEBUG=${DEBUG- }
@@ -31,10 +30,10 @@ services:
       - POSTGRES_USER=panelapp
       - POSTGRES_DB=panelapp
 
-  rabbitmq:
-    image: rabbitmq
-    environment:
-      - RABBITMQ_DEFAULT_VHOST=panelapp
+#  rabbitmq:
+#    image: rabbitmq
+#    environment:
+#      - RABBITMQ_DEFAULT_VHOST=panelapp
 
   web:
     build:
@@ -50,22 +49,24 @@ services:
       - "8080:8000"
     depends_on:
       - db
-      - rabbitmq
+#      - rabbitmq
       - localstack
     environment:
       - DATABASE_URL=postgres://panelapp:panelapp@db/panelapp
       - DJANGO_SETTINGS_MODULE=panelapp.settings.docker-dev
       - DJANGO_LOG_LEVEL=DEBUG
       - HEALTH_ACCESS_TOKEN_LOCATION=/app/health_token
-      - CELERY_BROKER_URL=amqp://rabbitmq/panelapp
       - ALLOWED_HOSTS=localhost;web
+      - AWS_REGION=eu-west-2
+      - AWS_ACCESS_KEY_ID=dummy
+      - AWS_SECRET_ACCESS_KEY=dummy
       - USE_S3=TRUE
       - AWS_S3_STATICFILES_BUCKET_NAME=static
       - AWS_S3_MEDIAFILES_BUCKET_NAME=media
-      - AWS_ACCESS_KEY_ID=dummy
-      - AWS_SECRET_ACCESS_KEY=dummy
 #      - STATIC_ROOT=/static
 #      - MEDIA_ROOT=/media
+      - USE_SQS=TRUE
+      - CELERY_BROKER_URL=sqs://@localstack:4576
 
   worker:
     build:
@@ -80,15 +81,17 @@ services:
     ports: []
     depends_on:
       - db
-      - rabbitmq
+#      - rabbitmq
     environment:
       - DATABASE_URL=postgres://panelapp:panelapp@db/panelapp
       - DJANGO_SETTINGS_MODULE=panelapp.settings.docker-dev
       - HEALTH_ACCESS_TOKEN_LOCATION=/app/health_token
-      - CELERY_BROKER_URL=amqp://rabbitmq/panelapp
       - ALLOWED_HOSTS=localhost;web
 #      - MEDIA_ROOT=/media
-      - USE_S3=TRUE
-      - AWS_S3_MEDIAFILES_BUCKET_NAME=media
+      - AWS_REGION=eu-west-2
       - AWS_ACCESS_KEY_ID=dummy
       - AWS_SECRET_ACCESS_KEY=dummy
+      - USE_S3=TRUE
+      - AWS_S3_MEDIAFILES_BUCKET_NAME=media
+      - USE_SQS=TRUE
+      - CELERY_BROKER_URL=sqs://@localstack:4576
