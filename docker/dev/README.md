@@ -33,7 +33,7 @@ As separate steps:
 
 1. Start a new dev cluster (in detached mode): 
     ```bash
-    $ make run
+    $ make up
     ```
 2. Create db schema or apply migration (give time to the db container to start, before running `migrate`. 
 Possibly, have a look at logs with `make logs` to see it starting): 
@@ -51,6 +51,10 @@ Possibly, have a look at logs with `make logs` to see it starting):
 5. Deploy static files (takes a while):
     ```bash
     $ make collectstatic
+    ```
+6. Create admin user (username: `admin`, interactively insert passwod)
+    ```bash
+    $ make createsuperuser
     ```
 
 ### Developing and accessing the application
@@ -76,11 +80,6 @@ To tail logs from all containers:
 $ make logs
 ```
 
-To create a superuser (interactive):
-
-```bash
-$ make createsuperuser
-```
 
 ### Stop, restart and destroy the cluster
 

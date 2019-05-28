@@ -84,5 +84,6 @@ setup(
         "django-filter==2.0.0",
         "django-storages==1.7.1",
         "boto3==1.9.147",
+        "pycurl==7.43.0.2",
     ],
 )
