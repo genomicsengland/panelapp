@@ -67,6 +67,7 @@ services:
 #      - MEDIA_ROOT=/media
       - USE_SQS=TRUE
       - CELERY_BROKER_URL=sqs://@localstack:4576
+#      - CELERY_BROKER_URL=amqp://rabbitmq/panelapp
 
   worker:
     build:
@@ -95,3 +96,4 @@ services:
       - AWS_S3_MEDIAFILES_BUCKET_NAME=media
       - USE_SQS=TRUE
       - CELERY_BROKER_URL=sqs://@localstack:4576
+#      - CELERY_BROKER_URL=amqp://rabbitmq/panelapp
