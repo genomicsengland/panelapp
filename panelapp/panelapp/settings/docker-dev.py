@@ -107,6 +107,13 @@ else:  # Static and Media files on local file system
 
 CELERY_TASK_DEFAULT_QUEUE = "panelapp"  # Statically specify the queue name
 
+CELERY_TASK_PUBLISH_RETRY_POLICY = {
+    "max_retries": 3,
+    "interval_start": 0,
+    "interval_step": 0.2,
+    "interval_max": 0.2,
+}
+
 USE_SQS = os.getenv('USE_SQS') == 'TRUE'
 
 if USE_SQS:  # Use SQS as message broker
@@ -120,13 +127,4 @@ if USE_SQS:  # Use SQS as message broker
     }
 
 else:  # Use RabbitMQ as message broker
-
     CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL", "pyamqp://localhost:5672/")
-
-# Dev-only
-CELERY_TASK_PUBLISH_RETRY_POLICY = {
-    "max_retries": 3,
-    "interval_start": 0,
-    "interval_step": 0.2,
-    "interval_max": 0.2,
-}
