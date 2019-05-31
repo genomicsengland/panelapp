@@ -1,0 +1,19 @@
+# Base image for both Web and Worker images
+FROM python:3.6.8-alpine3.9
+
+RUN mkdir -p /app/panelapp
+
+COPY ./panelapp     /app/panelapp
+COPY ./setup.py ./setup.cfg ./MANIFEST.in ./VERSION     /app/
+
+WORKDIR /app
+
+RUN apk add --no-cache postgresql-libs curl jpeg-dev zlib-dev && \
+    apk add --no-cache --virtual .build-deps gcc musl-dev curl-dev postgresql-dev build-base linux-headers && \
+    pip install . && \
+    apk --purge del .build-deps
+
+ENV PYTHONUNBUFFERED 0
+ENV DJANGO_SETTINGS_MODULE panelapp.settings.docker-aws
+ENV DJANGO_LOG_LEVEL INFO
+ENV CELERY_BROKER_URL sqs://

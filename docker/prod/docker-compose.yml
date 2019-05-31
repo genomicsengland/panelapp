@@ -1,0 +1,97 @@
+########################################################################################
+# This Docker-Compose file is for locally troubleshooting the production docker images.
+# THIS IS NOT MEANT TO BE RUN IN PRODUCTION or in any deployed environment
+########################################################################################
+
+version: '3'
+
+services:
+
+
+  localstack:
+    image: localstack/localstack
+    ports:
+      - "4567-4593:4567-4593"
+      # Exposes LocalStack WebUI on 8090
+      - "8090:8080"
+    environment:
+      - SERVICES=sqs,s3,ses
+      - DEFAULT_REGION=${AWS_DEFAULT_REGION-eu-west-2}
+      - HOSTNAME_EXTERNAL=localstack
+      - DEBUG=FALSE
+      - PORT_WEB_UI=8080
+      - DOCKER_HOST=unix:///var/run/docker.sock
+      # Make S3 bucket persistent
+      - DATA_DIR=/tmp/localstack/data
+    volumes:
+      - "${TMPDIR:-/tmp/localstack}:/tmp/localstack"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+
+  db:
+    image: postgres:9.6.9
+    environment:
+      - POSTGRES_PASSWORD=panelapp
+      - POSTGRES_USER=panelapp
+      - POSTGRES_DB=panelapp
+
+  web:
+    build:
+      context: ../../
+      dockerfile: ./docker/prod/Dockerfile-web
+    image: panelapp_web_prod
+    restart: on-failure
+    volumes:
+      - ../../panelapp:/app/panelapp
+    ports:
+      - "8080:8000"
+    depends_on:
+      - db
+      - localstack
+    environment:
+      - DATABASE_URL=postgres://panelapp:panelapp@db/panelapp
+      - DJANGO_SETTINGS_MODULE=panelapp.settings.docker-aws
+      - DJANGO_LOG_LEVEL=INFO
+      - HEALTH_ACCESS_TOKEN_LOCATION=/app/health_token
+      - ALLOWED_HOSTS=localhost;web
+      - AWS_REGION=eu-west-2
+      - AWS_ACCESS_KEY_ID=dummy-key
+      - AWS_SECRET_ACCESS_KEY=dummy-secret
+      - CELERY_BROKER_URL=sqs://@localstack:4576
+      - AWS_S3_USE_SSL=False
+      - AWS_STATICFILES_DEFAULT_ACL=public-read
+      - AWS_S3_ENDPOINT_URL=http://localstack:4572/
+      - AWS_S3_STATICFILES_BUCKET_NAME=static
+      - STATIC_URL=http://localstack:4572/static/
+      - AWS_S3_MEDIAFILES_BUCKET_NAME=media
+      - MEDIA_URL=http://localstack:4572/media/
+      - AWS_MEDIAFILES_DEFAULT_ACL=public-read
+    entrypoint:
+      - gunicorn
+      - --config=file:/app/gunicorn_config.py
+      - panelapp.wsgi:application
+      - --log-level=info
+
+
+  worker:
+    build:
+      context: ../../
+      dockerfile: ./docker/prod/Dockerfile-worker
+    image: panelapp_worker_prod
+    restart: on-failure
+    volumes:
+      - ../../panelapp:/app/panelapp
+    ports: []
+    depends_on:
+      - db
+    environment:
+      - DATABASE_URL=postgres://panelapp:panelapp@db/panelapp
+      - DJANGO_SETTINGS_MODULE=panelapp.settings.docker-aws
+      - HEALTH_ACCESS_TOKEN_LOCATION=/app/health_token
+      - ALLOWED_HOSTS=localhost;web
+      - AWS_REGION=eu-west-2
+      - AWS_ACCESS_KEY_ID=dummy
+      - AWS_SECRET_ACCESS_KEY=dummy
+      - USE_S3=TRUE
+      - AWS_S3_MEDIAFILES_BUCKET_NAME=media
+      - USE_SQS=TRUE
+      - CELERY_BROKER_URL=sqs://@localstack:4576

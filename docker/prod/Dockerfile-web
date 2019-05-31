@@ -1,23 +1,20 @@
-FROM python:3.6-8-alpine3.9
+# FIXME fully qualify the base image, including a tag
+FROM panelapp
 
-# Better to buffer stdout logging, for performance
-ENV PYTHONUNBUFFERED 0
+COPY ./deploy/gunicorn_config.py  /app/
 
-RUN mkdir -p /app/panelapp
+# Gunicorn settings
+ENV GUNICORN_WORKERS 2
+ENV GUNICORN_BACKLOG 4096
+ENV GUNICORN_BIND 0.0.0.0:8000
+ENV GUNICORN_LOG_LEVEL INFO
+# Access log is disabled: actual access log is from CDN
 
-COPY ./panelapp /app/panelapp
-COPY ./setup.py ./setup.cfg ./MANIFEST.in ./VERSION /app/
-
-WORKDIR /app
-
-RUN pip install .
-
-ENV DJANGO_SETTINGS_MODULE=panelapp.settings.docker-dev
-    DJANGO_LOG_LEVEL=INFO
-    USE_S3=TRUE
-    USE_SQS=TRUE
-
+# Gunicorn will run as non-root user
+RUN addgroup -S -g 1000 app; adduser -D -S -u 1000 -g app app
+USER 1000:1000
 
 WORKDIR /app/panelapp
 EXPOSE 8080
-CMD ["gunicorn", "--workers=2", "-b :8000", "panelapp.wsgi:application"]
+ENTRYPOINT ["gunicorn","--config /app/gunicorn_config.py","panelapp.wsgi:application"]
+

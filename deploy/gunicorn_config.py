@@ -22,6 +22,15 @@
 ## under the License.
 ##
 
-# Profile used for all deployed, dockerised environment (as opposed to local dockerised environment, for development)
+# Gunicorn configuration file
+# Iterates through all env variables named GUNICORN_* and set local variables with the suffix, lowercased: e.g.
+# GUNICORN_FOO_BAR = 42 creates a local variable named foo_bar with value '42'
+# Inspired by: https://sebest.github.io/post/protips-using-gunicorn-inside-a-docker-image/
 
-from .base import *  # noqa
+import os
+
+
+for k,v in os.environ.items():
+    if k.startswith("GUNICORN_"):
+        key = k.split('_', 1)[1].lower()
+        locals()[key] = v

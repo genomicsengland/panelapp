@@ -30,7 +30,7 @@ DEBUG = True
 
 RUNSERVERPLUS_SERVER_ADDRESS_PORT = "0.0.0.0:8000"
 
-INSTALLED_APPS += ("debug_toolbar", "django_extensions")  # noqa
+INSTALLED_APPS += ("debug_toolbar", "django_extensions",)  # noqa
 
 MIDDLEWARE += ("debug_toolbar.middleware.DebugToolbarMiddleware",)  # noqa
 
@@ -46,23 +46,17 @@ ALLOWED_HOSTS = ALLOWED_HOSTS + ["localhost", "*"]
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
 
-
-# Static files and media (uploaded files) to S3 bucket (LocalStack)
-# see https://testdriven.io/blog/storing-django-static-and-media-files-on-amazon-s3/
-# and https://django-storages.readthedocs.io/en/latest/backends/amazon-S3.html
-# and also https://www.caktusgroup.com/blog/2014/11/10/Using-Amazon-S3-to-store-your-Django-sites-static-and-media-files/
-
-
 USE_S3 = os.getenv('USE_S3') == 'TRUE'
+AWS_REGION = os.getenv('AWS_REGION', "eu-west-2")
+AWS_DEFAULT_ACL = 'public-read'  # To shut up a warning from s3boto3.py
 
 if USE_S3:  # Static and Media files on S3
 
     # AWS settings (regardless using LocalStack or the real thing)
-    AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID')
-    AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
+    AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID', None)
+    AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY', None)
 
     # What follows is specific to using LocalStack
-    AWS_DEFAULT_ACL = 'public-read'
     AWS_S3_USE_SSL = False
     AWS_S3_ENDPOINT_URL = 'http://localstack:4572/'  # URL used by Boto3 to connect to S3 API
 
@@ -83,6 +77,9 @@ if USE_S3:  # Static and Media files on S3
 
     AWS_S3_STATICFILES_OBJECT_PARAMETERS = {'CacheControl': 'max-age=86400'}
 
+    AWS_STATICFILES_DEFAULT_ACL = 'public-read'  # LocalStack only
+
+
     ##############
     # Media files
     ##############
@@ -92,6 +89,8 @@ if USE_S3:  # Static and Media files on S3
     AWS_S3_MEDIAFILES_CUSTOM_DOMAIN = None
     MEDIA_URL = f'http://localstack:4572/{AWS_S3_MEDIAFILES_BUCKET_NAME}/'  # URL media files are served from
     AWS_S3_MEDIAFILES_OBJECT_PARAMETERS = {}
+
+    AWS_MEDIAFILES_DEFAULT_ACL = 'public-read'  # LocalStack only
 
 else:  # Static and Media files on local file system
 
@@ -117,7 +116,6 @@ CELERY_TASK_PUBLISH_RETRY_POLICY = {
 USE_SQS = os.getenv('USE_SQS') == 'TRUE'
 
 if USE_SQS:  # Use SQS as message broker
-    AWS_REGION = os.getenv('AWS_REGION', "eu-west-2")
 
     CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL", "sqs://@localstack:4576")
     BROKER_TRANSPORT_OPTIONS = {

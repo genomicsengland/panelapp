@@ -112,6 +112,7 @@ Tests
 * `EMAIL_HOST_PASSWORD` - SMTP password
 * `ALLOWED_HOSTS` - whitelisted hostnames, if user tries to access website which isn't here Django will throw 500 error
 * `DJANGO_ADMIN_URL` - change admin URL to something secure.
+* `STATIC_URL` - **TBD**
 
 ## Other variables
 

@@ -65,7 +65,8 @@ The python code is mounted from the host `./panelapp` directory.
 Changes to the code are immediately reflected into the running containers.
 
 `setup.py`, `setup.cfg`, `MANIFEST.in` and `VERSION` are copied into the container at build-time.
-Any change to these files requires rebuilding the container and restarting the cluster.
+Any change to these files (e.g. **any changes to a dependency version**) requires rebuilding the container and restarting 
+the cluster.
 
 
 To run tests:
@@ -79,6 +80,7 @@ To tail logs from all containers:
 ```bash
 $ make logs
 ```
+
 
 
 ### Stop, restart and destroy the cluster

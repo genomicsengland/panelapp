@@ -1,18 +1,11 @@
-FROM python:3.6-8-alpine3.9
+# FIXME fully qualify the base image, including a tag
+FROM panelapp
 
-# Better to buffer stdout logging, for performance
-ENV PYTHONUNBUFFERED 0
-
-RUN mkdir -p /app/panelapp
-
-COPY ./panelapp /app/panelapp
-COPY ./setup.py ./setup.cfg ./MANIFEST.in ./VERSION /app/
-
-WORKDIR /app
-
-RUN pip install .
+# Celery will run as non-root user
+RUN addgroup -S -g 1000 app; adduser -D -S -u 1000 -g app app
+USER 1000:1000
 
 WORKDIR /app/panelapp
-
 ENTRYPOINT celery worker --app panelapp --task-events
 CMD ["--loglevel INFO"]
+# FIXME Configure  number of celery threads
