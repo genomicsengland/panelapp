@@ -31,21 +31,15 @@ up: ## Run cluster
 migrate: ## Create db schema, apply db migration (migrate command)
 	docker-compose exec web python manage.py migrate
 
-# FIXME This no longer works as the genes file is not in the Docker image
-# 		Write targets to:
-#		1) Push a file from the host machine to an S3 bucket in localstack
-#		2) Exec a command inside the docker image to fetch the file from S3 (requires AWS CLI...)
-#		3) Run `loaddata`
-#		4) Remove the gene file
-loaddata: export AWS_DEFAULT_REGION := eu-west-2
 loaddata: export AWS_ACCESS_KEY_ID := dummy-key
 loaddata: export AWS_SECRET_ACCESS_KEY := dummy-secret
 loaddata: ## Load genes files into db (loaddata command)
 	aws --endpoint-url=http://localhost:4572 s3 cp ../../deploy/genes.json.gz s3://media/genes.json.gz
-	docker-compose exec web apk add --no-cache --virtual .tmp aws-cli
-	docker-compose exec -e AWS_DEFAULT_REGION=eu-west-2 -e AWS_ACCESS_KEY_ID=dummy -e AWS_SECRET_ACCESS_KEY=dummy web aws s3 cp s3://media/genes.json.gz /app/genes.json.gz
-	docker-compose exec web apk --purge del .tmp
-	docker-compose exec web python manage.py loaddata /app/genes.json
+	docker-compose exec web python -c "import boto3,botocore;boto3.resource('s3',use_ssl=False, endpoint_url='http://localstack:4572').Bucket('media').download_file('genes.json.gz', '/var/tmp/genes.json.gz')"
+	docker-compose exec web python manage.py loaddata /var/tmp/genes.json
+	docker-compose exec web rm /var/tmp/genes.json.gz
+	aws --endpoint-url=http://localhost:4572 s3 rm s3://media/genes.json.gz
+
 
 collectstatic: ## Deploy static files (collectstatic command)
 	docker-compose exec web python manage.py collectstatic --noinput

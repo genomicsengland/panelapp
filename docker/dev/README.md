@@ -136,3 +136,16 @@ If you are running Docker Compose directly (or from the IDE) on OSX, beware it r
 Failing to do this causes LocalStack mounting the host directory `/tmp/localstack` (default on Linux), but Docker has no 
 write access to `/tmp` on OSX.
 The symptom will be a number of *Mount denied* or permissions errors on starting LocalStack.
+
+## Differences between AWS LocalStack and "the real" AWS thing
+
+* Running containers do not have any IAM Role; AWS credentials are not actually required but all libraries/cli tools 
+    expect them. `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` must be set as environment variables in the running
+    container (actual values do not matter).
+* [Service endpoints](https://github.com/localstack/localstack#user-content-overview) are different. 
+    You have to pass `endpoint_url` to most of libraries/CLI commands. Also, you may have to disable `https` with
+    `use_ssl=False` as LocalStack uses http while S3, for example, uses https by default.
+* Containers running inside the docker-compose cluster see all LocalStack service coming from `localstack` host. From the
+    host machine they are actually exposed to `localhost`. To make scripts running both inside the containers and from
+    the host machine, set an alias `localstack` alias to `localhost` in the host machine's `/etc/hosts` file
+         

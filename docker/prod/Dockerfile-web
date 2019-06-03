@@ -1,7 +1,7 @@
 # FIXME fully qualify the base image, including a tag
 FROM panelapp
 
-COPY ./deploy/gunicorn_config.py  /app/
+COPY --chown=app:app ./deploy/gunicorn_config.py  /app/
 
 # Gunicorn settings
 ENV GUNICORN_WORKERS 2
@@ -9,10 +9,6 @@ ENV GUNICORN_BACKLOG 4096
 ENV GUNICORN_BIND 0.0.0.0:8000
 ENV GUNICORN_LOG_LEVEL INFO
 # Access log is disabled: actual access log is from CDN
-
-# Gunicorn will run as non-root user
-RUN addgroup -S -g 1000 app; adduser -D -S -u 1000 -g app app
-USER 1000:1000
 
 WORKDIR /app/panelapp
 EXPOSE 8080

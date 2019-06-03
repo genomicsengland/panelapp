@@ -1,10 +1,6 @@
 # FIXME fully qualify the base image, including a tag
 FROM panelapp
 
-# Celery will run as non-root user
-RUN addgroup -S -g 1000 app; adduser -D -S -u 1000 -g app app
-USER 1000:1000
-
 WORKDIR /app/panelapp
 ENTRYPOINT celery worker --app panelapp --task-events
 CMD ["--loglevel INFO"]
