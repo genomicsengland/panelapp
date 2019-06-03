@@ -49,3 +49,12 @@ CELERY_TASK_PUBLISH_RETRY_POLICY = {
     "interval_step": 0.2,
     "interval_max": 0.2,
 }
+
+def show_toolbar(request):
+    if request.is_ajax():
+        return False
+    return True
+
+DEBUG_TOOLBAR_CONFIG = {
+    'SHOW_TOOLBAR_CALLBACK': 'panelapp.settings.dev.show_toolbar',
+}

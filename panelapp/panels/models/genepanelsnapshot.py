@@ -559,19 +559,6 @@ class GenePanelSnapshot(TimeStampedModel):
         if panels_changed:
             self.child_panels.set(updated_child_panels)
 
-    @cached_property
-    def contributors(self):
-        user_ids = (
-            Evaluation.objects.filter(Q(str__panel=self))
-            .union(Evaluation.objects.filter(region__panel=self))
-            .union(Evaluation.objects.filter(genepanelentrysnapshot__panel=self))
-            .distinct("user")
-            .order_by("user")
-            .values("user", flat=True)
-        )
-
-        return User.objects.filter(pk__in=user_ids)
-
     def increment_version(
         self,
         major=False,
@@ -606,25 +593,7 @@ class GenePanelSnapshot(TimeStampedModel):
 
             self.save()
 
-            if not self.is_super_panel:
-                # get latest versions for super panels
-                super_genepanels = set(
-                    self.genepanelsnapshot_set.values_list("panel_id", flat=True)
-                )
-
-                super_panels = list(
-                    GenePanelSnapshot.objects.filter(panel_id__in=super_genepanels)
-                    .distinct("panel_id")
-                    .order_by(
-                        "panel_id",
-                        "-major_version",
-                        "-minor_version",
-                        "-modified",
-                        "-pk",
-                    )
-                    .values_list("pk", flat=True)
-                )
-
+            if self.is_child_panel:
                 if major:
                     email_panel_promoted.delay(self.panel.pk)
 
@@ -640,15 +609,14 @@ class GenePanelSnapshot(TimeStampedModel):
                     )
                     self.save()
 
-                # check if there are any parent panels
-                if super_panels:
-                    for panel in GenePanelSnapshot.objects.filter(pk__in=super_panels):
-                        if user:
-                            increment_panel_async.delay(panel.pk, user_pk=user.pk, major=major)
-                        else:
-                            increment_panel_async.delay(panel.pk, major=major)
+        # increment versions of any super panel
+        for panel in self.genepanelsnapshot_set.all():
+            if user:
+                increment_panel_async.delay(panel.pk, user_pk=user.pk, major=major)
+            else:
+                increment_panel_async.delay(panel.pk, major=major)
 
-            return self
+        return self
 
     @cached_property
     def contributors(self):

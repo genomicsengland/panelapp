@@ -77,16 +77,16 @@ class SuperPanelsTest(LoginGELUser):
 
         child1 = GenePanelSnapshotFactory()
         child1.add_gene(self.gel_user, gene1.gene_symbol, gene1_data)
-        child1.panel.active_panel.add_gene(self.gel_user, gene2.gene_symbol, gene2_data)
-        child1 = child1.panel.active_panel
+        child1.add_gene(self.gel_user, gene2.gene_symbol, gene2_data)
 
         child2 = GenePanelSnapshotFactory()
         child2.add_gene(self.gel_user, gene1.gene_symbol, gene1_data)
-        child2 = child2.panel.active_panel
 
         parent.child_panels.set([child1, child2])
         parent.update_saved_stats()
         del parent.is_super_panel
+        del child1.is_child_panel
+        del child2.is_child_panel
 
         self.assertEqual(len(parent.get_all_entities_extra), 3)
         self.assertTrue(parent.is_super_panel)
