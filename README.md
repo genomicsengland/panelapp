@@ -3,14 +3,39 @@ PanelApp
 
 The Panel App is a crowd-sourced repository of information about various Gene panels.
 
-> This version of the application is under refactoring to be more "cloud-native"
+> This version of the application is under refactoring to be cloud-native and deployed on AWS.
 
-> This documentation page is going to be obsolete and replaced
+Local development environment
+-----------------------------
 
 For building local, dockerised development environment, see [./docker/dev/README.md](docker/dev/README.md)
 
-For notes about cloud-native, AWS porting, see [AWS.md](AWS.md)
+[Docker Compose](docker/dev/docker-compose.yml) and [Makefile](docker/dev/Makefile) are provided to help with the local 
+development environment.
 
+To simplify local development we are using [LocalStack](https://github.com/localstack/localstack). 
+It provides a mock for many AWS services (S3 and SQS in our case) running in a single docker container.
+
+> LocalStack API is identical to the actual services, but with some remarkable differences in security and URLs.
+> Beware configurations and security for local development with LocalStack is different from actual AWS services.
+
+It might be handy installing [AWScli-local](https://github.com/localstack/awscli-local) on developer's machine.
+A wrapper around AWS cli for interacting with LocalStack (it helps with not `--endpoint-url` and providing dummy 
+credentials on every request).
+
+Cloud environments
+------------------
+
+For AWS-deployed environment (Production, but also any other non-local-dev environment) see [./docker/prod/README.md](docker/prod/README.md).
+
+The [Docker Compose](docker/prod/docker-compose.yml) and [Makefile](docker/prod/Makefile) in the 
+[production docker directory](docker/prod/) are for troubleshooting production docker images running them locally.
+**They are not supposed to be used in any cloud environment**.
+
+
+---
+
+> This rest of this documentation page is obsolete and will be replaced
 
 
 Installation
