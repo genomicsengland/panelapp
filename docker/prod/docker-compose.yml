@@ -58,7 +58,6 @@ services:
       - localstack
     environment:
       - DATABASE_URL=postgres://panelapp:panelapp@db/panelapp
-      - DJANGO_SETTINGS_MODULE=panelapp.settings.docker-aws
       - DJANGO_LOG_LEVEL=INFO
       - HEALTH_ACCESS_TOKEN_LOCATION=/app/health_token
       - ALLOWED_HOSTS=localhost;web
@@ -93,7 +92,6 @@ services:
     environment:
       # Same configuration as web (except Static file storage-related and ALLOWED_HOSTS)
       - DATABASE_URL=postgres://panelapp:panelapp@db/panelapp
-      - DJANGO_SETTINGS_MODULE=panelapp.settings.docker-aws
       - DJANGO_LOG_LEVEL=INFO
       - AWS_REGION=eu-west-2
       - AWS_ACCESS_KEY_ID=dummy-key
