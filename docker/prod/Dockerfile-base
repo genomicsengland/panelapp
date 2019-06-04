@@ -1,0 +1,31 @@
+# Base image for both Web and Worker images
+FROM python:3.6.8-alpine3.9
+
+RUN mkdir -p /app/panelapp
+RUN mkdir -p /pythonlib
+
+# Application (non-root) user
+RUN adduser -D -u 1000 -s /sbin/nologin  -g app app
+
+COPY --chown=app:app ./panelapp     /app/panelapp
+COPY --chown=app:app ./setup.py ./setup.cfg ./MANIFEST.in ./VERSION     /app/
+
+# Python libraries get installed as root in /pythonlib (scripts are still installed in /usr/local/bin).
+# Ownership of all python modules have to be writable by the user running the application, to create __pycache__.
+# After installing we are removing all system dependencies not required at runtime, within the same Docker layer
+WORKDIR /app
+RUN apk add --no-cache postgresql-libs curl jpeg-dev zlib-dev && \
+    apk add --no-cache --virtual .build-deps gcc musl-dev curl-dev postgresql-dev build-base linux-headers && \
+    pip install --target /pythonlib --install-option="--install-scripts=/usr/local/bin" . && \
+    apk --purge del .build-deps && \
+    chown -R app:app /pythonlib && \
+    chown -R app:app /usr/local/lib/python3.*
+
+ENV PYTHONPATH /pythonlib
+ENV PATH="/pythonlib:${PATH}"
+ENV PYTHONUNBUFFERED 0
+ENV DJANGO_SETTINGS_MODULE panelapp.settings.docker-aws
+ENV DJANGO_LOG_LEVEL INFO
+ENV CELERY_BROKER_URL sqs://
+
+USER app:app

@@ -39,14 +39,18 @@ logger = logging.getLogger(__name__)
 
 
 class StaticStorage(S3Boto3Storage):
+    region_name = settings.AWS_REGION
     bucket_name = settings.AWS_S3_STATICFILES_BUCKET_NAME
     object_parameters = settings.AWS_S3_STATICFILES_OBJECT_PARAMETERS
     custom_domain = settings.AWS_S3_STATICFILES_CUSTOM_DOMAIN
+    default_acl = settings.AWS_STATICFILES_DEFAULT_ACL
     logger.debug("Static Files bucket: {}".format(bucket_name))
 
 
 class MediaStorage(S3Boto3Storage):
+    region_name = settings.AWS_REGION
     bucket_name = settings.AWS_S3_MEDIAFILES_BUCKET_NAME
     object_parameters = settings.AWS_S3_MEDIAFILES_OBJECT_PARAMETERS
     custom_domain = settings.AWS_S3_MEDIAFILES_CUSTOM_DOMAIN
+    default_acl = settings.AWS_MEDIAFILES_DEFAULT_ACL
     logger.debug("Media Files bucket: {}".format(bucket_name))

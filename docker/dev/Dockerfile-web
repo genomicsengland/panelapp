@@ -17,7 +17,7 @@ RUN pip install pytest-runner
 RUN apt-get update && apt-get install build-essential -y
 
 # Copy the genes file
-ADD ./deploy/genes.json.tgz /app
+ADD ./deploy/genes.json.gz /app
 
 # Unbufferend I/O for synchronous logging at dev-time
 ENV PYTHONUNBUFFERED 1
