@@ -84,6 +84,8 @@ or through CloudFront CDN (recommended).
 
 The external domain the _Static_ bucket is accessible at must be specified in the `AWS_S3_STATICFILES_CUSTOM_DOMAIN` setting.
 
+> Static files are stored in a `/static` "subdirectory" of the bucket and are expected to be served from 
+`https://<AWS_S3_STATICFILES_CUSTOM_DOMAIN>/static/` base URL.
 
 ## SQS
 
