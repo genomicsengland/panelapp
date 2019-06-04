@@ -148,4 +148,5 @@ The symptom will be a number of *Mount denied* or permissions errors on starting
 * Containers running inside the docker-compose cluster see all LocalStack service coming from `localstack` host. From the
     host machine they are actually exposed to `localhost`. To make scripts running both inside the containers and from
     the host machine, set an alias `localstack` alias to `localhost` in the host machine's `/etc/hosts` file
-         
+* LocalStack SES does not support SMTP
+* Fake-SMTP does not support authentication

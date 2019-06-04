@@ -12,5 +12,5 @@ ENV GUNICORN_LOG_LEVEL INFO
 
 WORKDIR /app/panelapp
 EXPOSE 8080
-ENTRYPOINT ["gunicorn","--config /app/gunicorn_config.py","panelapp.wsgi:application"]
+ENTRYPOINT ["gunicorn","--config=file:/app/gunicorn_config.py","panelapp.wsgi:application","--log-level=info"]
 

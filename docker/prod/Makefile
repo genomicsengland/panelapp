@@ -1,3 +1,8 @@
+#################################################################
+# This makefile is for troubleshooting production images locally.
+# It is not meant to build, deploy or run any actual environment.
+#################################################################
+
 BUILDDIR := .build
 APPDIR :=  panelapp
 SOURCEDIR := ../..
@@ -36,7 +41,7 @@ loaddata: export AWS_SECRET_ACCESS_KEY := dummy-secret
 loaddata: ## Load genes files into db (loaddata command)
 	aws --endpoint-url=http://localhost:4572 s3 cp ../../deploy/genes.json.gz s3://media/genes.json.gz
 	docker-compose exec web python -c "import boto3,botocore;boto3.resource('s3',use_ssl=False, endpoint_url='http://localstack:4572').Bucket('media').download_file('genes.json.gz', '/var/tmp/genes.json.gz')"
-	docker-compose exec web python manage.py loaddata /var/tmp/genes.json
+	docker-compose exec web python manage.py loaddata --verbosity 3 /var/tmp/genes.json
 	docker-compose exec web rm /var/tmp/genes.json.gz
 	aws --endpoint-url=http://localhost:4572 s3 rm s3://media/genes.json.gz
 
@@ -68,7 +73,7 @@ logs: ## Tail all logs
 mock-aws: export AWS_DEFAULT_REGION := eu-west-2
 mock-aws: export AWS_ACCESS_KEY_ID := dummy-key
 mock-aws: export AWS_SECRET_ACCESS_KEY := dummy-secret
-mock-aws: .mock-s3-static .mock-s3-media .mock-sqs-queue ## Create all mock AWS resources (docker-compose cluster must be running)
+mock-aws: .mock-s3-static .mock-s3-media .mock-sqs-queue ## Create all mock AWS resources
 
 
 help:	## display this help

@@ -10,7 +10,8 @@ RUN adduser -D -u 1000 -s /sbin/nologin  -g app app
 COPY --chown=app:app ./panelapp     /app/panelapp
 COPY --chown=app:app ./setup.py ./setup.cfg ./MANIFEST.in ./VERSION     /app/
 
-# Python libraries get installed as root in /pythonlib (but scripts are still installed in /usr/local/bin)
+# Python libraries get installed as root in /pythonlib (scripts are still installed in /usr/local/bin).
+# Ownership of all python modules have to be writable by the user running the application, to create __pycache__.
 # After installing we are removing all system dependencies not required at runtime, within the same Docker layer
 WORKDIR /app
 RUN apk add --no-cache postgresql-libs curl jpeg-dev zlib-dev && \

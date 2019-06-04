@@ -15,7 +15,7 @@ services:
       # Exposes LocalStack WebUI on 8090
       - "8090:8080"
     environment:
-      - SERVICES=sqs,s3,ses
+      - SERVICES=sqs,s3
       - DEFAULT_REGION=${AWS_DEFAULT_REGION-eu-west-2}
       - HOSTNAME_EXTERNAL=localstack
       - DEBUG=FALSE
@@ -33,6 +33,15 @@ services:
       - POSTGRES_PASSWORD=panelapp
       - POSTGRES_USER=panelapp
       - POSTGRES_DB=panelapp
+
+  # Fake-SMTP console is exposed on 8070 (credentials: admin/secret)
+  smtp:
+    image: devoto13/fake-smtp-server:0.1.0
+    ports:
+      - "1025:25"
+      - "8070:1080"
+    environment:
+      - AUTH=admin:secret
 
   web:
     build:
@@ -65,12 +74,10 @@ services:
       - AWS_S3_MEDIAFILES_BUCKET_NAME=media
       - MEDIA_URL=http://localstack:4572/media/
       - AWS_MEDIAFILES_DEFAULT_ACL=public-read
-    entrypoint:
-      - gunicorn
-      - --config=file:/app/gunicorn_config.py
-      - panelapp.wsgi:application
-      - --log-level=info
-
+      - DEFAULT_FROM_EMAIL=noreply-panelapp@local
+      - PANEL_APP_EMAIL=panelapp@local
+      - EMAIL_HOST=smtp
+      - EMAIL_PORT=1025
 
   worker:
     build:
@@ -84,14 +91,20 @@ services:
     depends_on:
       - db
     environment:
+      # Same configuration as web (except Static file storage-related and ALLOWED_HOSTS)
       - DATABASE_URL=postgres://panelapp:panelapp@db/panelapp
       - DJANGO_SETTINGS_MODULE=panelapp.settings.docker-aws
-      - HEALTH_ACCESS_TOKEN_LOCATION=/app/health_token
-      - ALLOWED_HOSTS=localhost;web
+      - DJANGO_LOG_LEVEL=INFO
       - AWS_REGION=eu-west-2
-      - AWS_ACCESS_KEY_ID=dummy
-      - AWS_SECRET_ACCESS_KEY=dummy
-      - USE_S3=TRUE
-      - AWS_S3_MEDIAFILES_BUCKET_NAME=media
-      - USE_SQS=TRUE
+      - AWS_ACCESS_KEY_ID=dummy-key
+      - AWS_SECRET_ACCESS_KEY=dummy-secret
       - CELERY_BROKER_URL=sqs://@localstack:4576
+      - AWS_S3_USE_SSL=False
+      - AWS_S3_ENDPOINT_URL=http://localstack:4572/
+      - AWS_S3_MEDIAFILES_BUCKET_NAME=media
+      - MEDIA_URL=http://localstack:4572/media/
+      - AWS_MEDIAFILES_DEFAULT_ACL=public-read
+      - DEFAULT_FROM_EMAIL=noreply-panelapp@local
+      - PANEL_APP_EMAIL=panelapp@local
+      - EMAIL_HOST=smtp
+      - EMAIL_PORT=1025
