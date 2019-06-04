@@ -559,12 +559,7 @@ class GenePanelSnapshot(TimeStampedModel):
         if panels_changed:
             self.child_panels.set(updated_child_panels)
 
-    def increment_version(
-        self,
-        major=False,
-        user=None,
-        comment=None,
-    ):
+    def increment_version(self, major=False, user=None, comment=None):
         """Creates a new version of the panel.
 
         This script copies all genes, all information for these genes, and also
@@ -1013,22 +1008,23 @@ class GenePanelSnapshot(TimeStampedModel):
     def has_region(self, region_name):
         return self.region_set.filter(name=region_name).count() > 0
 
-    def clear_cache(self):
-        to_clear = [
-            "cached_genes",
-            "current_genes_count",
-            "current_genes_duplicates",
-            "current_genes",
-            "get_all_genes",
-            "get_all_genes_extra",
-            "cached_strs",
-            "get_all_strs",
-            "get_all_strs_extra",
-            "cached_regions",
-            "get_all_regions",
-            "get_all_regions_extra",
-            "contributors",
-        ]
+    def clear_cache(self, to_clear=None):
+        if not to_clear:
+            to_clear = [
+                "cached_genes",
+                "current_genes_count",
+                "current_genes_duplicates",
+                "current_genes",
+                "get_all_genes",
+                "get_all_genes_extra",
+                "cached_strs",
+                "get_all_strs",
+                "get_all_strs_extra",
+                "cached_regions",
+                "get_all_regions",
+                "get_all_regions_extra",
+                "contributors",
+            ]
 
         for item in to_clear:
             if self.__dict__.get(item):
@@ -1741,7 +1737,7 @@ class GenePanelSnapshot(TimeStampedModel):
                 self.clear_cache()
                 self.clear_django_cache()
                 self.update_saved_stats()
-                return gene
+                return new_gpes
             elif gene_name and gene.gene.get("gene_name") != gene_name:
                 logging.debug(
                     "Updating gene_name for gene:{} in panel:{}".format(
@@ -2326,7 +2322,7 @@ class GenePanelSnapshot(TimeStampedModel):
             new_gene = str_data.get("gene")
             gene_name = str_data.get("gene_name")
 
-            if remove_gene and str_item.gene_core:
+            if (not new_gene or remove_gene) and str_item.gene_core:
                 logging.debug(
                     "{} in panel:{} was removed".format(
                         str_item.gene["gene_name"], self
@@ -2344,7 +2340,7 @@ class GenePanelSnapshot(TimeStampedModel):
             elif new_gene and str_item.gene_core != new_gene:
                 logging.debug(
                     "{} in panel:{} has changed to gene:{}".format(
-                        gene_name, self, new_gene.gene_symbol
+                        str_name, self, new_gene.gene_symbol
                     )
                 )
 
@@ -3010,7 +3006,7 @@ class GenePanelSnapshot(TimeStampedModel):
             new_gene = region_data.get("gene")
             gene_name = region_data.get("gene_name")
 
-            if remove_gene and region.gene_core:
+            if (not new_gene or remove_gene) and region.gene_core:
                 logging.debug(
                     "{} in panel:{} was removed".format(region.gene["gene_name"], self)
                 )
