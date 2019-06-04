@@ -8,7 +8,7 @@ The Django settings module must be `panelapp.settings.docker-aws` (`DJANGO_SETTI
 
 Different environments (e.g. Staging, Prod) are configured setting the environment variables below.
 
-Most of the configurations are the same for `web` and `worker` containers.
+Configurations of _web_ and _worker_ containers should be the same, except those related to Gunicorn only used in _web_.
 
 To configure it for running with LocalStack, look at the comments in `panelapp/panleapp/settings/docker-aws.py`.
 
@@ -18,11 +18,11 @@ All of the following must be explicitly configured
 
 ### Non-Secrets
 
-* `AWS_S3_STATICFILES_BUCKET_NAME` - Name of the S3 bucket for storing static files - `web` only
+* `AWS_S3_STATICFILES_BUCKET_NAME` - Name of the S3 bucket for storing static files
 * `AWS_S3_MEDIAFILES_BUCKET_NAME` - Name of the S3 bucket for storing media (uploaded) files
 * `AWS_REGION` - AWS Region
-* `AWS_S3_STATICFILES_CUSTOM_DOMAIN` - Custom CDN domain to serve static files from (e.g. `cdn.mydomain.com` - no trailing `/`) - `web` only
-* `ALLOWED_HOSTS` - whitelisted hostnames, if user tries to access website which isn't here Django will throw 500 error - `web` only
+* `AWS_S3_STATICFILES_CUSTOM_DOMAIN` - Custom CDN domain to serve static files from (e.g. `cdn.mydomain.com` - no trailing `/`)
+* `ALLOWED_HOSTS` - whitelisted hostnames, if user tries to access website which isn't here Django will throw 500 error
 * `DEFAULT_FROM_EMAIL` - we send emails as this address
 * `PANEL_APP_EMAIL` - PanelApp email address
 * `EMAIL_HOST` - SMTP server hostname
@@ -48,12 +48,12 @@ All of the following must be explicitly configured
 
 ### Secrets
 
-* `DJANGO_ADMIN_URL` - change admin URL to something secure - `web` only
+* `DJANGO_ADMIN_URL` - change admin URL to something secure
 * `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` - required if not using IAM Roles to authenticate access to S3 buckets   
 * `CELERY_BROKER_URL` - Only required if not using IAM Roles for SQS authentication. 
     It must be in the format `sqs://{aws_access_key}:{aws_secret_key}@`.
 
-## Gunicorn settings (`web` image only)
+## Gunicorn settings (_web_ image only)
 
 All [Gunicorn settings](http://docs.gunicorn.org/en/latest/settings.html) may be overridden by an environment variable 
 named `GUNICORN_<UPPERCASE-SETTING-NAME>` (e.g. `GUNICORN_WORKERS` overrides `workers`) 
@@ -66,7 +66,7 @@ Defaults:
 
 By default, the prod, dockerised application is supposed to be deployed on AWS.
 
-It runs as two separate components (containers): `web` and `worker`. 
+It runs as two separate components (containers): _web_ and _worker_. 
 
 Each component is completely stateless and it may scale horizontally as required.
 
@@ -77,9 +77,9 @@ We two S3 buckets for storing files:
 1. Media (uploaded) files
 2. Static files (images, css, js...)
 
-The _Media_ bucket must be accessible by both `web` and `worker`.
+The _Media_ bucket must be accessible by both _web_ and _worker_.
 
-The _Static_ bucket must be accessible by `web` only but must be exposed to the Internet, either directly (not-recommended)
+The _Static_ bucket must be accessible by _web_ only but must be exposed to the Internet, either directly (not-recommended)
 or through CloudFront CDN (recommended).
 
 The external domain the _Static_ bucket is accessible at must be specified in the `AWS_S3_STATICFILES_CUSTOM_DOMAIN` setting.
@@ -89,7 +89,7 @@ The external domain the _Static_ bucket is accessible at must be specified in th
 
 ## SQS
 
-The application uses an SQS queue named `panelapp` to schedule jobs picked up by `worker`.
+The application uses an SQS queue named `panelapp` to schedule jobs picked up by _worker_.
 
 It is recommended to create the SQS queue beforehand do not provide the application with permission to create any queues 
 (if the queue does not exist the application try to create it, but this is not secure).
@@ -145,7 +145,7 @@ This should be the Least-Privilege IAM Policy to access the SQS Queue.
 }
 ```
 
-Note the default queue name is `panelapp` unless overridden.
+Note the default queue name is `panelapp`, unless overridden.
 
 ### Policy for S3 Media bucket
 
