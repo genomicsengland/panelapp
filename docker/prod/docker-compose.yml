@@ -52,13 +52,13 @@ services:
     volumes:
       - ../../panelapp:/app/panelapp
     ports:
-      - "8080:8000"
+      - "8080:8080"
     depends_on:
       - db
       - localstack
     environment:
       - DATABASE_URL=postgres://panelapp:panelapp@db/panelapp
-      - DJANGO_LOG_LEVEL=INFO
+      - DJANGO_LOG_LEVEL=DEBUG
       - HEALTH_ACCESS_TOKEN_LOCATION=/app/health_token
       - ALLOWED_HOSTS=localhost;web
       - AWS_REGION=eu-west-2
@@ -92,7 +92,7 @@ services:
     environment:
       # Same configuration as web (except Static file storage-related and ALLOWED_HOSTS)
       - DATABASE_URL=postgres://panelapp:panelapp@db/panelapp
-      - DJANGO_LOG_LEVEL=INFO
+      - DJANGO_LOG_LEVEL=DEBUG
       - AWS_REGION=eu-west-2
       - AWS_ACCESS_KEY_ID=dummy-key
       - AWS_SECRET_ACCESS_KEY=dummy-secret

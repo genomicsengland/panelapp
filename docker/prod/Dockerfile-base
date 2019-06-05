@@ -2,7 +2,6 @@
 FROM python:3.6.8-alpine3.9
 
 RUN mkdir -p /app/panelapp
-RUN mkdir -p /pythonlib
 
 # Application (non-root) user
 RUN adduser -D -u 1000 -s /sbin/nologin  -g app app
@@ -16,9 +15,8 @@ COPY --chown=app:app ./setup.py ./setup.cfg ./MANIFEST.in ./VERSION     /app/
 WORKDIR /app
 RUN apk add --no-cache postgresql-libs curl jpeg-dev zlib-dev && \
     apk add --no-cache --virtual .build-deps gcc musl-dev curl-dev postgresql-dev build-base linux-headers && \
-    pip install --target /pythonlib --install-option="--install-scripts=/usr/local/bin" . && \
+    pip install . && \
     apk --purge del .build-deps && \
-    chown -R app:app /pythonlib && \
     chown -R app:app /usr/local/lib/python3.*
 
 ENV PYTHONPATH /pythonlib
