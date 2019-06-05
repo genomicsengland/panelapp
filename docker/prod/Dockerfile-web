@@ -1,16 +1,15 @@
 # FIXME fully qualify the base image, including a tag
-FROM panelapp
+FROM panelapp-base
 
 COPY --chown=app:app ./deploy/gunicorn_config.py  /app/
 
 # Gunicorn settings
 ENV GUNICORN_WORKERS 2
 ENV GUNICORN_BACKLOG 4096
-ENV GUNICORN_BIND 0.0.0.0:8000
+ENV GUNICORN_BIND 0.0.0.0:8080
 ENV GUNICORN_LOG_LEVEL INFO
 # Access log is disabled: actual access log is from CDN
 
 WORKDIR /app/panelapp
 EXPOSE 8080
-ENTRYPOINT ["gunicorn","--config=file:/app/gunicorn_config.py","panelapp.wsgi:application","--log-level=info"]
-
+ENTRYPOINT ["gunicorn","--config=file:/app/gunicorn_config.py","panelapp.wsgi:application"]

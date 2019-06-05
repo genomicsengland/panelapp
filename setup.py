@@ -85,5 +85,6 @@ setup(
         "django-storages==1.7.1",
         "boto3==1.9.147",
         "pycurl==7.43.0.2",
+        "python3-json-log-formatter==1.6.1",
     ],
 )

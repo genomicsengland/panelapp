@@ -117,3 +117,31 @@ AWS_MEDIAFILES_DEFAULT_ACL = os.getenv('AWS_MEDIAFILES_DEFAULT_ACL', None)
 
 # Object parameters for media files.
 AWS_S3_MEDIAFILES_OBJECT_PARAMETERS = {}
+
+# Logging (JSON to stdout)
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "json",
+        },
+    },
+    "formatters": {
+        "json" : {
+            "class": "json_log_formatter.JsonFormatter",
+        },
+    },
+    "loggers": {
+        "django": {
+            "handlers": ["console"],
+            "level": os.getenv("DJANGO_LOG_LEVEL", "INFO"),
+        },
+        "celery": {
+            "handlers": ["console"],
+            "level": os.getenv("DJANGO_LOG_LEVEL", "INFO"),
+        },
+    },
+}

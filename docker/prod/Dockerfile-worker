@@ -1,7 +1,5 @@
 # FIXME fully qualify the base image, including a tag
-FROM panelapp
+FROM panelapp-base
 
 WORKDIR /app/panelapp
-ENTRYPOINT celery worker --app panelapp --task-events
-CMD ["--loglevel INFO"]
-# FIXME Configure  number of celery threads
+ENTRYPOINT celery worker --app panelapp --task-events --concurrency 2
