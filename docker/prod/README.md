@@ -41,7 +41,7 @@ All of the following must be explicitly configured
 
 ### Non-secrets
 
-* `DJANGO_LOG_LEVEL` - to override Django log-level (default=`INFO`)
+* `DJANGO_LOG_LEVEL` - to override Django log-level (default=`INFO`). This also controls Gunicorn and Celery log level.
 * `EMAIL_USE_TLS` - Set to `False` to prevent SMTP from using TLS
 * `SQS_QUEUE_VISIBILITY_TIMEOUT` - SQS topic _Visibility Timeout_. Must be identical to the Visibility Timeout of the SQS queue
 * `TASK_QUEUE_NAME` - Name of the SQS queue (default: `panelapp`)     
