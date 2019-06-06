@@ -69,11 +69,15 @@ if USE_S3:  # Static and Media files on S3
     STATICFILES_STORAGE = 's3_storages.StaticStorage'
     AWS_S3_STATICFILES_BUCKET_NAME = os.getenv('AWS_S3_STATICFILES_BUCKET_NAME')  # Bucket containing staticfiles
 
+    # Location (path) to put media files, in the bucket
+    AWS_STATICFILES_LOCATION = os.getenv('AWS_STATICFILES_LOCATION', '')
+
 #   AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com'
     AWS_S3_STATICFILES_CUSTOM_DOMAIN = None
 
+    # URL static files are served from
 #   STATIC_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/{AWS_LOCATION}/'
-    STATIC_URL = f'http://localstack:4572/{AWS_S3_STATICFILES_BUCKET_NAME}/'  # URL static files are served from
+    STATIC_URL = f'http://localstack:4572/{AWS_S3_STATICFILES_BUCKET_NAME}/{AWS_STATICFILES_LOCATION + ("/" if AWS_STATICFILES_LOCATION else "")}'  #noqa
 
     AWS_S3_STATICFILES_OBJECT_PARAMETERS = {'CacheControl': 'max-age=86400'}
 
@@ -86,8 +90,11 @@ if USE_S3:  # Static and Media files on S3
 
     DEFAULT_FILE_STORAGE = 's3_storages.MediaStorage'
     AWS_S3_MEDIAFILES_BUCKET_NAME = os.getenv('AWS_S3_MEDIAFILES_BUCKET_NAME')  # Bucket containing mediafiles
+    AWS_MEDIAFILES_LOCATION = os.getenv('AWS_MEDIAFILES_LOCATION', '')  # Location (path) to put media files, in the bucket
+
     AWS_S3_MEDIAFILES_CUSTOM_DOMAIN = None
-    MEDIA_URL = f'http://localstack:4572/{AWS_S3_MEDIAFILES_BUCKET_NAME}/'  # URL media files are served from
+    # URL media files are served from
+    MEDIA_URL = f'http://localstack:4572/{AWS_S3_MEDIAFILES_BUCKET_NAME}/{AWS_MEDIAFILES_LOCATION + ("/" if AWS_MEDIAFILES_LOCATION else "")}'  #noqa
     AWS_S3_MEDIAFILES_OBJECT_PARAMETERS = {}
 
     AWS_MEDIAFILES_DEFAULT_ACL = 'public-read'  # LocalStack only

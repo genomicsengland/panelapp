@@ -45,6 +45,9 @@ All of the following must be explicitly configured
 * `EMAIL_USE_TLS` - Set to `False` to prevent SMTP from using TLS
 * `SQS_QUEUE_VISIBILITY_TIMEOUT` - SQS topic _Visibility Timeout_. Must be identical to the Visibility Timeout of the SQS queue
 * `TASK_QUEUE_NAME` - Name of the SQS queue (default: `panelapp`)     
+* `AWS_STATICFILES_LOCATION` - specify it to change the path static files are located within their S3 bucket (default: `static`)
+* `AWS_MEDIAFILES_LOCATION` - specify it to change the path media (uploaded) files are located within their S3 bucket 
+    (default: `uploads`)
 
 ### Secrets
 
@@ -84,7 +87,7 @@ or through CloudFront CDN (recommended).
 
 The external domain the _Static_ bucket is accessible at must be specified in the `AWS_S3_STATICFILES_CUSTOM_DOMAIN` setting.
 
-> Static files are stored in a `/static` "subdirectory" of the bucket and are expected to be served from 
+> By default, static files are stored in a `/static` "subdirectory" of the bucket and are expected to be served from 
 `https://<AWS_S3_STATICFILES_CUSTOM_DOMAIN>/static/` base URL.
 
 ## SQS

@@ -85,10 +85,10 @@ define create-sqs-queue-if-not-exists
 endef
 
 .mock-s3-static: ## Create mock S3 bucket for static files
-	$(call create-s3-bucket-if-not-exits,static)
+	$(call create-s3-bucket-if-not-exits,static-bucket)
 
 .mock-s3-media: ## Create mock S3 bucket for media files
-	$(call create-s3-bucket-if-not-exits,media)
+	$(call create-s3-bucket-if-not-exits,media-bucket)
 
 .mock-sqs-queue: ## Create mock SQS queue for Celery
 	$(call create-sqs-queue-if-not-exists,panelapp)

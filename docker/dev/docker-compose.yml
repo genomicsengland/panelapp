@@ -61,8 +61,10 @@ services:
       - AWS_ACCESS_KEY_ID=dummy
       - AWS_SECRET_ACCESS_KEY=dummy
       - USE_S3=TRUE
-      - AWS_S3_STATICFILES_BUCKET_NAME=static
-      - AWS_S3_MEDIAFILES_BUCKET_NAME=media
+      - AWS_S3_STATICFILES_BUCKET_NAME=static-bucket
+      - AWS_STATICFILES_LOCATION=static
+      - AWS_S3_MEDIAFILES_BUCKET_NAME=media-bucket
+      - AWS_MEDIAFILES_LOCATION=uploads
 #      - STATIC_ROOT=/static
 #      - MEDIA_ROOT=/media
       - USE_SQS=TRUE
@@ -93,7 +95,8 @@ services:
       - AWS_ACCESS_KEY_ID=dummy
       - AWS_SECRET_ACCESS_KEY=dummy
       - USE_S3=TRUE
-      - AWS_S3_MEDIAFILES_BUCKET_NAME=media
+      - AWS_S3_MEDIAFILES_BUCKET_NAME=media-bucket
+      - AWS_MEDIAFILES_LOCATION=uploads
       - USE_SQS=TRUE
       - CELERY_BROKER_URL=sqs://@localstack:4576
 #      - CELERY_BROKER_URL=amqp://rabbitmq/panelapp
