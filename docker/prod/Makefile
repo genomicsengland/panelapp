@@ -39,11 +39,11 @@ migrate: ## Create db schema, apply db migration (migrate command)
 loaddata: export AWS_ACCESS_KEY_ID := dummy-key
 loaddata: export AWS_SECRET_ACCESS_KEY := dummy-secret
 loaddata: ## Load genes files into db (loaddata command)
-	aws --endpoint-url=http://localhost:4572 s3 cp ../../deploy/genes.json.gz s3://media/genes.json.gz
-	docker-compose exec web python -c "import boto3,botocore;boto3.resource('s3',use_ssl=False, endpoint_url='http://localstack:4572').Bucket('media').download_file('genes.json.gz', '/var/tmp/genes.json.gz')"
+	aws --endpoint-url=http://localhost:4572 s3 cp ../../deploy/genes.json.gz s3://media-bucket/genes.json.gz
+	docker-compose exec web python -c "import boto3,botocore;boto3.resource('s3',use_ssl=False, endpoint_url='http://localstack:4572').Bucket('media-bucket').download_file('genes.json.gz', '/var/tmp/genes.json.gz')"
 	docker-compose exec web python manage.py loaddata --verbosity 3 /var/tmp/genes.json
 	docker-compose exec web rm /var/tmp/genes.json.gz
-	aws --endpoint-url=http://localhost:4572 s3 rm s3://media/genes.json.gz
+	aws --endpoint-url=http://localhost:4572 s3 rm s3://media-bucket/genes.json.gz
 
 
 collectstatic: ## Deploy static files (collectstatic command)
@@ -101,10 +101,10 @@ define create-sqs-queue-if-not-exists
 endef
 
 .mock-s3-static: ## Create mock S3 bucket for static files
-	$(call create-s3-bucket-if-not-exits,static)
+	$(call create-s3-bucket-if-not-exits,static-bucket)
 
 .mock-s3-media: ## Create mock S3 bucket for media files
-	$(call create-s3-bucket-if-not-exits,media)
+	$(call create-s3-bucket-if-not-exits,media-bucket)
 
 .mock-sqs-queue: ## Create mock SQS queue for Celery
 	$(call create-sqs-queue-if-not-exists,panelapp)

@@ -112,7 +112,6 @@ $ make command <command>
 
 Useful commands:
 
-* `createsuperuser`: create a superuser to access admin panel
 * `shell_plus`: run shell_plus extension to debug models
 
 ## LocalStack
