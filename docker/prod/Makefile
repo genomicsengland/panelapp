@@ -75,6 +75,8 @@ mock-aws: export AWS_ACCESS_KEY_ID := dummy-key
 mock-aws: export AWS_SECRET_ACCESS_KEY := dummy-secret
 mock-aws: .mock-s3-static .mock-s3-media .mock-sqs-queue ## Create all mock AWS resources
 
+clear-s3: ## Clear mock S3 buckets
+	rm -rf $(TMPDIR)/*
 
 help:	## display this help
 	@echo "************************************************"
@@ -109,5 +111,5 @@ endef
 .mock-sqs-queue: ## Create mock SQS queue for Celery
 	$(call create-sqs-queue-if-not-exists,panelapp)
 
-.PHONY:	clean .copy_sources .mock-s3-static .mock-s3-media .mock-sqs-queue up down migrate loaddata collectstatic stop start mock-aws createsuperuser command tests logs
+.PHONY:	clean .copy_sources .mock-s3-static .mock-s3-media .mock-sqs-queue up down migrate loaddata collectstatic stop start mock-aws createsuperuser command tests logs clear-s3
 .DEFAULT_GOAL:=help

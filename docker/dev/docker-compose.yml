@@ -2,7 +2,6 @@ version: '3'
 
 services:
 
-
   localstack:
     image: localstack/localstack
     ports:
@@ -29,11 +28,6 @@ services:
       - POSTGRES_PASSWORD=panelapp
       - POSTGRES_USER=panelapp
       - POSTGRES_DB=panelapp
-
-#  rabbitmq:
-#    image: rabbitmq
-#    environment:
-#      - RABBITMQ_DEFAULT_VHOST=panelapp
 
   web:
     build:
@@ -100,3 +94,8 @@ services:
       - USE_SQS=TRUE
       - CELERY_BROKER_URL=sqs://@localstack:4576
 #      - CELERY_BROKER_URL=amqp://rabbitmq/panelapp
+
+#  rabbitmq:
+#    image: rabbitmq
+#    environment:
+#      - RABBITMQ_DEFAULT_VHOST=panelapp

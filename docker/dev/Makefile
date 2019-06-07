@@ -63,6 +63,8 @@ mock-aws: export AWS_ACCESS_KEY_ID := foo
 mock-aws: export AWS_SECRET_ACCESS_KEY := bar
 mock-aws: .mock-s3-static .mock-s3-media .mock-sqs-queue ## Create all mock AWS resources (docker-compose cluster must be running)
 
+clear-s3: ## Clear mock S3 buckets
+	rm -rf $(TMPDIR)/*
 
 help:	## display this help
 	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target> [<arguments>]\033[0m\n\nTargets:\n"} /^[a-zA-Z_-]+:.*?##/ { printf "  \033[36m%-13s\033[0m %s\n", $$1, $$2 } END{print ""}' $(MAKEFILE_LIST)
@@ -93,5 +95,5 @@ endef
 .mock-sqs-queue: ## Create mock SQS queue for Celery
 	$(call create-sqs-queue-if-not-exists,panelapp)
 
-.PHONY:	clean .copy_sources .mock-s3-static .mock-s3-media .mock-sqs-queue up down migrate loaddata collectstatic stop start mock-aws createsuperuser command tests logs
+.PHONY:	clean .copy_sources .mock-s3-static .mock-s3-media .mock-sqs-queue up down migrate loaddata collectstatic stop start mock-aws createsuperuser command tests logs clear-s3
 .DEFAULT_GOAL:=help

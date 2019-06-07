@@ -1,25 +1,31 @@
-# Local development with Docker-compose
+# Local development environment
 
-> DOCUMENT TO BE IMPROVED
+Local development environment (the developer's machine) uses Docker, mounting the application code as volume frm the host machine.
 
-This directory contains Docker and Docker-compose files to be used for local development.
+It runs in Docker-compose, including a PostgreSQL instance and [LocalStack](https://github.com/localstack/localstack), for
+mocking S3 and SQS.
 
-You are supposed to use `make` rather than calling `docker-compose` directly.
+A [Makefile](./Makefile) is provided for all common operations, including starting and stopping the Docker-compose cluster.
 
-All commands are supposed to be run from this directory.
+> If you start the docker-compose cluster directly you need to set `TMPDIR` env variable, to `/tmp/localstack` on Linux
+> or `/private/tmp/localstack` on OSX.
 
-### Requirements
+## Developer machine requirements
 
-This is tested with Docker v.18.09.2
+* Docker (tested with Docker v.18.09.2 on Mac)
+* AWS CLI (tested with aws-cli/1.16.156 Python/2.7.16 botocore/1.12.146)
 
-It requires `aws` CLI installed.
+**Also add an alias `localstack` to `localhost` in your `/etc/hosts` file**.
+
+> This is required because [LocalStack](https://github.com/localstack/localstack), mocking AWS services, is running in
+> the Docker-Compose cluster as `localstack` but exposed to the host machine on localhost (port `4572` and `4576` for 
+> S3 and SQS, respectively).
 
 
-#### Edit `hosts` file
+## Development lifecycle
 
-To develop locally against AWS LocalStack, your machine has to resolve `localstack` hostname as localhost.
+All common operations use the [Makefile](./Makefile) in this directory.
 
-Edit `/etc/hosts` and add `localstack` as alias to `localhost`.
 
 ### Build dev docker images 
 
@@ -29,22 +35,20 @@ $ make build
 
 ### Run and setup the cluster
 
-As separate steps:
-
 1. Start a new dev cluster (in detached mode): 
     ```bash
     $ make up
     ```
-2. Create db schema or apply migration (give time to the db container to start, before running `migrate`. 
-Possibly, have a look at logs with `make logs` to see it starting): 
+2. Create db schema or apply migration (give few seconds to the db container to start, before running `migrate`): 
     ```bash
     $ make migrate
     ```
-3. Load genes data: 
+3. Load gene data: 
     ```bash
     $ make loaddata
     ```
-4. Create all required mock, local AWS resources (a bit dumb at the moment: it explodes if any resources already exists):
+    Genes data contains public gene info, such as ensemble IDs, HGNC symbols, OMIM ID.
+4. Create all required mock AWS resources, if the do not exist:
     ```bash
     $ make mock-aws
     ```
@@ -52,7 +56,7 @@ Possibly, have a look at logs with `make logs` to see it starting):
     ```bash
     $ make collectstatic
     ```
-6. Create admin user (username: `admin`, interactively insert passwod)
+6. Create admin user (username: `admin`, interactively insert password)
     ```bash
     $ make createsuperuser
     ```
@@ -61,58 +65,56 @@ Possibly, have a look at logs with `make logs` to see it starting):
 
 The application is accessible from `http://localhost:8080/`
 
-The python code is mounted from the host `./panelapp` directory. 
-Changes to the code are immediately reflected into the running containers.
+The python code is mounted from the host `<project-root>/panelapp` directory.  Changes to the code are immediately 
+reflected into the running containers.
 
-`setup.py`, `setup.cfg`, `MANIFEST.in` and `VERSION` are copied into the container at build-time.
+**`setup.py`, `setup.cfg`, `MANIFEST.in` and `VERSION` are copied into the container at docker build-time.**
 Any change to these files (e.g. **any changes to a dependency version**) requires rebuilding the container and restarting 
 the cluster.
 
-
-To run tests:
-
-```bash
-$ make tests
-```
-
-To tail logs from all containers:
-
-```bash
-$ make logs
-```
-
-
-
-### Stop, restart and destroy the cluster
-
-Stop the cluster, without losing the state: 
-
-```bash
-$ make stop
-```
-
-Restart a stopped cluster: 
-    
-```bash
-$ make start
-```
-
-Destroy the cluster, including the state: 
+* Run tests:
+    ```bash
+    $ make tests
+    ```
+* To tail logs from **all** containers:
+    ```bash
+    $ make logs
+    ```
+    To see logs from a single service you must use `docker-compose` or `docker` commands, directly.
+* Stop the cluster, without losing the state (db content):
+    ```bash
+    $ make stop
+    ```
+    Restart after stopping with `start`.
+* Tear down the cluster destroying the state (db content):
     ```bash
     $ make down
     ```
+* The content of mock S3 buckets is actually saved in the temp directory (`/tmp/localstack` on Linux or 
+    `/private/tmp/localstack` on OSX). When you re-create the cluster and `mock-aws` resources, content of S3 buckets will 
+    be there. To clear them use:
+    ```bash
+    $ make clear-s3
+    ```
+* Run a Django arbitrary command:
+    ```bash
+    $ make command <command> [<args>...]
+    ```
+    E.g. to run shell_plus extension to debug models
+    ```bash
+    $ make command shell_plus
 
-### Run any Django command
+    ```
 
-To run a generic command through `manage.py`:
+## Application Configuration
 
-```bash
-$ make command <command>
-```
+Django settings: `panelapp.settings.docker-dev`
 
-Useful commands:
+The [docker-compose.yml](./docker-compose.yml) file set up all required environment variables.
 
-* `shell_plus`: run shell_plus extension to debug models
+By default mocked S3 and SQS are used. Look at the [docker-dev settings](../../panelapp/panelapp/settings/docker-dev.py)
+and [docker-compose.yml](./docker-compose.yml) to make it work with local file-system and RabbitMQ.
+
 
 ## LocalStack
 
@@ -125,7 +127,6 @@ Service endpoints are the defaults:
 
 * S3: `http://localhost:4572`
 * SQS: `http://localhost:4576`
-* SES `http://localhost:4579`
 
 ### LocalStack tmp directory
 
@@ -136,7 +137,7 @@ Failing to do this causes LocalStack mounting the host directory `/tmp/localstac
 write access to `/tmp` on OSX.
 The symptom will be a number of *Mount denied* or permissions errors on starting LocalStack.
 
-## Differences between AWS LocalStack and "the real" AWS thing
+### Differences between AWS LocalStack and "the real" AWS thing
 
 * Running containers do not have any IAM Role; AWS credentials are not actually required but all libraries/cli tools 
     expect them. `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` must be set as environment variables in the running

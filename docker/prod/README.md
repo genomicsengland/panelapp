@@ -1,17 +1,15 @@
 # Production docker
 
-This directory contains Dockerfiles for generating images to be used in all AWS environments (as opposed to local development).
+This directory contains Dockerfiles for for all AWS environments (as opposed to local development).
 
-It is designed to run on AWS, using S3 and SQS (as opposed to file-system storage and RabbitMQ).
+They are designed to run on AWS, using S3 and SQS (as opposed to file-system storage and RabbitMQ), scheduler by any
+container scheduler, Kubernetes, ECS, ECS/Fargate... (Docker-Compose is not a production scheduler).
 
-The Django settings module must be `panelapp.settings.docker-aws` (`DJANGO_SETTINGS_MODULE=panelapp.settings.docker-aws`).
 
-Different environments (e.g. Staging, Prod) are configured setting the environment variables below.
+The Django settings module for all these environments is `panelapp.settings.docker-aws`.
 
-Configurations of _web_ and _worker_ containers should be the same, except those related to Gunicorn only used in _web_.
-
-To configure it for running with LocalStack, look at the comments in `panelapp/panleapp/settings/docker-aws.py`.
-
+All configurations changing with the environments are passed as environment variables (see below). 
+ 
 ##  Mandatory environment variables
 
 All of the following must be explicitly configured
@@ -65,40 +63,41 @@ Defaults:
 
 * `GUNICORN_WORKERS` (`workers`): 2
 
-# Production environment requirements
+# AWS resources
 
-By default, the prod, dockerised application is supposed to be deployed on AWS.
-
-It runs as two separate components (containers): _web_ and _worker_. 
+The application is supposed to run on two separate containers, _web_ and _worker_. 
 
 Each component is completely stateless and it may scale horizontally as required.
 
-## S3 
+## S3 buckets
 
-We two S3 buckets for storing files:
+Two S3 buckets are used for storing files:
 
 1. Media (uploaded) files
 2. Static files (images, css, js...)
 
-The _Media_ bucket must be accessible by both _web_ and _worker_.
+The _Media_ bucket must be accessible for read&write by both _web_ and _worker_.
 
-The _Static_ bucket must be accessible by _web_ only but must be exposed to the Internet, either directly (not-recommended)
+The _Static_ bucket must be accessible for read&write by _web_ only 
+
+The _Static_ bucket must also be publicly accessible (from the Internet), either directly (not-recommended)
 or through CloudFront CDN (recommended).
 
-The external domain the _Static_ bucket is accessible at must be specified in the `AWS_S3_STATICFILES_CUSTOM_DOMAIN` setting.
+`AWS_S3_STATICFILES_CUSTOM_DOMAIN` defines the public DNS domain to access the _Static_ bucket (e.g. the CloudFront domain).
 
 > By default, static files are stored in a `/static` "subdirectory" of the bucket and are expected to be served from 
 `https://<AWS_S3_STATICFILES_CUSTOM_DOMAIN>/static/` base URL.
 
-## SQS
+## SQS queue
 
 The application uses an SQS queue named `panelapp` to schedule jobs picked up by _worker_.
 
 It is recommended to create the SQS queue beforehand do not provide the application with permission to create any queues 
 (if the queue does not exist the application try to create it, but this is not secure).
 
-The SQS queue _Visibility Timeout_ must be `360` (seconds). 
-If different, override the `SQS_QUEUE_VISIBILITY_TIMEOUT` to match the queue _Visibility Timeout_.
+The queue **_Visibility Timeout_ must be `360` (seconds)**. 
+
+If _Visibility Timeout_  is different, override the `SQS_QUEUE_VISIBILITY_TIMEOUT` settings to match queue timeout.
 
 > If the _Visibility Timeout_ does not match what the application is expecting, Celery will try to create a new queue 
 > and get an error, if it does not have permissions (it should not have)
