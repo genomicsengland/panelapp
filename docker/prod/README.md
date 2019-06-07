@@ -1,18 +1,24 @@
 # Production docker
 
-This directory contains Dockerfiles for for all AWS environments (as opposed to local development).
+This directory contains Dockerfiles for AWS environments (as opposed to local development).
 
-They are designed to run on AWS, using S3 and SQS (as opposed to file-system storage and RabbitMQ), scheduler by any
+All AWS environment are identical to Production. Environment-specific configurations are passed to the runtime container
+as environment variables.
+
+The production docker images is designed to run on AWS, using S3 and SQS (as opposed to file-system storage and RabbitMQ), scheduler by any
 container scheduler, Kubernetes, ECS, ECS/Fargate... (Docker-Compose is not a production scheduler).
 
+> Docker Compose](./docker-compose.yml) and [Makefile](./Makefile) in this directory are **for troubleshooting docker 
+> images** only. They are not supposed to be used in any environments.
 
-The Django settings module for all these environments is `panelapp.settings.docker-aws`.
+The Django settings module for these environments is `panelapp.settings.docker-aws`.
 
-All configurations changing with the environments are passed as environment variables (see below). 
+> The same settings is used for all environments. All settings changing with Staging... Prod etc are passed as environment 
+> variables. Not switching Django setting module.
  
 ##  Mandatory environment variables
 
-All of the following must be explicitly configured
+All of the following environment variables must be set:
 
 ### Non-Secrets
 
