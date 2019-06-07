@@ -106,14 +106,13 @@ If _Visibility Timeout_  is different, override the `SQS_QUEUE_VISIBILITY_TIMEOU
 
 The application expects a PostgreSQL-compatible DB: either Aurora or RDS.
 
-## Internal authentication 
+## AWS resource security 
 
 Authentication with the database uses username and password (part of `DATABASE_URL`).
 
 Authentication between application and SQS and S3 should use IAM Roles.
 
 No `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` must be explicitly passed to the application (this is not secure!)
-
 
 ### Policy for SQS access
 
@@ -156,3 +155,11 @@ Note the default queue name is `panelapp`, unless overridden.
 ### Policy for S3 Static bucket and CloudFront CDN
 
 **TBD**
+
+## Logging
+
+All application components logs to console in JSON, using `python3-json-log-formatter==1.6.1` as log formatter, for 
+easier log aggregation and indexing.
+
+Logging level is controlled by `DJANGO_LOG_LEVEL` (default = `INFO`). Note that this does not only control Django, but also
+Celery and Gunicorn logging.
