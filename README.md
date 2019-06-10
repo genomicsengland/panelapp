@@ -1,59 +1,55 @@
 # PanelApp
 
 
-The Panel App is a crowd-sourced repository of information about various Gene panels.
+Panel App is a crowd-sourced repository of information about various gene panels.
 
 
 
 ## Application overview
 
-The Panel App is a project based on Django Framework (v2.1).
-It uses PostgreSQL as relational database, AWS SQS as message queue backend and AWS S3 for file storage..
+Panel App is a project based on Django Framework (v2.1).
+It uses PostgreSQL as database, AWS SQS as message queue backend and AWS S3 for file storage.
 
 Python version: 3.5
 
-Python dependencies are installed via setup.py.
+Python dependencies are installed via `setup.py`.
 
-> The previous version of the application was using a hosted RabbitMQ middleware and local file system for file storage.
+> The previous version of the application used a hosted RabbitMQ instance and the local file system for file storage.
 > This new version has been refactored to work on AWS, leveraging managed AWS services.
-> Using RabbitMQ and local file system is still possible, using the Django settings `./panelapp/panelapp/settings/on-prem.py`, 
+> Using RabbitMQ and the local file system is still possible with the Django settings `./panelapp/panelapp/settings/on-prem.py`, 
 > but backward compatibility is not fully guaranteed.
 
 All environment are dockerised. 
-We make a distinction between "Local Development" environment and "Cloud environments", as the use different Dockerfiles
-and Django settings.
 
-## Local development environment
+We make a distinction between local development environments and cloud environments, as they use different Dockerfiles and Django settings.
 
-The local environment allows developers to change the code and immediately observe the changes.
+As much as possible, the application follows the [Twelve-Factors App](https://12factor.net/) design principles.
+
+## Local development environments
+
+**For more details about local development environment setup and tooling, see [./docker/dev/README.md](docker/dev/README.md).**
+
+
+The local environment allows developers to change the code and observe changes.
 
 It also uses [LocalStack](https://github.com/localstack/localstack), to mock AWS SQS and S3 services.
 
-A Docker compose cluster includes the two runtime PanelApp component, _web_ and _worker_, a PostgreSQL instance,
-[LocalStack](https://github.com/localstack/localstack), to mock AWS SQS and S3 services.
+A [Docker Compose](docker/dev/docker-compose.yml) stack that includes PanelApp (_Web_ and _Worker_), a PostgreSQL instance and [LocalStack](https://github.com/localstack/localstack) is provided.
 
 _Web_ and _Worker_ components share the same codebase but _web_ runs as web-app server while _worker_ runs as Celery.
 
-For more details about local development environment setup and tooling, see [./docker/dev/README.md](docker/dev/README.md).
-
-[Docker Compose](docker/dev/docker-compose.yml) and [Makefile](docker/dev/Makefile) help with normal dev-time operations.
+A [Makefile](docker/dev/Makefile) is provided to facilitate dev-time operations.
 
 
 ## Cloud environments
 
-All environments, except local development, run on AWS and using actual AWS services.
-They are all identical to the actual Production, so we call them _prod_ environments.
+**For details on _Cloud_ environments see [./docker/prod/README.md](docker/cloud/README.md).**
 
-Dockerfiles for _prod_ are hardened and optimised to be small.
+All environments, except the local-dev environment, are assumed to run on AWS against actual AWS services.
 
-The way docker images are scheduled (Kubernetes, ECS...) is irrelevant for the application.
+Dockerfiles for cloud are optimised for security and size.
 
-For details on _prod_ environments see [./docker/prod/README.md](docker/prod/README.md).
-
-> [Docker Compose](docker/prod/docker-compose.yml) and [Makefile](docker/prod/Makefile) in the 
-[production docker directory](docker/prod/) are **for troubleshooting _prod_ docker images**.
-They are not supposed to be used in any real environment.
-
+The application is agnostic to the container scheduler platform it runs in (e.g. Kubernetes, ECS).
 
 ## Contributing to PanelApp
 

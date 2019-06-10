@@ -1,14 +1,12 @@
-# Production docker
+# Cloud environments
 
 This directory contains Dockerfiles for AWS environments.
 
-All AWS environment are identical to Production. 
-Environment-specific configurations are passed to the runtime container as environment variables.
+All cloud environments are intended to be as identical as possible, using thesame Docker images and Django settings, except for environment-specific parameters.
 
 ## Dockerfiles
 
-Production docker images is designed to run on AWS, using S3 and SQS (as opposed to file-system storage and RabbitMQ), scheduler by any
-container scheduler, Kubernetes, ECS, ECS/Fargate... (Docker-Compose is not a production scheduler).
+The cloud docker images are designed to run on AWS, using S3 and SQS, and run within any container scheduler platform, Kubernetes, ECS, ECS/Fargate... (Docker Compose is not intended for production use).
 
 * [Base image Dockerfile](./Dockerfile-base)
 * [Web Dockerfile](./Dockerfile-web), starts the Django application with Gunicorn
@@ -23,7 +21,7 @@ The Django settings module for these environments is
 [`panelapp.settings.docker-aws`](../../panelapp/panelapp/settings/docker-aws.py).
 
 The same Django settings module is used for all environments.
-All configs changing with the environment are passed as environment variables, not by switching Django setting module.
+All environment-specific parameters are passed as environment variables (not by switching Django setting module).
  
 ###  Mandatory environment variables
 
@@ -69,7 +67,7 @@ All of the following environment variables must be set:
 * `CELERY_BROKER_URL` - Only required if not using IAM Roles for SQS authentication. 
     It must be in the format `sqs://{aws_access_key}:{aws_secret_key}@`.
 
-### Gunicorn settings (_web_ image only)
+### Gunicorn settings (_Web_ image only)
 
 All [Gunicorn settings](http://docs.gunicorn.org/en/latest/settings.html) may be overridden by an environment variable 
 named `GUNICORN_<UPPERCASE-SETTING-NAME>` (e.g. `GUNICORN_WORKERS` overrides `workers`) 
@@ -80,7 +78,8 @@ Defaults:
 
 # AWS resources
 
-_Web_ and _Worker_ are completely stateless. They may scale out for HA as required.
+_Web_ and _Worker_ are completely stateless. 
+They may scale out for HA as required.
 
 ## S3 buckets
 
@@ -105,17 +104,20 @@ The _Static_ bucket must also be publicly accessible, either directly (not-recom
 
 The application uses an SQS queue named `panelapp` to schedule jobs picked up by _Worker_.
 
-It is recommended to create the SQS queue beforehand and do NOT give the application permissions to create queues
-(if the queue does not exist the application try to create it, but this is not secure).
+It is recommended to create the SQS queue beforehand.
+Infrastructure should be managed securely outside of the running application.
+You should not give the application permissions to create queues at runtime.
 
 The queue **_Visibility Timeout_ must be `360` (seconds)**. 
-If different, do not forget to override `SQS_QUEUE_VISIBILITY_TIMEOUT` to match queue timeout.
+If you use a different value, do not forget to override `SQS_QUEUE_VISIBILITY_TIMEOUT` to match the queue timeout.
 
 > If the _Visibility Timeout_ does not match what the application is expecting, Celery will try to create a new queue.
 
 ## Database
 
-The application expects a PostgreSQL-compatible DB. Either Aurora or RDS.
+The application expects a PostgreSQL-compatible DB.
+
+The application has been tested with AWS Aurora, but PostgreSQL RDS should also work.
 
 ## AWS resource security 
 
@@ -169,7 +171,7 @@ Note the default queue name is `panelapp`, unless overridden.
 
 ## Logging
 
-All application components logs to console in JSON, using `python3-json-log-formatter==1.6.1` as log formatter, for 
+All application components logs to stdout in JSON, using `python3-json-log-formatter==1.6.1` as log formatter, for 
 easier log aggregation and indexing.
 
 Logging level is controlled by `DJANGO_LOG_LEVEL` (default = `INFO`). Note that this does not only control Django, but also

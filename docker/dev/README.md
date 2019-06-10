@@ -1,18 +1,18 @@
-# Local development environment
+# Local development environments
 
-Local development environment (the developer's machine) uses Docker and Docker Compose.
+Local-dev uses Docker and the [Docker Compose stack](./docker-compose.yml) included
  
 Docker Compose cluster includes:
 
-* _Web_ component: Django app server run with `runserver_plus`.
-* _Worker_  component: Celery application.
-* PostgreSQL instance
+* _Web_ component: a Django app server run with `runserver_plus`.
+* _Worker_  component: a Celery application.
+* A PostgreSQL instance
 * [LocalStack](https://github.com/localstack/localstack), mocking S3 and SQS.
  
-The application source code from the local machine is mounted as volumes into the running containers.
-Any change to the code may be immediately observed.
+The application source code fis mounted rom the local machine as volumes into the running containers.
+Any change to the code will be immediately reflected.
 
-A [Makefile](./Makefile) helps with common operations.
+A [Makefile](./Makefile) helps with common development tasks.
 
 > If you start the docker-compose cluster directly, without the Makefile, you need to set `TMPDIR` env variable. 
 > To `/tmp/localstack` on Linux or `/private/tmp/localstack` on OSX.
@@ -24,7 +24,7 @@ Software requirements:
 * Docker: tested with Docker v.18.09.2 on Mac
 * AWS CLI: tested with aws-cli/1.16.156 Python/2.7.16 botocore/1.12.146
 
-Machine Setup requirements:
+Local setup requirements:
 
 * Edit your `/etc/hosts` file adding `localstack` as alias to `localhost`
 
@@ -36,11 +36,11 @@ S3 and SQS, respectively).
 
 _Web_ and _Worker_ have separate Dockerfiles: [`Dockerfile-web`](./Dockerfile-web) and [`Dockerfile-worker`](./Dockerfile-worker).
 
-All Python dependencies, including dev and test deps, are installed are editable.
+All Python dependencies, including dev and test deps, are installed as editable.
 
 ## Development lifecycle
 
-Use the [Makefile](./Makefile) in this directory for all common operations.
+You should use the [Makefile](./Makefile) in this directory for all common tasks.
 
 
 ### Build dev docker images 
@@ -49,11 +49,11 @@ Use the [Makefile](./Makefile) in this directory for all common operations.
 $ make build
 ```
 
-### Run and setup the cluster
+### Run and setup the stack
 
 To start an empty application from scratch (no Panel, but includes Genes data).
 
-1. Start a new dev cluster (in detached mode): 
+1. Start a new dev stack (in detached mode): 
     ```bash
     $ make up
     ```
@@ -83,10 +83,9 @@ To start an empty application from scratch (no Panel, but includes Genes data).
 
 ### Developing and accessing the application
 
-The application is accessible at `http://localhost:8080/`
+The application is available at `http://localhost:8080/`
 
-The python code is mounted from the host `<project-root>/panelapp` directory.  Changes to the code are immediately 
-reflected into the running containers.
+The Python code is mounted from the host `<project-root>/panelapp` directory.  
 
 **`setup.py`, `setup.cfg`, `MANIFEST.in` and `VERSION` are copied into the container when the Docker image is build.**
 Any change to these files (e.g. **changes to dependencies versions**) requires rebuilding the container and restarting 
@@ -101,12 +100,12 @@ the cluster.
     $ make logs
     ```
     To see logs from a single service you must use `docker-compose` or `docker` commands, directly.
-* Stop the cluster, without losing the state (db content):
+* Stop the stack, without losing the state (db content):
     ```bash
     $ make stop
     ```
     Restart after stopping with `start`.
-* Tear down the cluster destroying the state (db content):
+* Tear down the stack destroying the state (db content):
     ```bash
     $ make down
     ```
@@ -134,7 +133,7 @@ The [docker-compose.yml](./docker-compose.yml) sets all required environment var
 
 By default, it uses mocked S3 and SQS by LocalStack.
 
-> You may make the application run with RabbitMQ and local file system, tweaking 
+> You could run the application against RabbitMQ and the local file system, tweaking 
 > [docker-dev settings](../../panelapp/panelapp/settings/docker-dev.py) and [docker-compose.yml](./docker-compose.yml),
 > but this backward compatibility may be dropped in the future.
 
@@ -153,12 +152,12 @@ Service endpoints are LocalStack defaults:
 * SQS: `http://localhost:4576`
 
 
-> If you are running Docker Compose directly (or from the IDE) on OSX, beware it requires the environment variable
+> If you are running Docker Compose directly (or from the IDE) on OSX, beware that requires the environment variable
 > `TMPDIR=/private/tmp/localstack`. Failing to do this causes LocalStack mounting the host directory `/tmp/localstack` 
 > (default on Linux), but Docker has no write access to `/tmp` on OSX. The symptom will be a number of *Mount denied* 
 > or permissions errors on starting LocalStack.
 
-### Differences between AWS LocalStack and "the real" AWS thing
+### Differences between AWS LocalStack and real AWS services
 
 * Running containers do not have any IAM Role; AWS credentials are not actually required but all libraries/cli tools 
     expect them. `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` must be set as environment variables in the running
