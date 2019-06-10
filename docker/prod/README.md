@@ -1,26 +1,35 @@
 # Production docker
 
-This directory contains Dockerfiles for AWS environments (as opposed to local development).
+This directory contains Dockerfiles for AWS environments.
 
-All AWS environment are identical to Production. Environment-specific configurations are passed to the runtime container
-as environment variables.
+All AWS environment are identical to Production. 
+Environment-specific configurations are passed to the runtime container as environment variables.
 
-The production docker images is designed to run on AWS, using S3 and SQS (as opposed to file-system storage and RabbitMQ), scheduler by any
+## Dockerfiles
+
+Production docker images is designed to run on AWS, using S3 and SQS (as opposed to file-system storage and RabbitMQ), scheduler by any
 container scheduler, Kubernetes, ECS, ECS/Fargate... (Docker-Compose is not a production scheduler).
+
+* [Base image Dockerfile](./Dockerfile-base)
+* [Web Dockerfile](./Dockerfile-web), starts the Django application with Gunicorn
+* [Worker Dockerfile](./Dockerfile-worker), starts Celery
 
 > Docker Compose](./docker-compose.yml) and [Makefile](./Makefile) in this directory are **for troubleshooting docker 
 > images** only. They are not supposed to be used in any environments.
 
-The Django settings module for these environments is `panelapp.settings.docker-aws`.
+## Application configuration
 
-> The same settings is used for all environments. All settings changing with Staging... Prod etc are passed as environment 
-> variables. Not switching Django setting module.
+The Django settings module for these environments is 
+[`panelapp.settings.docker-aws`](../../panelapp/panelapp/settings/docker-aws.py).
+
+The same Django settings module is used for all environments.
+All configs changing with the environment are passed as environment variables, not by switching Django setting module.
  
-##  Mandatory environment variables
+###  Mandatory environment variables
 
 All of the following environment variables must be set:
 
-### Non-Secrets
+#### Non-Secrets
 
 * `AWS_S3_STATICFILES_BUCKET_NAME` - Name of the S3 bucket for storing static files
 * `AWS_S3_MEDIAFILES_BUCKET_NAME` - Name of the S3 bucket for storing media (uploaded) files
@@ -32,7 +41,7 @@ All of the following environment variables must be set:
 * `EMAIL_HOST` - SMTP server hostname
 * `EMAIL_PORT` - SMTP server port
 
-### Secrets
+#### Secrets
 
 * `DATABASE_URL` - PostgreSQL config url, in the format: `postgresql://{username}:{password}@{host}:{port}/{database_name}`
 * `EMAIL_HOST_USER` - SMTP username (no SMTP authentication if omitted)
@@ -41,9 +50,9 @@ All of the following environment variables must be set:
 * `SECRET_KEY` - Secret for encrypting cookies
 
 
-## Optional environment variables
+### Optional environment variables
 
-### Non-secrets
+#### Non-secrets
 
 * `DJANGO_LOG_LEVEL` - to override Django log-level (default=`INFO`). This also controls Gunicorn and Celery log level.
 * `EMAIL_USE_TLS` - Set to `False` to prevent SMTP from using TLS
@@ -53,14 +62,14 @@ All of the following environment variables must be set:
 * `AWS_MEDIAFILES_LOCATION` - specify it to change the path media (uploaded) files are located within their S3 bucket 
     (default: `uploads`)
 
-### Secrets
+#### Secrets
 
 * `DJANGO_ADMIN_URL` - change admin URL to something secure
 * `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` - required if not using IAM Roles to authenticate access to S3 buckets   
 * `CELERY_BROKER_URL` - Only required if not using IAM Roles for SQS authentication. 
     It must be in the format `sqs://{aws_access_key}:{aws_secret_key}@`.
 
-## Gunicorn settings (_web_ image only)
+### Gunicorn settings (_web_ image only)
 
 All [Gunicorn settings](http://docs.gunicorn.org/en/latest/settings.html) may be overridden by an environment variable 
 named `GUNICORN_<UPPERCASE-SETTING-NAME>` (e.g. `GUNICORN_WORKERS` overrides `workers`) 
@@ -71,9 +80,7 @@ Defaults:
 
 # AWS resources
 
-The application is supposed to run on two separate containers, _web_ and _worker_. 
-
-Each component is completely stateless and it may scale horizontally as required.
+_Web_ and _Worker_ are completely stateless. They may scale out for HA as required.
 
 ## S3 buckets
 
@@ -82,12 +89,12 @@ Two S3 buckets are used for storing files:
 1. Media (uploaded) files
 2. Static files (images, css, js...)
 
-The _Media_ bucket must be accessible for read&write by both _web_ and _worker_.
+The _Media_ bucket must be accessible for read+write by both _Web_ and _Worker_.
 
-The _Static_ bucket must be accessible for read&write by _web_ only 
+The _Static_ bucket must be accessible for read+write by _Web_ only 
 
-The _Static_ bucket must also be publicly accessible (from the Internet), either directly (not-recommended)
-or through CloudFront CDN (recommended).
+The _Static_ bucket must also be publicly accessible, either directly (not-recommended) or through CloudFront CDN 
+(recommended).
 
 `AWS_S3_STATICFILES_CUSTOM_DOMAIN` defines the public DNS domain to access the _Static_ bucket (e.g. the CloudFront domain).
 
@@ -96,27 +103,25 @@ or through CloudFront CDN (recommended).
 
 ## SQS queue
 
-The application uses an SQS queue named `panelapp` to schedule jobs picked up by _worker_.
+The application uses an SQS queue named `panelapp` to schedule jobs picked up by _Worker_.
 
-It is recommended to create the SQS queue beforehand do not provide the application with permission to create any queues 
+It is recommended to create the SQS queue beforehand and do NOT give the application permissions to create queues
 (if the queue does not exist the application try to create it, but this is not secure).
 
 The queue **_Visibility Timeout_ must be `360` (seconds)**. 
+If different, do not forget to override `SQS_QUEUE_VISIBILITY_TIMEOUT` to match queue timeout.
 
-If _Visibility Timeout_  is different, override the `SQS_QUEUE_VISIBILITY_TIMEOUT` settings to match queue timeout.
-
-> If the _Visibility Timeout_ does not match what the application is expecting, Celery will try to create a new queue 
-> and get an error, if it does not have permissions (it should not have)
+> If the _Visibility Timeout_ does not match what the application is expecting, Celery will try to create a new queue.
 
 ## Database
 
-The application expects a PostgreSQL-compatible DB: either Aurora or RDS.
+The application expects a PostgreSQL-compatible DB. Either Aurora or RDS.
 
 ## AWS resource security 
 
 Authentication with the database uses username and password (part of `DATABASE_URL`).
 
-Authentication between application and SQS and S3 should use IAM Roles.
+Access SQS and S3 should be authorised using IAM Policy.
 
 No `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` must be explicitly passed to the application (this is not secure!)
 

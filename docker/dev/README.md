@@ -1,30 +1,46 @@
 # Local development environment
 
-Local development environment (the developer's machine) uses Docker, mounting the application code as volume frm the host machine.
+Local development environment (the developer's machine) uses Docker and Docker Compose.
+ 
+Docker Compose cluster includes:
 
-It runs in Docker-compose, including a PostgreSQL instance and [LocalStack](https://github.com/localstack/localstack), for
-mocking S3 and SQS.
+* _Web_ component: Django app server run with `runserver_plus`.
+* _Worker_  component: Celery application.
+* PostgreSQL instance
+* [LocalStack](https://github.com/localstack/localstack), mocking S3 and SQS.
+ 
+The application source code from the local machine is mounted as volumes into the running containers.
+Any change to the code may be immediately observed.
 
-A [Makefile](./Makefile) is provided for all common operations, including starting and stopping the Docker-compose cluster.
+A [Makefile](./Makefile) helps with common operations.
 
-> If you start the docker-compose cluster directly you need to set `TMPDIR` env variable, to `/tmp/localstack` on Linux
-> or `/private/tmp/localstack` on OSX.
+> If you start the docker-compose cluster directly, without the Makefile, you need to set `TMPDIR` env variable. 
+> To `/tmp/localstack` on Linux or `/private/tmp/localstack` on OSX.
 
 ## Developer machine requirements
 
-* Docker (tested with Docker v.18.09.2 on Mac)
-* AWS CLI (tested with aws-cli/1.16.156 Python/2.7.16 botocore/1.12.146)
+Software requirements:
 
-**Also add an alias `localstack` to `localhost` in your `/etc/hosts` file**.
+* Docker: tested with Docker v.18.09.2 on Mac
+* AWS CLI: tested with aws-cli/1.16.156 Python/2.7.16 botocore/1.12.146
 
-> This is required because [LocalStack](https://github.com/localstack/localstack), mocking AWS services, is running in
-> the Docker-Compose cluster as `localstack` but exposed to the host machine on localhost (port `4572` and `4576` for 
-> S3 and SQS, respectively).
+Machine Setup requirements:
 
+* Edit your `/etc/hosts` file adding `localstack` as alias to `localhost`
+
+This is required because [LocalStack](https://github.com/localstack/localstack), mocking AWS services, is running in
+the Docker-Compose cluster as `localstack` but exposed to the host machine on localhost (port `4572` and `4576` for 
+S3 and SQS, respectively).
+
+## Dockerfiles
+
+_Web_ and _Worker_ have separate Dockerfiles: [`Dockerfile-web`](./Dockerfile-web) and [`Dockerfile-worker`](./Dockerfile-worker).
+
+All Python dependencies, including dev and test deps, are installed are editable.
 
 ## Development lifecycle
 
-All common operations use the [Makefile](./Makefile) in this directory.
+Use the [Makefile](./Makefile) in this directory for all common operations.
 
 
 ### Build dev docker images 
@@ -34,6 +50,8 @@ $ make build
 ```
 
 ### Run and setup the cluster
+
+To start an empty application from scratch (no Panel, but includes Genes data).
 
 1. Start a new dev cluster (in detached mode): 
     ```bash
@@ -52,7 +70,7 @@ $ make build
     ```bash
     $ make mock-aws
     ```
-5. Deploy static files (takes a while):
+5. Deploy static files:
     ```bash
     $ make collectstatic
     ```
@@ -60,16 +78,18 @@ $ make build
     ```bash
     $ make createsuperuser
     ```
+    This is the user to log into the webapp.
+
 
 ### Developing and accessing the application
 
-The application is accessible from `http://localhost:8080/`
+The application is accessible at `http://localhost:8080/`
 
 The python code is mounted from the host `<project-root>/panelapp` directory.  Changes to the code are immediately 
 reflected into the running containers.
 
-**`setup.py`, `setup.cfg`, `MANIFEST.in` and `VERSION` are copied into the container at docker build-time.**
-Any change to these files (e.g. **any changes to a dependency version**) requires rebuilding the container and restarting 
+**`setup.py`, `setup.cfg`, `MANIFEST.in` and `VERSION` are copied into the container when the Docker image is build.**
+Any change to these files (e.g. **changes to dependencies versions**) requires rebuilding the container and restarting 
 the cluster.
 
 * Run tests:
@@ -108,34 +128,35 @@ the cluster.
 
 ## Application Configuration
 
-Django settings: `panelapp.settings.docker-dev`
+Django settings: [`panelapp.settings.docker-dev`](../../panelapp/panelapp/settings/docker-dev.py).
 
-The [docker-compose.yml](./docker-compose.yml) file set up all required environment variables.
+The [docker-compose.yml](./docker-compose.yml) sets all required environment variables.
 
-By default mocked S3 and SQS are used. Look at the [docker-dev settings](../../panelapp/panelapp/settings/docker-dev.py)
-and [docker-compose.yml](./docker-compose.yml) to make it work with local file-system and RabbitMQ.
+By default, it uses mocked S3 and SQS by LocalStack.
 
+> You may make the application run with RabbitMQ and local file system, tweaking 
+> [docker-dev settings](../../panelapp/panelapp/settings/docker-dev.py) and [docker-compose.yml](./docker-compose.yml),
+> but this backward compatibility may be dropped in the future.
+
+Sending email is completely disabled: it only outputs to console.
 
 ## LocalStack
 
 The Docker-Compose cluster also includes an instance of [LocalStack](https://github.com/localstack/localstack) running 
-S3, SQS and SES for local development.
+S3, SQS for local development.
 
-The LocalStack UI is accessible from `http://localhost:8090`
+A minimal LocalStack UI is accessible from `http://localhost:8090/`
 
-Service endpoints are the defaults:
+Service endpoints are LocalStack defaults:
 
 * S3: `http://localhost:4572`
 * SQS: `http://localhost:4576`
 
-### LocalStack tmp directory
 
-If you are running Docker Compose directly (or from the IDE) on OSX, beware it requires environment variable
-`TMPDIR=/private/tmp/localstack`.
-
-Failing to do this causes LocalStack mounting the host directory `/tmp/localstack` (default on Linux), but Docker has no 
-write access to `/tmp` on OSX.
-The symptom will be a number of *Mount denied* or permissions errors on starting LocalStack.
+> If you are running Docker Compose directly (or from the IDE) on OSX, beware it requires the environment variable
+> `TMPDIR=/private/tmp/localstack`. Failing to do this causes LocalStack mounting the host directory `/tmp/localstack` 
+> (default on Linux), but Docker has no write access to `/tmp` on OSX. The symptom will be a number of *Mount denied* 
+> or permissions errors on starting LocalStack.
 
 ### Differences between AWS LocalStack and "the real" AWS thing
 
@@ -149,4 +170,10 @@ The symptom will be a number of *Mount denied* or permissions errors on starting
     host machine they are actually exposed to `localhost`. To make scripts running both inside the containers and from
     the host machine, set an alias `localstack` alias to `localhost` in the host machine's `/etc/hosts` file
 * LocalStack SES does not support SMTP
-* Fake-SMTP does not support authentication
+
+### AWScli-local
+
+It might be handy installing [AWScli-local](https://github.com/localstack/awscli-local) on developer's machine.
+
+It is a wrapper around AWS cli for interacting with LocalStack (it helps with not `--endpoint-url` and providing dummy 
+credentials on every request).
