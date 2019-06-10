@@ -27,7 +27,7 @@ clean: ## Remove build directory
 	rm -rf $(BUILDDIR)
 
 build: clean ## Build Docker Images
-	cd ../.. ; docker build --tag panelapp-base --file ./docker/prod/Dockerfile-base . ; cd docker/prod
+	cd ../.. ; docker build --tag panelapp-base --file ./docker/cloud/Dockerfile-base . ; cd docker/cloud
 	docker-compose build
 
 up: ## Run cluster
