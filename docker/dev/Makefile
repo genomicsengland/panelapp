@@ -37,8 +37,8 @@ loaddata: ## Load genes files into db (loaddata command)
 collectstatic: ## Deploy static files (collectstatic command)
 	docker-compose exec web python manage.py collectstatic --noinput
 
-createsuperuser: ## Create superuser (interactively insert password)
-	docker-compose exec web python manage.py createsuperuser --username admin --email adimin@test.test
+createsuperuser: ## Create superuser (username: 'admin', pwd: 'secret', email: `admin@local`)
+	docker-compose exec web /bin/sh -c "echo \"from django.contrib.auth import get_user_model; User = get_user_model(); User.objects.create_superuser('admin', 'admin@local', 'secret')\" | python manage.py shell"
 
 command: ## Run a generic command, passed as additional argument(s)
 	docker-compose exec web python manage.py $(COMMAND_ARGS)

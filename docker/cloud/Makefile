@@ -40,17 +40,15 @@ loaddata: export AWS_ACCESS_KEY_ID := dummy-key
 loaddata: export AWS_SECRET_ACCESS_KEY := dummy-secret
 loaddata: ## Load genes files into db (loaddata command)
 	aws --endpoint-url=http://localhost:4572 s3 cp ../../deploy/genes.json.gz s3://media-bucket/genes.json.gz
-	docker-compose exec web python -c "import boto3,botocore;boto3.resource('s3',use_ssl=False, endpoint_url='http://localstack:4572').Bucket('media-bucket').download_file('genes.json.gz', '/var/tmp/genes.json.gz')"
-	docker-compose exec web python manage.py loaddata --verbosity 3 /var/tmp/genes.json
-	docker-compose exec web rm /var/tmp/genes.json.gz
+	docker-compose exec web /bin/sh -c "python -c \"import boto3,botocore;boto3.resource('s3',use_ssl=False, endpoint_url='http://localstack:4572').Bucket('media-bucket').download_file('genes.json.gz', '/var/tmp/genes.json.gz')\"; python manage.py loaddata --verbosity 3 /var/tmp/genes.json; rm /var/tmp/genes.json.gz"
 	aws --endpoint-url=http://localhost:4572 s3 rm s3://media-bucket/genes.json.gz
 
 
 collectstatic: ## Deploy static files (collectstatic command)
 	docker-compose exec web python manage.py collectstatic --noinput
 
-createsuperuser: ## Create superuser (interactively insert password)
-	docker-compose exec web python manage.py createsuperuser --username admin --email adimin@test.test
+createsuperuser: ## Create superuser (username: 'admin', pwd: 'secret', email: `admin@local`)
+	docker-compose exec web /bin/sh -c "echo \"from django.contrib.auth import get_user_model; User = get_user_model(); User.objects.create_superuser('admin', 'admin@local', 'secret')\" | python manage.py shell"
 
 command: ## Run a generic command, passed as additional argument(s)
 	docker-compose exec web python manage.py $(COMMAND_ARGS)

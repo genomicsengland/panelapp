@@ -74,11 +74,11 @@ To start an empty application from scratch (no Panel, but includes Genes data).
     ```bash
     $ make collectstatic
     ```
-6. Create admin user (username: `admin`, interactively insert password)
+6. Create admin user
     ```bash
     $ make createsuperuser
     ```
-    This is the user to log into the webapp.
+    This is the user to log into the webapp: username=`admin`, pwd=`secret`, email=`admin@local`
 
 
 ### Developing and accessing the application
