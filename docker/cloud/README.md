@@ -1,22 +1,33 @@
-# Production docker
+# Cloud environments
 
-This directory contains Dockerfiles for generating images to be used in all AWS environments (as opposed to local development).
+This directory contains Dockerfiles for AWS environments.
 
-It is designed to run on AWS, using S3 and SQS (as opposed to file-system storage and RabbitMQ).
+All cloud environments are intended to be as identical as possible, using thesame Docker images and Django settings, except for environment-specific parameters.
 
-The Django settings module must be `panelapp.settings.docker-aws` (`DJANGO_SETTINGS_MODULE=panelapp.settings.docker-aws`).
+## Dockerfiles
 
-Different environments (e.g. Staging, Prod) are configured setting the environment variables below.
+The cloud docker images are designed to run on AWS, using S3 and SQS, and run within any container scheduler platform, Kubernetes, ECS, ECS/Fargate... (Docker Compose is not intended for production use).
 
-Configurations of _web_ and _worker_ containers should be the same, except those related to Gunicorn only used in _web_.
+* [Base image Dockerfile](./Dockerfile-base)
+* [Web Dockerfile](./Dockerfile-web), starts the Django application with Gunicorn
+* [Worker Dockerfile](./Dockerfile-worker), starts Celery
 
-To configure it for running with LocalStack, look at the comments in `panelapp/panleapp/settings/docker-aws.py`.
+> Docker Compose](./docker-compose.yml) and [Makefile](./Makefile) in this directory are **for troubleshooting docker 
+> images** only. They are not supposed to be used in any environments.
 
-##  Mandatory environment variables
+## Application configuration
 
-All of the following must be explicitly configured
+The Django settings module for these environments is 
+[`panelapp.settings.docker-aws`](../../panelapp/panelapp/settings/docker-aws.py).
 
-### Non-Secrets
+The same Django settings module is used for all environments.
+All environment-specific parameters are passed as environment variables (not by switching Django setting module).
+ 
+###  Mandatory environment variables
+
+All of the following environment variables must be set:
+
+#### Non-Secrets
 
 * `AWS_S3_STATICFILES_BUCKET_NAME` - Name of the S3 bucket for storing static files
 * `AWS_S3_MEDIAFILES_BUCKET_NAME` - Name of the S3 bucket for storing media (uploaded) files
@@ -28,7 +39,7 @@ All of the following must be explicitly configured
 * `EMAIL_HOST` - SMTP server hostname
 * `EMAIL_PORT` - SMTP server port
 
-### Secrets
+#### Secrets
 
 * `DATABASE_URL` - PostgreSQL config url, in the format: `postgresql://{username}:{password}@{host}:{port}/{database_name}`
 * `EMAIL_HOST_USER` - SMTP username (no SMTP authentication if omitted)
@@ -37,9 +48,9 @@ All of the following must be explicitly configured
 * `SECRET_KEY` - Secret for encrypting cookies
 
 
-## Optional environment variables
+### Optional environment variables
 
-### Non-secrets
+#### Non-secrets
 
 * `DJANGO_LOG_LEVEL` - to override Django log-level (default=`INFO`). This also controls Gunicorn and Celery log level.
 * `EMAIL_USE_TLS` - Set to `False` to prevent SMTP from using TLS
@@ -49,14 +60,14 @@ All of the following must be explicitly configured
 * `AWS_MEDIAFILES_LOCATION` - specify it to change the path media (uploaded) files are located within their S3 bucket 
     (default: `uploads`)
 
-### Secrets
+#### Secrets
 
 * `DJANGO_ADMIN_URL` - change admin URL to something secure
 * `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` - required if not using IAM Roles to authenticate access to S3 buckets   
 * `CELERY_BROKER_URL` - Only required if not using IAM Roles for SQS authentication. 
     It must be in the format `sqs://{aws_access_key}:{aws_secret_key}@`.
 
-## Gunicorn settings (_web_ image only)
+### Gunicorn settings (_Web_ image only)
 
 All [Gunicorn settings](http://docs.gunicorn.org/en/latest/settings.html) may be overridden by an environment variable 
 named `GUNICORN_<UPPERCASE-SETTING-NAME>` (e.g. `GUNICORN_WORKERS` overrides `workers`) 
@@ -65,56 +76,56 @@ Defaults:
 
 * `GUNICORN_WORKERS` (`workers`): 2
 
-# Production environment requirements
+# AWS resources
 
-By default, the prod, dockerised application is supposed to be deployed on AWS.
+_Web_ and _Worker_ are completely stateless. 
+They may scale out for HA as required.
 
-It runs as two separate components (containers): _web_ and _worker_. 
+## S3 buckets
 
-Each component is completely stateless and it may scale horizontally as required.
-
-## S3 
-
-We two S3 buckets for storing files:
+Two S3 buckets are used for storing files:
 
 1. Media (uploaded) files
 2. Static files (images, css, js...)
 
-The _Media_ bucket must be accessible by both _web_ and _worker_.
+The _Media_ bucket must be accessible for read+write by both _Web_ and _Worker_.
 
-The _Static_ bucket must be accessible by _web_ only but must be exposed to the Internet, either directly (not-recommended)
-or through CloudFront CDN (recommended).
+The _Static_ bucket must be accessible for read+write by _Web_ only 
 
-The external domain the _Static_ bucket is accessible at must be specified in the `AWS_S3_STATICFILES_CUSTOM_DOMAIN` setting.
+The _Static_ bucket must also be publicly accessible, either directly (not-recommended) or through CloudFront CDN 
+(recommended).
+
+`AWS_S3_STATICFILES_CUSTOM_DOMAIN` defines the public DNS domain to access the _Static_ bucket (e.g. the CloudFront domain).
 
 > By default, static files are stored in a `/static` "subdirectory" of the bucket and are expected to be served from 
 `https://<AWS_S3_STATICFILES_CUSTOM_DOMAIN>/static/` base URL.
 
-## SQS
+## SQS queue
 
-The application uses an SQS queue named `panelapp` to schedule jobs picked up by _worker_.
+The application uses an SQS queue named `panelapp` to schedule jobs picked up by _Worker_.
 
-It is recommended to create the SQS queue beforehand do not provide the application with permission to create any queues 
-(if the queue does not exist the application try to create it, but this is not secure).
+It is recommended to create the SQS queue beforehand.
+Infrastructure should be managed securely outside of the running application.
+You should not give the application permissions to create queues at runtime.
 
-The SQS queue _Visibility Timeout_ must be `360` (seconds). 
-If different, override the `SQS_QUEUE_VISIBILITY_TIMEOUT` to match the queue _Visibility Timeout_.
+The queue **_Visibility Timeout_ must be `360` (seconds)**. 
+If you use a different value, do not forget to override `SQS_QUEUE_VISIBILITY_TIMEOUT` to match the queue timeout.
 
-> If the _Visibility Timeout_ does not match what the application is expecting, Celery will try to create a new queue 
-> and get an error, if it does not have permissions (it should not have)
+> If the _Visibility Timeout_ does not match what the application is expecting, Celery will try to create a new queue.
 
 ## Database
 
-The application expects a PostgreSQL-compatible DB: either Aurora or RDS.
+The application expects a PostgreSQL-compatible DB.
 
-## Internal authentication 
+The application has been tested with AWS Aurora, but PostgreSQL RDS should also work.
+
+## AWS resource security 
 
 Authentication with the database uses username and password (part of `DATABASE_URL`).
 
-Authentication between application and SQS and S3 should use IAM Roles.
+Access SQS and S3 should be authorised using IAM Policy.
 
 No `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` must be explicitly passed to the application (this is not secure!)
-
 
 ### Policy for SQS access
 
@@ -157,3 +168,11 @@ Note the default queue name is `panelapp`, unless overridden.
 ### Policy for S3 Static bucket and CloudFront CDN
 
 **TBD**
+
+## Logging
+
+All application components logs to stdout in JSON, using `python3-json-log-formatter==1.6.1` as log formatter, for 
+easier log aggregation and indexing.
+
+Logging level is controlled by `DJANGO_LOG_LEVEL` (default = `INFO`). Note that this does not only control Django, but also
+Celery and Gunicorn logging.

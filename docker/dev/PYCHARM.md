@@ -17,7 +17,7 @@ All settings not explicitly mentioned should be left as by default.
 1. Create *Docker* execution server:
 	* `Preferences` : `Build, Execution, Deployment` > `Docker` + `Docker for Mac`
 2. Set up *Python Interpreter* = *Docker Compose*
-	*   `Preferences` : `Project: application` > `Project interpreter` > 
+	*   `Preferences` : `Project: panelapp` > `Project interpreter` > 
 		*   Add : `Docker Compose`
 			*   Server: `Docker`
 			*   Configuration files: `./docker/dev/docker-compose.yml`
@@ -30,7 +30,7 @@ All settings not explicitly mentioned should be left as by default.
 		* Settings: `panelapp/settings/docker-dev.py`
 		* Manage Script: `manage.py`
 4. Set up project source directory:
-	*  `Preferences` : `Project: application` > `Project Structure`
+	*  `Preferences` : `Project: panelapp` > `Project Structure`
 		* Add `./panelapp` to Sources
 5. Docker-compose cluster Run Profile (not mandatory but handy):
 	* `Run` > `Edit Configurations`: Add `Docker > Docker-compose`
