@@ -48,7 +48,7 @@ logconfig_dict = {
     },
     "formatters": {
         "json": {
-            "class": "json_log_formatter.JsonFormatter",
+            "class": "simple_json_log_formatter.SimpleJsonFormatter",
         },
     },
     "loggers" : {

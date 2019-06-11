@@ -43,7 +43,7 @@ A [Makefile](docker/dev/Makefile) is provided to facilitate dev-time operations.
 
 ## Cloud environments
 
-**For details on _Cloud_ environments see [./docker/prod/README.md](docker/cloud/README.md).**
+**For details on _Cloud_ environments see [./docker/cloud/README.md](docker/cloud/README.md).**
 
 All environments, except the local-dev environment, are assumed to run on AWS against actual AWS services.
 
