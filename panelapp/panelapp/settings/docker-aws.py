@@ -142,7 +142,6 @@ LOGGING = {
     "formatters": {
         "json" : {
             "class": "simple_json_log_formatter.SimpleJsonFormatter",
-
         },
     },
     "loggers": {
