@@ -44,7 +44,6 @@ All of the following environment variables must be set:
 * `DATABASE_URL` - PostgreSQL config url, in the format: `postgresql://{username}:{password}@{host}:{port}/{database_name}`
 * `EMAIL_HOST_USER` - SMTP username (no SMTP authentication if omitted)
 * `EMAIL_HOST_PASSWORD` - SMTP password (no SMTP authentication if omitted)
-* `HEALTH_CHECK_TOKEN` - Token to authenticate health check endpoint requests
 * `SECRET_KEY` - Secret for encrypting cookies
 
 

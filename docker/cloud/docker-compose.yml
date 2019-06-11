@@ -59,7 +59,6 @@ services:
     environment:
       - DATABASE_URL=postgres://panelapp:panelapp@db/panelapp
       - DJANGO_LOG_LEVEL=INFO
-      - HEALTH_ACCESS_TOKEN_LOCATION=/app/health_token
       - ALLOWED_HOSTS=localhost;web
       - AWS_REGION=eu-west-2
       - AWS_ACCESS_KEY_ID=dummy-key
