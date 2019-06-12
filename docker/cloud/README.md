@@ -130,7 +130,7 @@ No `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` must be explicitly passed to 
 
 This should be the Least-Privilege IAM Policy to access the SQS Queue.
 
-```
+```json
 {
     "Version": "2012-10-17",
     "Statement": [
@@ -160,13 +160,33 @@ This should be the Least-Privilege IAM Policy to access the SQS Queue.
 
 Note the default queue name is `panelapp`, unless overridden.
 
-### Policy for S3 Media bucket
+### Policy to allow the application to access Media and Static S3 buckets
 
-**TBD**
+```json
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+          "Sid": "Stmt1559654322774",
+          "Action": [
+            "s3:DeleteObject",
+            "s3:PutObjectAcl",
+            "s3:GetObjectAcl",
+            "s3:GetObject",
+            "s3:HeadBucket",
+            "s3:ListBucket",
+            "s3:PutObject"
+          ],
+          "Effect": "Allow",
+          "Resource": [
+            "arn:aws:s3:::<STATIC-BUCKET-NAME>/*",
+            "arn:aws:s3:::<MEDIA-BUCKET-NAME>/*"
+            ]
+        }
+    ]
+}
+```
 
-### Policy for S3 Static bucket and CloudFront CDN
-
-**TBD**
 
 ## Logging
 
