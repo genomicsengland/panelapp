@@ -127,30 +127,42 @@ def get_panel(request, panel_name):
     if "version" in request.GET:
         version = request.GET["version"]
         try:
-            major_version = int(version.split(".")[0])
-            minor_version = int(version.split(".")[1])
-        except IndexError:
+            major_version, minor_version = version.split(".")
+        except ValueError:
             return Response(
                 {"Query Error: The incorrect version requested"}, status=400
             )
+        try:
+            int(panel_name)
+            queryset = GenePanelSnapshot.objects.get_active(all=True, internal=True, deleted=True).filter(panel__pk=panel_name)
+        except ValueError:
+            queryset = GenePanelSnapshot.objects.get_active(all=True, internal=True, deleted=True).filter(panel__old_pk=panel_name)
 
-        snap = HistoricalSnapshot.objects.filter(
-            panel__pk=panel_name,
-            major_version=major_version,
-            minor_version=minor_version,
-        ).first()
+        instance = queryset.first()
+        if instance.major_version != int(major_version) or instance.minor_version != int(minor_version):
+            if len(panel_name) == 24:
+                snap = HistoricalSnapshot.objects.filter(
+                    panel__old_pk=panel_name,
+                    major_version=major_version,
+                    minor_version=minor_version,
+                ).first()
+            else:
+                snap = HistoricalSnapshot.objects.filter(
+                    panel__pk=panel_name,
+                    major_version=major_version,
+                    minor_version=minor_version,
+                ).first()
 
-        if not snap:
-            return Response(
-                {
-                    "Query Error: The version requested for panel:"
-                    + panel_name
-                    + " was not found."
-                }
-            )
-        json = snap.to_api_0()
-        return Response(json)
-
+            if not snap:
+                return Response(
+                    {
+                        "Query Error: The version requested for panel:"
+                        + panel_name
+                        + " was not found."
+                    }
+                )
+            json = snap.to_api_0()
+            return Response(json)
     else:
         queryset = GenePanelSnapshot.objects.get_active()
 
@@ -184,7 +196,8 @@ def get_panel(request, panel_name):
         else:
             queryset = queryset_name_exact
 
-    instance = queryset[0]
+    instance = queryset.first()
+
     serializer = PanelSerializer(
         filter_entity_list(instance.get_all_genes_extra, **filters),
         filter_entity_list(instance.get_all_strs_extra, **filters),
