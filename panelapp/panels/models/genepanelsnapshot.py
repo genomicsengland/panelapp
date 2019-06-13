@@ -606,15 +606,15 @@ class GenePanelSnapshot(TimeStampedModel):
                     )
                     self.save()
 
-        # increment versions of any super panel
-        if include_superpanels:
-            super_panel_ids = self.genepanelsnapshot_set.all().values_list('pk', flat=True)
-            super_panels = self.genepanelsnapshot_set.get_active_annotated(all=True, deleted=True, internal=True).filter(pk__in=super_panel_ids)
-            for panel in super_panels:
-                if user:
-                    increment_panel_async.delay(panel.pk, user_pk=user.pk, major=major)
-                else:
-                    increment_panel_async.delay(panel.pk, major=major)
+            # increment versions of any super panel
+            if include_superpanels:
+                super_panel_ids = self.genepanelsnapshot_set.values_list('pk', flat=True)
+                super_panels = self.genepanelsnapshot_set.get_active_annotated(all=True, deleted=True, internal=True).filter(pk__in=super_panel_ids)
+                for panel in super_panels:
+                    if user:
+                        increment_panel_async(panel.pk, user_pk=user.pk, major=major, update_stats=False)
+                    else:
+                        increment_panel_async(panel.pk, major=major, update_stats=False)
 
         return self
 
