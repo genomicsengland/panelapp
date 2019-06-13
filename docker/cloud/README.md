@@ -41,7 +41,11 @@ All of the following environment variables must be set:
 
 #### Secrets
 
-* `DATABASE_URL` - PostgreSQL config url, in the format: `postgresql://{username}:{password}@{host}:{port}/{database_name}`
+* `DATABASE_HOST` - PostgreSQL hostname
+* `DATABASE_PORT` - (default: 5432) PostgreSQL port
+* `DATABASE_NAME` - (default: "panelapp") db name
+* `DATABASE_USER` - PostgreSQL username
+* `DATABASE_PASSWORD` - PostgreSQL password
 * `EMAIL_HOST_USER` - SMTP username (no SMTP authentication if omitted)
 * `EMAIL_HOST_PASSWORD` - SMTP password (no SMTP authentication if omitted)
 * `SECRET_KEY` - Secret for encrypting cookies
@@ -61,6 +65,8 @@ All of the following environment variables must be set:
 
 #### Secrets
 
+* `DATABASE_URL` - (**alternative to passing separate `DATABASE_*` parameters**)
+    database config URL, in the format: `postgresql://{username}:{password}@{host}:{port}/{database_name}`
 * `DJANGO_ADMIN_URL` - change admin URL to something secure
 * `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` - required if not using IAM Roles to authenticate access to S3 buckets   
 * `CELERY_BROKER_URL` - Only required if not using IAM Roles for SQS authentication. 

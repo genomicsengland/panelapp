@@ -30,7 +30,7 @@ services:
   db:
     image: postgres:9.6.9
     environment:
-      - POSTGRES_PASSWORD=panelapp
+      - POSTGRES_PASSWORD=secret
       - POSTGRES_USER=panelapp
       - POSTGRES_DB=panelapp
 
@@ -57,7 +57,12 @@ services:
       - db
       - localstack
     environment:
-      - DATABASE_URL=postgres://panelapp:panelapp@db/panelapp
+#      - DATABASE_URL=postgres://panelapp:secret@db:5432/panelapp
+      - DATABASE_USER=panelapp
+      - DATABASE_PASSWORD=secret
+      - DATABASE_HOST=db
+      - DATABASE_PORT=5432
+      - DATABASE_NAME=panelapp
       - DJANGO_LOG_LEVEL=INFO
       - ALLOWED_HOSTS=localhost;web
       - AWS_REGION=eu-west-2
@@ -92,7 +97,12 @@ services:
       - db
     environment:
       # Same configuration as web (except Static file storage-related and ALLOWED_HOSTS)
-      - DATABASE_URL=postgres://panelapp:panelapp@db/panelapp
+#      - DATABASE_URL=postgres://panelapp:secret@db:5432/panelapp
+      - DATABASE_USER=panelapp
+      - DATABASE_PASSWORD=secret
+      - DATABASE_HOST=db
+      - DATABASE_PORT=5432
+      - DATABASE_NAME=panelapp
       - DJANGO_LOG_LEVEL=INFO
       - AWS_REGION=eu-west-2
       - AWS_ACCESS_KEY_ID=dummy-key

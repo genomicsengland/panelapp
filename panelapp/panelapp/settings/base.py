@@ -36,6 +36,7 @@ https://docs.djangoproject.com/en/1.11/ref/settings/
 import os
 import panelapp
 import dj_database_url
+import urllib.parse
 from django.contrib.messages import constants as message_constants
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
@@ -144,7 +145,17 @@ FILE_UPLOAD_DIRECTORY_PERMISSIONS = 755
 # Database
 # https://docs.djangoproject.com/en/1.11/ref/settings/#databases
 
-DATABASES = {"default": dj_database_url.config(engine="django.db.backends.postgresql")}
+DATABASE_USER = os.getenv("DATABASE_USER")
+DATABASE_PASSWORD = os.getenv("DATABASE_PASSWORD")
+DATABASE_HOST = os.getenv("DATABASE_HOST")
+DATABASE_PORT = os.getenv("DATABASE_PORT", "5324")
+DATABASE_NAME = os.getenv("DATABASE_NAME", "panelapp")
+DATABASE_URL = os.getenv(
+    "DATABASE_URL",
+    f"postgres://{DATABASE_USER}:{urllib.parse.quote(DATABASE_PASSWORD,safe='')}@{DATABASE_HOST}:{DATABASE_PORT}/{DATABASE_NAME}"
+    if DATABASE_USER and DATABASE_PASSWORD and DATABASE_HOST else None )
+DATABASES = {"default": dj_database_url.parse(DATABASE_URL,engine="django.db.backends.postgresql")}
+
 
 # Admin
 ADMIN_URL = os.getenv("DJANGO_ADMIN_URL", "admin/")
