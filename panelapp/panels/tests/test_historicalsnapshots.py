@@ -66,7 +66,7 @@ class HistoricalSnapshotTest(LoginGELUser):
     def test_import_panel(self):
         gpes = GenePanelSnapshotFactory()
         GenePanelEntrySnapshotFactory.create_batch(2, panel=gpes)  # random genes
-        snap = HistoricalSnapshot().import_panel(gpes)
+        snap = HistoricalSnapshot.import_panel(gpes)
 
         assert snap.data
         assert len(snap.data["genes"]) == 2
@@ -77,7 +77,7 @@ class HistoricalSnapshotTest(LoginGELUser):
     def test_download_historical_snapshot_tsv(self):
         gps = GenePanelSnapshotFactory()
 
-        HistoricalSnapshot().import_panel(gps)
+        HistoricalSnapshot.import_panel(gps)
         gps.increment_version()
         res = self.client.post(
             reverse_lazy("panels:download_old_panel_tsv", args=(gps.panel.pk,)), {"panel_version": "0.0"}
@@ -88,7 +88,7 @@ class HistoricalSnapshotTest(LoginGELUser):
         gps = GenePanelSnapshotFactory()
         GenePanelEntrySnapshotFactory.create_batch(2, panel=gps)  # random genes
 
-        HistoricalSnapshot().import_panel(gps)
+        HistoricalSnapshot.import_panel(gps)
 
         res = self.client.get(
             reverse_lazy("webservices:get_panel", args=(gps.panel.pk,)), {"version": "0.0"}

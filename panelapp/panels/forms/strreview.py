@@ -80,5 +80,5 @@ class STRReviewForm(forms.ModelForm):
         ev = panel.get_str(self.str_item.name).update_evaluation(
             self.request.user, evaluation_data
         )
-        panel.update_saved_stats()
+        panel._update_saved_stats()
         return ev

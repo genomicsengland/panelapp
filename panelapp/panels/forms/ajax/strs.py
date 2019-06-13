@@ -62,7 +62,7 @@ class UpdateSTRMOIForm(forms.ModelForm):
             pk=self.instance.panel.panel.pk
         ).active_panel.get_str(self.instance.name)
         self.instance.update_moi(moi, user, comment)
-        self.instance.panel.update_saved_stats()
+        self.instance.panel._update_saved_stats()
 
 
 class UpdateSTRPhenotypesForm(forms.ModelForm):
@@ -86,7 +86,7 @@ class UpdateSTRPhenotypesForm(forms.ModelForm):
             pk=self.instance.panel.panel.pk
         ).active_panel.get_str(self.instance.name)
         self.instance.update_phenotypes(phenotypes, user, comment)
-        self.instance.panel.update_saved_stats()
+        self.instance.panel._update_saved_stats()
 
 
 class UpdateSTRPublicationsForm(forms.ModelForm):
@@ -111,7 +111,7 @@ class UpdateSTRPublicationsForm(forms.ModelForm):
             pk=self.instance.panel.panel.pk
         ).active_panel.get_str(self.instance.name)
         self.instance.update_publications(publications, user, comment)
-        self.instance.panel.update_saved_stats()
+        self.instance.panel._update_saved_stats()
 
 
 class UpdateSTRRatingForm(forms.ModelForm):
@@ -138,4 +138,4 @@ class UpdateSTRRatingForm(forms.ModelForm):
             pk=self.instance.panel.panel.pk
         ).active_panel.get_str(self.instance.name)
         self.instance.update_rating(status, user, self.cleaned_data["comment"])
-        self.instance.panel.update_saved_stats()
+        self.instance.panel._update_saved_stats()

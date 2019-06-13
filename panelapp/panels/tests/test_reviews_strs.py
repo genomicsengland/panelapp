@@ -48,7 +48,7 @@ class EvaluationSTRTest(LoginGELUser):
 
         str_item = STRFactory()
         str_item.evaluation.all().delete()
-        str_item.panel.update_saved_stats()
+        str_item.panel._update_saved_stats()
         url = reverse_lazy(
             "panels:review_entity",
             kwargs={

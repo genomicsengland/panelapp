@@ -48,7 +48,7 @@ class GeneEvaluationTest(LoginGELUser):
 
         gpes = GenePanelEntrySnapshotFactory()
         gpes.evaluation.all().delete()
-        gpes.panel.update_saved_stats()
+        gpes.panel._update_saved_stats()
         url = reverse_lazy(
             "panels:review_entity",
             kwargs={

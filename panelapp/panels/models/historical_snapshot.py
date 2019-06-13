@@ -243,18 +243,20 @@ class HistoricalSnapshot(models.Model):
             )
         return response
 
-    def import_panel(self, panel, comment=None):
+    @classmethod
+    def import_panel(cls, panel, comment=None):
         json = PanelSerializer(panel, include_entities=True)
 
-        self.panel = panel.panel
-        self.major_version = panel.major_version
-        self.minor_version = panel.minor_version
-        self.reason = comment
-        self.schema_version = panelapp.__version__
-        self.data = json.data
+        instance = cls()
+        instance.panel = panel.panel
+        instance.major_version = panel.major_version
+        instance.minor_version = panel.minor_version
+        instance.reason = comment
+        instance.schema_version = panelapp.__version__
+        instance.data = json.data
 
-        self.save()
-        return self
+        instance.save()
+        return instance
 
     @staticmethod
     def ensemble(entity):

@@ -61,7 +61,7 @@ def command():
         .iterator()
     ):
         with transaction.atomic():
-            HistoricalSnapshot().import_panel(panel=gps)
+            HistoricalSnapshot.import_panel(panel=gps)
             gps.delete()
             completed['genepanel'] +=1
             completed['historical'] +=1

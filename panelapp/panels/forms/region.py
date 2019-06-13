@@ -251,6 +251,4 @@ class PanelRegionForm(forms.ModelForm):
             region = self.panel.add_region(
                 self.request.user, new_region_name, region_data, increment_version
             )
-            self.panel = GenePanel.objects.get(pk=self.panel.panel.pk).active_panel
-            self.panel.update_saved_stats()
             return region

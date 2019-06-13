@@ -62,7 +62,7 @@ class UpdateRegionMOIForm(forms.ModelForm):
             pk=self.instance.panel.panel.pk
         ).active_panel.get_region(self.instance.name)
         self.instance.update_moi(moi, user, comment)
-        self.instance.panel.update_saved_stats()
+        self.instance.panel._update_saved_stats()
 
 
 class UpdateRegionPhenotypesForm(forms.ModelForm):
@@ -86,7 +86,7 @@ class UpdateRegionPhenotypesForm(forms.ModelForm):
             pk=self.instance.panel.panel.pk
         ).active_panel.get_region(self.instance.name)
         self.instance.update_phenotypes(phenotypes, user, comment)
-        self.instance.panel.update_saved_stats()
+        self.instance.panel._update_saved_stats()
 
 
 class UpdateRegionPublicationsForm(forms.ModelForm):
@@ -111,7 +111,7 @@ class UpdateRegionPublicationsForm(forms.ModelForm):
             pk=self.instance.panel.panel.pk
         ).active_panel.get_region(self.instance.name)
         self.instance.update_publications(publications, user, comment)
-        self.instance.panel.update_saved_stats()
+        self.instance.panel._update_saved_stats()
 
 
 class UpdateRegionRatingForm(forms.ModelForm):
@@ -138,4 +138,4 @@ class UpdateRegionRatingForm(forms.ModelForm):
             pk=self.instance.panel.panel.pk
         ).active_panel.get_region(self.instance.name)
         self.instance.update_rating(status, user, self.cleaned_data["comment"])
-        self.instance.panel.update_saved_stats()
+        self.instance.panel._update_saved_stats()

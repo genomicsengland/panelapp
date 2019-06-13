@@ -77,7 +77,7 @@ class GenePanelSnapshotFactory(factory.django.DjangoModelFactory):
         if not create:
             return
 
-        self.update_saved_stats()
+        self._update_saved_stats()
 
 
 class GenePanelFactory(factory.django.DjangoModelFactory):
@@ -200,7 +200,7 @@ class GenePanelEntrySnapshotFactory(factory.django.DjangoModelFactory):
         if not create:
             return
 
-        self.panel.update_saved_stats()
+        self.panel._update_saved_stats()
 
 
 class FakeRange:
@@ -275,7 +275,7 @@ class STRFactory(factory.django.DjangoModelFactory):
         if not create:
             return
 
-        self.panel.update_saved_stats()
+        self.panel._update_saved_stats()
 
 
 class RegionFactory(factory.django.DjangoModelFactory):
@@ -338,4 +338,4 @@ class RegionFactory(factory.django.DjangoModelFactory):
         if not create:
             return
 
-        self.panel.update_saved_stats()
+        self.panel._update_saved_stats()

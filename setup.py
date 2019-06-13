@@ -33,7 +33,7 @@ setup(
     include_package_data=True,
     setup_requires=["pytest-runner"],
     extras_require={
-        "dev": ["django-debug-toolbar==1.9.1", "ipython==6.4.0", "Werkzeug==0.14.1"],
+        "dev": ["django-debug-toolbar==1.11", "ipython==6.4.0", "Werkzeug==0.14.1"],
         "tests": [
             "pytest==3.7.1",
             "pytest-django==3.3.3",
@@ -44,8 +44,8 @@ setup(
         ],
     },
     install_requires=[
-        "django==2.1.8",
-        "simplejson==3.8.2",
+        "django==2.1.9",
+        "simplejson==3.16.0",
         "PyYAML==5.1",
         "psycopg2-binary==2.7.4",
         "dj-database-url==0.5.0",
@@ -66,8 +66,6 @@ setup(
         "more-itertools==4.2.0",
         "requests==2.22.0",
         "uwsgi==2.0.15",
-        "ijson==2.3",
-        "ujson==1.35",
         "django-admin-list-filter-dropdown==1.0.1",
         "pytz==2018.4",
         "gunicorn==19.9.0",
@@ -80,6 +78,6 @@ setup(
         "django-array-field-select==0.2.0",
         "django-qurl-templatetag==0.0.13",
         "django-click==2.1.0",
-        "django-filter==2.0.0",
+        "django-filter==2.0.0"
     ],
 )

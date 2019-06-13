@@ -136,12 +136,12 @@ class GenePanelSnapshotManager(models.Manager):
         )
 
     def get_active_annotated(
-        self, all=False, deleted=False, internal=False, name=None, panel_types=None
+        self, all=False, deleted=False, internal=False, name=None, panel_types=None, superpanels=True
     ):
         """This method adds additional values to the queryset, such as number_of_genes, etc and returns active panels"""
 
         return self.annotate_panels(
-            self.get_active(all, deleted, internal, name, panel_types)
+            self.get_active(all, deleted, internal, name, panel_types, superpanels=superpanels)
         )
 
     def annotate_panels(self, qs):
@@ -411,7 +411,7 @@ class GenePanelSnapshot(TimeStampedModel):
 
         # another way to refactor below info: when copying data, just count the numbers...
 
-        info = GenePanelSnapshot.objects.filter(pk__in=pks).aggregate(
+        info_genes = GenePanelSnapshot.objects.filter(pk__in=pks).aggregate(
             gene_reviewers=ArrayAgg(
                 "genepanelentrysnapshot__evaluation__user", distinct=True
             ),
@@ -444,6 +444,9 @@ class GenePanelSnapshot(TimeStampedModel):
                 ),
                 distinct=True,
             ),
+        )
+
+        info_strs = GenePanelSnapshot.objects.filter(pk__in=pks).aggregate(
             str_reviewers=ArrayAgg("str__evaluation__user", distinct=True),
             number_of_evaluated_strs=Count(
                 Case(
@@ -460,6 +463,9 @@ class GenePanelSnapshot(TimeStampedModel):
                 Case(When(str__saved_gel_status__gte=3, then=models.F("str"))),
                 distinct=True,
             ),
+        )
+
+        info_regions = GenePanelSnapshot.objects.filter(pk__in=pks).aggregate(
             region_reviewers=ArrayAgg("region__evaluation__user", distinct=True),
             number_of_evaluated_regions=Count(
                 Case(
@@ -472,7 +478,7 @@ class GenePanelSnapshot(TimeStampedModel):
             number_of_ready_regions=Count(
                 Case(When(region__ready=True, then=models.F("region"))), distinct=True
             ),
-            number_of_green_region=Count(
+            number_of_green_regions=Count(
                 Case(When(region__saved_gel_status__gte=3, then=models.F("region"))),
                 distinct=True,
             ),
@@ -481,7 +487,14 @@ class GenePanelSnapshot(TimeStampedModel):
         out = {"gene_reviewers": [], "str_reviewers": [], "region_reviewers": []}
 
         for key in keys:
-            out[key] = out.get(key, 0) + info.get(key, 0)
+            if key not in ['str_reviewers', 'region_reviewers']:
+                out[key] = out.get(key, 0) + info_genes.get(key, 0)
+
+            if key not in ['gene_reviewers', 'region_reviewers']:
+                out[key] = out.get(key, 0) + info_strs.get(key, 0)
+
+            if key not in ['str_reviewers', 'gene_reviewers']:
+                out[key] = out.get(key, 0) + info_regions.get(key, 0)
 
         out["gene_reviewers"] = list(
             set([r for r in out["gene_reviewers"] if r])
@@ -516,25 +529,14 @@ class GenePanelSnapshot(TimeStampedModel):
         )
         return out
 
-    def update_saved_stats(self, use_db=True):
+    def _update_saved_stats(self, use_db=True, update_superpanels=True):
         """Get the new values from the database"""
-
         self.stats = self._get_stats(use_db=use_db)
         self.save(update_fields=["stats"])
 
-        super_genepanels = set(
-            self.genepanelsnapshot_set.values_list("panel_id", flat=True)
-        )
-        if super_genepanels:
-            super_panels = (
-                GenePanelSnapshot.objects.filter(panel_id__in=super_genepanels)
-                .distinct("panel_id")
-                .order_by(
-                    "panel_id", "-major_version", "-minor_version", "-modified", "-pk"
-                )
-            )
-            for super_panel in super_panels:
-                super_panel.update_saved_stats(use_db=False)
+        if update_superpanels:
+            for super_panel in self.genepanelsnapshot_set.all():
+                super_panel._update_saved_stats(use_db=use_db)
 
     @property
     def version(self):
@@ -559,7 +561,7 @@ class GenePanelSnapshot(TimeStampedModel):
         if panels_changed:
             self.child_panels.set(updated_child_panels)
 
-    def increment_version(self, major=False, user=None, comment=None):
+    def increment_version(self, major=False, user=None, comment=None, include_superpanels=True):
         """Creates a new version of the panel.
 
         This script copies all genes, all information for these genes, and also
@@ -575,7 +577,7 @@ class GenePanelSnapshot(TimeStampedModel):
             raise Exception("Cannot increment non recent version")
 
         with transaction.atomic():
-            HistoricalSnapshot().import_panel(self, comment=comment)
+            HistoricalSnapshot.import_panel(self, comment=comment)
 
             self.created = timezone.now()
             self.modified = timezone.now()
@@ -605,11 +607,14 @@ class GenePanelSnapshot(TimeStampedModel):
                     self.save()
 
         # increment versions of any super panel
-        for panel in self.genepanelsnapshot_set.all():
-            if user:
-                increment_panel_async.delay(panel.pk, user_pk=user.pk, major=major)
-            else:
-                increment_panel_async.delay(panel.pk, major=major)
+        if include_superpanels:
+            super_panel_ids = self.genepanelsnapshot_set.all().values_list('pk', flat=True)
+            super_panels = self.genepanelsnapshot_set.get_active_annotated(all=True, deleted=True, internal=True).filter(pk__in=super_panel_ids)
+            for panel in super_panels:
+                if user:
+                    increment_panel_async.delay(panel.pk, user_pk=user.pk, major=major)
+                else:
+                    increment_panel_async.delay(panel.pk, major=major)
 
         return self
 
@@ -845,7 +850,7 @@ class GenePanelSnapshot(TimeStampedModel):
                 entity_type=V("gene", output_field=models.CharField()),
                 entity_name=models.F("gene_core__gene_symbol"),
             )
-            .prefetch_related("evidence", "tags")
+            .prefetch_related("evidence", "tags", "panel__panel__types",)
         )
 
         if self.is_super_panel:
@@ -888,7 +893,7 @@ class GenePanelSnapshot(TimeStampedModel):
                 entity_type=V("str", output_field=models.CharField()),
                 entity_name=models.F("name"),
             )
-            .prefetch_related("evidence", "tags")
+            .prefetch_related("evidence", "tags", "panel__panel__types",)
         )
 
         if self.is_super_panel:
@@ -931,7 +936,7 @@ class GenePanelSnapshot(TimeStampedModel):
                 entity_type=V("region", output_field=models.CharField()),
                 entity_name=models.F("name"),
             )
-            .prefetch_related("evidence", "tags")
+            .prefetch_related("evidence", "tags", "panel__panel__types")
         )
 
         if self.is_super_panel:
@@ -1054,7 +1059,7 @@ class GenePanelSnapshot(TimeStampedModel):
                     user, "removed gene:{} from the panel".format(gene_symbol)
                 )
 
-            self.update_saved_stats()
+            self._update_saved_stats()
             return True
         else:
             return False
@@ -1067,7 +1072,7 @@ class GenePanelSnapshot(TimeStampedModel):
 
         if self.has_str(str_name):
             if increment:
-                self = self.increment_version(ignore_str=str_name)
+                self = self.increment_version()
             else:
                 self.cached_strs.get(name=str_name).delete()
                 self.clear_cache()
@@ -1078,7 +1083,7 @@ class GenePanelSnapshot(TimeStampedModel):
                     user, "removed STR:{} from the panel".format(str_name)
                 )
 
-            self.update_saved_stats()
+            self._update_saved_stats()
             return True
         else:
             return False
@@ -1088,7 +1093,7 @@ class GenePanelSnapshot(TimeStampedModel):
 
         if self.has_region(region_name):
             if increment:
-                self = self.increment_version(ignore_region=region_name)
+                self = self.increment_version()
             else:
                 self.cached_regions.get(name=region_name).delete()
                 self.clear_cache()
@@ -1099,7 +1104,7 @@ class GenePanelSnapshot(TimeStampedModel):
                     user, "removed region:{} from the panel".format(region_name)
                 )
 
-            self.update_saved_stats()
+            self._update_saved_stats()
             return True
         else:
             return False
@@ -1299,7 +1304,7 @@ class GenePanelSnapshot(TimeStampedModel):
         gene = self.add_entity_info(gene, user, gene.label, gene_data)
 
         gene.evidence_status(update=True)
-        self.update_saved_stats()
+        self._update_saved_stats()
         return gene
 
     def update_gene(self, user, gene_symbol, gene_data, append_only=False):
@@ -1736,7 +1741,7 @@ class GenePanelSnapshot(TimeStampedModel):
                 self.delete_gene(old_gene_symbol, increment=False)
                 self.clear_cache()
                 self.clear_django_cache()
-                self.update_saved_stats()
+                self._update_saved_stats()
                 return new_gpes
             elif gene_name and gene.gene.get("gene_name") != gene_name:
                 logging.debug(
@@ -1749,7 +1754,7 @@ class GenePanelSnapshot(TimeStampedModel):
             else:
                 gene.save()
             self.clear_cache()
-            self.update_saved_stats()
+            self._update_saved_stats()
             return gene
         else:
             return False
@@ -1818,7 +1823,7 @@ class GenePanelSnapshot(TimeStampedModel):
         str_item = self.add_entity_info(str_item, user, str_item.label, str_data)
 
         str_item.evidence_status(update=True)
-        self.update_saved_stats()
+        self._update_saved_stats()
         return str_item
 
     def update_str(
@@ -2406,7 +2411,7 @@ class GenePanelSnapshot(TimeStampedModel):
 
             str_item.save()
             self.clear_cache()
-            self.update_saved_stats()
+            self._update_saved_stats()
             return str_item
         else:
             return False
@@ -2478,7 +2483,7 @@ class GenePanelSnapshot(TimeStampedModel):
         region = self.add_entity_info(region, user, region.label, region_data)
 
         region.evidence_status(update=True)
-        self.update_saved_stats()
+        self._update_saved_stats()
         return region
 
     def update_region(
@@ -3091,7 +3096,7 @@ class GenePanelSnapshot(TimeStampedModel):
 
             region.save()
             self.clear_cache()
-            self.update_saved_stats()
+            self._update_saved_stats()
             return region
         else:
             return False
@@ -3232,7 +3237,7 @@ class GenePanelSnapshot(TimeStampedModel):
                 [Evaluation.comments.through(**c) for c in comments]
             )
 
-            self.update_saved_stats()
+            self._update_saved_stats()
             return len(evaluations)
 
     def add_activity(self, user, text, entity=None):

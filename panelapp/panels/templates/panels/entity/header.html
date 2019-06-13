@@ -13,7 +13,7 @@
 {% if entity.ready and request.user.is_authenticated and request.user.reviewer.is_GEL %}
     <span class="banner banner-ready">Ready for major version</span>
 {% endif %}
-{% if request.user.pk in entity.evaluators %}
+{% if request.user.pk and request.user.pk in entity.evaluators %}
     <span class="banner banner-reviewed">
         <i class="fa fa-check"></i> You reviewed
     </span>
