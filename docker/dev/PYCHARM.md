@@ -38,7 +38,7 @@ All settings not explicitly mentioned should be left as by default.
 		*  Environment Variables: `TMPDIR=/private/tmp/localstack`
 6. Django app Run profile:
 	* `Run` > `Edit Configurations`: Add `Django server`
-		* Host: `0.0.0.0`, Port: `8080`
+		* Host: `0.0.0.0`, Port: `8000` (Django server listens to 8000 that is mapped to 8080 on localhost)
 		* Python Interpreter: `Remote Python 3.6.8 Docker Compose...` (the one created above)
 		
 		

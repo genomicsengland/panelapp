@@ -110,9 +110,9 @@ DEFAULT_FILE_STORAGE = 's3_storages.MediaStorage'
 # Override to 'media' with LocalStack
 AWS_S3_MEDIAFILES_BUCKET_NAME = os.getenv('AWS_S3_MEDIAFILES_BUCKET_NAME')
 
-# Path, within the S3 bucket, to put uploaded files into
-# By default it is `uploads` (no leading or trailing slash)
-AWS_MEDIAFILES_LOCATION = os.getenv('AWS_MEDIAFILES_LOCATION', 'uploads')
+# Path, within the S3 bucket, to put media files into
+# By default it is `media` (no leading or trailing slash)
+AWS_MEDIAFILES_LOCATION = os.getenv('AWS_MEDIAFILES_LOCATION', 'media')
 
 # Media files are never served to the client
 AWS_S3_MEDIAFILES_CUSTOM_DOMAIN = None

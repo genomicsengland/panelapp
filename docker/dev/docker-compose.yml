@@ -24,6 +24,8 @@ services:
 
   db:
     image: postgres:9.6.9
+    ports:
+      - "5432:5432"
     environment:
       - POSTGRES_PASSWORD=secret
       - POSTGRES_USER=panelapp
@@ -63,7 +65,7 @@ services:
       - AWS_S3_STATICFILES_BUCKET_NAME=static-bucket
       - AWS_STATICFILES_LOCATION=static
       - AWS_S3_MEDIAFILES_BUCKET_NAME=media-bucket
-      - AWS_MEDIAFILES_LOCATION=uploads
+      - AWS_MEDIAFILES_LOCATION=media
 #      - STATIC_ROOT=/static
 #      - MEDIA_ROOT=/media
       - USE_SQS=TRUE
@@ -100,7 +102,7 @@ services:
       - AWS_SECRET_ACCESS_KEY=dummy
       - USE_S3=TRUE
       - AWS_S3_MEDIAFILES_BUCKET_NAME=media-bucket
-      - AWS_MEDIAFILES_LOCATION=uploads
+      - AWS_MEDIAFILES_LOCATION=media
       - USE_SQS=TRUE
       - CELERY_BROKER_URL=sqs://@localstack:4576
 #      - CELERY_BROKER_URL=amqp://rabbitmq/panelapp

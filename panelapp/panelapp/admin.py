@@ -43,8 +43,7 @@ class ImageAdmin(admin.ModelAdmin):
     def view_example(self, obj):
         "Example of how to use this image with markdown syntax"
 
-        site = Site.objects.get_current()
-        return "![{0}](https://{1}{2})".format(obj.alt, site.domain, obj.image.url)
+        return "![{0}]({1})".format(obj.alt, obj.image.url)
 
     view_example.empty_value_display = ""
     view_example.short_description = "Markdown example"
@@ -57,8 +56,7 @@ class FileAdmin(admin.ModelAdmin):
     def view_example(self, obj):
         "File url"
 
-        site = Site.objects.get_current()
-        return "[{0}](https://{1}{2})".format(obj.title, site.domain, obj.file.url)
+        return "[{0}]({1})".format(obj.title, obj.file.url)
 
     view_example.empty_value_display = ""
     view_example.short_description = "File url"

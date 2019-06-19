@@ -57,7 +57,7 @@ class HomeText(models.Model):
 
 class Image(models.Model):
     image = models.ImageField(
-        upload_to="images", storage=OverwriteStorage(), max_length=255
+        upload_to="images", max_length=255
     )
     alt = models.CharField("Alterative text", max_length=64)
     title = models.CharField("Image title", max_length=128, null=True, blank=True)
@@ -70,7 +70,7 @@ class File(models.Model):
     """File storage for any file which should be available online"""
 
     file = models.FileField(
-        upload_to="files", storage=OverwriteStorage(), max_length=512
+        upload_to="files", max_length=512
     )
     title = models.CharField("File title", max_length=128)
 

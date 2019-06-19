@@ -60,8 +60,7 @@ All of the following environment variables must be set:
 * `SQS_QUEUE_VISIBILITY_TIMEOUT` - SQS topic _Visibility Timeout_. Must be identical to the Visibility Timeout of the SQS queue
 * `TASK_QUEUE_NAME` - Name of the SQS queue (default: `panelapp`)     
 * `AWS_STATICFILES_LOCATION` - specify it to change the path static files are located within their S3 bucket (default: `static`)
-* `AWS_MEDIAFILES_LOCATION` - specify it to change the path media (uploaded) files are located within their S3 bucket 
-    (default: `uploads`)
+* `AWS_MEDIAFILES_LOCATION` - specify it to change the path media files are located within their S3 bucket (default: `media`)
 
 #### Secrets
 
