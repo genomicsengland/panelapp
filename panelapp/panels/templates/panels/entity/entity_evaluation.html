@@ -18,8 +18,9 @@
 
   {% for comment in ev.comments.all %}
     <blockquote class="add-top-margin" id="comment_{{ comment.pk }}">
-      {{ comment.comment|linebreaksbr }}
-      <h6>{{ comment.created|date:'DATETIME_FORMAT' }}</h6>
+      {{ comment.comment|linebreaksbr|urlize }}
+      <h6>Created: {{ comment.created|date:'DATETIME_FORMAT' }} {% if comment.last_updated %}| Last Modified: {{ comment.last_updated|date:'DATETIME_FORMAT' }} {% endif %}</h6>
+      {%  if comment.version %}<h6>Panel Version: {{ comment.version }}</h6>{% endif %}
       {% if request.user == user and panel and entity %}
         <a href="{% url "panels:edit_comment_by_user" panel.panel_id entity_type entity_name comment.pk %}" class="btn btn-default btn-xs" data-ajax="true" data-success="djangoAjaxHandler">Edit your comment</a>
         <a href="{% url "panels:delete_comment_by_user" panel.panel_id entity_type entity_name comment.pk %}" class="btn btn-default btn-xs" data-ajax="true" data-success="djangoAjaxHandler">Delete comment</a>
@@ -72,7 +73,8 @@
 
 {% if ev.version %}
 <div class="panel-footer">
-  {{ ev.created|date:'DATETIME_FORMAT' }}<br>
+  Created: {{ ev.created|date:'DATETIME_FORMAT' }}<br>
+    {% if ev.last_updated %}Last Modified: {{ ev.last_updated|date:'DATETIME_FORMAT' }} {% endif %}<br>
   <strong>Panel version: </strong>{{ ev.version }}
 </div>
 {% endif %}

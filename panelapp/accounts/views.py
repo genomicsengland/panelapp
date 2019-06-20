@@ -1,3 +1,26 @@
+##
+## Copyright (c) 2016-2019 Genomics England Ltd.
+##
+## This file is part of PanelApp
+## (see https://panelapp.genomicsengland.co.uk).
+##
+## Licensed to the Apache Software Foundation (ASF) under one
+## or more contributor license agreements.  See the NOTICE file
+## distributed with this work for additional information
+## regarding copyright ownership.  The ASF licenses this file
+## to you under the Apache License, Version 2.0 (the
+## "License"); you may not use this file except in compliance
+## with the License.  You may obtain a copy of the License at
+##
+##   http://www.apache.org/licenses/LICENSE-2.0
+##
+## Unless required by applicable law or agreed to in writing,
+## software distributed under the License is distributed on an
+## "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+## KIND, either express or implied.  See the License for the
+## specific language governing permissions and limitations
+## under the License.
+##
 from django.http import Http404
 from django.views.generic import FormView
 from django.views.generic.edit import CreateView
@@ -23,12 +46,12 @@ class UserRegistrationView(CreateView):
         ret = super().form_valid(form)
         messages.success(
             self.request,
-            "Your account has been created. Please confirm your email address by clicking the link we have sent."
+            "Your account has been created. Please confirm your email address by clicking the link we have sent.",
         )
         return ret
 
     def get_success_url(self):
-        return reverse_lazy('home')
+        return reverse_lazy("home")
 
 
 class UserView(LoginRequiredMixin, DetailView):
@@ -42,19 +65,22 @@ class UpdatePasswordView(LoginRequiredMixin, FormView):
     template_name = "accounts/update_user_password.html"
 
     form_class = ChangePasswordForm
-    success_url = reverse_lazy('accounts:profile')
+    success_url = reverse_lazy("accounts:profile")
 
     def get_form(self, form_class=None):
         if form_class is None:
             form_class = self.get_form_class()
         form_kwargs = self.get_form_kwargs()
-        form_kwargs['user'] = self.request.user
+        form_kwargs["user"] = self.request.user
 
         return form_class(**form_kwargs)
 
     def form_valid(self, form):
         form.update_user_password()
-        messages.success(self.request, "Password successfully updated, please login with the new password.")
+        messages.success(
+            self.request,
+            "Password successfully updated, please login with the new password.",
+        )
         return super().form_valid(form)
 
 
@@ -71,19 +97,25 @@ class VerifyEmailAddressView(View):
         """
 
         try:
-            user = User.objects.get_by_base64_email(kwargs.get('b64_email'))
+            user = User.objects.get_by_base64_email(kwargs.get("b64_email"))
             if user.is_active:
                 messages.success(request, "Your account has already been verified")
-                return redirect('accounts:login')
+                return redirect("accounts:login")
 
-            if user.verify_crypto_id(kwargs.get('crypto_id')):
+            if user.verify_crypto_id(kwargs.get("crypto_id")):
                 user.activate()
-                messages.success(request, "You have successfully verified your email address. You can login now.")
-                return redirect('accounts:login')
+                messages.success(
+                    request,
+                    "You have successfully verified your email address. You can login now.",
+                )
+                return redirect("accounts:login")
             else:
-                messages.success(request, "The link has expired. We have sent a new link to your email address.")
+                messages.success(
+                    request,
+                    "The link has expired. We have sent a new link to your email address.",
+                )
                 user.send_verification_email()
-                return redirect('home')
+                return redirect("home")
         except User.DoesNotExist:
             raise Http404
 

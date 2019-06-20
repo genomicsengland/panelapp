@@ -1,3 +1,26 @@
+##
+## Copyright (c) 2016-2019 Genomics England Ltd.
+##
+## This file is part of PanelApp
+## (see https://panelapp.genomicsengland.co.uk).
+##
+## Licensed to the Apache Software Foundation (ASF) under one
+## or more contributor license agreements.  See the NOTICE file
+## distributed with this work for additional information
+## regarding copyright ownership.  The ASF licenses this file
+## to you under the Apache License, Version 2.0 (the
+## "License"); you may not use this file except in compliance
+## with the License.  You may obtain a copy of the License at
+##
+##   http://www.apache.org/licenses/LICENSE-2.0
+##
+## Unless required by applicable law or agreed to in writing,
+## software distributed under the License is distributed on an
+## "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+## KIND, either express or implied.  See the License for the
+## specific language governing permissions and limitations
+## under the License.
+##
 import random
 from django.core import mail
 from django.contrib.messages import get_messages
@@ -20,20 +43,20 @@ class TestUsers(SetupUsers):
         password = fake.sentence()
 
         data = {
-            'username': username,
-            'first_name': fake.first_name(),
-            'last_name': fake.last_name(),
-            'email': email,
-            'confirm_email': email,
-            'affiliation': fake.word(),
-            'role': random.choice([r for r in Reviewer.ROLES])[0],
-            'workplace': random.choice([r for r in Reviewer.WORKPLACES])[0],
-            'group': random.choice([r for r in Reviewer.GROUPS])[0],
-            'password1': password,
-            'password2': password,
+            "username": username,
+            "first_name": fake.first_name(),
+            "last_name": fake.last_name(),
+            "email": email,
+            "confirm_email": email,
+            "affiliation": fake.word(),
+            "role": random.choice([r for r in Reviewer.ROLES])[0],
+            "workplace": random.choice([r for r in Reviewer.WORKPLACES])[0],
+            "group": random.choice([r for r in Reviewer.GROUPS])[0],
+            "password1": password,
+            "password2": password,
         }
 
-        res = self.client.post(reverse_lazy('accounts:register'), data)
+        res = self.client.post(reverse_lazy("accounts:register"), data)
         self.assertEqual(res.status_code, 302)
 
         users = User.objects.filter(username=username)
@@ -47,7 +70,10 @@ class TestUsers(SetupUsers):
         self.assertEqual(len(mail.outbox), 1)
 
     def test_get_email_by_b64_hash(self):
-        self.assertEqual(User.objects.get_by_base64_email(self.external_user.base64_email), self.external_user)
+        self.assertEqual(
+            User.objects.get_by_base64_email(self.external_user.base64_email),
+            self.external_user,
+        )
 
     def test_hmac_id(self):
         user = self.external_user
@@ -57,7 +83,10 @@ class TestUsers(SetupUsers):
 
     def test_registration_email_contains_validation_url(self):
         registration_email(self.external_user.pk)
-        self.assertIn('/'.join(self.external_user.get_email_verification_url().split('/')[:-2]), mail.outbox[0].body)
+        self.assertIn(
+            "/".join(self.external_user.get_email_verification_url().split("/")[:-2]),
+            mail.outbox[0].body,
+        )
 
     def test_email_validation(self):
         user = self.external_user
@@ -77,7 +106,10 @@ class TestUsers(SetupUsers):
             res = self.client.get(user.get_email_verification_url())
             self.assertEqual(res.status_code, 302)
             message = list(get_messages(res.wsgi_request))[0]
-            self.assertEqual(message.message, 'The link has expired. We have sent a new link to your email address.')
+            self.assertEqual(
+                message.message,
+                "The link has expired. We have sent a new link to your email address.",
+            )
 
     def test_promote_to_reviewer(self):
         self.external_user.promote_to_reviewer()
@@ -86,7 +118,7 @@ class TestUsers(SetupUsers):
     def test_reviewer_confirmation_request_email(self):
         self.external_user.promote_to_reviewer()
         reviewer_confirmation_requset_email(self.external_user.pk)
-        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(len(mail.outbox), 2)
 
     def test_revierwer_confirmed_email(self):
         revierwer_confirmed_email(self.verified_user.pk)
@@ -98,12 +130,12 @@ class TestUsers(SetupUsers):
         password = fake.sentence()
 
         data = {
-            'current_password': "pass",
-            'password1': password,
-            'password2': password
+            "current_password": "pass",
+            "password1": password,
+            "password2": password,
         }
 
-        res = self.client.post(reverse_lazy('accounts:change_password'), data)
+        res = self.client.post(reverse_lazy("accounts:change_password"), data)
         assert res.status_code == 302
 
         assert User.objects.get(username=username).check_password(password) is True
@@ -112,5 +144,5 @@ class TestUsers(SetupUsers):
         username = self.external_user.username
         self.client.login(username=username, password="pass")
 
-        res = self.client.get(reverse_lazy('accounts:profile'))
+        res = self.client.get(reverse_lazy("accounts:profile"))
         assert res.status_code == 200

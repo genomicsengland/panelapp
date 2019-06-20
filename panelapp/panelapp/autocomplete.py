@@ -1,3 +1,26 @@
+##
+## Copyright (c) 2016-2019 Genomics England Ltd.
+##
+## This file is part of PanelApp
+## (see https://panelapp.genomicsengland.co.uk).
+##
+## Licensed to the Apache Software Foundation (ASF) under one
+## or more contributor license agreements.  See the NOTICE file
+## distributed with this work for additional information
+## regarding copyright ownership.  The ASF licenses this file
+## to you under the Apache License, Version 2.0 (the
+## "License"); you may not use this file except in compliance
+## with the License.  You may obtain a copy of the License at
+##
+##   http://www.apache.org/licenses/LICENSE-2.0
+##
+## Unless required by applicable law or agreed to in writing,
+## software distributed under the License is distributed on an
+## "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+## KIND, either express or implied.  See the License for the
+## specific language governing permissions and limitations
+## under the License.
+##
 from django.db.models import Q
 from dal_select2.views import Select2QuerySetView
 from dal_select2.views import Select2ListView
@@ -13,7 +36,9 @@ class GeneAutocomplete(Select2QuerySetView):
         qs = Gene.objects.filter(active=True)
 
         if self.q:
-            qs = qs.filter(Q(gene_symbol__istartswith=self.q) | Q(gene_name__istartswith=self.q))
+            qs = qs.filter(
+                Q(gene_symbol__istartswith=self.q) | Q(gene_name__istartswith=self.q)
+            )
 
         return qs
 
@@ -37,10 +62,14 @@ class TagsAutocomplete(Select2QuerySetView):
 
 class SimplePanelsAutocomplete(Select2QuerySetView):
     def get_queryset(self):
-        qs = GenePanelSnapshot.objects.get_active_annotated(internal=False, deleted=False).exclude(is_super_panel=True)
+        qs = GenePanelSnapshot.objects.get_active_annotated(
+            internal=False, deleted=False
+        ).exclude(is_super_panel=True)
 
         if self.q:
-            qs = qs.filter(Q(panel__name__icontains=self.q) | Q(panel__name__icontains=self.q))
+            qs = qs.filter(
+                Q(panel__name__icontains=self.q) | Q(panel__name__icontains=self.q)
+            )
 
         return qs
 

@@ -3,7 +3,7 @@
 <div class="panel-heading">STRs in panel</div>
 <div class="btn-group btn-group-justified" role="group" data-module="gene-nav">
     {% if prev_str %}
-        <a href="{% url 'panels:evaluation' panel.panel_id 'str' next_str.name %}"
+        <a href="{% url 'panels:evaluation' panel.panel_id 'str' prev_str.name %}"
            class="gene-nav-prev btn btn-default" title="{{ prev_str.name }}">
             <i class="fa fa-arrow-up add-right-margin"></i>Prev
         </a>

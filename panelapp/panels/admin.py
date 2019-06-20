@@ -1,3 +1,26 @@
+##
+## Copyright (c) 2016-2019 Genomics England Ltd.
+##
+## This file is part of PanelApp
+## (see https://panelapp.genomicsengland.co.uk).
+##
+## Licensed to the Apache Software Foundation (ASF) under one
+## or more contributor license agreements.  See the NOTICE file
+## distributed with this work for additional information
+## regarding copyright ownership.  The ASF licenses this file
+## to you under the Apache License, Version 2.0 (the
+## "License"); you may not use this file except in compliance
+## with the License.  You may obtain a copy of the License at
+##
+##   http://www.apache.org/licenses/LICENSE-2.0
+##
+## Unless required by applicable law or agreed to in writing,
+## software distributed under the License is distributed on an
+## "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+## KIND, either express or implied.  See the License for the
+## specific language governing permissions and limitations
+## under the License.
+##
 from django.contrib import admin
 from django_admin_listfilter_dropdown.filters import DropdownFilter
 from .models import Tag
@@ -19,110 +42,112 @@ from .models import PanelType
 
 
 class TagAdmin(admin.ModelAdmin):
-    list_display = ('name',)
+    list_display = ("name",)
 
 
 class GeneAdmin(admin.ModelAdmin):
-    list_display = ('gene_symbol', 'gene_name', 'omim_gene',)
-    search_fields = ('gene_symbol', 'gene_name',)
+    list_display = ("gene_symbol", "gene_name", "omim_gene")
+    search_fields = ("gene_symbol", "gene_name")
 
 
 class ActivityAdmin(admin.ModelAdmin):
-    list_display = ('created', 'panel', 'user',)
-    search_fields = ('panel__name', )
+    list_display = ("created", "panel", "user")
+    search_fields = ("panel__name",)
 
 
 class Level4TitleAdmin(admin.ModelAdmin):
-    list_display = ('name', 'level3title', 'level2title',)
+    list_display = ("name", "level3title", "level2title")
     search_fields = (
-        'name', 'level3title', 'level2title',
-        'description', 'omim', 'orphanet', 'hpo'
+        "name",
+        "level3title",
+        "level2title",
+        "description",
+        "omim",
+        "orphanet",
+        "hpo",
     )
 
 
 class CommentAdmin(admin.ModelAdmin):
-    list_display = ('created', 'user', 'flagged',)
-    search_fields = ('user', 'comment',)
+    list_display = ("created", "user", "flagged")
+    search_fields = ("user", "comment")
 
 
 class EvidenceAdmin(admin.ModelAdmin):
-    list_display = ('created', 'name', 'rating',)  # FIXME display last active panel
-    search_fields = ('name', 'comment',)
+    list_display = ("created", "name", "rating")  # FIXME display last active panel
+    search_fields = ("name", "comment")
 
 
 class EvaluationAdmin(admin.ModelAdmin):
-    list_display = ('created', 'panel_snapshot', 'gene_symbol', 'user', 'rating')
+    list_display = ("created", "panel_snapshot", "gene_symbol", "user", "rating")
 
-    readonly_fields = (
-        'user',
-    )
+    readonly_fields = ("user",)
 
     search_fields = (
-        'user__first_name',
-        'user__last_name',
-        'rating',
-        'publications',
-        'phenotypes',
-        'moi',
-        'version',
-        'genepanelentrysnapshot__panel__panel__name'
+        "user__first_name",
+        "user__last_name",
+        "rating",
+        "publications",
+        "phenotypes",
+        "moi",
+        "version",
+        "genepanelentrysnapshot__panel__panel__name",
     )
 
-    list_filter = (
-        ('genepanelentrysnapshot__panel__panel__name', DropdownFilter),
-    )
+    list_filter = (("genepanelentrysnapshot__panel__panel__name", DropdownFilter),)
 
     def gene_symbol(self, obj):
-        return ", ".join([gene.gene.get('gene_symbol') for gene in obj.genepanelentrysnapshot_set.all()])
+        return ", ".join(
+            [
+                gene.gene.get("gene_symbol")
+                for gene in obj.genepanelentrysnapshot_set.all()
+            ]
+        )
 
     def panel_snapshot(self, obj):
-        return ", ".join([str(gene.panel) for gene in obj.genepanelentrysnapshot_set.all()])
+        return ", ".join(
+            [str(gene.panel) for gene in obj.genepanelentrysnapshot_set.all()]
+        )
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)
         return qs.prefetch_related(
-            'user',
-            'genepanelentrysnapshot_set',
-            'genepanelentrysnapshot_set__panel__panel',
+            "user",
+            "genepanelentrysnapshot_set",
+            "genepanelentrysnapshot_set__panel__panel",
         )
 
 
 class TrackRecordAdmin(admin.ModelAdmin):
-    list_display = ('created', 'user', 'issue_type', 'gel_status')
-    search_fields = ('user', 'issue_type', 'issue_description',)
+    list_display = ("created", "user", "issue_type", "gel_status")
+    search_fields = ("user", "issue_type", "issue_description")
 
 
 class GenePanelAdmin(admin.ModelAdmin):
-    list_display = ('created', 'name', 'status')
+    list_display = ("created", "name", "status")
     search_fields = (
-        'created',
-        'name',
-        'genepanelsnapshot_set__level4title__level3title',
-        'genepanelsnapshot_set__level4title__level2title',
-        'old_panels'
+        "created",
+        "name",
+        "genepanelsnapshot_set__level4title__level3title",
+        "genepanelsnapshot_set__level4title__level2title",
+        "old_panels",
     )
 
 
 class PanelTypeAdmin(admin.ModelAdmin):
-    list_display = ('name', 'slug')
-    readonly_fields = (
-        'slug',
-    )
-    search_fields = (
-        'name',
-        'description',
-        'slug',
-    )
+    list_display = ("name", "slug")
+    readonly_fields = ("slug",)
+    search_fields = ("name", "description", "slug")
 
 
 class GenePanelSnapshotAdmin(admin.ModelAdmin):
-    list_display = ('created', 'name', 'major_version', 'minor_version')
+    list_display = ("created", "name", "major_version", "minor_version")
     search_fields = (
-        'created',
-        'name',
-        'level4title__level3title',
-        'level4title__level2title',
-        'old_panels',
+        "created",
+        "name",
+        "level4title__level3title",
+        "level4title__level2title",
+        "old_panels",
     )
 
     def name(self, obj):
@@ -130,37 +155,42 @@ class GenePanelSnapshotAdmin(admin.ModelAdmin):
 
 
 class GenePanelEntrySnapshotAdmin(admin.ModelAdmin):
-    ordering = (
-        '-created',
+    ordering = ("-created",)
+
+    raw_id_fields = (
+        "panel",
+        "gene_core",
+        "evaluation",
+        "evidence",
+        "track",
+        "comments",
+        "panel",
+        "evidence",
     )
 
-    raw_id_fields = ('panel', 'gene_core', 'evaluation', 'evidence', 'track', 'comments', 'panel', 'evidence')
-
-    list_filter = (
-        ('panel__panel__name', DropdownFilter),
-    )
+    list_filter = (("panel__panel__name", DropdownFilter),)
 
     list_display = (
-        'created',
-        'gene_symbol',
-        'name',
-        'saved_gel_status',
-        'flagged',
-        'ready'
+        "created",
+        "gene_symbol",
+        "name",
+        "saved_gel_status",
+        "flagged",
+        "ready",
     )
 
     search_fields = (
-        'created',
-        'gene_core__gene_symbol',
-        'panel__panel__name',
-        'panel__level4title__level3title',
-        'panel__level4title__level2title',
-        'panel__old_panels',
-        'comments__comment',
+        "created",
+        "gene_core__gene_symbol",
+        "panel__panel__name",
+        "panel__level4title__level3title",
+        "panel__level4title__level2title",
+        "panel__old_panels",
+        "comments__comment",
     )
 
     def gene_symbol(self, obj):
-        return obj.gene.get('gene_symbol')
+        return obj.gene.get("gene_symbol")
 
     def name(self, obj):
         return obj.panel
@@ -171,46 +201,47 @@ class GenePanelEntrySnapshotAdmin(admin.ModelAdmin):
     def get_queryset(self, request):
         qs = super().get_queryset(request)
         return qs.prefetch_related(
-            'panel',
-            'panel__level4title',
-            'panel__panel',
-            'comments',
-            'gene_core',
+            "panel", "panel__level4title", "panel__panel", "comments", "gene_core"
         )
 
 
 class STRAdmin(admin.ModelAdmin):
-    ordering = (
-        '-created',
+    ordering = ("-created",)
+
+    raw_id_fields = (
+        "panel",
+        "gene_core",
+        "evaluation",
+        "evidence",
+        "track",
+        "comments",
+        "panel",
+        "evidence",
     )
 
-    raw_id_fields = ('panel', 'gene_core', 'evaluation', 'evidence', 'track', 'comments', 'panel', 'evidence')
-
-    list_filter = (
-        ('panel__panel__name', DropdownFilter),
-    )
+    list_filter = (("panel__panel__name", DropdownFilter),)
 
     list_display = (
-        'created',
-        'gene_symbol',
-        'name',
-        'saved_gel_status',
-        'flagged',
-        'ready'
+        "created",
+        "gene_symbol",
+        "name",
+        "saved_gel_status",
+        "flagged",
+        "ready",
     )
 
     search_fields = (
-        'created',
-        'gene_core__gene_symbol',
-        'panel__panel__name',
-        'panel__level4title__level3title',
-        'panel__level4title__level2title',
-        'panel__old_panels',
-        'comments__comment',
+        "created",
+        "gene_core__gene_symbol",
+        "panel__panel__name",
+        "panel__level4title__level3title",
+        "panel__level4title__level2title",
+        "panel__old_panels",
+        "comments__comment",
     )
 
     def gene_symbol(self, obj):
-        return obj.gene.get('gene_symbol') if obj.gene else ''
+        return obj.gene.get("gene_symbol") if obj.gene else ""
 
     def name(self, obj):
         return obj.panel
@@ -221,24 +252,20 @@ class STRAdmin(admin.ModelAdmin):
     def get_queryset(self, request):
         qs = super().get_queryset(request)
         return qs.prefetch_related(
-            'panel',
-            'panel__level4title',
-            'panel__panel',
-            'comments',
-            'gene_core',
+            "panel", "panel__level4title", "panel__panel", "comments", "gene_core"
         )
 
 
 class UploadedGeneListAdmin(admin.ModelAdmin):
-    list_display = ('created', 'imported', 'gene_list')
+    list_display = ("created", "imported", "gene_list")
 
 
 class UploadedPanelListAdmin(admin.ModelAdmin):
-    list_display = ('created', 'imported', 'panel_list')
+    list_display = ("created", "imported", "panel_list")
 
 
 class UploadedReviewsListAdmin(admin.ModelAdmin):
-    list_display = ('created', 'imported', 'reviews')
+    list_display = ("created", "imported", "reviews")
 
 
 admin.site.register(Tag, TagAdmin)

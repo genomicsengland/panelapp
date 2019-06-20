@@ -1,3 +1,26 @@
+##
+## Copyright (c) 2016-2019 Genomics England Ltd.
+##
+## This file is part of PanelApp
+## (see https://panelapp.genomicsengland.co.uk).
+##
+## Licensed to the Apache Software Foundation (ASF) under one
+## or more contributor license agreements.  See the NOTICE file
+## distributed with this work for additional information
+## regarding copyright ownership.  The ASF licenses this file
+## to you under the Apache License, Version 2.0 (the
+## "License"); you may not use this file except in compliance
+## with the License.  You may obtain a copy of the License at
+##
+##   http://www.apache.org/licenses/LICENSE-2.0
+##
+## Unless required by applicable law or agreed to in writing,
+## software distributed under the License is distributed on an
+## "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+## KIND, either express or implied.  See the License for the
+## specific language governing permissions and limitations
+## under the License.
+##
 """Contains a form which is used to add/edit a gene in a panel."""
 
 from collections import OrderedDict
@@ -41,38 +64,38 @@ class PanelGeneForm(forms.ModelForm):
         label="Gene symbol",
         queryset=Gene.objects.filter(active=True),
         widget=ModelSelect2(
-            url="autocomplete-gene",
-            attrs={'data-minimum-input-length': 1}
-        )
+            url="autocomplete-gene", attrs={"data-minimum-input-length": 1}
+        ),
     )
 
     gene_name = forms.CharField()
 
     source = Select2ListMultipleChoiceField(
-        choice_list=Evidence.ALL_SOURCES, required=False,
-        widget=Select2Multiple(url="autocomplete-source")
+        choice_list=Evidence.ALL_SOURCES,
+        required=False,
+        widget=Select2Multiple(url="autocomplete-source"),
     )
     tags = forms.ModelMultipleChoiceField(
-        queryset=Tag.objects.all(), required=False,
-        widget=ModelSelect2Multiple(url="autocomplete-tags")
+        queryset=Tag.objects.all(),
+        required=False,
+        widget=ModelSelect2Multiple(url="autocomplete-tags"),
     )
 
     publications = GELSimpleArrayField(
         forms.CharField(),
         label="Publications (PMID: 1234;4321)",
         delimiter=";",
-        required=False
+        required=False,
     )
     phenotypes = GELSimpleArrayField(
         forms.CharField(),
         label="Phenotypes (separate using a semi-colon - ;)",
         delimiter=";",
-        required=False
+        required=False,
     )
 
     rating = forms.ChoiceField(
-        choices=[('', 'Provide rating')] + Evaluation.RATINGS,
-        required=False
+        choices=[("", "Provide rating")] + Evaluation.RATINGS, required=False
     )
     current_diagnostic = forms.BooleanField(required=False)
     comments = forms.CharField(widget=forms.Textarea, required=False)
@@ -80,68 +103,73 @@ class PanelGeneForm(forms.ModelForm):
     class Meta:
         model = GenePanelEntrySnapshot
         fields = (
-            'mode_of_pathogenicity',
-            'moi',
-            'penetrance',
-            'publications',
-            'phenotypes',
+            "mode_of_pathogenicity",
+            "moi",
+            "penetrance",
+            "publications",
+            "phenotypes",
         )
 
     def __init__(self, *args, **kwargs):
-        self.panel = kwargs.pop('panel')
-        self.request = kwargs.pop('request')
+        self.panel = kwargs.pop("panel")
+        self.request = kwargs.pop("request")
         super().__init__(*args, **kwargs)
 
         original_fields = self.fields
 
         self.fields = OrderedDict()
-        self.fields['gene'] = original_fields.get('gene')
+        self.fields["gene"] = original_fields.get("gene")
         if self.instance.pk:
-            self.fields['gene_name'] = original_fields.get('gene_name')
-        self.fields['source'] = original_fields.get('source')
-        self.fields['mode_of_pathogenicity'] = original_fields.get('mode_of_pathogenicity')
-        self.fields['moi'] = original_fields.get('moi')
-        self.fields['moi'].required = False
-        self.fields['penetrance'] = original_fields.get('penetrance')
-        self.fields['publications'] = original_fields.get('publications')
-        self.fields['phenotypes'] = original_fields.get('phenotypes')
+            self.fields["gene_name"] = original_fields.get("gene_name")
+        self.fields["source"] = original_fields.get("source")
+        self.fields["mode_of_pathogenicity"] = original_fields.get(
+            "mode_of_pathogenicity"
+        )
+        self.fields["moi"] = original_fields.get("moi")
+        self.fields["moi"].required = False
+        self.fields["penetrance"] = original_fields.get("penetrance")
+        self.fields["publications"] = original_fields.get("publications")
+        self.fields["phenotypes"] = original_fields.get("phenotypes")
         if self.request.user.is_authenticated and self.request.user.reviewer.is_GEL():
-            self.fields['tags'] = original_fields.get('tags')
+            self.fields["tags"] = original_fields.get("tags")
         if not self.instance.pk:
-            self.fields['rating'] = original_fields.get('rating')
-            self.fields['current_diagnostic'] = original_fields.get('current_diagnostic')
-            self.fields['comments'] = original_fields.get('comments')
+            self.fields["rating"] = original_fields.get("rating")
+            self.fields["current_diagnostic"] = original_fields.get(
+                "current_diagnostic"
+            )
+            self.fields["comments"] = original_fields.get("comments")
 
     def clean_source(self):
-        if len(self.cleaned_data['source']) < 1:
-            raise forms.ValidationError('Please select a source')
-        return self.cleaned_data['source']
+        if len(self.cleaned_data["source"]) < 1:
+            raise forms.ValidationError("Please select a source")
+        return self.cleaned_data["source"]
 
     def clean_moi(self):
-        if not self.cleaned_data['moi']:
-            raise forms.ValidationError('Please select a mode of inheritance')
-        return self.cleaned_data['moi']
+        if not self.cleaned_data["moi"]:
+            raise forms.ValidationError("Please select a mode of inheritance")
+        return self.cleaned_data["moi"]
 
     def clean_gene(self):
         """Check if gene exists in a panel if we add a new gene or change the gene"""
 
-        gene_symbol = self.cleaned_data['gene'].gene_symbol
+        gene_symbol = self.cleaned_data["gene"].gene_symbol
         if not self.instance.pk and self.panel.has_gene(gene_symbol):
             raise forms.ValidationError(
-                "Gene has already been added to the panel",
-                code='gene_exists_in_panel',
+                "Gene has already been added to the panel", code="gene_exists_in_panel"
             )
-        elif self.instance.pk and 'gene' in self.changed_data \
-                and gene_symbol != self.instance.gene.get('gene_symbol')\
-                and self.panel.has_gene(gene_symbol):
+        elif (
+            self.instance.pk
+            and "gene" in self.changed_data
+            and gene_symbol != self.instance.gene.get("gene_symbol")
+            and self.panel.has_gene(gene_symbol)
+        ):
             raise forms.ValidationError(
-                "Gene has already been added to the panel",
-                code='gene_exists_in_panel',
+                "Gene has already been added to the panel", code="gene_exists_in_panel"
             )
-        if not self.cleaned_data.get('gene_name'):
-            self.cleaned_data['gene_name'] = self.cleaned_data['gene'].gene_name
+        if not self.cleaned_data.get("gene_name"):
+            self.cleaned_data["gene_name"] = self.cleaned_data["gene"].gene_name
 
-        return self.cleaned_data['gene']
+        return self.cleaned_data["gene"]
 
     def save(self, *args, **kwargs):
         """Don't save the original panel as we need to increment version first"""
@@ -151,36 +179,30 @@ class PanelGeneForm(forms.ModelForm):
         """Saves the gene, increments version and returns the gene back"""
 
         gene_data = self.cleaned_data
-        gene_data['sources'] = gene_data.pop('source')
+        gene_data["sources"] = gene_data.pop("source")
 
-        if gene_data.get('comments'):
-            gene_data['comment'] = gene_data.pop('comments')
+        if gene_data.get("comments"):
+            gene_data["comment"] = gene_data.pop("comments")
 
         if self.initial:
-            initial_gene_symbol = self.initial['gene_json'].get('gene_symbol')
+            initial_gene_symbol = self.initial["gene_json"].get("gene_symbol")
         else:
             initial_gene_symbol = None
 
-        new_gene_symbol = gene_data.get('gene').gene_symbol
+        new_gene_symbol = gene_data.get("gene").gene_symbol
 
         if self.initial and self.panel.has_gene(initial_gene_symbol):
             self.panel = self.panel.increment_version()
             self.panel = GenePanel.objects.get(pk=self.panel.panel.pk).active_panel
-            self.panel.update_gene(
-                self.request.user,
-                initial_gene_symbol,
-                gene_data
-            )
+            self.panel.update_gene(self.request.user, initial_gene_symbol, gene_data)
             self.panel = GenePanel.objects.get(pk=self.panel.panel.pk).active_panel
             return self.panel.get_gene(new_gene_symbol)
         else:
-            increment_version = self.request.user.is_authenticated and self.request.user.reviewer.is_GEL()
-            gene = self.panel.add_gene(
-                self.request.user,
-                new_gene_symbol,
-                gene_data,
-                increment_version
+            increment_version = (
+                self.request.user.is_authenticated
+                and self.request.user.reviewer.is_GEL()
             )
-            self.panel = GenePanel.objects.get(pk=self.panel.panel.pk).active_panel
-            self.panel.update_saved_stats()
+            gene = self.panel.add_gene(
+                self.request.user, new_gene_symbol, gene_data, increment_version
+            )
             return gene

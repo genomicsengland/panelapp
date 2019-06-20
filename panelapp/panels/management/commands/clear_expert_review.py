@@ -1,3 +1,26 @@
+##
+## Copyright (c) 2016-2019 Genomics England Ltd.
+##
+## This file is part of PanelApp
+## (see https://panelapp.genomicsengland.co.uk).
+##
+## Licensed to the Apache Software Foundation (ASF) under one
+## or more contributor license agreements.  See the NOTICE file
+## distributed with this work for additional information
+## regarding copyright ownership.  The ASF licenses this file
+## to you under the Apache License, Version 2.0 (the
+## "License"); you may not use this file except in compliance
+## with the License.  You may obtain a copy of the License at
+##
+##   http://www.apache.org/licenses/LICENSE-2.0
+##
+## Unless required by applicable law or agreed to in writing,
+## software distributed under the License is distributed on an
+## "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+## KIND, either express or implied.  See the License for the
+## specific language governing permissions and limitations
+## under the License.
+##
 import csv
 import djclick as click
 from django.db import transaction
@@ -6,7 +29,7 @@ from panels.models import GenePanelSnapshot
 
 
 @click.command()
-@click.argument('csv_file', type=click.Path(exists=True))
+@click.argument("csv_file", type=click.Path(exists=True))
 def command(csv_file):
     """
     Go through the file and clear previous expert reviews
@@ -17,7 +40,7 @@ def command(csv_file):
     :return:
     """
 
-    with open(click.format_filename(csv_file), 'r') as f:
+    with open(click.format_filename(csv_file), "r") as f:
         reader = csv.reader(f)
         next(reader)  # skip header
 
@@ -28,15 +51,19 @@ def command(csv_file):
         with transaction.atomic():
             # go through each panel and create a new version
             panels = {}
-            qs = GenePanelSnapshot.objects.get_active_annotated(True, True, True).filter(panel__id__in=unique_panels)
+            qs = GenePanelSnapshot.objects.get_active_annotated(
+                True, True, True
+            ).filter(panel__id__in=unique_panels)
             for p in qs.iterator():
-                click.secho('Creating a new version for {}'.format(p), fg='green')
+                click.secho("Creating a new version for {}".format(p), fg="green")
                 panels[str(p.panel.id)] = p.increment_version()
 
-            click.secho('Created new versions for {} panels'.format(len(panels)), fg='green')
+            click.secho(
+                "Created new versions for {} panels".format(len(panels)), fg="green"
+            )
 
             for line in lines:
-                should_change = line[8].lower() == 'true'
+                should_change = line[8].lower() == "true"
                 if should_change:
                     panel = panels[line[1]]
                     entity_type = line[4].strip().lower()
@@ -44,29 +71,39 @@ def command(csv_file):
                     keep_expert_review = line[9].strip()
 
                     entity = None
-                    if entity_type == 'gene':
+                    if entity_type == "gene":
                         entity = panel.get_gene(entity_name, prefetch_extra=True)
-                    elif entity_type == 'str':
+                    elif entity_type == "str":
                         entity = panel.get_str(entity_name, prefetch_extra=True)
-                    elif entity_type == 'region':
+                    elif entity_type == "region":
                         entity = panel.get_region(entity_name, prefetch_extra=True)
 
                     if entity:
                         keep_evidence = None
                         remove_sources = []
 
-                        for evidence in entity.evidence.all().order_by('-created'):  # most recent first
-                            if evidence.name in Evidence.EXPERT_REVIEWS:  # Only remove expert review evidences
-                                if evidence.name == keep_expert_review:   # Check for duplicates
-                                    if keep_evidence:                     # Already keeping one
+                        for evidence in entity.evidence.all().order_by(
+                            "-created"
+                        ):  # most recent first
+                            if (
+                                evidence.name in Evidence.EXPERT_REVIEWS
+                            ):  # Only remove expert review evidences
+                                if (
+                                    evidence.name == keep_expert_review
+                                ):  # Check for duplicates
+                                    if keep_evidence:  # Already keeping one
                                         remove_sources.append(evidence)
                                     else:
-                                        keep_evidence = evidence          # Remove duplicate
+                                        keep_evidence = evidence  # Remove duplicate
                                 else:
-                                    remove_sources.append(evidence)       # Remove export review
+                                    remove_sources.append(
+                                        evidence
+                                    )  # Remove export review
 
                         if not remove_sources:
-                            click.secho('Skipping {}: nothing to remove'.format(panel), fg='red')
+                            click.secho(
+                                "Skipping {}: nothing to remove".format(panel), fg="red"
+                            )
                             continue
 
                         for evidence in remove_sources:
@@ -74,14 +111,24 @@ def command(csv_file):
 
                         # make sure current rating still there
                         if not entity.evidence.filter(name=keep_expert_review).count():
-                            raise Exception('Entity {} Source {} is missing after cleanup {}'.format(entity, keep_expert_review, panel.pk))
+                            raise Exception(
+                                "Entity {} Source {} is missing after cleanup {}".format(
+                                    entity, keep_expert_review, panel.pk
+                                )
+                            )
 
                         # add activity message
                         # not adding TrackRecord as the rating shouldn't change
-                        description = "Removed sources: {}".format(', '.join([e.name for e in remove_sources]))
+                        description = "Removed sources: {}".format(
+                            ", ".join([e.name for e in remove_sources])
+                        )
                         panel.add_activity(None, description, entity)
-                        click.secho('Cleaned {}: {}'.format(panel, description), fg='green')
+                        click.secho(
+                            "Cleaned {}: {}".format(panel, description), fg="green"
+                        )
                     else:
-                        raise Exception('Entity {} is missing in {}'.format(entity_name, panel.pk))
+                        raise Exception(
+                            "Entity {} is missing in {}".format(entity_name, panel.pk)
+                        )
 
-            click.secho('All done', fg='green')
+            click.secho("All done", fg="green")

@@ -1,3 +1,26 @@
+##
+## Copyright (c) 2016-2019 Genomics England Ltd.
+##
+## This file is part of PanelApp
+## (see https://panelapp.genomicsengland.co.uk).
+##
+## Licensed to the Apache Software Foundation (ASF) under one
+## or more contributor license agreements.  See the NOTICE file
+## distributed with this work for additional information
+## regarding copyright ownership.  The ASF licenses this file
+## to you under the Apache License, Version 2.0 (the
+## "License"); you may not use this file except in compliance
+## with the License.  You may obtain a copy of the License at
+##
+##   http://www.apache.org/licenses/LICENSE-2.0
+##
+## Unless required by applicable law or agreed to in writing,
+## software distributed under the License is distributed on an
+## "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+## KIND, either express or implied.  See the License for the
+## specific language governing permissions and limitations
+## under the License.
+##
 import os
 from django.core import mail
 from django.test import Client
@@ -9,6 +32,7 @@ from panels.models import GenePanel
 from panels.models import GenePanelEntrySnapshot
 from panels.models import Region
 from panels.models import STR
+from panels.models import HistoricalSnapshot
 from panels.tasks import email_panel_promoted
 from panels.tests.factories import GeneFactory
 from panels.tests.factories import STRFactory
@@ -27,10 +51,22 @@ class CommandUpdateEnsemblTest(LoginGELUser):
         super().setUp()
 
     def test_update_ensembl(self):
-        gene_symbol = 'FAM58A'
+        gene_symbol = "FAM58A"
         gene_to_update = GeneFactory(gene_symbol=gene_symbol)
-        ensembl_data = {"GRch37": {"82": {"ensembl_id": "ENSG00000147382", "location": "X:152853377-152865500"}},
-                        "GRch38": {"90": {"ensembl_id": "ENSG00000262919", "location": "X:153587919-153600045"}}}
+        ensembl_data = {
+            "GRch37": {
+                "82": {
+                    "ensembl_id": "ENSG00000147382",
+                    "location": "X:152853377-152865500",
+                }
+            },
+            "GRch38": {
+                "90": {
+                    "ensembl_id": "ENSG00000262919",
+                    "location": "X:153587919-153600045",
+                }
+            },
+        }
         json_data = {gene_symbol: ensembl_data}
 
         gps = GenePanelSnapshotFactory()
@@ -48,14 +84,16 @@ class CommandUpdateEnsemblTest(LoginGELUser):
         RegionFactory.create(gene_core=gene_to_update, panel=gps_2)
 
         # make sure ensembl data doesn't match
-        for gene in GenePanelEntrySnapshot.objects.filter(gene__gene_symbol=gene_symbol):
-            self.assertNotEqual(gene.gene.get('ensembl_genes'), ensembl_data)
+        for gene in GenePanelEntrySnapshot.objects.filter(
+            gene__gene_symbol=gene_symbol
+        ):
+            self.assertNotEqual(gene.gene.get("ensembl_genes"), ensembl_data)
 
         for str in STR.objects.filter(gene__gene_symbol=gene_symbol):
-            self.assertNotEqual(gene.gene.get('ensembl_genes'), ensembl_data)
+            self.assertNotEqual(str.gene.get("ensembl_genes"), ensembl_data)
 
         for region in Region.objects.filter(gene__gene_symbol=gene_symbol):
-            self.assertNotEqual(gene.gene.get('ensembl_genes'), ensembl_data)
+            self.assertNotEqual(region.gene.get("ensembl_genes"), ensembl_data)
 
         gps_pk = gps.pk
         gps_version = gps.version
@@ -64,14 +102,15 @@ class CommandUpdateEnsemblTest(LoginGELUser):
         process(json_data)
 
         # make sure previous data didn't change
-        for gene in GenePanelEntrySnapshot.objects.filter(gene__gene_symbol=gene_symbol, panel_id=gps_pk):
-            self.assertNotEqual(gene.gene.get('ensembl_genes'), ensembl_data)
+        snapshot = HistoricalSnapshot.objects.filter(panel__pk=gps_pk).first()
+        for gene in snapshot.data["genes"]:
+            self.assertNotEqual(gene["gene_data"]["ensembl_genes"], ensembl_data)
 
-        for str in STR.objects.filter(gene__gene_symbol=gene_symbol, panel_id=gps_pk):
-            self.assertNotEqual(gene.gene.get('ensembl_genes'), ensembl_data)
+        for str in snapshot.data["strs"]:
+            self.assertNotEqual(str["gene_data"]["ensembl_genes"], ensembl_data)
 
-        for region in Region.objects.filter(gene__gene_symbol=gene_symbol, panel_id=gps_pk):
-            self.assertNotEqual(gene.gene.get('ensembl_genes'), ensembl_data)
+        for region in snapshot.data["regions"]:
+            self.assertNotEqual(region["gene_data"]["ensembl_genes"], ensembl_data)
 
         gps = gps.panel.active_panel
         gps_2 = gps_2.panel.active_panel
@@ -80,11 +119,13 @@ class CommandUpdateEnsemblTest(LoginGELUser):
         self.assertNotEqual(gps_2_version, gps_2.version)
 
         # make sure new data has changed
-        for gene in GenePanelEntrySnapshot.objects.filter(gene__gene_symbol=gene_symbol, panel=gps):
-            self.assertEqual(gene.gene.get('ensembl_genes'), ensembl_data)
+        for gene in GenePanelEntrySnapshot.objects.filter(
+            gene__gene_symbol=gene_symbol, panel=gps
+        ):
+            self.assertEqual(gene.gene.get("ensembl_genes"), ensembl_data)
 
         for str in STR.objects.filter(gene__gene_symbol=gene_symbol, panel=gps):
-            self.assertEqual(gene.gene.get('ensembl_genes'), ensembl_data)
+            self.assertEqual(str.gene.get("ensembl_genes"), ensembl_data)
 
         for region in Region.objects.filter(gene__gene_symbol=gene_symbol, panel=gps):
-            self.assertEqual(gene.gene.get('ensembl_genes'), ensembl_data)
+            self.assertEqual(region.gene.get("ensembl_genes"), ensembl_data)

@@ -113,3 +113,4 @@ _mediafiles
 _staticfiles
 temp_dump_data
 .pytest_cache
+.idea
