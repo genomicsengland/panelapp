@@ -114,8 +114,10 @@ AWS_S3_MEDIAFILES_BUCKET_NAME = os.getenv('AWS_S3_MEDIAFILES_BUCKET_NAME')
 # By default it is `media` (no leading or trailing slash)
 AWS_MEDIAFILES_LOCATION = os.getenv('AWS_MEDIAFILES_LOCATION', 'media')
 
-# Media files are never served to the client
-AWS_S3_MEDIAFILES_CUSTOM_DOMAIN = None
+# Domain serving media files.
+# MANDATORY to override when using a CDN
+# Keep the default (`None`) when directly serving files from the bucket (including with LocalStack)
+AWS_S3_MEDIAFILES_CUSTOM_DOMAIN = os.getenv('AWS_S3_MEDIAFILES_CUSTOM_DOMAIN', None)
 
 # URL the application fetches media file from.
 # Should be `https://<media-bucket-name>.s3.amazonaws.com/uploads/' if AWS_MEDIAFILES_LOCATION is the default 'uploads'.

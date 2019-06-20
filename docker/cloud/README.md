@@ -33,6 +33,7 @@ All of the following environment variables must be set:
 * `AWS_S3_MEDIAFILES_BUCKET_NAME` - Name of the S3 bucket for storing media (uploaded) files
 * `AWS_REGION` - AWS Region
 * `AWS_S3_STATICFILES_CUSTOM_DOMAIN` - Custom CDN domain to serve static files from (e.g. `cdn.mydomain.com` - no trailing `/`)
+* `AWS_S3_MEDIAFILES_CUSTOM_DOMAIN` - Custom CDN domain to serve media files from (e.g. `cdn.mydomain.com` - no trailing `/`)
 * `ALLOWED_HOSTS` - whitelisted hostnames, if user tries to access website which isn't here Django will throw 500 error
 * `DEFAULT_FROM_EMAIL` - we send emails as this address
 * `PANEL_APP_EMAIL` - PanelApp email address
