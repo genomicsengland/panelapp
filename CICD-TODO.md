@@ -11,7 +11,7 @@ services:
   - postgres:9.6.9
 script:
   - apk add --no-cache postgresql-libs curl jpeg-dev zlib-dev gcc musl-dev curl-dev postgresql-dev build-base linux-headers
-  - pip install .[dev,tests]
+  - pip install .[tests]
   - pip install pytest-runner
   - pytest
 ```
