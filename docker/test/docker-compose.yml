@@ -28,6 +28,6 @@ services:
       - /bin/sh
       - -c
       - |
-          pip install .[dev,tests]
+          pip install .[tests]
           pip install pytest-runner
           pytest
