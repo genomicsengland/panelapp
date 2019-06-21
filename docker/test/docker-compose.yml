@@ -1,0 +1,33 @@
+version: '3'
+
+services:
+  db:
+    image: postgres:9.6.9
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_PASSWORD=secret
+      - POSTGRES_USER=panelapp
+      - POSTGRES_DB=panelapp
+
+  test:
+    build:
+      context: ../../
+      dockerfile: ./docker/test/Dockerfile-test
+    image: panelapp_web_test
+    restart: "no"
+    volumes:
+      - ../../:/app/
+    depends_on:
+      - db
+    environment:
+      - DATABASE_URL=postgres://panelapp:secret@db:5432/panelapp
+      - DJANGO_SETTINGS_MODULE=panelapp.settings.test
+      - DJANGO_LOG_LEVEL=INFO
+    command:
+      - /bin/sh
+      - -c
+      - |
+          pip install .[dev,tests]
+          pip install pytest-runner
+          pytest

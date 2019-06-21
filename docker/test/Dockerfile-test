@@ -1,0 +1,13 @@
+# This dockerfile tests installing the application and running tests, the same way the CI/CD pipeline does
+# It is for experimenting only. It is not supposed to be used as part of the normal development lifecycle
+
+# Same base image as
+FROM python:3.6.8-alpine3.9
+
+RUN apk add --no-cache postgresql-libs curl jpeg-dev zlib-dev gcc musl-dev curl-dev postgresql-dev build-base linux-headers
+
+RUN mkdir -p /app/panelapp
+
+WORKDIR /app/
+
+VOLUME ["/app/"]
