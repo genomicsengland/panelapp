@@ -160,16 +160,21 @@ class PanelsViewSet(ReadOnlyListViewset):
                     detail="Incorrect version supplied", code="incorrect_version"
                 )
 
-            latest = GenePanelSnapshot.objects.filter(panel_id=self.kwargs["pk"]).first()
+            panel_id = self.kwargs["pk"]
+            id_kwarg = 'panel_id' if panel_id.isdigit() else 'panel__old_pk'
+            filter_kwargs = {
+                id_kwarg: panel_id
+            }
+
+            latest = GenePanelSnapshot.objects.filter(**filter_kwargs).first()
 
             if str(latest.major_version) == major_version and str(latest.minor_version) == minor_version:
                 return super().retrieve(request, *args, **kwargs)
 
-            snap = HistoricalSnapshot.objects.filter(
-                panel__pk=self.kwargs["pk"],
-                major_version=major_version,
-                minor_version=minor_version,
-            ).first()
+            filter_kwargs['major_version'] = major_version
+            filter_kwargs['minor_version'] = minor_version
+
+            snap = HistoricalSnapshot.objects.filter(**filter_kwargs).first()
             if snap:
                 json = snap.to_api_1()
                 return Response(json)
