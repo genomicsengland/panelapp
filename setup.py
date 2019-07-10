@@ -44,7 +44,7 @@ setup(
         ],
     },
     install_requires=[
-        "django==2.1.9",
+        "django==2.1.10",
         "simplejson==3.16.0",
         "PyYAML==5.1",
         "psycopg2-binary==2.7.4",
