@@ -38,18 +38,18 @@ from panels.exceptions import IsSuperPanelException
 
 
 @shared_task
-def increment_panel_async(panel_pk, user_pk=None, version_comment=None, major=False, update_stats=True):
+def increment_panel_async(panel_pk, user_pk=None, version_comment=None, major=False, update_stats=True, include_superpanels=False):
     from accounts.models import User
     from panels.models import GenePanelSnapshot
 
     if user_pk:
         gps = GenePanelSnapshot.objects.get(pk=panel_pk).increment_version(
             major=major, user=User.objects.get(pk=user_pk), comment=version_comment,
-            include_superpanels=True
+            include_superpanels=include_superpanels
         )
     else:
         gps = GenePanelSnapshot.objects.get(pk=panel_pk).increment_version(
-            major=major, comment=version_comment, include_superpanels=True
+            major=major, comment=version_comment, include_superpanels=include_superpanels
         )
 
     if update_stats:
