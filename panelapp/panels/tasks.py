@@ -44,11 +44,12 @@ def increment_panel_async(panel_pk, user_pk=None, version_comment=None, major=Fa
 
     if user_pk:
         gps = GenePanelSnapshot.objects.get(pk=panel_pk).increment_version(
-            major=major, user=User.objects.get(pk=user_pk), comment=version_comment
+            major=major, user=User.objects.get(pk=user_pk), comment=version_comment,
+            include_superpanels=True
         )
     else:
         gps = GenePanelSnapshot.objects.get(pk=panel_pk).increment_version(
-            major=major, comment=version_comment
+            major=major, comment=version_comment, include_superpanels=True
         )
 
     if update_stats:
