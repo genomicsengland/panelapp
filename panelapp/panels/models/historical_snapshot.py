@@ -38,7 +38,7 @@ class HistoricalSnapshot(models.Model):
     panel = models.ForeignKey(GenePanel, on_delete=models.PROTECT)
     major_version = models.IntegerField(default=0, db_index=True)
     minor_version = models.IntegerField(default=0, db_index=True)
-    reason = models.CharField(null=True, max_length=100)
+    reason = models.TextField(null=True)
     schema_version = models.CharField(max_length=100)  # JSON schema version
     data = JSONField()
 
