@@ -178,7 +178,9 @@ class GenePanelTest(LoginGELUser):
         )  # 4 is due to create_batch
 
         old_gps = HistoricalSnapshot.objects.get(panel__pk=gps.panel.pk)
-        assert '{}.{}'.format(old_gps.major_version, old_gps.minor_version) != gps.version
+        assert (
+            "{}.{}".format(old_gps.major_version, old_gps.minor_version) != gps.version
+        )
         assert gene_symbol in [g["entity_name"] for g in old_gps.data["genes"]]
 
         new_gps = GenePanel.objects.get(pk=gps.panel.pk).active_panel
@@ -331,6 +333,7 @@ class GenePanelTest(LoginGELUser):
         GeneFactory(gene_symbol="ABCC5-AS1")
         GeneFactory(gene_symbol="A1CF")
         GeneFactory(gene_symbol="STR_1")
+        GeneFactory(gene_symbol="STR_2")
 
         file_path = os.path.join(os.path.dirname(__file__), "import_panel_data.tsv")
         test_panel_file = os.path.abspath(file_path)
@@ -342,12 +345,13 @@ class GenePanelTest(LoginGELUser):
         gp = GenePanel.objects.get(name="Panel One")
         active_panel = gp.active_panel
         entries = active_panel.get_all_genes
-        assert entries.count() == 2
+        self.assertEqual(entries.count(), 2)
 
     def test_import_regions(self):
         GeneFactory(gene_symbol="ABCC5-AS1")
         GeneFactory(gene_symbol="A1CF")
         GeneFactory(gene_symbol="STR_1")
+        GeneFactory(gene_symbol="STR_2")
 
         file_path = os.path.join(os.path.dirname(__file__), "import_panel_data.tsv")
         test_panel_file = os.path.abspath(file_path)
@@ -363,7 +367,9 @@ class GenePanelTest(LoginGELUser):
     def test_import_strs(self):
         GeneFactory(gene_symbol="ABCC5-AS1")
         GeneFactory(gene_symbol="A1CF")
-        GeneFactory(gene_symbol="STR_1")
+        gene = GeneFactory(gene_symbol="STR_1")
+        GeneFactory(gene_symbol="STR_2")
+        GeneFactory(gene_symbol="STR_3")
 
         file_path = os.path.join(os.path.dirname(__file__), "import_panel_data.tsv")
         test_panel_file = os.path.abspath(file_path)
@@ -375,12 +381,16 @@ class GenePanelTest(LoginGELUser):
         self.assertEqual(GenePanel.objects.count(), 2)
         gp = GenePanel.objects.get(name="TestPanel")
         active_panel = gp.active_panel
-        self.assertEqual(active_panel.get_all_strs.count(), 1)
+        self.assertEqual(active_panel.get_all_strs.count(), 3)
+        self.assertEqual(active_panel.get_str("STR_1").gene_core, gene)
+        self.assertEqual(active_panel.get_str("STR_2").gene_core, None)
+        self.assertEqual(active_panel.get_str("STR_3").gene_core, None)
 
     def test_import_panel_sources(self):
         gene = GeneFactory(gene_symbol="ABCC5-AS1")
         A1CF = GeneFactory(gene_symbol="A1CF")
         GeneFactory(gene_symbol="STR_1")
+        GeneFactory(gene_symbol="STR_2")
 
         gps = GenePanelSnapshotFactory()
         gps.panel.name = "Panel One"
@@ -557,7 +567,9 @@ class GenePanelTest(LoginGELUser):
         # check if deleting gene preserves it in the previous versions
         gp = gps.panel
         gps.delete_gene(gene_symbol)
-        v1 = HistoricalSnapshot.objects.filter(panel=gps.panel, major_version=0, minor_version=1).first()
+        v1 = HistoricalSnapshot.objects.filter(
+            panel=gps.panel, major_version=0, minor_version=1
+        ).first()
         assert gene_symbol in [g["entity_name"] for g in v1.data["genes"]]
 
     def test_panel_types(self):

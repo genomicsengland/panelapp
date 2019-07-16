@@ -77,7 +77,7 @@ class GenePanelSnapshotFactory(factory.django.DjangoModelFactory):
         if not create:
             return
 
-        self.update_saved_stats()
+        self._update_saved_stats()
 
 
 class GenePanelFactory(factory.django.DjangoModelFactory):
@@ -88,6 +88,7 @@ class GenePanelFactory(factory.django.DjangoModelFactory):
         lambda x: fake.sentence(nb_words=6, variable_nb_words=True).strip(".")
     )
     genepanelsnapshot = factory.RelatedFactory(GenePanelSnapshotFactory)
+    old_pk = '553f9696bb5a1616e5ed41e3'
 
 
 class PanelTypeFactory(factory.django.DjangoModelFactory):
@@ -200,7 +201,7 @@ class GenePanelEntrySnapshotFactory(factory.django.DjangoModelFactory):
         if not create:
             return
 
-        self.panel.update_saved_stats()
+        self.panel._update_saved_stats()
 
 
 class FakeRange:
@@ -275,7 +276,7 @@ class STRFactory(factory.django.DjangoModelFactory):
         if not create:
             return
 
-        self.panel.update_saved_stats()
+        self.panel._update_saved_stats()
 
 
 class RegionFactory(factory.django.DjangoModelFactory):
@@ -338,4 +339,4 @@ class RegionFactory(factory.django.DjangoModelFactory):
         if not create:
             return
 
-        self.panel.update_saved_stats()
+        self.panel._update_saved_stats()

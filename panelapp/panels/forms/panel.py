@@ -205,7 +205,7 @@ class PanelForm(forms.ModelForm):
             if data_changed or self.changed_data:
                 self.instance.increment_version()
                 panel.save()
-                self.instance.update_saved_stats(use_db=update_stats_superpanel)
+                self.instance._update_saved_stats(use_db=update_stats_superpanel)
             else:
                 panel.save()
 
@@ -234,7 +234,7 @@ class PanelForm(forms.ModelForm):
                     self.instance.child_panels.values_list("major_version", flat=True)
                 )
                 self.instance.save(update_fields=["major_version"])
-                self.instance.update_saved_stats(use_db=False)
+                self.instance._update_saved_stats(use_db=False)
                 activities.append(
                     "Set child panels to: {}".format(
                         "; ".join(

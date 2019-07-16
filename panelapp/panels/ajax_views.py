@@ -199,7 +199,6 @@ class ClearSourcesAjaxView(
         self.panel.increment_version()
         del self.panel
         self.object.clear_evidences(self.request.user)
-        self.panel.update_saved_stats()
         return self.return_data()
 
 
@@ -224,7 +223,6 @@ class ClearSingleSourceAjaxView(
             self.panel.get_region(self.kwargs["entity_name"]).clear_evidences(
                 self.request.user, evidence=self.kwargs["source"]
             )
-        self.panel.update_saved_stats()
         return self.return_data()
 
     def return_data(self):

@@ -77,5 +77,5 @@ class GeneReviewForm(forms.ModelForm):
         ev = panel.get_gene(self.gene.gene.get("gene_symbol")).update_evaluation(
             self.request.user, evaluation_data
         )
-        panel.update_saved_stats()
+        panel._update_saved_stats()
         return ev

@@ -205,6 +205,4 @@ class PanelGeneForm(forms.ModelForm):
             gene = self.panel.add_gene(
                 self.request.user, new_gene_symbol, gene_data, increment_version
             )
-            self.panel = GenePanel.objects.get(pk=self.panel.panel.pk).active_panel
-            self.panel.update_saved_stats()
             return gene

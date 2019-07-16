@@ -179,6 +179,11 @@ class TestWebservices(TransactionTestCase):
         )
         self.assertEqual(r.status_code, 200)
 
+    def test_get_panel_by_old_pk(self):
+        r = self.client.get(reverse_lazy("webservices:get_panel", args=(self.gpes.panel.panel.old_pk,)))
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(b"Query Error" not in r.content)
+
     def test_get_panel_version(self):
         self.gpes.panel.increment_version()
         del self.gpes.panel.panel.active_panel

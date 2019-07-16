@@ -47,7 +47,7 @@ class EvaluationRegionTest(LoginGELUser):
 
         region = RegionFactory()
         region.evaluation.all().delete()
-        region.panel.update_saved_stats()
+        region.panel._update_saved_stats()
         url = reverse_lazy(
             "panels:review_entity",
             kwargs={

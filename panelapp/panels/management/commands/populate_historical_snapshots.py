@@ -33,6 +33,7 @@ from django.db.models import Value
 from panels.models import GenePanelSnapshot
 from panels.models import HistoricalSnapshot
 
+
 @click.command()
 def command():
 
@@ -60,11 +61,11 @@ def command():
         .iterator()
     ):
         with transaction.atomic():
-            HistoricalSnapshot().import_panel(panel=gps)
+            HistoricalSnapshot.import_panel(panel=gps)
             gps.delete()
             completed['genepanel'] +=1
             completed['historical'] +=1
-            if completed['genepanel'] % 1000:
-                print('Migrated {} Genepanels!'.format(completed['genepanel']))
+            if completed['genepanel'] % 1000 == 0:
+                click.echo('Migrated {} Genepanels!'.format(completed['genepanel']))
 
-    print('Populated {} Historical panels from {} Genepanels!'.format(completed['historical'], completed['genepanel']))
+    click.echo('Populated {} Historical panels from {} Genepanels!'.format(completed['historical'], completed['genepanel']))

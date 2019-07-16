@@ -261,6 +261,4 @@ class PanelSTRForm(forms.ModelForm):
             str_item = self.panel.add_str(
                 self.request.user, new_str_name, str_data, increment_version
             )
-            self.panel = GenePanel.objects.get(pk=self.panel.panel.pk).active_panel
-            self.panel.update_saved_stats()
             return str_item

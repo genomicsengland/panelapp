@@ -165,6 +165,12 @@ class TestAPIV1(LoginExternalUser):
         )
         self.assertEqual(r.status_code, 200)
 
+    def test_get_panel_old_pk(self):
+        r = self.client.get(
+            reverse_lazy("api:v1:panels-detail", args=(self.gpes.panel.panel.old_pk,))
+        )
+        self.assertEqual(r.status_code, 200)
+
     def test_get_panel_version(self):
         self.gpes.panel.increment_version()
         self.gpes.panel.panel.active_panel.increment_version()

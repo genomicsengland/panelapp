@@ -21,29 +21,29 @@
 ## specific language governing permissions and limitations
 ## under the License.
 ##
-from django import forms
+
+import djclick as click
+from django.db import transaction
+
 from panels.models import GenePanelSnapshot
-from panels.tasks import increment_panel_async
 
 
-class PromotePanelForm(forms.ModelForm):
-    """
-    This form increments a major version and saves new version comment
-    """
+@click.command()
+def command():
+    for panel in GenePanelSnapshot.objects.get_active_annotated(
+        all=True, internal=True, superpanels=False
+    ).filter(is_child_panel=True):
+        with transaction.atomic():
+            new_panel = panel.increment_version(include_superpanels=False)
+            new_panel._update_saved_stats(update_superpanels=False)
 
-    version_comment = forms.CharField(
-        label="Comment about this new version", widget=forms.Textarea
-    )
+    click.echo('Updated all simple panels')
 
-    class Meta:
-        model = GenePanelSnapshot
-        fields = ("version_comment",)
+    for super_panel in GenePanelSnapshot.objects.get_active_annotated(
+        all=True, internal=True, superpanels=True
+    ).filter(is_super_panel=True):
+        with transaction.atomic():
+            new_super_panel = super_panel.increment_version()
+            new_super_panel._update_saved_stats(update_superpanels=False)
 
-    def __init__(self, *args, **kwargs):
-        self.request = kwargs.pop("request")
-        super().__init__(*args, **kwargs)
-
-    def save(self, *args, commit=True, **kwargs):
-        increment_panel_async(
-            self.instance.pk, self.request.user.pk, self.cleaned_data["version_comment"], major=True, include_superpanels=True
-        )
+    click.echo('Updated all super panels')

@@ -379,19 +379,29 @@ class UploadedPanelList(TimeStampedModel):
 
     _map_type_to_methods = {
         "gene": {
-            "check_exists": "current_genes",
+            "check_exists": "has_gene",
             "add": "add_gene",
             "update": "update_gene",
+            "clear": [
+                "cached_genes",
+                "current_genes_count",
+                "current_genes_duplicates",
+                "current_genes",
+                "get_all_genes",
+                "get_all_genes_extra",
+            ],
         },
         "str": {
-            "check_exists": "current_strs",
+            "check_exists": "has_str",
             "add": "add_str",
             "update": "update_str",
+            "clear": ["cached_strs", "get_all_strs", "get_all_strs_extra"],
         },
         "region": {
-            "check_exists": "current_regions",
+            "check_exists": "has_region",
             "add": "add_region",
             "update": "update_region",
+            "clear": ["cached_regions", "get_all_regions", "get_all_regions_extra"],
         },
     }
 
@@ -509,27 +519,28 @@ class UploadedPanelList(TimeStampedModel):
 
         # Add or update entity
         methods = self._map_type_to_methods[entity_data["entity_type"]]
-        if entity_data["entity_name"] not in getattr(panel, methods["check_exists"]):
-            if entity_data["entity_type"] == "gene" or entity_data["gene_symbol"]:
-                # Check if we want to add a gene which doesn't exist in our database
-                try:
-                    Gene.objects.get(
-                        gene_symbol=entity_data["gene_symbol"], active=True
-                    )
-                except Gene.DoesNotExist:
-                    raise GeneDoesNotExist(
-                        "{}, Gene: {}".format(key + 2, entity_data["gene_symbol"])
-                    )
 
+        if entity_data["entity_type"] == "gene" or entity_data["gene_symbol"]:
+            # Check if we want to add a gene which doesn't exist in our database
+            try:
+                entity_data["gene"] = Gene.objects.get(
+                    gene_symbol=entity_data["gene_symbol"], active=True
+                )
+            except Gene.DoesNotExist:
+                raise GeneDoesNotExist(
+                    "{}, Gene: {}".format(key + 2, entity_data["gene_symbol"])
+                )
+
+        if not getattr(panel, methods["check_exists"])(entity_data["entity_name"]):
             getattr(panel, methods["add"])(
                 user, entity_data["entity_name"], entity_data, False
             )
-            del panel.panel.active_panel
-            self._cached_panels[entity_data["level4"]] = panel.panel.active_panel
         else:
             getattr(panel, methods["update"])(
                 user, entity_data["entity_name"], entity_data, True
             )
+
+        getattr(panel, "clear_cache")(methods["clear"])
 
     def get_panel(self, line_data):
         return self._cached_panels[line_data["level4"]]
@@ -736,7 +747,7 @@ class UploadedReviewsList(TimeStampedModel):
                     raise GenesDoNotExist(", ".join(non_existing_genes))
 
                 if (
-                    not background and len(lines) > 20
+                    not background and len(lines) > 50
                 ):  # panel is too big, process in the background
                     import_reviews.delay(user.pk, self.pk)
                     return ProcessingRunCode.PROCESS_BACKGROUND

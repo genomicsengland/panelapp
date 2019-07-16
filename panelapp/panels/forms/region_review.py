@@ -79,5 +79,5 @@ class RegionReviewForm(forms.ModelForm):
         ev = panel.get_region(self.region.name).update_evaluation(
             self.request.user, evaluation_data
         )
-        panel.update_saved_stats()
+        panel._update_saved_stats()
         return ev
