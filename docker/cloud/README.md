@@ -80,7 +80,8 @@ named `GUNICORN_<UPPERCASE-SETTING-NAME>` (e.g. `GUNICORN_WORKERS` overrides `wo
 
 Defaults:
 
-* `GUNICORN_WORKERS` (`workers`): 2
+* `GUNICORN_WORKERS` (`workers`): 8 
+* `GUNICORN_TIMEOUT` (`timeout`, in seconds): 120
 
 # AWS resources
 
