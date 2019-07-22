@@ -39,6 +39,7 @@ All of the following environment variables must be set:
 * `PANEL_APP_EMAIL` - PanelApp email address
 * `EMAIL_HOST` - SMTP server hostname
 * `EMAIL_PORT` - SMTP server port
+* `PANEL_APP_BASE_URL` - Public URL of the web application
 
 #### Secrets
 
@@ -67,7 +68,7 @@ All of the following environment variables must be set:
 
 * `DATABASE_URL` - (**alternative to passing separate `DATABASE_*` parameters**)
     database config URL, in the format: `postgresql://{username}:{password}@{host}:{port}/{database_name}`
-* `DJANGO_ADMIN_URL` - change admin URL to something secure
+* `DJANGO_ADMIN_URL` - change admin URL to something more secure (by obscurity) than the default `/admin`
 * `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` - required if not using IAM Roles to authenticate access to S3 buckets   
 * `CELERY_BROKER_URL` - Only required if not using IAM Roles for SQS authentication. 
     It must be in the format `sqs://{aws_access_key}:{aws_secret_key}@`.
@@ -79,7 +80,8 @@ named `GUNICORN_<UPPERCASE-SETTING-NAME>` (e.g. `GUNICORN_WORKERS` overrides `wo
 
 Defaults:
 
-* `GUNICORN_WORKERS` (`workers`): 2
+* `GUNICORN_WORKERS` (`workers`): 8 
+* `GUNICORN_TIMEOUT` (`timeout`, in seconds): 300
 
 # AWS resources
 
