@@ -4,7 +4,6 @@ variables:
 stages:
    - code_test
    - image_build
-   - deploy_to_development
    - deploy_to_stage         # Manual
    - deploy_to_production    # Manual
    - deploy_to_test          # Manual
@@ -31,7 +30,7 @@ code_test:
     - apk add --no-cache postgresql-libs git curl jpeg-dev zlib-dev gcc musl-dev curl-dev postgresql-dev build-base linux-headers
     - pip install .[tests]
     - pip install pytest-runner
-    - pytest     # FIXME - Need to work with Oleg to fix few random test failure.
+    - pytest
 
 
 
@@ -134,7 +133,7 @@ destroy_stage:
     - git clone https://$INFRA_DEPLOY_TOKEN_USERNAME:$TF_INFRA_REPO_TOKEN@gitlab.com/genomicsengland/panelapp/panelapp-config.git
   script:
     - export WORKING_DIR=$(pwd)
-    - cd $PANNELAPP_TF_DIR; terraform init -backend-config "$WORKING_DIR/panelapp-config/$env_name/panelapp/backend.conf" && terraform plan -var-file="$WORKING_DIR/panelapp-config/$env_name/panelapp/terraform.tfvars" -var 'create_aurora=false' -var 'panelapp_replica=0' && terraform apply -auto-approve -var-file="$WORKING_DIR/panelapp-config/$env_name/panelapp/terraform.tfvars" -var 'create_aurora=false' -var 'panelapp_replica=0' 
+    - cd $PANNELAPP_TF_DIR; terraform init -backend-config "$WORKING_DIR/panelapp-config/$env_name/panelapp/backend.conf" && terraform plan -var-file="$WORKING_DIR/panelapp-config/$env_name/panelapp/terraform.tfvars" -var 'create_aurora=false' -var 'panelapp_replica=0' && terraform apply -auto-approve -var-file="$WORKING_DIR/panelapp-config/$env_name/panelapp/terraform.tfvars" -var 'create_aurora=false' -var 'panelapp_replica=0'
 
 
 deploy_to_production:
@@ -167,8 +166,8 @@ deploy_to_production:
    script:
      - export WORKING_DIR=$(pwd)
      # Take DB snapshot and delete the old one
-     - aws docdb delete-db-cluster-snapshot --db-cluster-snapshot-identifier predeployment # FIXME - Need to discuss about retensions
-     - aws docdb create-db-cluster-snapshot --db-cluster-identifier aurora-prod --db-cluster-snapshot-identifier predeployment
+     - aws docdb create-db-cluster-snapshot --db-cluster-identifier aurora-prod --db-cluster-snapshot-identifier predeployment-$CI_JOB_ID
+     - sleep 60
      #- cd $PANNELAPP_TF_DIR; terraform init -backend-config "$WORKING_DIR/panelapp-config/$env_name/panelapp/backend.conf" && terraform plan -var-file="$WORKING_DIR/panelapp-config/$env_name/panelapp/terraform.tfvars" 'image_tag=$CI_COMMIT_TAG' && terraform apply -auto-approve -var-file="$WORKING_DIR/panelapp-config/$env_name/panelapp/terraform.tfvars" -var 'image_tag=$CI_COMMIT_TAG'
      - cd $PANNELAPP_TF_DIR; terraform init -backend-config "$WORKING_DIR/panelapp-config/$env_name/panelapp/backend.conf" && terraform plan -var-file="$WORKING_DIR/panelapp-config/$env_name/panelapp/terraform.tfvars" -var 'image_tag=latest' #&& terraform apply -auto-approve -var-file="$WORKING_DIR/panelapp-config/$env_name/panelapp/terraform.tfvars" -var 'image_tag=latest'
      - sleep 30
@@ -193,6 +192,8 @@ deploy_to_test:
 
 destroy_test:
   when: manual
+  only:
+    - schedules
   stage: deploy_to_test
   tags:
     - executor:docker
