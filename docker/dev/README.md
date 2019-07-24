@@ -176,3 +176,16 @@ It might be handy installing [AWScli-local](https://github.com/localstack/awscli
 
 It is a wrapper around AWS cli for interacting with LocalStack (it helps with not `--endpoint-url` and providing dummy 
 credentials on every request).
+
+## Known Issues
+
+Using different dockerfiles for local development and production is actually violating 
+[12-Factor App Dev-Prod parity](https://12factor.net/dev-prod-parity).
+
+The main goal was to have a proper production docker image: no dev/test dependency, lightweight base image, dependencies not 
+installed as "editable"...
+ 
+A common pattern is building dev and test images on top of the production image. Unfortunately, this cannot be easily done
+in Python installing dependencies with setup.py, without loosening the production image.
+
+There is space for improvement here.

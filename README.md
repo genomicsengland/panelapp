@@ -51,6 +51,9 @@ Dockerfiles for cloud are optimised for security and size.
 
 The application is agnostic to the container scheduler platform it runs in (e.g. Kubernetes, ECS).
 
+Docker-compose and Makefile in  [./docker/cloud/](docker/cloud/) are for locally troubleshooting production docker images.
+They are NOT supposed to be used to deploy the application in any environment.
+
 ## Contributing to PanelApp
 
 All contributions are under [Apache2 license](http://www.apache.org/licenses/LICENSE-2.0.html#contributions).
