@@ -15,7 +15,7 @@ code_test:
   only:
     - tags
     - merge_requests
-    - branches # FIXME will be removed once access issue is resolved
+    - branches
   services:
     - name: postgres:9.6.9
       alias: db-postgres
@@ -169,7 +169,7 @@ deploy_to_production:
      - aws docdb create-db-cluster-snapshot --db-cluster-identifier aurora-prod --db-cluster-snapshot-identifier predeployment-$CI_JOB_ID
      - sleep 60
      #- cd $PANNELAPP_TF_DIR; terraform init -backend-config "$WORKING_DIR/panelapp-config/$env_name/panelapp-backend.conf" && terraform plan -var-file="$WORKING_DIR/panelapp-config/$env_name/terraform.tfvars" -var 'image_tag=$CI_COMMIT_TAG' && terraform apply -auto-approve -var-file="$WORKING_DIR/panelapp-config/$env_name/terraform.tfvars" -var 'image_tag=$CI_COMMIT_TAG'
-     - cd $PANNELAPP_TF_DIR; terraform init -backend-config "$WORKING_DIR/panelapp-config/$env_name/panelapp-backend.conf" && terraform plan -var-file="$WORKING_DIR/panelapp-config/$env_name/terraform.tfvars" -var 'image_tag=latest' #&& terraform apply -auto-approve -var-file="$WORKING_DIR/panelapp-config/$env_name/terraform.tfvars" -var 'image_tag=latest'
+     - cd $PANNELAPP_TF_DIR; terraform init -backend-config "$WORKING_DIR/panelapp-config/$env_name/panelapp-backend.conf" && terraform plan -var-file="$WORKING_DIR/panelapp-config/$env_name/terraform.tfvars" -var 'image_tag=latest' && terraform apply -auto-approve -var-file="$WORKING_DIR/panelapp-config/$env_name/terraform.tfvars" -var 'image_tag=latest'
      - sleep 30
      - python3 $WORKING_DIR/panelapp-infra/run-ecs-task.py -tasks panelapp-migrate-panelapp-prod -panelapp
      - sleep 30
