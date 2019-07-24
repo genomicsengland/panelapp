@@ -133,7 +133,7 @@ destroy_stage:
     - git clone https://$INFRA_DEPLOY_TOKEN_USERNAME:$TF_INFRA_REPO_TOKEN@gitlab.com/genomicsengland/panelapp/panelapp-config.git
   script:
     - export WORKING_DIR=$(pwd)
-    - cd $PANNELAPP_TF_DIR; terraform init -backend-config "$WORKING_DIR/panelapp-config/$env_name/panelapp-backend.conf" && terraform plan -var-file="$WORKING_DIR/panelapp-config/$env_name/terraform.tfvars" -var 'create_aurora=false' -var 'panelapp_replica=0' && terraform apply -auto-approve -var-file="$WORKING_DIR/panelapp-config/$env_name/terraform.tfvars" -var 'create_aurora=false' -var 'panelapp_replica=0'
+    - cd $PANNELAPP_TF_DIR; terraform init -backend-config "$WORKING_DIR/panelapp-config/$env_name/panelapp-backend.conf" && terraform plan -var-file="$WORKING_DIR/panelapp-config/$env_name/terraform.tfvars" -var 'create_aurora=false' -var 'panelapp_replica=0' -var 'image_tag=latest' && terraform apply -auto-approve -var-file="$WORKING_DIR/panelapp-config/$env_name/terraform.tfvars" -var 'create_aurora=false' -var 'panelapp_replica=0' -var 'image_tag=latest'
 
 
 deploy_to_production:
