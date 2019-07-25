@@ -341,7 +341,7 @@ class TestAPIV1(LoginExternalUser):
         j = r.json()
         self.assertEqual(r.status_code, 200)
         gene_symbols_v0 = [g["entity_name"] for g in j["results"]]
-        self.assertTrue(gene_symbols_v0, gene_symbol)
+        self.assertIn(gene_symbol, gene_symbols_v0)
         r = self.client.get(
             reverse_lazy("api:v1:panels_genes-list", args=(self.gpes.panel.panel.pk,))
         )
@@ -349,6 +349,38 @@ class TestAPIV1(LoginExternalUser):
         self.assertEqual(r.status_code, 200)
         gene_symbols_v1 = [g["entity_name"] for g in j["results"]]
         self.assertNotIn(gene_symbol, gene_symbols_v1)
+
+    def test_regions_endpoint_in_panel_version_old_panel_pk(self):
+        name = self.region.name
+        self.gps.delete_region(name)
+
+        r = self.client.get(
+            reverse_lazy("api:v1:panels_regions-list", args=(self.region.panel.panel.old_pk, ))
+            + "?version=0.0"
+        )
+        j = r.json()
+        self.assertEqual(r.status_code, 200)
+
+    def test_regions_endpoint_in_panel_version(self):
+        name = self.region.name
+        self.gps.delete_region(name)
+
+        r = self.client.get(
+            reverse_lazy("api:v1:panels_regions-list", args=(self.region.panel.panel.pk, ))
+            + "?version=0.0"
+        )
+        j = r.json()
+        self.assertEqual(r.status_code, 200)
+        names_v0 = [g["entity_name"] for g in j["results"]]
+        self.assertIn(name, names_v0)
+        r = self.client.get(
+            reverse_lazy("api:v1:panels_regions-list", args=(self.region.panel.panel.pk, ))
+            + "?version=0.1"
+        )
+        j = r.json()
+        self.assertEqual(r.status_code, 200)
+        names_v1 = [g["entity_name"] for g in j["results"]]
+        self.assertNotIn(name, names_v1)
 
     def test_entities_pagination_historical_version(self):
         with self.settings(REST_FRAMEWORK={"PAGE_SIZE": 1, "DEFAULT_VERSIONING_CLASS": "rest_framework.versioning.NamespaceVersioning",
@@ -483,6 +515,38 @@ class TestAPIV1(LoginExternalUser):
         self.assertEqual(r.status_code, 200)
         self.assertEqual(len(r.json()["results"]), 1)
 
+    def test_strs_endpoint_in_panel_version_old_panel_pk(self):
+        name = self.str.name
+        self.gps.delete_str(name)
+
+        r = self.client.get(
+            reverse_lazy("api:v1:panels-strs-list", args=(self.str.panel.panel.old_pk, ))
+            + "?version=0.0"
+        )
+        j = r.json()
+        self.assertEqual(r.status_code, 200)
+
+    def test_strs_endpoint_in_panel_version(self):
+        name = self.str.name
+        self.gps.delete_str(name)
+
+        r = self.client.get(
+            reverse_lazy("api:v1:panels-strs-list", args=(self.str.panel.panel.pk, ))
+            + "?version=0.0"
+        )
+        j = r.json()
+        self.assertEqual(r.status_code, 200)
+        names_v0 = [g["entity_name"] for g in j["results"]]
+        self.assertIn(name, names_v0)
+        r = self.client.get(
+            reverse_lazy("api:v1:panels-strs-list", args=(self.str.panel.panel.pk, ))
+            + "?version=0.1"
+        )
+        j = r.json()
+        self.assertEqual(r.status_code, 200)
+        names_v1 = [g["entity_name"] for g in j["results"]]
+        self.assertNotIn(name, names_v1)
+
     def test_regions_list(self):
         r = self.client.get(reverse_lazy("api:v1:regions-list"))
         self.assertEqual(r.status_code, 200)
@@ -589,6 +653,23 @@ class NonAuthAPIv1Request(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertEqual(len(r.json()["results"]), 4)
 
+    def test_genes_evaluations_old_version(self):
+        """We don't have evaluations for old versions,
+        they are only saved on the current version
+
+        :return:
+        """
+        gene_symbol = self.gpes.gene_core.gene_symbol
+        self.gps.delete_gene(gene_symbol)
+
+        r = self.client.get(
+            reverse_lazy(
+                "api:v1:strs-evaluations-list",
+                args=(self.gps.panel.panel.pk, gene_symbol),
+            ) + "?version=0.0"
+        )
+        self.assertEqual(r.status_code, 400)
+
     def test_strs_evaluations(self):
         r = self.client.get(
             reverse_lazy(
@@ -599,6 +680,23 @@ class NonAuthAPIv1Request(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertEqual(len(r.json()["results"]), 4)
 
+    def test_strs_evaluations_old_version(self):
+        """We don't have evaluations for old versions,
+        they are only saved on the current version
+
+        :return:
+        """
+        name = self.str.name
+        self.gps.delete_str(name)
+
+        r = self.client.get(
+            reverse_lazy(
+                "api:v1:strs-evaluations-list",
+                args=(self.str.panel.panel.pk, self.str.name),
+            ) + "?version=0.0"
+        )
+        self.assertEqual(r.status_code, 400)
+
     def test_region_evaluations(self):
         r = self.client.get(
             reverse_lazy(
@@ -608,3 +706,20 @@ class NonAuthAPIv1Request(TestCase):
         )
         self.assertEqual(r.status_code, 200)
         self.assertEqual(len(r.json()["results"]), 4)
+
+    def test_region_evaluations_old_version(self):
+        """We don't have evaluations for old versions,
+        they are only saved on the current version
+
+        :return:
+        """
+        name = self.str.name
+        self.gps.delete_region(name)
+
+        r = self.client.get(
+            reverse_lazy(
+                "api:v1:regions-evaluations-list",
+                args=(self.region.panel.panel.pk, self.region.name),
+            ) + "?version=0.0"
+        )
+        self.assertEqual(r.status_code, 400)
