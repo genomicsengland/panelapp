@@ -4,7 +4,7 @@ variables:
 stages:
    - code_test
    - image_build
-   - deploy_to_stage         # Manual
+   - deploy_to_stage         # 
    - deploy_to_production    # Manual
    - deploy_to_test          # Manual
    - destroy_stage           # Manual
