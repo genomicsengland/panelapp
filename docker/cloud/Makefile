@@ -1,6 +1,6 @@
 #################################################################
-# This makefile is for troubleshooting production images locally.
-# It is not meant to build, deploy or run any actual environment.
+# This Makefile is for troubleshooting production images locally.
+# It is not meant to build, deploy or run any actual environment!
 #################################################################
 
 BUILDDIR := .build
