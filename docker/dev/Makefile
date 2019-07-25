@@ -48,7 +48,8 @@ collectstatic: ## Deploy static files (collectstatic command)
 	docker-compose exec web python manage.py collectstatic --noinput
 
 createsuperuser: ## Create superuser (username: 'admin', pwd: 'changeme', email: `admin@local`)
-	docker-compose exec web /bin/sh -c "echo \"from django.contrib.auth import get_user_model; User = get_user_model(); User.objects.create_superuser('admin', 'admin@local', 'changeme')\" | python manage.py shell"
+	@echo "Creating superuser credentials: admin/changeme"
+	@docker-compose exec web /bin/sh -c "echo \"from django.contrib.auth import get_user_model; User = get_user_model(); User.objects.create_superuser('admin', 'admin@local', 'changeme')\" | python manage.py shell"
 
 command: ## Run a generic command, passed as additional argument(s)
 	docker-compose exec web python manage.py $(COMMAND_ARGS)

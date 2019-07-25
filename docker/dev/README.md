@@ -1,18 +1,20 @@
 # Local development environments
 
-Local-dev uses Docker and the [Docker Compose stack](./docker-compose.yml) included
+Local-dev uses Docker and the [Docker Compose stack](./docker-compose.yml) included.
+
+Please use the [Makefile](./Makefile) provided to set up the local dev environment.
+
+## Docker-Compose stack
  
-Docker Compose cluster includes:
+Docker Compose stack includes:
 
 * _Web_ component: a Django app server run with `runserver_plus`.
 * _Worker_  component: a Celery application.
 * A PostgreSQL instance
 * [LocalStack](https://github.com/localstack/localstack), mocking S3 and SQS.
  
-The application source code fis mounted rom the local machine as volumes into the running containers.
+The application source code fis mounted from the local machine as volumes into the running containers.
 Any change to the code will be immediately reflected.
-
-A [Makefile](./Makefile) helps with common development tasks.
 
 > If you start the docker-compose cluster directly, without the Makefile, you need to set `TMPDIR` env variable. 
 > To `/tmp/localstack` on Linux or `/private/tmp/localstack` on OSX.
@@ -48,6 +50,10 @@ You should use the [Makefile](./Makefile) in this directory for all common tasks
 ```bash
 $ make build
 ```
+
+> You must rebuild the base docker images if you change any dependencies in `setup.py`. 
+> Any other code change does not require to rebuild, as the source code is mounted from the host machine file system
+> and installed in editable mode.
 
 ### Run and setup the stack
 
