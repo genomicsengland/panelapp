@@ -84,7 +84,7 @@ To start an empty application from scratch (no Panel, but includes Genes data).
     ```bash
     $ make createsuperuser
     ```
-    This is the user to log into the webapp: username=`admin`, pwd=`secret`, email=`admin@local`
+    This is the user to log into the webapp: username=`admin`, pwd=`changeme`, email=`admin@local`
 
 
 ### Developing and accessing the application
