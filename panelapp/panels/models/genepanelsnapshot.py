@@ -1073,10 +1073,10 @@ class GenePanelSnapshot(TimeStampedModel):
         if self.has_str(str_name):
             if increment:
                 self = self.increment_version()
-            else:
-                self.cached_strs.get(name=str_name).delete()
-                self.clear_cache()
-                self.clear_django_cache()
+
+            self.cached_strs.get(name=str_name).delete()
+            self.clear_cache()
+            self.clear_django_cache()
 
             if user:
                 self.add_activity(
@@ -1094,10 +1094,10 @@ class GenePanelSnapshot(TimeStampedModel):
         if self.has_region(region_name):
             if increment:
                 self = self.increment_version()
-            else:
-                self.cached_regions.get(name=region_name).delete()
-                self.clear_cache()
-                self.clear_django_cache()
+
+            self.cached_regions.get(name=region_name).delete()
+            self.clear_cache()
+            self.clear_django_cache()
 
             if user:
                 self.add_activity(

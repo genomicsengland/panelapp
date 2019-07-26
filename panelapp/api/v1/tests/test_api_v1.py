@@ -350,12 +350,33 @@ class TestAPIV1(LoginExternalUser):
         gene_symbols_v1 = [g["entity_name"] for g in j["results"]]
         self.assertNotIn(gene_symbol, gene_symbols_v1)
 
+    def test_genes_endpoint_in_panel_version_old_pk(self):
+        gene_symbol = self.gpes.gene.get("gene_symbol")
+        self.gps_public.delete_gene(gene_symbol)
+        self.gps_public = self.gps_public.panel.active_panel
+
+        r = self.client.get(
+            reverse_lazy("api:v1:panels_genes-list", args=(self.gpes.panel.panel.old_pk,))
+            + "?version=0.0"
+        )
+        j = r.json()
+        self.assertEqual(r.status_code, 200)
+        gene_symbols_v0 = [g["entity_name"] for g in j["results"]]
+        self.assertIn(gene_symbol, gene_symbols_v0)
+        r = self.client.get(
+            reverse_lazy("api:v1:panels_genes-list", args=(self.gpes.panel.panel.old_pk,))
+        )
+        j = r.json()
+        self.assertEqual(r.status_code, 200)
+        gene_symbols_v1 = [g["entity_name"] for g in j["results"]]
+        self.assertNotIn(gene_symbol, gene_symbols_v1)
+
     def test_regions_endpoint_in_panel_version_old_panel_pk(self):
         name = self.region.name
         self.gps.delete_region(name)
 
         r = self.client.get(
-            reverse_lazy("api:v1:panels_regions-list", args=(self.region.panel.panel.old_pk, ))
+            reverse_lazy("api:v1:panels-regions-list", args=(self.region.panel.panel.old_pk, ))
             + "?version=0.0"
         )
         j = r.json()
@@ -366,7 +387,7 @@ class TestAPIV1(LoginExternalUser):
         self.gps.delete_region(name)
 
         r = self.client.get(
-            reverse_lazy("api:v1:panels_regions-list", args=(self.region.panel.panel.pk, ))
+            reverse_lazy("api:v1:panels-regions-list", args=(self.region.panel.panel.pk, ))
             + "?version=0.0"
         )
         j = r.json()
@@ -374,7 +395,7 @@ class TestAPIV1(LoginExternalUser):
         names_v0 = [g["entity_name"] for g in j["results"]]
         self.assertIn(name, names_v0)
         r = self.client.get(
-            reverse_lazy("api:v1:panels_regions-list", args=(self.region.panel.panel.pk, ))
+            reverse_lazy("api:v1:panels-regions-list", args=(self.region.panel.panel.pk, ))
             + "?version=0.1"
         )
         j = r.json()
@@ -528,7 +549,8 @@ class TestAPIV1(LoginExternalUser):
 
     def test_strs_endpoint_in_panel_version(self):
         name = self.str.name
-        self.gps.delete_str(name)
+        deleted = self.gps.delete_str(name)
+        self.assertTrue(deleted)
 
         r = self.client.get(
             reverse_lazy("api:v1:panels-strs-list", args=(self.str.panel.panel.pk, ))
@@ -660,12 +682,12 @@ class NonAuthAPIv1Request(TestCase):
         :return:
         """
         gene_symbol = self.gpes.gene_core.gene_symbol
-        self.gps.delete_gene(gene_symbol)
+        self.gpes.panel.delete_gene(gene_symbol)
 
         r = self.client.get(
             reverse_lazy(
                 "api:v1:strs-evaluations-list",
-                args=(self.gps.panel.panel.pk, gene_symbol),
+                args=(self.gpes.panel.panel.pk, gene_symbol),
             ) + "?version=0.0"
         )
         self.assertEqual(r.status_code, 400)
@@ -687,7 +709,7 @@ class NonAuthAPIv1Request(TestCase):
         :return:
         """
         name = self.str.name
-        self.gps.delete_str(name)
+        self.str.panel.delete_str(name)
 
         r = self.client.get(
             reverse_lazy(
@@ -713,8 +735,8 @@ class NonAuthAPIv1Request(TestCase):
 
         :return:
         """
-        name = self.str.name
-        self.gps.delete_region(name)
+        name = self.region.name
+        self.region.panel.delete_region(name)
 
         r = self.client.get(
             reverse_lazy(

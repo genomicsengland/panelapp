@@ -60,6 +60,10 @@ class ReadOnlyListViewset(
 CONFIDENCE_CHOICES = ((3, "Green"), (2, "Amber"), (1, "Red"), (0, "No List"))
 
 
+class Http400(Exception):
+    pass
+
+
 class NumberChoices(filters.ChoiceFilter, filters.NumberFilter):
     pass
 
@@ -221,6 +225,7 @@ class EntityViewSet(viewsets.mixins.ListModelMixin, viewsets.GenericViewSet):
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
     lookup_field = "entity_name"
     lookup_url_kwarg = "entity_name"
+    recent_version_only = False
 
     def filter_list(self, obj):
         entity_name = self.request.query_params.get("entity_name")
@@ -292,13 +297,21 @@ class EntityViewSet(viewsets.mixins.ListModelMixin, viewsets.GenericViewSet):
                     detail="Incorrect version supplied", code="incorrect_version"
                 )
 
-            latest = GenePanelSnapshot.objects.filter(panel_id=self.kwargs["panel_pk"]).first()
+            panel_id = self.kwargs["panel_pk"]
+            id_kwarg = 'panel_id' if panel_id.isdigit() else 'panel__old_pk'
+            filter_kwargs = {
+                id_kwarg: panel_id
+            }
+
+            latest = GenePanelSnapshot.objects.filter(**filter_kwargs).first()
 
             if str(latest.major_version) == major_version and str(latest.minor_version) == minor_version:
                 return super().list(request, *args, **kwargs)
 
-            obj = HistoricalSnapshot.objects.filter(
-                panel__pk=self.kwargs["panel_pk"],
+            if self.recent_version_only:
+                raise Http400('Endpoint doesnt support version parameter')
+
+            obj = HistoricalSnapshot.objects.filter(**filter_kwargs).filter(
                 major_version=major_version,
                 minor_version=minor_version,
             ).first()
@@ -311,21 +324,36 @@ class EntityViewSet(viewsets.mixins.ListModelMixin, viewsets.GenericViewSet):
         else:
             return super().list(request, *args, **kwargs)
 
+    def dispatch(self, request, *args, **kwargs):
+        try:
+            response = super().dispatch(request, *args, **kwargs)
+        except Http400 as e:
+            response = Response({"error": str(e)}, status=400)
+            response = self.finalize_response(request, response, *args, **kwargs)
+        return response
+
     def get_panel(self):
+        obj = GenePanelSnapshot.objects.get_active_annotated(
+            all=True, internal=True, deleted=True, name=self.kwargs["panel_pk"]
+        ).first()
+
+        if not obj:
+            raise Http404
+
         version = self.request.query_params.get("version")
         if version:
-            obj = GenePanelSnapshot.objects.get_panel_version(
-                name=self.kwargs["panel_pk"], version=version
-            ).first()
+            try:
+                major_version, minor_version = version.split(".")
+                if str(obj.major_version) == major_version and str(obj.minor_version) == minor_version:
+                    return obj
+                else:
+                    raise Http400('Endpoint doesnt support version parameter')
+            except ValueError:
+                raise APIException(
+                    detail="Incorrect version supplied", code="incorrect_version"
+                )
         else:
-            obj = GenePanelSnapshot.objects.get_active_annotated(
-                all=True, internal=True, deleted=True, name=self.kwargs["panel_pk"]
-            ).first()
-
-        if obj:
             return obj
-
-        raise Http404
 
 
 class GeneViewSet(EntityViewSet):
@@ -335,19 +363,13 @@ class GeneViewSet(EntityViewSet):
     lookup_collection = "genes"
 
     def get_queryset(self):
-        version = self.request.query_params.get("version", None)
-        if version:
-            return GenePanelEntrySnapshot.objects.none()
-        else:
-            obj = GenePanelSnapshot.objects.get_active_annotated(
-                all=True, internal=True, deleted=True, name=self.kwargs["panel_pk"]
-            ).first()
-            return obj.get_all_genes.prefetch_related("evidence", "tags")
+        return self.get_panel().get_all_genes.prefetch_related("evidence", "tags")
 
 
 class GeneEvaluationsViewSet(EntityViewSet):
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
     serializer_class = EvaluationSerializer
+    recent_version_only = True
 
     def get_queryset(self):
         panel = self.get_panel()
@@ -371,6 +393,7 @@ class STRViewSet(EntityViewSet):
 class STREvaluationsViewSet(EntityViewSet):
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
     serializer_class = EvaluationSerializer
+    recent_version_only = True
 
     def get_queryset(self):
         panel = self.get_panel()
@@ -395,6 +418,7 @@ class RegionViewSet(EntityViewSet):
 class RegionEvaluationsViewSet(EntityViewSet):
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
     serializer_class = EvaluationSerializer
+    recent_version_only = True
 
     def get_queryset(self):
         panel = self.get_panel()
