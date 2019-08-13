@@ -70,6 +70,10 @@ class GeneReviewForm(forms.ModelForm):
         self.fields["current_diagnostic"] = original_fields.get("current_diagnostic")
         self.fields["comments"] = original_fields.get("comments")
 
+    def clean_phenotypes(self):
+        clean_data = [p.replace('\t', ' ') for p in self.cleaned_data.get('phenotypes')]
+        return clean_data
+
     def save(self, *args, **kwargs):
         evaluation_data = self.cleaned_data
         evaluation_data["comment"] = evaluation_data.pop("comments")
